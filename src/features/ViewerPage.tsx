@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { useStillHere } from '../components/useStillHere';
 import { readBlob } from '../data/blobs';
 import { formatBytes, KIND_LABEL, kindOf } from '../data/format';
 import { deleteMaterial, fileMaterial, getMaterial, listCourses, listTopics } from '../data/store';
@@ -40,6 +41,24 @@ function ImageView({ url, name }: { url: string; name: string }) {
   );
 }
 
+/** Browser recordings often don't state their length, which breaks the seek bar until it's measured. */
+function AudioView({ url, onFail }: { url: string; onFail: () => void }) {
+  return (
+    <audio
+      controls
+      src={url}
+      data-testid="audio-player"
+      onError={onFail}
+      onLoadedMetadata={(event) => {
+        const audio = event.currentTarget;
+        if (Number.isFinite(audio.duration)) return;
+        audio.addEventListener('timeupdate', () => { audio.currentTime = 0; }, { once: true });
+        audio.currentTime = 1e101;
+      }}
+    />
+  );
+}
+
 function Filing({ material }: { material: Material }) {
   const { data } = useLive(async () => ({
     courses: await listCourses(),
@@ -76,6 +95,7 @@ export default function ViewerPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const stage = useRef<HTMLDivElement>(null);
+  const stillHere = useStillHere();
   const [confirm, setConfirm] = useState(false);
   const [failure, setFailure] = useState('');
   const [viewFailure, setViewFailure] = useState('');
@@ -127,7 +147,7 @@ export default function ViewerPage() {
   else if (kind === 'pdf') body = <Suspense fallback={<p className="muted">Opening PDF…</p>}><PdfViewer blob={blob} onFail={fail} /></Suspense>;
   else if (!url) body = kind === 'text' ? <TextView blob={blob} /> : <p className="muted">Opening file…</p>;
   else if (kind === 'image') body = <ImageView url={url} name={material.name} />;
-  else if (kind === 'audio') body = <audio controls src={url} data-testid="audio-player" onError={() => fail('audio')} />;
+  else if (kind === 'audio') body = <AudioView url={url} onFail={() => fail('audio')} />;
   else if (kind === 'video') body = <video controls playsInline src={url} data-testid="video-player" onError={() => fail('video')} />;
   else if (kind === 'text') body = <TextView blob={blob} />;
   else body = fallback("Study Forge can't display this file type yet, but the original is safe. You can download it and open it in another app.");
@@ -158,8 +178,9 @@ export default function ViewerPage() {
           onConfirm={async () => {
             setConfirm(false);
             try {
+              const destination = material.courseId ? `/courses/${material.courseId}` : '/library';
               await deleteMaterial(material.id);
-              navigate(-1);
+              if (stillHere.current) navigate(destination, { replace: true });
             } catch (error) {
               setFailure(`The file wasn't deleted. ${(error as Error).message}`);
             }

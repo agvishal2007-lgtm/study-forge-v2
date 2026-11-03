@@ -48,6 +48,7 @@ const pdfFile = fixture('accounting-notes.pdf', makePdf(3));
 const textFile = fixture('reading-list.txt', 'Chapter 1: The accounting equation\nAssets = Liabilities + Equity\n');
 const brokenVideo = fixture('broken.mp4', Buffer.from('this is not really a video'));
 const brokenPdf = fixture('broken.pdf', Buffer.from('this is not really a pdf'));
+const extraFile = fixture('extra-note.txt', 'One more note, unlike the others.\n');
 const slides = fixture('slides.pptx', Buffer.from('fake slides'));
 const largeFile = fixture('large-lecture.bin', Buffer.alloc(300 * 1024 * 1024, 7));
 const audioFile = path.join(work, 'lecture.wav');
@@ -193,7 +194,8 @@ test('a duplicate is caught, and can be moved instead of saved twice', async () 
   await topic.getByRole('link', { name: 'reading-list.txt' }).waitFor();
   await page.screenshot({ path: path.join(shots, 'course.png') });
   await page.getByRole('navigation').getByRole('link', { name: 'Library' }).click();
-  await page.getByRole('link', { name: 'reading-list.txt' }).waitFor();
+  await page.getByRole('heading', { name: 'Library' }).waitFor();
+  await page.locator('.files li', { hasText: 'accounting-notes.pdf' }).waitFor();
   assert.equal(await page.locator('.files li', { hasText: 'reading-list.txt' }).count(), 1);
 });
 
@@ -221,8 +223,9 @@ test('deleting needs confirmation, and only then removes the file', async () => 
   await page.getByRole('heading', { name: 'large-lecture.bin' }).waitFor();
   await page.getByRole('button', { name: 'Delete file' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Delete file' }).click();
-  await page.getByRole('navigation').getByRole('link', { name: 'Library' }).click();
+  await page.getByRole('heading', { name: 'Library' }).waitFor();
   await page.getByRole('link', { name: 'accounting-notes.pdf' }).waitFor();
+  assert.match(page.url(), /#\/library$/);
   assert.equal(await page.getByRole('link', { name: 'large-lecture.bin' }).count(), 0);
   const left = await page.evaluate(async () => {
     const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('materials');
@@ -231,6 +234,25 @@ test('deleting needs confirmation, and only then removes the file', async () => 
     return count;
   });
   assert.equal(left, 7);
+});
+
+test('moving to another screen during a delete does not get overridden', async () => {
+  await addFiles([extraFile]);
+  await saved('extra-note.txt').waitFor();
+  await clearPanel();
+  await page.getByRole('link', { name: 'extra-note.txt' }).click();
+  await page.getByRole('button', { name: 'Delete file' }).click();
+  await page.evaluate(() => {
+    // Leave at the same moment the delete is confirmed.
+    [...document.querySelectorAll('dialog button')].find((b) => b.textContent === 'Delete file').click();
+    location.hash = '#/settings';
+  });
+  await page.getByRole('heading', { name: 'Settings' }).waitFor();
+  await page.waitForTimeout(500);
+  assert.match(page.url(), /#\/settings$/);
+  await page.getByRole('navigation').getByRole('link', { name: 'Library' }).click();
+  await page.getByRole('link', { name: 'accounting-notes.pdf' }).waitFor();
+  assert.equal(await page.getByRole('link', { name: 'extra-note.txt' }).count(), 0);
 });
 
 test('deleting a course keeps its files in the Library', async () => {

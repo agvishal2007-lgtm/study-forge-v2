@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createCourse } from '../data/store';
+import { useStillHere } from './useStillHere';
 
 export function NewCourseForm() {
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const stillHere = useStillHere();
   return (
     <form
       className="inline-form"
@@ -15,7 +17,7 @@ export function NewCourseForm() {
         if (!name.trim()) return setError('Enter a course name.');
         try {
           const course = await createCourse(name, code);
-          navigate(`/courses/${course.id}`);
+          if (stillHere.current) navigate(`/courses/${course.id}`);
         } catch (failure) {
           setError(`The course wasn't saved. ${(failure as Error).message}`);
         }

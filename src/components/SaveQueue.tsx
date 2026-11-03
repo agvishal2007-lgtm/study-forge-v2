@@ -47,6 +47,17 @@ const describeFailure = (error: unknown) => {
   return `The file wasn't saved. ${error instanceof Error ? error.message : ''}`.trim();
 };
 
+/** Redraws progress at most ten times a second, however many pieces a large file has. */
+function throttled(report: (bytes: number) => void) {
+  let last = 0;
+  return (bytes: number) => {
+    const now = performance.now();
+    if (now - last < 100) return;
+    last = now;
+    report(bytes);
+  };
+}
+
 export function SaveProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<SaveItem[]>([]);
   const controllers = useRef(new Map<string, AbortController>());
@@ -61,7 +72,7 @@ export function SaveProvider({ children }: { children: ReactNode }) {
     if (signal.aborted) return;
     try {
       update(key, { phase: 'checking', bytes: 0 });
-      const hash = await hashFile(file, signal, (bytes) => update(key, { bytes }));
+      const hash = await hashFile(file, signal, throttled((bytes) => update(key, { bytes })));
       const existing = await findByHash(hash);
       if (existing) {
         update(key, { phase: 'duplicate', material: existing });
@@ -76,7 +87,7 @@ export function SaveProvider({ children }: { children: ReactNode }) {
         return;
       }
       update(key, { phase: 'saving', bytes: 0 });
-      const material = await storeMaterial(file, hash, target, signal, (bytes) => update(key, { bytes }));
+      const material = await storeMaterial(file, hash, target, signal, throttled((bytes) => update(key, { bytes })));
       update(key, { phase: 'saved', bytes: file.size, material });
       void requestKeepFiles();
     } catch (error) {

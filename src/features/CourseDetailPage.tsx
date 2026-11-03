@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AddFiles } from '../components/AddFiles';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MaterialList } from '../components/MaterialList';
+import { useStillHere } from '../components/useStillHere';
 import { createTopic, deleteCourse, deleteTopic, getCourse, listMaterials, listTopics } from '../data/store';
 import type { Topic } from '../data/types';
 import { useLive } from '../data/useLive';
@@ -10,6 +11,7 @@ import { useLive } from '../data/useLive';
 export function CourseDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
+  const stillHere = useStillHere();
   const [topicName, setTopicName] = useState('');
   const [confirmCourse, setConfirmCourse] = useState(false);
   const [confirmTopic, setConfirmTopic] = useState<Topic | null>(null);
@@ -48,6 +50,7 @@ export function CourseDetailPage() {
       <section aria-labelledby="course-files">
         <h2 id="course-files">Files</h2>
         <AddFiles courseId={course.id} />
+        <p><Link to={`/record?course=${course.id}`}>Record a lecture for this course</Link></p>
         {loose.length > 0
           ? <MaterialList materials={loose} />
           : topics.length === 0 && <p className="muted">No files in this course yet.</p>}
@@ -86,7 +89,7 @@ export function CourseDetailPage() {
           title={`Delete ${course.name}?`}
           confirmLabel="Delete course"
           onCancel={() => setConfirmCourse(false)}
-          onConfirm={() => void attempt(async () => { await deleteCourse(course.id); navigate('/courses'); })}
+          onConfirm={() => void attempt(async () => { await deleteCourse(course.id); if (stillHere.current) navigate('/courses', { replace: true }); })}
         >
           <p>The course and its topics will be removed. Its {materials.length === 1 ? '1 file stays' : `${materials.length} files stay`} in your Library.</p>
         </ConfirmDialog>

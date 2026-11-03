@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { Course, Material, Topic } from './types';
+import type { Course, Material, RecordingSession, Topic } from './types';
 
 /**
  * IndexedDB is the single source of truth for courses, topics, and file records.
@@ -10,19 +10,40 @@ interface StudyForgeDB extends DBSchema {
   topics: { key: string; value: Topic; indexes: { courseId: string } };
   materials: { key: string; value: Material; indexes: { hash: string; createdAt: number } };
   blobs: { key: string; value: Blob };
+  recordings: { key: string; value: RecordingSession };
+  recordingChunks: { key: [string, number]; value: Blob };
 }
 
 let dbPromise: Promise<IDBPDatabase<StudyForgeDB>> | null = null;
 
 export function getDb() {
-  dbPromise ??= openDB<StudyForgeDB>('study-forge', 1, {
-    upgrade(db) {
-      db.createObjectStore('courses', { keyPath: 'id' });
-      db.createObjectStore('topics', { keyPath: 'id' }).createIndex('courseId', 'courseId');
-      const materials = db.createObjectStore('materials', { keyPath: 'id' });
-      materials.createIndex('hash', 'hash');
-      materials.createIndex('createdAt', 'createdAt');
-      db.createObjectStore('blobs');
+  dbPromise ??= openDB<StudyForgeDB>('study-forge', 2, {
+    upgrade(db, oldVersion) {
+      // Each step only adds to what's there, so existing students keep their data.
+      if (oldVersion < 1) {
+        db.createObjectStore('courses', { keyPath: 'id' });
+        db.createObjectStore('topics', { keyPath: 'id' }).createIndex('courseId', 'courseId');
+        const materials = db.createObjectStore('materials', { keyPath: 'id' });
+        materials.createIndex('hash', 'hash');
+        materials.createIndex('createdAt', 'createdAt');
+        db.createObjectStore('blobs');
+      }
+      if (oldVersion < 2) {
+        db.createObjectStore('recordings', { keyPath: 'id' });
+        db.createObjectStore('recordingChunks');
+      }
+    },
+    // An older open tab is holding the database, so the update has to wait for it.
+    blocked() {
+      window.dispatchEvent(new Event('study-forge-update-blocked'));
+    },
+    // A newer version of the site needs the database, so step aside for it.
+    blocking(_current, _blocked, event) {
+      (event.target as IDBDatabase).close();
+      dbPromise = null;
+    },
+    terminated() {
+      dbPromise = null;
     },
   });
   return dbPromise;

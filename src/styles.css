@@ -135,8 +135,8 @@ label input, label select { margin-top: .25rem; font-weight: 400; }
   main { grid-row: 1; }
   .nav { grid-row: 2; flex-direction: row; padding: .25rem; border-right: 0; border-top: 1px solid var(--line); padding-bottom: max(.25rem, env(safe-area-inset-bottom)); }
   .nav .brand { display: none; }
-  .nav-links { display: flex; flex: 3; overflow: visible; }
-  .nav-links a, .nav-bottom a { flex: 1; text-align: center; padding: .7rem .25rem; font-size: .95rem; }
+  .nav-links { display: flex; flex: 4; overflow: visible; }
+  .nav-links a, .nav-bottom a { flex: 1; text-align: center; padding: .7rem .1rem; font-size: .9rem; }
   .nav-bottom { flex: 1; display: flex; border-top: 0; padding-top: 0; }
   .nav a.active:not(.brand) { box-shadow: inset 0 3px 0 var(--brass); }
   .page { padding: 1.25rem 1rem 2rem; }
@@ -146,3 +146,20 @@ label input, label select { margin-top: .25rem; font-weight: 400; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* Recording */
+.studio { background: var(--raised); border-radius: 4px; padding: clamp(1rem, 3vw, 2rem); margin-top: 1.5rem; max-width: 760px; }
+.page > section.studio { margin-top: 1.5rem; }
+.studio .inline-form { margin-top: 0; }
+.record-button { font-size: 1.15rem; padding: .75rem 1.5rem; }
+.studio-state { display: flex; align-items: center; gap: .6rem; font-weight: 700; margin: 0; overflow-wrap: anywhere; }
+.studio-clock { font: 700 clamp(3.5rem, 2rem + 8vw, 6.5rem)/1.05 var(--display); margin: .5rem 0 1rem; font-variant-numeric: tabular-nums; }
+.level { height: 12px; background: var(--ground); border-radius: 2px; overflow: hidden; margin-bottom: .75rem; }
+.level span { display: block; height: 100%; background: var(--brass); transform-origin: left; transition: transform .12s linear; }
+.dot { flex: none; display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--muted); }
+.dot.live { background: var(--danger); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .45; } }
+.recording-bar { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .65rem; background: var(--raised); border-bottom: 1px solid var(--line); padding: .55rem clamp(1rem, 3vw, 3rem); }
+.recording-bar-text { flex: 1 1 200px; overflow-wrap: anywhere; }
+.files li .row-actions { margin-top: .4rem; }
+@media (prefers-reduced-motion: reduce) { .dot.live { animation: none; } }

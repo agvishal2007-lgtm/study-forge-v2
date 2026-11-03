@@ -4,20 +4,21 @@ import { MaterialList } from '../components/MaterialList';
 import { NewCourseForm } from '../components/NewCourseForm';
 import { Shelf } from '../components/Shelf';
 import { getStorageStatus, listCourses, listMaterials, requestKeepFiles } from '../data/store';
+import { listUnfinished } from '../data/recordings';
 import { useLive } from '../data/useLive';
 
 export function TodayPage() {
   const [askedToKeep, setAskedToKeep] = useState(false);
   const { data, error } = useLive(async () => {
-    const [courses, materials, storage] = await Promise.all([listCourses(), listMaterials(), getStorageStatus()]);
-    return { courses, materials, storage };
+    const [courses, materials, storage, unfinished] = await Promise.all([listCourses(), listMaterials(), getStorageStatus(), listUnfinished()]);
+    return { courses, materials, storage, unfinished };
   }, [askedToKeep]);
 
   if (error) return <div className="page"><h1>Today</h1><p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { courses, materials, storage } = data;
+  const { courses, materials, storage, unfinished } = data;
 
-  if (courses.length === 0 && materials.length === 0) {
+  if (courses.length === 0 && materials.length === 0 && unfinished.length === 0) {
     return (
       <div className="page welcome">
         <h1>Start with one course</h1>
@@ -30,6 +31,11 @@ export function TodayPage() {
   return (
     <div className="page">
       <h1>Today</h1>
+      {unfinished.length > 0 && (
+        <p className="notice">
+          A recording was interrupted, and what was captured is safe. <Link to="/record">Save or discard it</Link>
+        </p>
+      )}
       {materials.length > 0 && storage.persisted === false && (
         <p className="notice">
           Your browser may clear saved files if this device runs low on space.{' '}
