@@ -221,7 +221,7 @@ test('a second tab does not treat a live recording as interrupted', async () => 
   assert.equal(await other.getByRole('heading', { name: 'Interrupted recordings' }).count(), 0);
   await other.close();
   await page.getByRole('button', { name: 'Stop and save' }).click();
-  await page.getByText(/^Saved /).waitFor();
+  await page.getByText(/^Saved “/).waitFor();
 });
 
 test('losing the microphone saves what was captured and says so', async () => {
@@ -240,7 +240,7 @@ test('losing the microphone saves what was captured and says so', async () => {
     track.dispatchEvent(new Event('ended'));
   });
   await page.getByText('The microphone was disconnected or turned off').waitFor();
-  await page.getByText(/^Saved /).waitFor();
+  await page.getByText(/^Saved “/).waitFor();
 });
 
 for (const [name, message] of [
@@ -286,7 +286,7 @@ test('recording works at phone size without sideways scrolling', async () => {
   assert.ok((await overflow()) <= 0);
   await page.getByRole('link', { name: 'Go to recording' }).click();
   await page.getByRole('button', { name: 'Stop and save' }).click();
-  await page.getByText(/^Saved /).waitFor();
+  await page.getByText(/^Saved “/).waitFor();
 });
 
 test('no uncaught errors happened during the whole run', () => {

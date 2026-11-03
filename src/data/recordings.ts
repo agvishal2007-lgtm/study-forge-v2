@@ -44,7 +44,7 @@ export async function listUnfinished(): Promise<RecordingSession[]> {
   return sessions.filter((session) => !active.has(lockName(session.id)));
 }
 
-const EXTENSIONS: [string, string][] = [['webm', 'webm'], ['mp4', 'm4a'], ['aac', 'm4a'], ['ogg', 'ogg']];
+const EXTENSIONS: [string, string][] = [['video/mp4', 'mp4'], ['webm', 'webm'], ['mp4', 'm4a'], ['aac', 'm4a'], ['ogg', 'ogg']];
 
 /** Turns the saved pieces into one file in the library, and only then removes the pieces. */
 export async function finishSession(id: string): Promise<Material | null> {

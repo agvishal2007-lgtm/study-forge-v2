@@ -8,7 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --port 4173 --strictPort",
     "typecheck": "tsc --noEmit",
-    "test": "npm run build && node --test --test-reporter=spec tests/app.test.cjs tests/recording.test.cjs"
+    "test": "npm run build && node --test --test-reporter=spec tests/app.test.cjs tests/recording.test.cjs tests/screen.test.cjs"
   },
   "dependencies": {
     "@fontsource/atkinson-hyperlegible": "^5.3.0",

@@ -60,11 +60,33 @@ Running the tests repeatedly also found and fixed two real bugs: deleting a file
 
 ### Not built yet in recording
 - Transcription, and summaries or flashcards from a lecture. These come later and are optional.
-- Recording video or screen. Only audio can be recorded, though video files can be added.
 - MP3 output. Recordings are saved in the format the browser produces, usually WebM on laptops.
 
-### Next
-Notes and backup export.
+## Virtual lecture recording
+
+**The goal:** a student watching a lecture online can capture the screen and all of its sound.
+
+### What works
+- The Record screen asks whether the lecture is in person or virtual.
+- Virtual records the shared tab, window, or screen with its audio, about 500 MB per hour.
+- An option adds the student's microphone, mixed into the same file.
+- A clear warning if the lecture's sound isn't being captured, and a notice after 20 seconds of silence in either mode.
+- The browser's own Stop sharing button saves the recording.
+- Closing the browser mid-recording keeps what was captured, the same as in-person recording.
+- Devices that can't share a screen see an explanation, and in-person recording still works.
+
+### How it was tested
+`tests/screen.test.cjs` uses Chromium's simulated screen and sound. It checks for a real picture in the saved file, and tests the lecture sound and microphone separately to prove each one reaches it. `npm test` ran all 37 tests five times in a row.
+
+### Limits that come from browsers
+- **Phones:** iPhones and Android browsers generally can't share their screen with a website, so virtual recording is for computers.
+- **Sound:** Chrome and Edge capture a shared tab's sound on every computer type. Capturing the whole computer's sound, such as the Zoom or Teams app, is mainly a Windows and ChromeOS option. On a Mac, a browser tab is the reliable route.
+- **Safari and Firefox:** these may record the picture with no sound. The app shows its warning when that happens.
+
+### Not tested yet
+- A real screen, real lecture, and real sharing choices. The picker itself was skipped in testing, so a person must check it.
+- Long recordings. Several hours would be over 1 GB, and joining that many pieces hasn't been tried.
+- Whether the saved video's seek bar works well on long recordings.
 
 ## How the code is organized
 

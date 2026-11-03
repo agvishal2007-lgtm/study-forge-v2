@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AddFiles } from '../components/AddFiles';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { Meter, useElapsed, useRecorder } from '../components/Recorder';
+import { canRecordScreen, Meter, useElapsed, useRecorder, type RecordingSource } from '../components/Recorder';
 import { formatBytes, formatDate, formatDuration } from '../data/format';
 import { discardSession, finishSession, listUnfinished } from '../data/recordings';
 import { listCourses, listTopics } from '../data/store';
@@ -71,7 +71,7 @@ function Interrupted() {
 }
 
 function Recording() {
-  const { phase, name, bytes, muted, pause, resume, stop } = useRecorder();
+  const { phase, name, bytes, muted, source, hasAudio, micIncluded, silent, warning, pause, resume, stop } = useRecorder();
   const elapsed = useElapsed();
   const [hiddenWhileRecording, setHidden] = useState(false);
   useEffect(() => {
@@ -83,13 +83,27 @@ function Recording() {
     <div className="studio">
       <p className="studio-state">
         <span className={phase === 'recording' ? 'dot live' : 'dot'} aria-hidden="true" />
-        {phase === 'recording' ? 'Recording' : 'Paused'}: {name}
+        {phase === 'recording' ? 'Recording' : 'Paused'}{source === 'screen' ? ' your screen' : ''}: {name}
       </p>
       <p className="studio-clock" data-testid="clock" role="timer">{formatDuration(elapsed)}</p>
-      <Meter />
-      <p className="muted">{formatBytes(bytes)} saved to this device so far. You can open your slides and notes while this runs.</p>
+      {!hasAudio && (
+        <div className="error-box" role="alert" data-testid="no-audio">
+          <strong>{micIncluded ? "The lecture's sound isn't being recorded, only your microphone." : 'No sound is being recorded.'}</strong> Stop, start again, and turn on the option to share audio when your browser asks what to share. If you shared a whole window, try sharing a browser tab instead, because that's where audio sharing is most reliable.
+        </div>
+      )}
+      {(hasAudio || micIncluded) && <Meter />}
+      {(hasAudio || micIncluded) && silent && phase === 'recording' && (
+        <p className="notice" role="status" data-testid="silent">No sound has reached this recording for a while. If the lecture is already talking, stop and check what you shared.</p>
+      )}
+      {warning && <p className="notice" role="status">{warning}</p>}
+      <p className="muted">
+        {formatBytes(bytes)} saved to this device so far.{' '}
+        {source === 'screen'
+          ? "Use the browser's Stop sharing button or the one below to finish."
+          : 'You can open your slides and notes while this runs.'}
+      </p>
       {muted && <p className="error" role="alert">Your device has silenced the microphone, possibly for a call. Recording will pick up again when it's released.</p>}
-      {hiddenWhileRecording && <p className="notice">You left this page during recording. Some phones stop the microphone when you do, so check that the sound bar still moves.</p>}
+      {hiddenWhileRecording && source === 'microphone' && <p className="notice">You left this page during recording. Some phones stop the microphone when you do, so check that the sound bar still moves.</p>}
       <div className="row-actions">
         {phase === 'recording'
           ? <button className="button" onClick={pause}>Pause</button>
@@ -106,6 +120,9 @@ export function RecordPage() {
   const [title, setTitle] = useState(defaultName);
   const [courseId, setCourseId] = useState(params.get('course') ?? '');
   const [topicId, setTopicId] = useState('');
+  const [source, setSource] = useState<RecordingSource>('microphone');
+  const [withMicrophone, setWithMicrophone] = useState(false);
+  const screenAvailable = canRecordScreen();
   const { data: courses } = useLive(listCourses);
   const { data: topics } = useLive(() => (courseId ? listTopics(courseId) : Promise.resolve([])), [courseId]);
   const running = phase === 'recording' || phase === 'paused';
@@ -123,6 +140,17 @@ export function RecordPage() {
 
       {running ? <Recording /> : (
         <section className="studio" aria-label="Set up a recording">
+          <fieldset className="source-choice">
+            <legend>Where is the lecture?</legend>
+            <label className={source === 'microphone' ? 'source chosen' : 'source'}>
+              <input type="radio" name="source" checked={source === 'microphone'} onChange={() => setSource('microphone')} />
+              <span><strong>In person</strong><br /><span className="muted">Records the room with your microphone.</span></span>
+            </label>
+            <label className={source === 'screen' ? 'source chosen' : 'source'}>
+              <input type="radio" name="source" checked={source === 'screen'} disabled={!screenAvailable} onChange={() => setSource('screen')} />
+              <span><strong>Virtual</strong><br /><span className="muted">{screenAvailable ? 'Records your screen and the lecture audio.' : "Needs Chrome or Edge on a computer. This browser or device can't record its screen."}</span></span>
+            </label>
+          </fieldset>
           <div className="inline-form">
             <label>Recording name<input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
             <label>Course
@@ -140,14 +168,32 @@ export function RecordPage() {
               </label>
             )}
           </div>
+          {source === 'screen' && (
+            <div className="screen-help">
+              <label className="check">
+                <input type="checkbox" checked={withMicrophone} onChange={(event) => setWithMicrophone(event.target.checked)} />
+                Also record my microphone, for my own questions
+              </label>
+              <p>Your browser will ask what to share:</p>
+              <ol>
+                <li>If the lecture is in a browser tab, choose that tab. This is the most reliable way to capture its sound.</li>
+                <li>Turn on the option to share audio. Without it, the recording will have no lecture sound.</li>
+                <li>If the lecture is in the Zoom or Teams app, audio capture depends on your computer. On Windows, share your entire screen with system audio. On a Mac, join in a browser tab if you can.</li>
+              </ol>
+              <p className="muted">Use Chrome or Edge for sound. Safari and Firefox may record only the picture. Uses about 500 MB per hour of this device's space.</p>
+            </div>
+          )}
           <button
             className="button primary record-button"
             disabled={phase !== 'idle'}
-            onClick={() => void start({ name: title.trim() || defaultName(), courseId: courseId || null, topicId: topicId || null })}
+            onClick={() => void start({ source, withMicrophone, name: title.trim() || defaultName(), courseId: courseId || null, topicId: topicId || null })}
           >
-            {phase === 'starting' ? 'Waiting for microphone…' : phase === 'saving' ? 'Saving recording…' : 'Start recording'}
+            {phase === 'starting' ? (source === 'screen' ? 'Waiting for you to choose what to share…' : 'Waiting for microphone…') : phase === 'saving' ? 'Saving recording…' : source === 'screen' ? 'Choose screen and start' : 'Start recording'}
           </button>
-          <p className="muted">Audio is saved to this device every 5 seconds. On a phone, keep this page open and the screen unlocked, because locking it can stop the microphone.</p>
+          <p className="muted">
+            Saved to this device every 5 seconds.
+            {source === 'microphone' && ' On a phone, keep this page open and the screen unlocked, because locking it can stop the microphone.'}
+          </p>
         </section>
       )}
 

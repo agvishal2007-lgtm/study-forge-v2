@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useStillHere } from '../components/useStillHere';
@@ -42,21 +42,11 @@ function ImageView({ url, name }: { url: string; name: string }) {
 }
 
 /** Browser recordings often don't state their length, which breaks the seek bar until it's measured. */
-function AudioView({ url, onFail }: { url: string; onFail: () => void }) {
-  return (
-    <audio
-      controls
-      src={url}
-      data-testid="audio-player"
-      onError={onFail}
-      onLoadedMetadata={(event) => {
-        const audio = event.currentTarget;
-        if (Number.isFinite(audio.duration)) return;
-        audio.addEventListener('timeupdate', () => { audio.currentTime = 0; }, { once: true });
-        audio.currentTime = 1e101;
-      }}
-    />
-  );
+function measureLength(event: SyntheticEvent<HTMLMediaElement>) {
+  const media = event.currentTarget;
+  if (Number.isFinite(media.duration)) return;
+  media.addEventListener('timeupdate', () => { media.currentTime = 0; }, { once: true });
+  media.currentTime = 1e101;
 }
 
 function Filing({ material }: { material: Material }) {
@@ -104,12 +94,14 @@ export default function ViewerPage() {
   const { data: blob, error: blobError, loading: blobLoading } = useLive(() => readBlob(id), [id]);
   const [url, setUrl] = useState<string | null>(null);
 
+  // Files read back from storage lose their type, and some browsers need it to play them.
+  const mimeType = material?.mimeType;
   useEffect(() => {
     if (!blob) return;
-    const created = URL.createObjectURL(blob);
+    const created = URL.createObjectURL(blob.type || !mimeType ? blob : blob.slice(0, blob.size, mimeType));
     setUrl(created);
     return () => URL.revokeObjectURL(created);
-  }, [blob]);
+  }, [blob, mimeType]);
 
   useEffect(() => {
     const sync = () => setFull(document.fullscreenElement === stage.current);
@@ -147,8 +139,8 @@ export default function ViewerPage() {
   else if (kind === 'pdf') body = <Suspense fallback={<p className="muted">Opening PDF…</p>}><PdfViewer blob={blob} onFail={fail} /></Suspense>;
   else if (!url) body = kind === 'text' ? <TextView blob={blob} /> : <p className="muted">Opening file…</p>;
   else if (kind === 'image') body = <ImageView url={url} name={material.name} />;
-  else if (kind === 'audio') body = <AudioView url={url} onFail={() => fail('audio')} />;
-  else if (kind === 'video') body = <video controls playsInline src={url} data-testid="video-player" onError={() => fail('video')} />;
+  else if (kind === 'audio') body = <audio controls src={url} data-testid="audio-player" onLoadedMetadata={measureLength} onError={() => fail('audio')} />;
+  else if (kind === 'video') body = <video controls playsInline src={url} data-testid="video-player" onLoadedMetadata={measureLength} onError={() => fail('video')} />;
   else if (kind === 'text') body = <TextView blob={blob} />;
   else body = fallback("Study Forge can't display this file type yet, but the original is safe. You can download it and open it in another app.");
 
