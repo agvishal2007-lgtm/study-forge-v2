@@ -215,6 +215,31 @@ test('progress is real and cancelling a large save keeps nothing', async () => {
   await page.getByTestId('viewer-fallback').waitFor();
 });
 
+test('a save cut off by a reload leaves nothing behind', async () => {
+  const entries = () => page.evaluate(async () => {
+    const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('materials');
+    let count = 0;
+    for await (const _ of dir.keys()) count++;
+    return count;
+  });
+  const before = await entries();
+  await page.evaluate(async () => {
+    // What an interrupted save leaves: an entry with no file record.
+    const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('materials');
+    await dir.getFileHandle('leftover-from-a-crash', { create: true });
+  });
+  assert.equal(await entries(), before + 1);
+  await page.reload();
+  await page.getByRole('heading', { name: 'large-lecture.bin' }).waitFor();
+  const deadline = Date.now() + 5000;
+  while ((await entries()) !== before) {
+    assert.ok(Date.now() < deadline, 'the leftover should be removed');
+    await page.waitForTimeout(100);
+  }
+  // Real files are untouched, including the one on screen.
+  await page.getByTestId('viewer-fallback').waitFor();
+});
+
 test('deleting needs confirmation, and only then removes the file', async () => {
   await page.getByRole('button', { name: 'Delete file' }).click();
   const dialog = page.getByRole('dialog');

@@ -1,5 +1,5 @@
 import { createSHA256 } from 'hash-wasm';
-import { deleteBlob, saveBlob } from './blobs';
+import { deleteBlob, removeLeftovers, saveBlob, whileSaving } from './blobs';
 import { getDb, notifyChanged } from './db';
 import { SPINE_COLORS, type Course, type Material, type Topic } from './types';
 
@@ -131,15 +131,23 @@ export async function storeMaterial(
     topicId: target.topicId,
     createdAt: Date.now(),
   };
-  await saveBlob(material.id, file, signal, onProgress);
-  try {
-    await (await getDb()).put('materials', material);
-  } catch (error) {
-    await deleteBlob(material.id).catch(() => undefined);
-    throw error;
-  }
+  // The file and its record count as one save, so cleanup can't run between them.
+  await whileSaving(async () => {
+    await saveBlob(material.id, file, signal, onProgress);
+    try {
+      await (await getDb()).put('materials', material);
+    } catch (error) {
+      await deleteBlob(material.id).catch(() => undefined);
+      throw error;
+    }
+  });
   notifyChanged();
   return material;
+}
+
+export async function cleanUpInterruptedSaves(): Promise<void> {
+  const db = await getDb();
+  await removeLeftovers(async (id) => (await db.getKey('materials', id)) !== undefined);
 }
 
 export interface StorageStatus {

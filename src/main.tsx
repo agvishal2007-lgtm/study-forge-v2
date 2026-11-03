@@ -7,6 +7,9 @@ import '@fontsource/zilla-slab/500.css';
 import '@fontsource/zilla-slab/700.css';
 import './styles.css';
 import { App } from './App';
+import { cleanUpInterruptedSaves } from './data/store';
+
+void cleanUpInterruptedSaves().catch(() => undefined);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -183,6 +183,7 @@ test('missing lecture audio with the microphone on says exactly that', async () 
   await page.getByLabel(/Also record my microphone/).check();
   await begin();
   await page.getByTestId('no-audio').getByText("The lecture's sound isn't being recorded, only your microphone").waitFor();
+  await waitForPiece();
   await page.getByRole('button', { name: 'Stop and save' }).click();
   await page.getByText(/^Saved “/).waitFor();
 });
@@ -193,6 +194,7 @@ test('a blocked microphone still records the lecture and says so', async () => {
   await page.getByLabel(/Also record my microphone/).check();
   await begin();
   await page.getByText("your own voice won't be in this recording").waitFor();
+  await waitForPiece();
   await page.getByRole('button', { name: 'Stop and save' }).click();
   await page.getByText(/^Saved “/).waitFor();
 });
@@ -204,6 +206,15 @@ test('cancelling the share picker records nothing and explains', async () => {
   await page.getByText('Screen sharing was cancelled, so nothing was recorded').waitFor();
   await page.getByRole('button', { name: 'Choose screen and start' }).waitFor();
   assert.equal(await page.getByRole('heading', { name: 'Interrupted recordings' }).count(), 0);
+});
+
+test('stopping the instant a recording starts gives a clear result, never a hang', async () => {
+  await open();
+  await chooseVirtual();
+  await begin();
+  await page.getByRole('button', { name: 'Stop and save' }).click();
+  await page.getByText(/^(Saved “|Nothing was captured)/).waitFor();
+  await page.getByRole('button', { name: 'Choose screen and start' }).waitFor();
 });
 
 test("the browser's Stop sharing button saves the recording", async () => {
@@ -254,6 +265,7 @@ test('devices that cannot share a screen explain why, and in-person still works'
   await page.screenshot({ path: path.join(shots, 'phone-record-choice.png'), fullPage: true });
   await page.getByRole('button', { name: 'Start recording' }).click();
   await page.getByRole('button', { name: 'Stop and save' }).waitFor();
+  await waitForPiece();
   await page.getByRole('button', { name: 'Stop and save' }).click();
   await page.getByText(/^Saved “/).waitFor();
 });

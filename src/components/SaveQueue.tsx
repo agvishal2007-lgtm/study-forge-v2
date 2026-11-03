@@ -111,7 +111,8 @@ export function SaveProvider({ children }: { children: ReactNode }) {
     },
     cancel(key) {
       controllers.current.get(key)?.abort();
-      update(key, { phase: 'cancelled' });
+      // A running save reports Cancelled itself, once it has really stopped and cleaned up.
+      setItems((current) => current.map((item) => (item.key === key && item.phase === 'waiting' ? { ...item, phase: 'cancelled' } : item)));
     },
     dismiss(key) {
       setItems((current) => current.filter((item) => item.key !== key));

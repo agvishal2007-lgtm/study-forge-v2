@@ -284,6 +284,7 @@ test('recording works at phone size without sideways scrolling', async () => {
   await nav('Today');
   await page.getByTestId('recording-bar').waitFor();
   assert.ok((await overflow()) <= 0);
+  await waitForPieces(1);
   await page.getByRole('link', { name: 'Go to recording' }).click();
   await page.getByRole('button', { name: 'Stop and save' }).click();
   await page.getByText(/^Saved “/).waitFor();
