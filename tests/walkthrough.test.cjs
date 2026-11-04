@@ -100,7 +100,7 @@ test('it never opens by itself, and a new student can find it', async () => {
 test('the button starts it at 0%', async () => {
   await open('main');
   await card().waitFor();
-  assert.match(await count(), /Step 1 of 21, 0% complete/);
+  assert.match(await count(), /Step 1 of 23, 0% complete/);
   await page.getByRole('heading', { name: 'Welcome to Study Forge' }).waitFor();
   await settle();
   await page.screenshot({ path: path.join(shots, 'tour-welcome.png') });
@@ -184,7 +184,7 @@ test('every step opens the real screen and puts a box around the real section', 
 
 test('Back returns to the earlier section', async () => {
   await press('Back');
-  await atStep(19);
+  await atStep(21);
   assert.equal(await card().getAttribute('data-step'), 'offline');
   await page.locator('[data-testid=tour-card]').getByRole('button', { name: 'Back' }).waitFor();
   assert.match(await count(), /87% complete/);
@@ -204,7 +204,7 @@ test('a reload closes it, and the button picks up at the same step, on the right
   await page.waitForTimeout(300);
   assert.equal(await card().count(), 0);
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(19);
+  await atStep(21);
   await page.getByTestId('tour-box').waitFor();
   assert.ok(page.url().endsWith('#/settings'));
 });
@@ -224,11 +224,11 @@ test('the X cleans up completely, and it does not come back by itself', async ()
 
 test('Escape also leaves, and the question mark resumes at the same step', async () => {
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(19);
+  await atStep(21);
   await page.keyboard.press('Escape');
   await card().waitFor({ state: 'detached' });
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(19);
+  await atStep(21);
 });
 
 test('tapping the button the moment the page opens still resumes at the saved step', async () => {
@@ -237,7 +237,7 @@ test('tapping the button the moment the page opens still resumes at the saved st
   await page.waitForTimeout(200);
   await page.reload();
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(19);
+  await atStep(21);
 });
 
 test('Start over returns to the beginning at 0%', async () => {

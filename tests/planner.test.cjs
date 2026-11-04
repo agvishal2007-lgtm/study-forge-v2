@@ -286,7 +286,7 @@ test('someone already using the site keeps everything when the Planner arrives',
     request.onsuccess = () => { request.result.close(); resolve(); };
   }));
   await page.goto(URL_BASE);
-  await page.getByRole('heading', { name: 'Today' }).waitFor();
+  await page.getByRole('heading', { name: /^Today:/ }).waitFor();
   await nav('Courses');
   await page.getByRole('link', { name: /Older Course/ }).waitFor();
   await addItem({ name: 'First item after updating', course: 'Older Course', date: '2030-01-15' });

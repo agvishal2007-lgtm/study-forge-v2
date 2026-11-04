@@ -127,6 +127,8 @@ const pageErrors = [];
 const shots = path.join(__dirname, '..', 'test-output');
 const nav = (name) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
 
+const cellHas = (date, pattern) => page.waitForFunction(([day, source]) => new RegExp(source).test(document.querySelector(`[data-date="${day}"]`)?.innerText ?? ''), [date, pattern.source]);
+
 const CALENDARS = [
   { id: 'me@example.com', summary: 'Me', primary: true },
   { id: 'canvas-feed', summary: 'Canvas Calendar' },
@@ -283,7 +285,7 @@ test('a weekly item, a study block, and no-class days can be added by hand', asy
   await page.getByLabel('Last date').fill('2026-11-19');
   await page.getByRole('button', { name: 'Save' }).click();
   await page.getByRole('tab', { name: 'Plan Calendar' }).waitFor();
-  for (const date of ['2026-11-05', '2026-11-12', '2026-11-19']) assert.match(await page.locator(`[data-date="${date}"]`).innerText(), /Office hours/);
+  for (const date of ['2026-11-05', '2026-11-12', '2026-11-19']) await cellHas(date, /Office hours/);
   assert.doesNotMatch(await page.locator('[data-date="2026-11-26"]').innerText(), /Office hours/);
 
   await page.locator('[data-date="2026-11-12"] .month-chip').filter({ hasText: 'Office hours' }).click();
@@ -365,10 +367,10 @@ test('connecting Google brings in chosen calendars, with Canvas work in the Plan
   await page.getByTestId('plan-row').filter({ hasText: 'ECO 231' }).getByText('Bliss 123').waitFor();
   await page.getByRole('tab', { name: 'Plan Calendar' }).click();
   assert.doesNotMatch(await page.locator('[data-date="2026-11-05"]').innerText(), /Dinner/);
-  assert.match(await page.locator('[data-date="2026-11-26"]').innerText(), /No classes/);
-  assert.match(await page.locator('[data-date="2026-11-27"]').innerText(), /No classes/);
+  await cellHas('2026-11-26', /No classes/);
+  await cellHas('2026-11-27', /No classes/);
   await page.getByRole('tab', { name: 'Deadline Calendar' }).click();
-  assert.match(await page.locator('[data-date="2026-11-09"]').innerText(), /Quiz 1/);
+  await cellHas('2026-11-09', /Quiz 1/);
   assert.doesNotMatch(await page.locator('[data-date="2026-11-09"]').innerText(), /1268/, 'the Canvas tag is tidied away');
 
   await page.goto(`${URL_BASE}#/planner`);
@@ -398,7 +400,7 @@ test('getting the latest updates, removes, and keeps what the student changed', 
   await page.goto(`${URL_BASE}#/calendar?view=plan`);
   await page.getByTestId('month-view').waitFor();
   assert.doesNotMatch(await page.locator('[data-date="2026-11-04"]').innerText(), /ECO 231/, 'a meeting gone from Google goes here too');
-  assert.match(await page.locator('[data-date="2026-11-07"]').innerText(), /Tutoring with Ana/);
+  await cellHas('2026-11-07', /Tutoring with Ana/);
   assert.doesNotMatch(await page.locator('[data-date="2026-11-05"]').innerText(), /Dinner/, 'a skipped item stays skipped');
   await page.locator('[data-date="2026-11-06"]').click();
   await page.getByTestId('selected-day').getByText('11:00 AM to 11:50 AM').waitFor();
@@ -468,9 +470,9 @@ test('planner items can reserve time on the calendar', async () => {
   await page.getByLabel('Starts').fill('15:00');
   await page.getByRole('button', { name: 'Save' }).click();
   await page.goto(`${URL_BASE}#/calendar?view=plan`);
-  assert.match(await page.locator('[data-date="2026-11-18"]').innerText(), /Write the paper/);
+  await cellHas('2026-11-18', /Write the paper/);
   await page.getByRole('tab', { name: 'Deadline Calendar' }).click();
-  assert.match(await page.locator('[data-date="2026-11-20"]').innerText(), /Write the paper/);
+  await cellHas('2026-11-20', /Write the paper/);
   assert.doesNotMatch(await page.locator('[data-date="2026-11-18"]').innerText(), /Write the paper/, 'reserved time is not a second deadline');
 });
 
@@ -482,7 +484,7 @@ test('the course filter narrows every view', async () => {
   assert.match(before, /ECO 231/);
   await page.getByLabel('Course', { exact: true }).selectOption({ label: 'ECO 231' });
   await page.waitForFunction(() => !document.querySelector('[data-date="2026-11-06"]').innerText.includes('BUS 200'));
-  assert.match(await page.locator('[data-date="2026-11-06"]').innerText(), /ECO 231/);
+  await cellHas('2026-11-06', /ECO 231/);
   await page.getByLabel('Course', { exact: true }).selectOption('');
 });
 
@@ -527,7 +529,7 @@ test('disconnecting keeps what came in and changes nothing in Google', async () 
   await page.getByRole('dialog').getByRole('button', { name: 'Disconnect' }).click();
   await page.getByTestId('google-start').waitFor();
   await page.goto(`${URL_BASE}#/calendar?view=plan`);
-  assert.match(await page.locator('[data-date="2026-11-06"]').innerText(), /ECO 231/);
+  await cellHas('2026-11-06', /ECO 231/);
 });
 
 

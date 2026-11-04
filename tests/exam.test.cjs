@@ -333,14 +333,15 @@ test('a backup restores saved scores, and deleting a score leaves practice alone
   assert.equal(await page.getByTestId('exam-scores').locator('li').count(), count);
 });
 
-test('on a phone it fits, and can be reached from Today and Practice', async () => {
+test('on a phone it fits, and can be reached from the bar, Today, and Practice', async () => {
   await page.setViewportSize({ width: 360, height: 700 });
   const overflow = () => page.evaluate(() => {
     const main = document.querySelector('main');
     return Math.max(document.documentElement.scrollWidth - innerWidth, main.scrollWidth - main.clientWidth);
   });
   assert.ok((await overflow()) <= 0);
-  assert.equal(await page.locator('.nav-links a[href="#/exams"]').isVisible(), false, 'the bottom bar stays readable');
+  await page.locator('.nav-links a[href="#/exams"]').scrollIntoViewIfNeeded();
+  assert.equal(await page.locator('.nav-links a[href="#/exams"]').isVisible(), true, 'the bottom bar slides to it');
   await page.locator('.nav-links').getByRole('link', { name: 'Today', exact: true }).click();
   await page.getByRole('main').getByRole('link', { name: 'Exam Hall' }).click();
   await page.getByRole('heading', { name: 'Exam Hall' }).waitFor();

@@ -347,7 +347,7 @@ test('someone already using the site keeps everything when Practice arrives', as
     request.onsuccess = () => { request.result.close(); resolve(); };
   }));
   await page.goto(URL_BASE);
-  await page.getByRole('heading', { name: /^Today/ }).waitFor();
+  await page.getByRole('heading', { name: /^Today:/ }).waitFor();
   await nav('Flashcards');
   await page.getByTestId('deck-row').getByText('Older deck').waitFor();
   await nav('Practice');
@@ -380,8 +380,9 @@ test('it works on a phone, with every destination in reach', async () => {
   await page.screenshot({ path: path.join(shots, 'phone-practice.png') });
   const links = await page.locator('nav.nav .nav-links a:visible').all();
   for (const link of links) {
+    await link.scrollIntoViewIfNeeded();
     const box = await link.boundingBox();
-    assert.ok(box.x >= 0 && box.x + box.width <= 360, 'every section button is on screen');
+    assert.ok(box.x >= 0 && box.x + box.width <= 360, 'every section button can be slid onto the screen');
   }
 });
 

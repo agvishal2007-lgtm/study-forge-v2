@@ -333,7 +333,7 @@ test('someone already using the site keeps everything when Flashcards arrive', a
     request.onsuccess = () => { request.result.close(); resolve(); };
   }));
   await page.goto(URL_BASE);
-  await page.getByRole('heading', { name: 'Today' }).waitFor();
+  await page.getByRole('heading', { name: /^Today:/ }).waitFor();
   await nav('Planner');
   await page.getByRole('link', { name: 'Older item', exact: true }).waitFor();
   await nav('Flashcards');
@@ -369,8 +369,9 @@ test('it works on a phone, with every destination in reach', async () => {
   }
   const links = await page.getByRole('navigation').getByRole('link').all();
   for (const link of links) {
+    await link.scrollIntoViewIfNeeded();
     const box = await link.boundingBox();
-    assert.ok(box.x >= 0 && box.x + box.width <= 360, 'every section button is on screen');
+    assert.ok(box.x >= 0 && box.x + box.width <= 360, 'every section button can be slid onto the screen');
   }
 });
 

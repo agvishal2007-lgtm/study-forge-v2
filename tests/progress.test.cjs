@@ -98,11 +98,12 @@ test('reviewing cards counts today, and the numbers follow the work', async () =
 test('yesterday and the day before make a streak, and a new day keeps it open', async () => {
   await page.clock.setFixedTime(new Date('2026-11-05T14:30:00-05:00'));
   await page.goto(`${URL_BASE}#/progress`);
+  await page.reload();
   await page.getByTestId('progress-current').waitFor();
   assert.match(await page.getByTestId('streak-summary').innerText(), /Study today to keep it going/);
   assert.equal(await tile('current'), '1');
   await page.clock.setFixedTime(new Date('2026-11-07T14:30:00-05:00'));
-  await page.goto(`${URL_BASE}#/progress`);
+  await page.reload();
   await page.getByTestId('progress-current').waitFor();
   assert.equal(await tile('current'), '0');
   assert.equal(await tile('longest'), '1');
