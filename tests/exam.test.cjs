@@ -333,7 +333,7 @@ test('a backup restores saved scores, and deleting a score leaves practice alone
   assert.equal(await page.getByTestId('exam-scores').locator('li').count(), count);
 });
 
-test('on a phone it fits, and can be reached from the bar, Today, and Practice', async () => {
+test('on a phone it fits, and its one button is in the bar', async () => {
   await page.setViewportSize({ width: 360, height: 700 });
   const overflow = () => page.evaluate(() => {
     const main = document.querySelector('main');
@@ -343,10 +343,12 @@ test('on a phone it fits, and can be reached from the bar, Today, and Practice',
   await page.locator('.nav-links a[href="#/exams"]').scrollIntoViewIfNeeded();
   assert.equal(await page.locator('.nav-links a[href="#/exams"]').isVisible(), true, 'the bottom bar slides to it');
   await page.locator('.nav-links').getByRole('link', { name: 'Today', exact: true }).click();
-  await page.getByRole('main').getByRole('link', { name: 'Exam Hall' }).click();
-  await page.getByRole('heading', { name: 'Exam Hall' }).waitFor();
+  await page.getByRole('heading', { name: /^Today:/ }).waitFor();
+  assert.equal(await page.getByRole('main').getByRole('link', { name: 'Exam Hall' }).count(), 0, 'the bar is the one way there');
   await page.locator('.nav-links').getByRole('link', { name: 'Practice', exact: true }).click();
-  await page.getByRole('main').getByRole('link', { name: 'Exam Hall' }).click();
+  await page.getByRole('heading', { name: 'Practice', exact: true }).waitFor();
+  assert.equal(await page.getByRole('main').getByRole('link', { name: 'Exam Hall' }).count(), 0, 'the bar is the one way there');
+  await page.locator('.nav-links').getByRole('link', { name: 'Exam Hall', exact: true }).click();
   await page.getByRole('heading', { name: 'Exam Hall' }).waitFor();
   await startExam('15 minutes');
   assert.ok((await overflow()) <= 0);

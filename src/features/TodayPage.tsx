@@ -176,7 +176,6 @@ export function TodayPage() {
         <Link className="button" to="/planner/new">Add a deadline</Link>
         <Link className="button" to="/notes">Write a note</Link>
         <Link className="button" to="/record">Record a lecture</Link>
-        <Link className="button" to="/exams">Exam Hall</Link>
       </div>
 
       <div className="dash-grid">

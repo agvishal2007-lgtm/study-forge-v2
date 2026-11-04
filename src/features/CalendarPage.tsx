@@ -67,10 +67,10 @@ function TodayView({ events, deadlines, courses, today }: { events: CalendarEven
                       <th scope="row"><Link to={`/calendar/event/${event.id}`}>{event.title}</Link>{noClasses.length > 0 && event.kind === 'Class' && <span className="plan-flag"> Check this: today is marked no classes.</span>}</th>
                       <td>{courseName(event.courseId)}</td>
                       <td>{describeTime(event)}{event.location && <span className="muted plan-where">{event.location}</span>}</td>
-                      <td>{event.whatToDo || '—'}</td>
-                      <td>{event.priority}</td>
-                      <td>{minutes === null ? '—' : `${minutes} min`}</td>
-                      <td><Completed event={event} onProblem={setProblem} /></td>
+                      <td data-empty={event.whatToDo ? undefined : 'true'}>{event.whatToDo || '—'}</td>
+                      <td data-label="Priority" data-empty={event.priority === 'Normal' ? 'true' : undefined}>{event.priority}</td>
+                      <td data-label="Time needed" data-empty={minutes === null ? 'true' : undefined}>{minutes === null ? '—' : `${minutes} min`}</td>
+                      <td data-label="Completed" className="plan-done-cell"><Completed event={event} onProblem={setProblem} /></td>
                     </tr>
                   );
                 })}

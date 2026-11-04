@@ -108,6 +108,22 @@ test('buttons are blue bubbles, with no yellow left on the page', async () => {
   assert.equal(yellow, 0);
 });
 
+test('the words sit in the middle of every button', async () => {
+  for (const hash of ['#/', '#/calendar', '#/calendar/schedule', '#/planner', '#/settings']) {
+    await page.goto(`${URL_BASE}${hash}`);
+    await page.waitForTimeout(150);
+    const off = await page.evaluate(() => [...document.querySelectorAll('a.button, button.button')].filter((el) => el.offsetParent).map((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const words = range.getBoundingClientRect();
+      const box = el.getBoundingClientRect();
+      return [el.innerText, Math.abs((words.top + words.bottom) / 2 - (box.top + box.bottom) / 2)];
+    }).filter(([, distance]) => distance > 1.5));
+    assert.deepEqual(off, [], hash);
+  }
+  await page.goto(URL_BASE);
+});
+
 test('create a course and a topic', async () => {
   await page.getByLabel('Course name').fill('Financial Accounting');
   await page.getByLabel('Course code').fill('ACC 211');

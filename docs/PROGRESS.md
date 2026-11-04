@@ -346,7 +346,7 @@ Tested in a real browser using small test files. Not tried yet with real, compli
 
 ## Exam Hall and Cram Mode
 
-Exam Hall gathers exam preparation in one place. It's in the sidebar on computers, and in the sliding bottom bar on phones.
+Exam Hall gathers exam preparation in one place. It has one button: in the sidebar on computers, and in the sliding bottom bar on phones.
 
 - Mock exams pull shuffled questions from practice sets, by course, with a question count and an optional time limit. The clock keeps running if the page closes, and time running out submits the exam.
 - Answers and feedback stay hidden until the end. Unanswered questions count as wrong. Written answers that don't match an accepted answer wait for the student to check them, and no score shows until they're checked.
