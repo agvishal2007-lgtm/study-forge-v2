@@ -4,7 +4,7 @@ A free study website where students keep their courses, files, notes, and lectur
 
 Files stay in the student's own browser on their own device. There's no account and nothing is uploaded to a server.
 
-**Status:** Courses, files, lecture recording, notes, and backup are built. See [docs/PROGRESS.md](docs/PROGRESS.md) for what works, what doesn't yet, and how it was tested.
+**Status:** Courses, files, lecture recording, notes, backup, and Guided Study are built. See [docs/PROGRESS.md](docs/PROGRESS.md) for what works, what doesn't yet, and how it was tested.
 
 ## Run it on your computer
 

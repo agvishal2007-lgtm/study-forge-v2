@@ -126,7 +126,7 @@ Earlier repeat runs found a real bug, now fixed: a save cut off by a reload coul
 ### How it was tested
 `tests/backup.test.cjs` restores a real backup into a fresh browser and compares every file byte for byte, including a recording, a non-English file name, and two files with the same name. Python's zip tools independently confirm the file is a valid zip. Hand-damaged and deliberately unsafe backups are tried too. `tests/notes.test.cjs` covers notes.
 
-All 73 tests across the five test files passed six runs in a row. Every publish now runs the tests first, and a failure stops it.
+All 73 tests that existed then passed six runs in a row. Every publish now runs the tests first, and a failure stops it.
 
 ### Not tested yet
 - **Backups over 350 MB.** The format for zips over 4 GB was only tested with a small hand-built file, so a real multi-gigabyte backup still needs a try.
@@ -137,6 +137,46 @@ All 73 tests across the five test files passed six runs in a row. Every publish 
 - Automatic or scheduled backups, and syncing between devices. A student makes each backup by hand.
 - Backups don't include interrupted recordings, until they're saved. The app warns about this.
 
+## Guided Study
+
+**The goal:** students understand a topic, not just memorize answers. The sequence is teach, example, practice, explain, evaluate, mastery, progress, next topic.
+
+### What works
+- The Study screen, with a sample lesson and a way for students to write their own lessons. Lessons can be called lessons, chapters, modules, or units.
+- Teaching always comes before practice, in small steps. A checkpoint with no teaching can't be started.
+- One question at a time, with nothing preselected, an explicit Submit, and the answer kept out of the page until then.
+- Multiple choice grades itself. Typed answers grade themselves on an exact match, and otherwise the student compares against a model answer.
+- A miss gets targeted reteaching with a different example, then a new question. Earlier right answers are kept.
+- Missing the same idea twice marks it Needs Review, with choices to try another example, review the source, or move on. Nobody is blocked.
+- After practice, the student explains it in their own words, then compares that to the saved key points.
+- Progress is shown throughout, and counts rise only from real evidence. Today and Study recommend what's next and why.
+- Every action saves as it happens, so a reload or double-click can't lose or double-count anything.
+- Lessons and progress are in backups.
+
+### The mastery rule
+`src/data/mastery.ts` holds these rules and numbers. All of them must be true:
+1. Teaching was shown, or the student chose "I already know this".
+2. At least 3 questions were answered, or all of them if there are fewer.
+3. At least 80% of the latest answers are right.
+4. At least one application question or worked problem is right, if the checkpoint has one.
+5. The student's explanation covered every key point.
+
+The numbers are starting values, not research findings, and should change after real use.
+
+### How it was tested
+`tests/mastery.test.cjs` tests the rules directly, and `tests/guided.test.cjs` follows the spec's acceptance tests in a real browser, including part of a session with the internet off. All 112 tests across the seven test files passed five runs in a row.
+
+### Known limits
+- **Without AI, explanations are self-checked.** Students compare their own work to the key points, so mastery depends on their honesty. The app labels this clearly.
+- Typed answers need a model answer written in advance, and nothing judges a free-written answer.
+- Lessons have to be written by hand, apart from the sample. Generating them from uploaded files needs AI.
+- Spaced review isn't built, so a mastered checkpoint doesn't come back later yet.
+- Checkpoints can't be reordered after they're created.
+- The sample lesson hasn't been reviewed by an accounting instructor.
+
+### Next
+Optional Google sign-in, with courses, topics, notes, lessons, and progress saved across devices. Files and recordings stay on the device. It needs a free Firebase project under the owner's account.
+
 ## How the code is organized
 
 - `src/data/` holds saved data, and nothing else talks to storage directly.
@@ -146,6 +186,7 @@ All 73 tests across the five test files passed six runs in a row. Every publish 
   - `recordings.ts` saves recordings in small pieces and turns them into finished files.
   - `notes.ts` saves notes and catches changes from another tab.
   - `backup.ts` and `zipReader.ts` create and restore backups.
+  - `mastery.ts` holds the Guided Study rules, and `guided.ts` saves lessons and progress.
 - `src/components/` holds pieces used on several screens, such as the saving panel and the recorder.
 - `src/features/` holds one file per screen.
 - `tests/` holds the browser tests.
