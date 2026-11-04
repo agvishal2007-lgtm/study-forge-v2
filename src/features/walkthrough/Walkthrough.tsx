@@ -289,7 +289,7 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
         <p id="tour-body">{definition.body}</p>
         {trying && !notFound && <p className="tour-try" data-testid="tour-try">{definition.action?.instruction}</p>}
         {definition.action && actionDone === true && <p className="tour-done" data-testid="tour-done" role="status">{definition.action.doneMessage}</p>}
-        {notFound && actionDone !== true && <p className="muted" data-testid="tour-missing">This part isn't on the screen right now, so there's nothing to highlight. You can keep going.</p>}
+        {notFound && !(definition.action && actionDone === true) && <p className="muted" data-testid="tour-missing">This part isn't on the screen right now, so there's nothing to highlight. You can keep going.</p>}
         <div className="tour-actions">
           {isLast
             ? <button ref={primary} className="button primary" onClick={onFinish}>Finish</button>

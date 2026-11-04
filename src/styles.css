@@ -359,3 +359,9 @@ main::-webkit-scrollbar-thumb, .nav-links::-webkit-scrollbar-thumb { border-radi
   .tour-card[data-trying='true'] .tour-try { margin-top: 0 !important; }
   .tour-card[data-trying='true'] .tour-actions { margin-top: .4rem; }
 }
+
+.icon-button { background: none; border: 0; padding: 0; cursor: pointer; }
+.icon-button:hover { background: var(--raised-hover); }
+input[type='radio'] { appearance: none; -webkit-appearance: none; border: 2px solid var(--muted); border-radius: 50%; background: transparent; padding: 0; }
+input[type='radio']:hover { border-color: var(--paper); }
+input[type='radio']:checked { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 45%, transparent 50%); }

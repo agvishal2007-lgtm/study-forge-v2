@@ -228,10 +228,14 @@ Whoever owns the Firebase project can technically view stored data in its admin 
 `tests/walkthrough.test.cjs` checks every step in a real browser: the right screen, a box matching the section, and the explanation on screen. It also covers blocked clicks, keyboard use, resuming, cleanup, and phone size.
 
 ### Known limits
-- Students read and press Next. It doesn't yet make them try each part, so the percentage shows steps finished, not skills practiced.
+- Three steps are hands-on so far, and Next stays locked until they're done: adding a course, adding the sample lesson, and writing a note. Work already done isn't asked for again, and what students make is real and stays. Other parts, such as adding a file or recording, are only explained, because not everyone has a file or a microphone ready.
 - Its place is remembered per device, not across devices.
 - On small phones, the explanation can cover part of a tall highlighted section.
 - It hasn't been tried on a real phone yet.
+
+## Look and feel
+
+The owner asked to replace the yellow and square buttons. The site now uses a sky blue accent on navy, fully rounded bubble buttons, and softer corners throughout. Older courses with the yellow color update automatically, including when restored from a backup.
 
 ## How the code is organized
 

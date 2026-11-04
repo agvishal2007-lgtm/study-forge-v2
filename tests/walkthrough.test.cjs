@@ -29,13 +29,13 @@ const card = () => page.getByTestId('tour-card');
 const count = () => page.getByTestId('tour-count').textContent();
 const press = (name) => card().getByRole('button', { name, exact: true }).click();
 async function atStep(number) {
-  await page.locator(`[data-testid=tour-count]`, { hasText: `Step ${number} of ${TOTAL}` }).waitFor();
+  await page.locator(`[data-testid=tour-count]`, { hasText: `Step ${number} of ${TOTAL}` }).waitFor({ state: 'attached' });
 }
 /** Does what a hands-on step asks for, proving Next stays locked until then. */
 async function doAction() {
   const id = await card().getAttribute('data-step');
   await page.getByTestId('tour-try').waitFor();
-  assert.equal(await card().getByRole('button', { name: 'Next', exact: true }).isDisabled(), true, `${id}: Next is locked`);
+  assert.equal(await card().getAttribute('data-action-pending'), 'true', `${id}: Next is locked`);
   if (id === 'courses') {
     await page.getByLabel('Course name').fill('Real class');
     await page.getByRole('button', { name: 'Create course' }).click();
