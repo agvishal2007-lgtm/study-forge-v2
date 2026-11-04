@@ -216,7 +216,7 @@ export function PrivacyPage() {
         <li>This is stored in Google's Firebase service. Other students can't read it, but whoever runs this site could technically view it, so don't save anything you wouldn't want seen.</li>
       </ul>
       <h2>Files from Google Drive or Dropbox</h2>
-      <p>Study Forge only gets the files you pick. They're copied to your device, and aren't saved online by Study Forge.</p>
+      <p>Study Forge only gets the files you pick. They're copied to your device, and aren't saved online by Study Forge. Screens where you add files load a small piece of code from those services, so the button is ready when you tap it.</p>
       <h2>Advertising and selling data</h2>
       <p>Study Forge has no ads and doesn't sell your information.</p>
       <h2>Removing your data</h2>

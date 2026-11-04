@@ -9,24 +9,37 @@ export function AddFiles({ courseId = null, topicId = null }: { courseId?: strin
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState<CloudSource | null>(null);
   const [ready, setReady] = useState<CloudSource[]>([]);
+  const [unreachable, setUnreachable] = useState<CloudSource[]>([]);
   const [problem, setProblem] = useState('');
   const { addFiles } = useSaveQueue();
   const sources = cloudSources();
 
+  const prepare = (source: CloudSource, isActive: () => boolean = () => true) => {
+    prepareCloud(source).then(
+      () => {
+        if (!isActive()) return;
+        setReady((current) => [...new Set([...current, source])]);
+        setUnreachable((current) => current.filter((entry) => entry !== source));
+      },
+      () => { if (isActive()) setUnreachable((current) => [...new Set([...current, source])]); },
+    );
+  };
+
   useEffect(() => {
     let active = true;
-    sources.forEach((source) => {
-      prepareCloud(source).then(
-        () => { if (active) setReady((current) => [...new Set([...current, source])]); },
-        () => undefined,
-      );
-    });
+    sources.forEach((source) => prepare(source, () => active));
     return () => { active = false; };
     // The list of services doesn't change while the site is open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const pick = (source: CloudSource) => {
+    if (!ready.includes(source)) {
+      // It couldn't load earlier, so explain that and try loading it again for the next tap.
+      setProblem(`${CLOUD_LABEL[source]} couldn't be reached. Check your internet connection, then try again in a moment.`);
+      prepare(source);
+      return;
+    }
     setBusy(source);
     setProblem('');
     // Nothing is awaited before this call, so the window opens as part of the tap itself.
@@ -53,7 +66,7 @@ export function AddFiles({ courseId = null, topicId = null }: { courseId?: strin
       <button className="button primary" onClick={() => input.current?.click()}>Add files</button>
       <span className="muted">or drag them here</span>
       {sources.map((source) => (
-        <button key={source} className="button" disabled={busy !== null || !ready.includes(source)} onClick={() => pick(source)}>
+        <button key={source} className="button" disabled={busy !== null || !(ready.includes(source) || unreachable.includes(source))} onClick={() => pick(source)}>
           {busy === source ? 'Getting files…' : `From ${CLOUD_LABEL[source]}`}
         </button>
       ))}
