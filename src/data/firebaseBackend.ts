@@ -5,7 +5,7 @@ import {
   type Firestore,
 } from 'firebase/firestore/lite';
 import {
-  createUserWithEmailAndPassword, FacebookAuthProvider, GoogleAuthProvider, OAuthProvider, onAuthStateChanged, reload, sendEmailVerification,
+  createUserWithEmailAndPassword, GoogleAuthProvider, OAuthProvider, onAuthStateChanged, reload, sendEmailVerification,
   sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, signOut,
 } from 'firebase/auth';
 import { BackendError, itemKey, type AccountBackend, type AccountUser, type LoginProvider, type PullResult, type PushItem, type RemoteItem } from './accountBackend.ts';
@@ -30,11 +30,6 @@ function providerFor(provider: LoginProvider) {
     microsoft.setCustomParameters({ prompt: 'select_account' });
     return microsoft;
   }
-  if (provider === 'facebook') {
-    const facebook = new FacebookAuthProvider();
-    facebook.addScope('email');
-    return facebook;
-  }
   const google = new GoogleAuthProvider();
   google.setCustomParameters({ prompt: 'select_account' });
   return google;
@@ -43,7 +38,6 @@ function providerFor(provider: LoginProvider) {
 export function createFirebaseBackend(_app: FirebaseApp, auth: Auth, db: Firestore, providers: LoginProvider[] = ['google']): AccountBackend {
   const toUser = (user: { uid: string; email: string | null; displayName: string | null; photoURL: string | null }): AccountUser => ({
     uid: user.uid,
-    // Some Facebook accounts have no email to share.
     email: user.email ?? user.displayName ?? 'Your account',
     photoURL: user.photoURL ?? undefined,
   });

@@ -439,7 +439,8 @@ test('a new student can sign up with an email and password, and sign in again la
   await page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name: 'Sign up' }).click();
   await page.getByRole('heading', { name: 'Create your account' }).waitFor();
   await page.screenshot({ path: path.join(shots, 'sign-up.png') });
-  for (const name of ['Continue with Google', 'Continue with Microsoft', 'Continue with Facebook']) await page.getByRole('button', { name }).waitFor();
+  for (const name of ['Continue with Google', 'Continue with Microsoft']) await page.getByRole('button', { name }).waitFor();
+  assert.equal(await page.getByRole('button', { name: /Facebook/ }).count(), 0);
   const create = () => page.getByRole('button', { name: 'Create account' }).click();
   const problems = page.getByTestId('auth-problems');
   await create();
@@ -548,14 +549,10 @@ test('privacy is one tap from signing in and says what is kept', async () => {
   await close('emailer');
 });
 
-test('Microsoft and Facebook use the same sign-in path as Google', async () => {
+test('Microsoft uses the same sign-in path as Google', async () => {
   const page = await device('social', { uid: 'social-uid', email: 'sam@outlook.com' });
   await signInButton(page).click();
   await page.getByRole('button', { name: 'Continue with Microsoft' }).click();
-  await page.getByRole('button', { name: /Account menu for sam@outlook.com/ }).waitFor();
-  await signOutButton(page);
-  await signInButton(page).click();
-  await page.getByRole('button', { name: 'Continue with Facebook' }).click();
   await page.getByRole('button', { name: /Account menu for sam@outlook.com/ }).waitFor();
   await nav(page, 'Settings');
   await page.getByTestId('sync-status').waitFor();

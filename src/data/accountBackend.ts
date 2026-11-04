@@ -4,7 +4,7 @@ export interface AccountUser {
   photoURL?: string;
 }
 
-export type LoginProvider = 'google' | 'microsoft' | 'facebook';
+export type LoginProvider = 'google' | 'microsoft';
 
 export type SyncCollection = 'courses' | 'topics' | 'notes' | 'lessons' | 'checkpoints' | 'checkpointProgress' | 'plannerItems' | 'decks' | 'cards' | 'cardProgress' | 'practiceSets' | 'practiceQuestions' | 'practiceAttempts';
 

@@ -308,13 +308,13 @@ Not built yet: making questions with AI, timed mock exams, and Cram Mode. Practi
 
 ## Sign up, email login, and recovery
 
-- A Sign up button sits beside Sign in, and both open a page with email and password plus Google. Microsoft is on. Facebook appears once it's set up and added to `LOGIN_PROVIDERS`.
+- A Sign up button sits beside Sign in, and both open a page with email and password plus Google. Microsoft is on. Facebook was removed, because Meta asked for legal business documents that Study Forge doesn't have.
 - Password accounts get a confirmation email, with a reminder and resend in Settings. Confirming isn't required to use the account.
 - Forgot password sends Firebase's reset email and never reveals whether an account exists.
 - Forgot email shows shortened hints of accounts used in this browser, plus places to look. It can't search by name, because that would reveal who has an account.
-- A Privacy page says what's kept and how to remove it. Facebook requires one.
+- A Privacy page says what's kept and how to remove it.
 
-Tested with a stand-in server, plus the real sign-in code against Firebase's emulator for email accounts. Real Microsoft and Facebook sign-in, and real emails arriving, haven't been tried. Texted codes aren't on the free plan, emailed sign-in links stop at 5 a day, and Firebase has no Instagram login.
+Tested with a stand-in server, plus the real sign-in code against Firebase's emulator for email accounts. Real Microsoft sign-in and real emails arriving haven't been tried. Texted codes aren't on the free plan, emailed sign-in links stop at 5 a day, and Firebase has no Instagram login.
 
 ## Adding files from other services
 

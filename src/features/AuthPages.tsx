@@ -6,7 +6,7 @@ import { describeAuthFailure, looksLikeEmail, signUpProblems } from '../data/aut
 import { forgetKnownAccounts, listKnownAccounts, rememberAccount } from '../data/knownAccounts';
 import { loadBackend } from '../data/sync';
 
-const PROVIDER_LABEL: Record<LoginProvider, string> = { google: 'Google', microsoft: 'Microsoft', facebook: 'Facebook' };
+const PROVIDER_LABEL: Record<LoginProvider, string> = { google: 'Google', microsoft: 'Microsoft' };
 
 /** Phones block a sign-in window that opens late, so this code is ready before any tap. */
 function useBackend() {
@@ -146,7 +146,7 @@ export function ForgotPasswordPage() {
       <div className="page auth-page">
         <h1>Check your email</h1>
         <p role="status" data-testid="reset-sent">If there's an account for {email.trim()}, a link to choose a new password is on its way. It can take a few minutes, so check your spam folder too.</p>
-        <p className="muted">If you signed up with Google, Microsoft, or Facebook, use that button to sign in instead.</p>
+        <p className="muted">If you signed up with Google or Microsoft, use that button to sign in instead.</p>
         <p><Link className="button primary" to="/sign-in">Back to sign in</Link></p>
       </div>
     );
@@ -193,7 +193,7 @@ export function ForgotEmailPage() {
           <li>Try your school email and your personal email.</li>
           <li>Search each inbox for "Study Forge". We sent a confirmation email when you signed up with an email and password.</li>
           <li>Check your browser's or phone's saved passwords for this site.</li>
-          <li>If you used Google, Microsoft, or Facebook, you don't need to remember an email. Just use that button.</li>
+          <li>If you used Google or Microsoft, you don't need to remember an email. Just use that button.</li>
         </ul>
       </section>
       <p><Link className="button primary" to="/sign-in">Back to sign in</Link></p>
@@ -210,7 +210,7 @@ export function PrivacyPage() {
       <p>Everything stays in your browser on your device. Nothing is sent to Study Forge.</p>
       <h2>With an account</h2>
       <ul className="plain-list">
-        <li>Your email address, plus your name and picture if you sign in with Google, Microsoft, or Facebook, are used to sign you in.</li>
+        <li>Your email address, plus your name and picture if you sign in with Google or Microsoft, are used to sign you in.</li>
         <li>The text you create is saved online so it can follow you: courses, topics, notes, lessons, planner items, flashcards, practice questions, and your progress.</li>
         <li>Files and recordings aren't saved online. They stay on your device.</li>
         <li>This is stored in Google's Firebase service. Other students can't read it, but whoever runs this site could technically view it, so don't save anything you wouldn't want seen.</li>
@@ -220,7 +220,7 @@ export function PrivacyPage() {
       <h2>Advertising and selling data</h2>
       <p>Study Forge has no ads and doesn't sell your information.</p>
       <h2>Removing your data</h2>
-      <p>While signed in, open Settings and use Delete my online copy in the Account section. That also covers anything from signing in with Facebook, Microsoft, or Google. To stop those companies sharing your details, remove Study Forge in your account settings with them.</p>
+      <p>While signed in, open Settings and use Delete my online copy in the Account section. That also covers anything from signing in with Microsoft or Google. To stop those companies sharing your details, remove Study Forge in your account settings with them.</p>
       <p><Link to="/">Go to Today</Link></p>
     </div>
   );

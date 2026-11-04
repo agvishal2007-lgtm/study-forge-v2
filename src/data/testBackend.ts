@@ -32,7 +32,7 @@ async function authCall(path: string, body: unknown): Promise<AccountUser> {
 const storedUser = (): (AccountUser & { password?: boolean }) | null => JSON.parse(localStorage.getItem(STORED) ?? 'null');
 
 export const backend: AccountBackend = {
-  providers: ['google', 'microsoft', 'facebook'],
+  providers: ['google', 'microsoft'],
   async signUpWithEmail(email, password) {
     const user = await authCall('/signUp', { email, password });
     localStorage.setItem(STORED, JSON.stringify({ ...user, password: true }));
