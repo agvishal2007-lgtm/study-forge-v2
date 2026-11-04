@@ -76,7 +76,9 @@ Running the tests repeatedly also found and fixed two real bugs: deleting a file
 - Devices that can't share a screen see an explanation, and in-person recording still works.
 
 ### How it was tested
-`tests/screen.test.cjs` uses Chromium's simulated screen and sound. It checks for a real picture in the saved file, and tests the lecture sound and microphone separately to prove each one reaches it. 
+`tests/screen.test.cjs` uses Chromium's simulated screen and sound. It checks for a real picture in the saved file, and tests the lecture sound and microphone separately to prove each one reaches it. With the fixes below, all 39 tests across the three test files passed eight runs in a row.
+
+Earlier repeat runs found a real bug, now fixed: a save cut off by a reload could leave an empty entry in storage. The Cancelled label also appeared before a save had actually stopped.
 
 ### Limits that come from browsers
 - **Phones:** iPhones and Android browsers generally can't share their screen with a website, so virtual recording is for computers.
