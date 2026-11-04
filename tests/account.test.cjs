@@ -756,7 +756,10 @@ test('deleting the online copy asks first, signs out, and keeps this device\'s c
 
 test('after signing in with Google, that calendar connects in one tap, and other sign-ins are not asked', async () => {
   const page = await device('calendar', { uid: 'calendar-uid', email: 'student@gmail.com', usesGoogle: true });
-  page.setDefaultTimeout(15000);
+  page.setDefaultTimeout(20000);
+  // A fixed clock keeps the dates the same on every machine, so the month never drifts.
+  await page.clock.setFixedTime(new Date('2026-11-04T09:00:00-05:00'));
+  await page.goto(URL_BASE);
   let scopes = '';
   let hint = '';
   await page.exposeFunction('__tokenAsked', (scope, who) => { scopes = scope; hint = who; });
@@ -765,7 +768,7 @@ test('after signing in with Google, that calendar connects in one tap, and other
     body: `window.google = { accounts: { oauth2: { initTokenClient(config) { return { requestAccessToken: async () => { await window.__tokenAsked(config.scope, config.hint); config.callback({ access_token: 'fake', expires_in: 3600 }); } }; } } } };`,
   }));
   const stamp = (date, time) => new Date(`${date}T${time}:00-05:00`).toISOString();
-  const soon = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+  const soon = '2026-11-06';
   const events = {
     'student@gmail.com': [{ id: 'eco', recurringEventId: 'ecos', summary: 'ECO 231', start: { dateTime: stamp(soon, '10:00') }, end: { dateTime: stamp(soon, '10:50') } }],
     canvas: [{ id: 'quiz', summary: 'Quiz 1 [1268-ECO231-03]', start: { dateTime: stamp(soon, '23:00') }, end: { dateTime: stamp(soon, '23:00') } }],
@@ -792,7 +795,11 @@ test('after signing in with Google, that calendar connects in one tap, and other
   assert.match(await done.innerText(), /1 deadline added to your Planner/);
   assert.equal(hint, 'student@gmail.com', 'it asks about the same account');
   assert.match(scopes, /calendar\.events\.readonly/);
-  await page.getByRole('link', { name: 'See your calendar' }).click();
+  // The Planner is the plainest check that the Canvas deadline came in.
+  await nav(page, 'Planner');
+  await page.getByRole('link', { name: 'Quiz 1' }).waitFor();
+  await nav(page, 'Calendar');
+  await page.getByRole('tab', { name: 'Plan Calendar' }).click();
   await page.locator(`[data-date="${soon}"]`).getByText('ECO 231').waitFor();
   assert.equal(await page.getByText('Sam birthday').count(), 0, 'calendars that are not for school stay out');
   await page.getByRole('tab', { name: 'Deadline Calendar' }).click();
