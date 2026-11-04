@@ -5,7 +5,7 @@ import { noteLabel } from './notes';
 import { listUnfinished } from './recordings';
 import { findByHash, getStorageStatus, hashFile, storeMaterial } from './store';
 import {
-  OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem, type CardProgress, type Deck, type Flashcard, CARD_RATINGS,
+  OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem, type PracticeAttempt, type PracticeQuestion, type PracticeSet, CONFIDENCE_LEVELS, PRACTICE_KINDS, type CardProgress, type Deck, type Flashcard, CARD_RATINGS,
   type AnswerRecord, type Checkpoint, type CheckpointProgress, type Course, type ExplanationRecord, type GuidedQuestion,
   type KeyPointRating, type Lesson, type Material, type MasteryStatus, type Note, type QuestionKind, type Reteach, type Topic,
 } from './types';
@@ -19,7 +19,7 @@ import { NotAZip, readZipEntries, type ZipEntry } from './zipReader';
  */
 const MANIFEST_PATH = 'study-forge-backup.json';
 const FORMAT = 'study-forge-backup';
-const VERSION = 4;
+const VERSION = 5;
 const LAST_BACKUP_KEY = 'lastBackupAt';
 
 export interface BackupManifest {
@@ -37,6 +37,9 @@ export interface BackupManifest {
   decks: Deck[];
   cards: Flashcard[];
   cardProgress: CardProgress[];
+  practiceSets: PracticeSet[];
+  practiceQuestions: PracticeQuestion[];
+  practiceAttempts: PracticeAttempt[];
 }
 
 export class BackupError extends Error {}
@@ -132,10 +135,11 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     : null;
 
   const db = await getDb();
-  const [courses, topics, notes, materials, lessons, checkpoints, progress, plannerItems, decks, cards, cardProgress] = await Promise.all([
+  const [courses, topics, notes, materials, lessons, checkpoints, progress, plannerItems, decks, cards, cardProgress, practiceSets, practiceQuestions, practiceAttempts] = await Promise.all([
     db.getAll('courses'), db.getAll('topics'), db.getAll('notes'), db.getAll('materials'),
     db.getAll('lessons'), db.getAll('checkpoints'), db.getAll('checkpointProgress'), db.getAll('plannerItems'),
     db.getAll('decks'), db.getAll('cards'), db.getAll('cardProgress'),
+    db.getAll('practiceSets'), db.getAll('practiceQuestions'), db.getAll('practiceAttempts'),
   ]);
   const courseFolder = (courseId: string | null, topicId: string | null) => {
     const course = courses.find((candidate) => candidate.id === courseId);
@@ -171,6 +175,9 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     decks,
     cards,
     cardProgress,
+    practiceSets,
+    practiceQuestions,
+    practiceAttempts,
   };
   const noteFiles = notes.map((note) => ({
     name: pathFor(`Notes/${courseFolder(note.courseId, note.topicId)}`, `${safeName(noteLabel(note), 'Note')}.txt`),
@@ -370,6 +377,37 @@ function cleanCardProgress(raw: unknown): CardProgress | null {
   };
 }
 
+function cleanPracticeSet(raw: unknown): PracticeSet | null {
+  if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.name) || !isOptionalId(raw.courseId) || !isOptionalId(raw.topicId) || !isTime(raw.createdAt)) return null;
+  return { id: raw.id, name: raw.name, courseId: raw.courseId, topicId: raw.topicId, createdAt: raw.createdAt, updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.createdAt };
+}
+
+function cleanPracticeQuestion(raw: unknown): PracticeQuestion | null {
+  if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.setId) || !raw.setId || !isText(raw.prompt) || !isTime(raw.createdAt)) return null;
+  if (!PRACTICE_KINDS.includes(raw.kind as PracticeQuestion['kind'])) return null;
+  const texts = (value: unknown) => (Array.isArray(value) ? value.filter(isText) : []);
+  const options = texts(raw.options);
+  const correct = typeof raw.correctOption === 'number' && Number.isInteger(raw.correctOption) && raw.correctOption >= 0 && raw.correctOption < options.length ? raw.correctOption : null;
+  if (options.length > 0 && correct === null) return null;
+  return {
+    id: raw.id, setId: raw.setId, kind: raw.kind as PracticeQuestion['kind'], prompt: raw.prompt, options, correctOption: correct, accepted: texts(raw.accepted),
+    modelAnswer: isText(raw.modelAnswer) ? raw.modelAnswer : '', explanation: isText(raw.explanation) ? raw.explanation : '',
+    topic: isText(raw.topic) ? raw.topic : '', source: isText(raw.source) ? raw.source : '',
+    createdAt: raw.createdAt, updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.createdAt,
+  };
+}
+
+function cleanPracticeAttempt(raw: unknown): PracticeAttempt | null {
+  if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.questionId) || !isText(raw.setId) || !isTime(raw.at)) return null;
+  if (!['correct', 'partial', 'wrong'].includes(raw.result as string)) return null;
+  return {
+    id: raw.id, questionId: raw.questionId, setId: raw.setId, sessionId: isText(raw.sessionId) ? raw.sessionId : '', answer: isText(raw.answer) ? raw.answer : '',
+    result: raw.result as PracticeAttempt['result'], selfChecked: raw.selfChecked === true,
+    confidence: CONFIDENCE_LEVELS.includes(raw.confidence as never) ? raw.confidence as PracticeAttempt['confidence'] : null,
+    at: raw.at, updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.at,
+  };
+}
+
 function cleanList<T>(raw: unknown, clean: (item: unknown) => T | null): T[] {
   if (!Array.isArray(raw)) throw new BackupError('This backup is damaged, so it can\'t be restored.');
   return raw.map(clean).map((item) => {
@@ -426,6 +464,9 @@ export async function openBackup(file: File): Promise<OpenedBackup> {
     decks: raw.decks === undefined ? [] : cleanList(raw.decks, cleanDeck),
     cards: raw.cards === undefined ? [] : cleanList(raw.cards, cleanCard),
     cardProgress: raw.cardProgress === undefined ? [] : cleanList(raw.cardProgress, cleanCardProgress),
+    practiceSets: raw.practiceSets === undefined ? [] : cleanList(raw.practiceSets, cleanPracticeSet),
+    practiceQuestions: raw.practiceQuestions === undefined ? [] : cleanList(raw.practiceQuestions, cleanPracticeQuestion),
+    practiceAttempts: raw.practiceAttempts === undefined ? [] : cleanList(raw.practiceAttempts, cleanPracticeAttempt),
   };
 
   let neededBytes = 0;
@@ -454,6 +495,7 @@ export interface RestoreReport {
   lessonsAdded: number;
   plannerAdded: number;
   cardsAdded: number;
+  practiceAdded: number;
 }
 
 /**
@@ -467,7 +509,7 @@ export async function restoreBackup(
 ): Promise<RestoreReport> {
   const report: RestoreReport = {
     coursesAdded: 0, topicsAdded: 0, filesAdded: 0, filesAlreadyHere: 0,
-    notesAdded: 0, notesAlreadyHere: 0, notesCopied: 0, damaged: [], stoppedEarly: '', lessonsAdded: 0, plannerAdded: 0, cardsAdded: 0,
+    notesAdded: 0, notesAlreadyHere: 0, notesCopied: 0, damaged: [], stoppedEarly: '', lessonsAdded: 0, plannerAdded: 0, cardsAdded: 0, practiceAdded: 0,
   };
   const db = await getDb();
 
@@ -609,6 +651,22 @@ export async function restoreBackup(
   // A card already here keeps its own schedule. Only cards just restored bring theirs.
   for (const entry of manifest.cardProgress) {
     if (newCards.has(entry.cardId)) await db.put('cardProgress', entry);
+  }
+  for (const set of manifest.practiceSets) {
+    if (!(await db.getKey('practiceSets', set.id))) {
+      const courseId = courseOrNull(set.courseId);
+      await db.put('practiceSets', { ...set, courseId, topicId: topicOrNull(set.topicId, courseId) });
+    }
+  }
+  for (const question of manifest.practiceQuestions) {
+    if ((await db.getKey('practiceSets', question.setId)) && !(await db.getKey('practiceQuestions', question.id))) {
+      await db.put('practiceQuestions', question);
+      report.practiceAdded += 1;
+    }
+  }
+  // Answers are added, never replaced, and only for questions that are here.
+  for (const attempt of manifest.practiceAttempts) {
+    if ((await db.getKey('practiceQuestions', attempt.questionId)) && !(await db.getKey('practiceAttempts', attempt.id))) await db.put('practiceAttempts', attempt);
   }
   notifyChanged();
   return report;

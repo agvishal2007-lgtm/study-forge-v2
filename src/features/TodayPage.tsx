@@ -12,6 +12,9 @@ import { isDue, isWeak } from '../data/flashcardRules';
 import { listCheckpoints, listLessons, listProgress } from '../data/guided';
 import { recommendNext } from '../data/mastery';
 import { listNotes } from '../data/notes';
+import { listAllTopics, listPracticeAttempts, listPracticeQuestions, listPracticeSets } from '../data/practice';
+import { accuracyOf, latestAnswers, mistakesIn, weakTopics } from '../data/practiceRules';
+import { topicLabeler } from './PracticePage';
 import { listPlannerItems, setPlannerStatus } from '../data/planner';
 import { comparePlanner, describeDue, groupOf, localNow } from '../data/plannerRules';
 import { listUnfinished } from '../data/recordings';
@@ -63,15 +66,16 @@ export function TodayPage() {
     const [courses, materials, storage, unfinished, notes, lastBackup] = await Promise.all([listCourses(), listMaterials(), getStorageStatus(), listUnfinished(), listNotes(), getLastBackupAt()]);
     const [lessons, checkpoints, progress, plannerItems] = await Promise.all([listLessons(), listCheckpoints(), listProgress(), listPlannerItems()]);
     const [decks, cards, cardProgress] = await Promise.all([listDecks(), listCards(), listCardProgress()]);
-    return { courses, materials, storage, unfinished, notes, lastBackup, plannerItems, decks, cards, cardProgress, progress, next: recommendNext(lessons, checkpoints, progress) };
+    const [practiceSets, practiceQuestions, practiceAttempts, topics] = await Promise.all([listPracticeSets(), listPracticeQuestions(), listPracticeAttempts(), listAllTopics()]);
+    return { practiceSets, practiceQuestions, practiceAttempts, topics, courses, materials, storage, unfinished, notes, lastBackup, plannerItems, decks, cards, cardProgress, progress, next: recommendNext(lessons, checkpoints, progress) };
   }, [askedToKeep]);
 
   if (error) return <div className="page"><h1>Today</h1><p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress } = data;
+  const { courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress, practiceSets, practiceQuestions, practiceAttempts, topics } = data;
   const backupDue = (materials.length > 0 || notes.length > 0) && (lastBackup === null || Date.now() - lastBackup > BACKUP_REMINDER_MS);
 
-  if (courses.length === 0 && materials.length === 0 && unfinished.length === 0 && notes.length === 0 && plannerItems.length === 0 && cards.length === 0 && decks.length === 0) {
+  if (courses.length === 0 && materials.length === 0 && unfinished.length === 0 && notes.length === 0 && plannerItems.length === 0 && cards.length === 0 && decks.length === 0 && practiceSets.length === 0) {
     return (
       <div className="page welcome">
         <h1>Start with one course</h1>
@@ -93,6 +97,9 @@ export function TodayPage() {
     .filter((entry) => entry.due > 0)
     .sort((a, b) => b.due - a.due);
   const toReview = [...progress.values()].filter((entry) => entry.status === 'needs-review').length;
+  const practiceAccuracy = accuracyOf([...latestAnswers(practiceAttempts).values()]);
+  const practiceMistakes = mistakesIn(practiceQuestions, practiceAttempts);
+  const weak = weakTopics(practiceQuestions, practiceAttempts, topicLabeler(practiceSets, topics));
   const [year, month, day] = now.date.split('-').map(Number);
   const dateWords = new Date(year, month - 1, day).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -101,6 +108,7 @@ export function TodayPage() {
     { label: 'Overdue', value: overdue.length, to: '/planner', id: 'overdue' },
     { label: 'Flashcards due', value: dueCards.length, to: dueCards.length > 0 ? '/cards/review' : '/cards', id: 'cards' },
     { label: 'Weak cards', value: weakCards.length, to: '/cards', id: 'weak' },
+    { label: 'Practice accuracy', value: practiceAccuracy === null ? '—' : `${practiceAccuracy}%`, to: '/practice', id: 'practice' },
     { label: 'Lessons to review', value: toReview, to: '/study', id: 'lessons' },
   ];
 
@@ -188,6 +196,26 @@ export function TodayPage() {
           {dueCards.length === 0 && <p className="muted">{cards.length > 0 ? 'Nothing due today.' : <>No cards yet. <Link to="/cards">Make your first deck</Link>.</>}</p>}
         </section>
 
+        <section className="dash-card" aria-labelledby="practice-heading" data-testid="today-practice">
+          <div className="section-head">
+            <h2 id="practice-heading">Practice</h2>
+            <Link to="/practice">See all</Link>
+          </div>
+          <p className="dash-note">Your weakest topics, from your latest answers.</p>
+          {weak.length > 0 && (
+            <ul className="dash-rows">
+              {weak.slice(0, 4).map((topic) => (
+                <li key={topic.label} className="dash-simple-row">
+                  <Link className="dash-what" to={`/practice/session?mode=topic&topic=${encodeURIComponent(topic.label)}`}>{topic.label}</Link>
+                  <span className="dash-next">{topic.percent}%</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {practiceMistakes.length > 0 && <p className="session-actions"><Link className="button primary" to="/practice/session?mode=mistakes">Review {practiceMistakes.length} {practiceMistakes.length === 1 ? 'mistake' : 'mistakes'}</Link></p>}
+          {practiceMistakes.length === 0 && <p className="muted">{practiceQuestions.length > 0 ? 'No mistakes to review.' : <>No questions yet. <Link to="/practice">Make your first set</Link>.</>}</p>}
+        </section>
+
         <section className="dash-card next-up" aria-labelledby="next-heading" data-testid="next-up">
           <div className="section-head">
             <h2 id="next-heading">Study next</h2>
@@ -239,6 +267,7 @@ export function TodayPage() {
             <dt>Due and overdue</dt><dd>Planner items that aren't Submitted, Waiting for Grade, or Completed.</dd>
             <dt>Flashcards due</dt><dd>Cards you haven't reviewed yet, plus cards whose review date is today or earlier.</dd>
             <dt>Weak cards</dt><dd>Your last answer was Again, or you've pressed Again twice or more and haven't since pressed Good or Easy enough to recover.</dd>
+            <dt>Practice accuracy</dt><dd>Your latest answer to each practice question. A partly right answer counts as half. Weak topics are under 70%.</dd>
             <dt>Lessons to review</dt><dd>Lesson checkpoints marked Needs review from your answers.</dd>
           </dl>
         </section>

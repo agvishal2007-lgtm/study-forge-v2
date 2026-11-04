@@ -100,6 +100,17 @@ test('decks, cards, and card progress can be saved', async () => {
   }
 });
 
+test('practice sets, questions, and answers can be saved', async () => {
+  const { conflicts } = await alice.backend.push(alice.uid, [
+    item('set-1', { collection: 'practiceSets' }), item('question-1', { collection: 'practiceQuestions' }), item('attempt-1', { collection: 'practiceAttempts' }),
+  ]);
+  assert.deepEqual(conflicts, []);
+  const { items } = await alice.backend.pull(alice.uid, 0);
+  for (const [id, collection] of [['set-1', 'practiceSets'], ['question-1', 'practiceQuestions'], ['attempt-1', 'practiceAttempts']]) {
+    assert.ok(items.some((entry) => entry.id === id && entry.collection === collection));
+  }
+});
+
 test('badly shaped or oversized items are refused, so the free storage can\'t be abused', async () => {
   const ref = doc(alice.db, 'users', alice.uid, 'items', 'bad');
   await denied(() => setDoc(ref, validDoc({ collection: 'materials' })), 'a file record');

@@ -10,7 +10,7 @@ import type { Checkpoint, CheckpointProgress, Note } from './types';
  * When two devices changed the same thing, nothing written is thrown away: notes and checkpoints
  * keep both versions, and progress combines the answers from both.
  */
-const COLLECTIONS: SyncCollection[] = ['courses', 'topics', 'lessons', 'checkpoints', 'notes', 'checkpointProgress', 'plannerItems', 'decks', 'cards', 'cardProgress'];
+const COLLECTIONS: SyncCollection[] = ['courses', 'topics', 'lessons', 'checkpoints', 'notes', 'checkpointProgress', 'plannerItems', 'decks', 'cards', 'cardProgress', 'practiceSets', 'practiceQuestions', 'practiceAttempts'];
 const CURSOR_KEY = 'syncCursor';
 const MAX_ITEM_BYTES = 900_000;
 const MAX_BATCH_BYTES = 4_000_000;
@@ -138,7 +138,7 @@ async function applyPulled(items: RemoteItem[]): Promise<number> {
       }
       await metaStore.put({ hash: meta?.hash ?? null, rev: item.rev }, key);
       changed += 1;
-    } else if (['plannerItems', 'decks', 'cards', 'cardProgress'].includes(item.collection)) {
+    } else if (['plannerItems', 'decks', 'cards', 'cardProgress', 'practiceSets', 'practiceQuestions', 'practiceAttempts'].includes(item.collection)) {
       // Both devices changed this. The most recent change wins, so "done" isn't undone by an old edit.
       const incoming = JSON.parse(item.json) as { updatedAt: number };
       if (incoming.updatedAt > (local as { updatedAt: number }).updatedAt) {

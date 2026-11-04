@@ -123,7 +123,7 @@ export function nextQuestion(checkpoint: Checkpoint, progress: CheckpointProgres
   return ordered.find((question) => question.id !== last?.questionId) ?? ordered[0] ?? null;
 }
 
-const isCorrectTyped = (question: GuidedQuestion, answer: string) => {
+const isCorrectTyped = (question: Pick<GuidedQuestion, 'accepted'>, answer: string) => {
   const clean = (text: string) => text.toLowerCase().replace(/[^\p{L}\p{N}.$%=+-]+/gu, ' ').trim();
   return question.accepted.some((accepted) => accepted.trim() && clean(accepted) === clean(answer));
 };
@@ -132,7 +132,7 @@ export function canAutoGrade(question: GuidedQuestion, answer: string) {
   return question.options.length > 0 || isCorrectTyped(question, answer);
 }
 
-export function gradeAutomatically(question: GuidedQuestion, answer: string): boolean {
+export function gradeAutomatically(question: Pick<GuidedQuestion, 'options' | 'correctOption' | 'accepted'>, answer: string): boolean {
   if (question.options.length > 0) return Number(answer) === question.correctOption;
   return isCorrectTyped(question, answer);
 }

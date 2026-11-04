@@ -1,6 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { CURRENT_DB } from './account';
-import { OLD_YELLOW, SPINE_COLORS, type Checkpoint, type PlannerItem, type CardProgress, type Deck, type Flashcard, CheckpointProgress, Course, Lesson, Material, Note, RecordingSession, Topic } from './types';
+import { OLD_YELLOW, SPINE_COLORS, type Checkpoint, type PlannerItem, type PracticeAttempt, type PracticeQuestion, type PracticeSet, type CardProgress, type Deck, type Flashcard, CheckpointProgress, Course, Lesson, Material, Note, RecordingSession, Topic } from './types';
 
 /**
  * IndexedDB is the single source of truth for courses, topics, and file records.
@@ -23,12 +23,15 @@ interface StudyForgeDB extends DBSchema {
   decks: { key: string; value: Deck };
   cards: { key: string; value: Flashcard; indexes: { deckId: string } };
   cardProgress: { key: string; value: CardProgress };
+  practiceSets: { key: string; value: PracticeSet };
+  practiceQuestions: { key: string; value: PracticeQuestion; indexes: { setId: string } };
+  practiceAttempts: { key: string; value: PracticeAttempt; indexes: { setId: string; questionId: string } };
 }
 
 let dbPromise: Promise<IDBPDatabase<StudyForgeDB>> | null = null;
 
 export function getDb() {
-  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 8, {
+  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 9, {
     async upgrade(db, oldVersion, _newVersion, transaction) {
       // Each step only adds to what's there, so existing students keep their data.
       if (oldVersion < 1) {
@@ -62,6 +65,13 @@ export function getDb() {
         db.createObjectStore('decks', { keyPath: 'id' });
         db.createObjectStore('cards', { keyPath: 'id' }).createIndex('deckId', 'deckId');
         db.createObjectStore('cardProgress', { keyPath: 'cardId' });
+      }
+      if (oldVersion < 9) {
+        db.createObjectStore('practiceSets', { keyPath: 'id' });
+        db.createObjectStore('practiceQuestions', { keyPath: 'id' }).createIndex('setId', 'setId');
+        const attempts = db.createObjectStore('practiceAttempts', { keyPath: 'id' });
+        attempts.createIndex('setId', 'setId');
+        attempts.createIndex('questionId', 'questionId');
       }
       if (oldVersion >= 1 && oldVersion < 6) {
         for (let cursor = await transaction.objectStore('courses').openCursor(); cursor; cursor = await cursor.continue()) {

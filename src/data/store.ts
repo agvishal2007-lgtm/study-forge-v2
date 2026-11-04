@@ -28,7 +28,7 @@ export const getCourse = async (id: string) => (await getDb()).get('courses', id
 /** Removes the course but keeps every file: its files stay in the Library. */
 export async function deleteCourse(id: string): Promise<void> {
   const db = await getDb();
-  const tx = db.transaction(['courses', 'topics', 'materials', 'notes', 'lessons', 'plannerItems', 'decks'], 'readwrite');
+  const tx = db.transaction(['courses', 'topics', 'materials', 'notes', 'lessons', 'plannerItems', 'decks', 'practiceSets'], 'readwrite');
   for (const topicId of await tx.objectStore('topics').index('courseId').getAllKeys(id)) {
     await tx.objectStore('topics').delete(topicId);
   }
@@ -45,6 +45,9 @@ export async function deleteCourse(id: string): Promise<void> {
   }
   for (const deck of await tx.objectStore('decks').getAll()) {
     if (deck.courseId === id) await tx.objectStore('decks').put({ ...deck, courseId: null, topicId: null, updatedAt: Math.max(Date.now(), deck.updatedAt + 1) });
+  }
+  for (const set of await tx.objectStore('practiceSets').getAll()) {
+    if (set.courseId === id) await tx.objectStore('practiceSets').put({ ...set, courseId: null, topicId: null, updatedAt: Math.max(Date.now(), set.updatedAt + 1) });
   }
   for (const lesson of await tx.objectStore('lessons').getAll()) {
     if (lesson.courseId === id) await tx.objectStore('lessons').put({ ...lesson, courseId: null });
@@ -68,7 +71,7 @@ export async function createTopic(courseId: string, name: string): Promise<void>
 /** Removes the topic but keeps its files in the course. */
 export async function deleteTopic(id: string): Promise<void> {
   const db = await getDb();
-  const tx = db.transaction(['topics', 'materials', 'notes', 'decks'], 'readwrite');
+  const tx = db.transaction(['topics', 'materials', 'notes', 'decks', 'practiceSets'], 'readwrite');
   for (const material of await tx.objectStore('materials').getAll()) {
     if (material.topicId === id) await tx.objectStore('materials').put({ ...material, topicId: null });
   }
@@ -77,6 +80,9 @@ export async function deleteTopic(id: string): Promise<void> {
   }
   for (const deck of await tx.objectStore('decks').getAll()) {
     if (deck.topicId === id) await tx.objectStore('decks').put({ ...deck, topicId: null, updatedAt: Math.max(Date.now(), deck.updatedAt + 1) });
+  }
+  for (const set of await tx.objectStore('practiceSets').getAll()) {
+    if (set.topicId === id) await tx.objectStore('practiceSets').put({ ...set, topicId: null, updatedAt: Math.max(Date.now(), set.updatedAt + 1) });
   }
   await tx.objectStore('topics').delete(id);
   await tx.done;

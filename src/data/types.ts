@@ -227,3 +227,63 @@ export interface CardProgress {
   lapses: number;
   updatedAt: number;
 }
+
+/* Practice */
+export const PRACTICE_KINDS = ['multiple', 'short', 'blank', 'definition', 'formula', 'worked', 'explain'] as const;
+export type PracticeKind = (typeof PRACTICE_KINDS)[number];
+export const PRACTICE_KIND_LABEL: Record<PracticeKind, string> = {
+  multiple: 'Multiple choice',
+  short: 'Short answer',
+  blank: 'Fill in the blank',
+  definition: 'Definition',
+  formula: 'Formula application',
+  worked: 'Worked problem',
+  explain: 'Concept explanation',
+};
+export type PracticeResult = 'correct' | 'partial' | 'wrong';
+export const CONFIDENCE_LEVELS = ['Guessing', 'Somewhat sure', 'Sure'] as const;
+export type Confidence = (typeof CONFIDENCE_LEVELS)[number];
+
+export interface PracticeSet {
+  id: string;
+  name: string;
+  courseId: string | null;
+  topicId: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface PracticeQuestion {
+  id: string;
+  setId: string;
+  kind: PracticeKind;
+  prompt: string;
+  /** Answer choices. Empty means the student types an answer. */
+  options: string[];
+  correctOption: number | null;
+  /** Typed answers that count as correct automatically. */
+  accepted: string[];
+  modelAnswer: string;
+  explanation: string;
+  /** The idea this tests, in the student's words. Weak topics are grouped by it. */
+  topic: string;
+  /** Where this came from, such as a chapter or page. */
+  source: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface PracticeAttempt {
+  /** One presented question, so a repeated submission never counts twice. */
+  id: string;
+  questionId: string;
+  setId: string;
+  sessionId: string;
+  answer: string;
+  result: PracticeResult;
+  /** The student judged a typed answer against the model answer. */
+  selfChecked: boolean;
+  confidence: Confidence | null;
+  at: number;
+  updatedAt: number;
+}

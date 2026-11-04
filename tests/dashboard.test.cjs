@@ -90,6 +90,7 @@ test('with only a course, the dashboard is honest that nothing is due', async ()
   await page.getByRole('heading', { name: 'Today: Wednesday, November 4' }).waitFor();
   assert.equal(await page.getByTestId('day-summary').innerText(), 'Nothing needs your attention right now.');
   for (const id of ['due', 'overdue', 'cards', 'weak', 'lessons']) assert.equal(await tile(id), '0', id);
+  assert.equal(await tile('practice'), '—', 'no accuracy is claimed before any answers');
   await page.getByText('Nothing due in the next 7 days.').waitFor();
   await page.getByText('Nothing overdue.').waitFor();
   await page.getByText('No cards yet').waitFor();

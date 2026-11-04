@@ -402,6 +402,31 @@ test('flashcards and their schedule follow the student', async () => {
   await laptop.getByTestId('deck-row').getByText('1 card, 0 due').waitFor();
 });
 
+test('practice sets and answers follow the student', async () => {
+  const laptop = await device('laptop');
+  const phone = await device('phone');
+  await nav(laptop, 'Practice');
+  await laptop.getByLabel('New practice set').fill('Synced set');
+  await laptop.getByRole('button', { name: 'Create set' }).click();
+  await laptop.getByRole('heading', { name: 'Synced set' }).waitFor();
+  await laptop.getByLabel('Question', { exact: true }).fill('Synced practice question');
+  await laptop.getByLabel('Answer choices').fill('Right\nWrong');
+  await laptop.getByLabel('Correct answer').selectOption({ label: 'Right' });
+  await laptop.getByRole('button', { name: 'Add question' }).click();
+  await laptop.getByTestId('question-row').waitFor();
+  await saved(laptop);
+  await saved(phone);
+  await nav(phone, 'Practice');
+  await phone.getByRole('link', { name: 'Start Synced set' }).click();
+  await phone.getByRole('radio', { name: 'Wrong', exact: true }).check();
+  await phone.getByRole('button', { name: 'Submit answer' }).click();
+  await phone.getByTestId('practice-feedback').waitFor();
+  await saved(phone);
+  await saved(laptop);
+  await nav(laptop, 'Practice');
+  await laptop.getByTestId('set-row').getByText('1 question, 0% accuracy').waitFor();
+});
+
 test('a half-typed answer stays on its own device', async () => {
   const items = fake.state.items('alice-uid').filter((item) => item.collection === 'checkpointProgress');
   assert.equal(JSON.parse(items[0].json).draft, '');

@@ -121,6 +121,13 @@ export const TOUR_STEPS: TourStep[] = [
     body: 'Group cards into decks, then test yourself. How well you remembered decides when each card comes back, so you spend your time on the ones you find hard.',
   },
   {
+    id: 'practice',
+    route: '/practice',
+    target: ['[data-tour="new-practice"]'],
+    title: 'Practice',
+    body: 'Write your own questions, answer them without your notes, and check your work. Study Forge tracks what you missed and shows your weak topics, so you know what to repeat.',
+  },
+  {
     id: 'notes',
     route: '/notes',
     target: ['[data-tour="new-note"]'],
