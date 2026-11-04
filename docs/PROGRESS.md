@@ -209,6 +209,30 @@ Whoever owns the Firebase project can technically view stored data in its admin 
 - A single note or checkpoint over about 900 KB stays on the device, and the app names it.
 - A Google account's data is separate from the student's backups, which are still the only protection for files and recordings.
 
+## Walkthrough
+
+**The goal:** a new student learns what each part of the site does, on the real screens.
+
+### What works
+- It starts by itself the first time, and the question mark at the top right reopens it.
+- There are 15 steps, covering only what exists today. Planner, Exam Hall, and Tutor aren't built, so they aren't included.
+- Everything goes dark except a box around the part being explained, and nothing outside the walkthrough can be clicked or reached by keyboard.
+- It opens each real screen by itself and scrolls to the right spot.
+- Back, Next, Skip for now, Start over, and Finish are available where they apply, and Esc also leaves.
+- It starts at 0%, and only finished steps count.
+- It resumes at the same step after skipping or reloading, and doesn't return by itself after being skipped or finished.
+- If a part isn't on screen, it says so and carries on instead of crashing.
+- Starting it from the lesson editor warns first, because moving between screens would lose unsaved changes.
+
+### How it was tested
+`tests/walkthrough.test.cjs` checks every step in a real browser: the right screen, a box matching the section, and the explanation on screen. It also covers blocked clicks, keyboard use, resuming, cleanup, and phone size.
+
+### Known limits
+- Students read and press Next. It doesn't yet make them try each part, so the percentage shows steps finished, not skills practiced.
+- Its place is remembered per device, not across devices.
+- On small phones, the explanation can cover part of a tall highlighted section.
+- It hasn't been tried on a real phone yet.
+
 ## How the code is organized
 
 - `src/data/` holds saved data, and nothing else talks to storage directly.
