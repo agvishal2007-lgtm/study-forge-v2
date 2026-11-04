@@ -139,7 +139,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/notes',
     target: ['[data-tour="new-note"]'],
     title: 'Notes',
-    body: 'Notes save as you type. You can file them under a course or topic, attach them to a file or recording, and search them all.',
+    body: 'Notes save as you type, with bold, headings, lists, and checklists. You can file them under a course or topic, and attach them to a file or recording.',
     action: {
       isDone: hasAny('notes'),
       instruction: 'Try it: press New note and type anything. It saves by itself.',
@@ -174,6 +174,13 @@ export const TOUR_STEPS: TourStep[] = [
     target: ['[data-tour="offline"]'],
     title: 'Study without internet',
     body: 'After your first visit, Study Forge opens with no internet, and your work on this device keeps saving. You can also install it on your phone or computer like an app.',
+  },
+  {
+    id: 'search',
+    route: '/search',
+    target: ['[data-tour="search-box"]'],
+    title: 'Search everything',
+    body: 'The magnifying glass at the top searches your notes, files, flashcards, practice, planner, and lessons, including the words inside PDFs and Office files.',
   },
   {
     id: 'finish',

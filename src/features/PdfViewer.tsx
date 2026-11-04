@@ -5,10 +5,10 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
 /** Draws PDFs itself so they behave the same on phones, where built-in PDF frames often fail. */
-export function PdfViewer({ blob, onFail }: { blob: Blob; onFail: (message: string) => void }) {
+export function PdfViewer({ blob, onFail, initialPage = 1 }: { blob: Blob; onFail: (message: string) => void; initialPage?: number }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [doc, setDoc] = useState<pdfjs.PDFDocumentProxy | null>(null);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialPage);
   const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
@@ -19,7 +19,11 @@ export function PdfViewer({ blob, onFail }: { blob: Blob; onFail: (message: stri
         const data = new Uint8Array(await blob.arrayBuffer());
         task = pdfjs.getDocument({ data });
         const loaded = await task.promise;
-        if (active) setDoc(loaded);
+        if (active) {
+          // A search result can ask for a page, so keep it within the file.
+          setPage((current) => Math.min(Math.max(1, current), loaded.numPages));
+          setDoc(loaded);
+        }
       } catch (error) {
         if (active) onFail((error as Error).message);
       }

@@ -1,6 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { CURRENT_DB } from './account';
-import { OLD_YELLOW, SPINE_COLORS, type Checkpoint, type PlannerItem, type ExamResult, type PracticeAttempt, type PracticeQuestion, type PracticeSet, type CardProgress, type Deck, type Flashcard, CheckpointProgress, Course, Lesson, Material, Note, RecordingSession, Topic } from './types';
+import { OLD_YELLOW, SPINE_COLORS, type Checkpoint, type PlannerItem, type FileText, type ExamResult, type PracticeAttempt, type PracticeQuestion, type PracticeSet, type CardProgress, type Deck, type Flashcard, CheckpointProgress, Course, Lesson, Material, Note, RecordingSession, Topic } from './types';
 
 /**
  * IndexedDB is the single source of truth for courses, topics, and file records.
@@ -27,12 +27,13 @@ interface StudyForgeDB extends DBSchema {
   practiceQuestions: { key: string; value: PracticeQuestion; indexes: { setId: string } };
   practiceAttempts: { key: string; value: PracticeAttempt; indexes: { setId: string; questionId: string } };
   examResults: { key: string; value: ExamResult };
+  fileText: { key: string; value: FileText };
 }
 
 let dbPromise: Promise<IDBPDatabase<StudyForgeDB>> | null = null;
 
 export function getDb() {
-  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 10, {
+  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 11, {
     async upgrade(db, oldVersion, _newVersion, transaction) {
       // Each step only adds to what's there, so existing students keep their data.
       if (oldVersion < 1) {
@@ -76,6 +77,9 @@ export function getDb() {
       }
       if (oldVersion < 10) {
         db.createObjectStore('examResults', { keyPath: 'id' });
+      }
+      if (oldVersion < 11) {
+        db.createObjectStore('fileText', { keyPath: 'materialId' });
       }
       if (oldVersion >= 1 && oldVersion < 6) {
         for (let cursor = await transaction.objectStore('courses').openCursor(); cursor; cursor = await cursor.continue()) {

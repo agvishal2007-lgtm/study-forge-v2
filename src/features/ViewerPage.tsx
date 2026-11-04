@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState, type SyntheticEvent } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { NewNoteButton, NoteList } from '../components/NoteList';
 import { listNotes } from '../data/notes';
@@ -86,6 +86,8 @@ function Filing({ material }: { material: Material }) {
 
 export default function ViewerPage() {
   const { id = '' } = useParams();
+  const [params] = useSearchParams();
+  const startPage = Number(params.get('page')) || 1;
   const navigate = useNavigate();
   const stage = useRef<HTMLDivElement>(null);
   const stillHere = useStillHere();
@@ -140,7 +142,7 @@ export default function ViewerPage() {
   else if (blobError) body = <p className="error" role="alert">This file couldn't be read. {blobError.message}</p>;
   else if (!blob) body = <p className="error" role="alert">This file is no longer on this device. The browser may have cleared it, or it was deleted in another tab.</p>;
   else if (viewFailure) body = fallback(`Study Forge couldn't display this ${KIND_LABEL[kind].toLowerCase()} file, but the original is safe. You can download it and open it in another app.`);
-  else if (kind === 'pdf') body = <Suspense fallback={<p className="muted">Opening PDF…</p>}><PdfViewer blob={blob} onFail={fail} /></Suspense>;
+  else if (kind === 'pdf') body = <Suspense fallback={<p className="muted">Opening PDF…</p>}><PdfViewer key={startPage} initialPage={startPage} blob={blob} onFail={fail} /></Suspense>;
   else if (kind === 'word' || kind === 'sheet' || kind === 'slides') body = <Suspense fallback={<p className="muted">Opening file…</p>}><OfficeViewer kind={kind} blob={blob} onFail={fail} /></Suspense>;
   else if (!url) body = kind === 'text' ? <TextView blob={blob} /> : <p className="muted">Opening file…</p>;
   else if (kind === 'image') body = <ImageView url={url} name={material.name} />;

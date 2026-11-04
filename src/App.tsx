@@ -17,6 +17,7 @@ import { SessionPage } from './features/guided/SessionPage';
 import { StudyPage } from './features/guided/StudyPage';
 import { RecordPage } from './features/RecordPage';
 import { AuthPage, ForgotEmailPage, ForgotPasswordPage, PrivacyPage } from './features/AuthPages';
+import { SearchPage } from './features/SearchPage';
 import { CramPage } from './features/CramPage';
 import { ExamHallPage } from './features/ExamHallPage';
 import { ExamResultPage } from './features/ExamResultPage';
@@ -114,6 +115,7 @@ export function App() {
                 <Route path="/practice" element={<PracticePage />} />
                 <Route path="/practice/session" element={<PracticeSessionPage />} />
                 <Route path="/practice/:id" element={<PracticeSetPage />} />
+                <Route path="/search" element={<SearchPage />} />
                 <Route path="/exams" element={<ExamHallPage />} />
                 <Route path="/exams/start" element={<ExamStartPage />} />
                 <Route path="/exams/run" element={<ExamRunPage />} />

@@ -315,3 +315,11 @@ export interface ExamResult {
   items: ExamItem[];
   updatedAt: number;
 }
+
+/** The words read from a file so it can be searched. Kept on this device only, and can be rebuilt. */
+export interface FileText {
+  materialId: string;
+  status: 'ok' | 'no-text' | 'unsupported' | 'too-large' | 'failed';
+  /** One entry for each page or slide. */
+  pages: string[];
+}

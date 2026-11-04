@@ -357,6 +357,14 @@ Exam Hall gathers exam preparation in one place. It's in the sidebar on computer
 
 Tested in a real browser, including timing, reloads, and a clock that runs out. Not built yet: choosing exams by topic, or printing an exam.
 
+## Formatted notes and search
+
+**Notes** have a toolbar for bold, italics, headings, bullets, numbers, and checklists, plus Cmd or Ctrl with B or I, and a Preview. Notes stay plain text with simple marks, such as `**bold**`. That keeps every older note unchanged, keeps saving online and backups the same, and means a note can't run code on the site. It isn't a word-processor view, so formatting shows in Preview rather than as you type.
+
+**Search** is the magnifying glass at the top. It looks through notes, files, flashcards, practice questions, the planner, lessons, and courses, and every word has to match, ignoring capitals and accents. It also reads the words inside PDFs, Word, Excel, PowerPoint, and text files, on the device only. A PDF result opens on the matching page.
+
+Limits: scanned PDFs have no words to read, and Study Forge says so. Files over 300 MB are searched by name only. The words read from files aren't backed up or saved online, because each device can read them again. Search is built for a student's own files, and hasn't been tried with thousands of large PDFs.
+
 ## How the code is organized
 
 - `src/data/` holds saved data, and nothing else talks to storage directly.
@@ -375,6 +383,7 @@ Tested in a real browser, including timing, reloads, and a clock that runs out. 
   - `offline.ts` tracks offline status and updates, and `sw-template.js` is the service worker.
   - `pptxReader.ts` reads PowerPoint files.
   - `exams.ts` saves mock exams, and `examRules.ts` holds their scoring and Cram Mode's plans.
+  - `noteFormat.ts` handles note formatting, `searchRules.ts` handles matching, and `fileText.ts` reads words from files.
   - `planner.ts` saves planner items, and `plannerRules.ts` holds the date rules.
   - `account.ts` keeps each account's storage separate, and `sync.ts` holds the saving-online rules.
 - `src/components/` holds pieces used on several screens, such as the saving panel and the recorder.

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { applyFormat, NoteToolbar } from '../components/NoteToolbar';
+import { NoteView } from '../components/NoteView';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useStillHere } from '../components/useStillHere';
 import { deleteNote, getNote, NoteConflict, saveNote } from '../data/notes';
@@ -26,6 +28,8 @@ interface Draft {
 }
 
 export function NoteEditorPage() {
+  const [previewing, setPreviewing] = useState(false);
+  const bodyBox = useRef<HTMLTextAreaElement>(null);
   const { id = '' } = useParams();
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -197,8 +201,21 @@ export function NoteEditorPage() {
       </div>
       {file && <p>About <Link to={`/files/${file.id}`}>{file.name}</Link></p>}
 
-      <label className="note-body-label">Your note
-        <textarea autoFocus={!hasRecord} className="note-body" value={draft.body} onChange={(event) => change({ body: event.target.value })} />
+      <div className="note-mode" role="group" aria-label="View">
+        <button type="button" className="button" aria-pressed={!previewing} onClick={() => setPreviewing(false)}>Write</button>
+        <button type="button" className="button" aria-pressed={previewing} onClick={() => setPreviewing(true)}>Preview</button>
+        {!previewing && <NoteToolbar box={bodyBox} onChange={(body) => change({ body })} />}
+      </div>
+      {previewing && <NoteView body={draft.body} />}
+      <label className="note-body-label" hidden={previewing}>Your note
+        <textarea ref={bodyBox} onKeyDown={(event) => {
+          if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
+          const kind = event.key.toLowerCase() === 'b' ? 'bold' : event.key.toLowerCase() === 'i' ? 'italic' : null;
+          if (kind) {
+            event.preventDefault();
+            applyFormat(event.currentTarget, kind, (body) => change({ body }));
+          }
+        }} autoFocus={!hasRecord} className="note-body" value={draft.body} onChange={(event) => change({ body: event.target.value })} />
       </label>
 
       {confirmDelete && (

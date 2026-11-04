@@ -60,3 +60,28 @@ write('lecture.pptx', {
     'ppt/notesSlides/notesSlide1.xml': f'<p:notes {P}><p:cSld><p:spTree>{shape("body", "Say this out loud")}</p:spTree></p:cSld></p:notes>',
     'ppt/slides/slide1.xml': f'<p:sld {P}><p:cSld><p:spTree>{shape("title", "Second in order")}</p:spTree></p:cSld></p:sld>',
 })
+
+
+def pdf(name, pages):
+    objects = ['<</Type/Catalog/Pages 2 0 R>>']
+    kids = ' '.join(f'{3 + i * 2} 0 R' for i in range(len(pages)))
+    objects.append(f'<</Type/Pages/Kids[{kids}]/Count {len(pages)}>>')
+    font = 3 + len(pages) * 2
+    for i, text in enumerate(pages):
+        stream = f'BT /F1 18 Tf 20 100 Td ({text}) Tj ET' if text else ''
+        objects.append(f'<</Type/Page/Parent 2 0 R/MediaBox[0 0 400 200]/Contents {4 + i * 2} 0 R/Resources<</Font<</F1 {font} 0 R>>>>>>')
+        objects.append(f'<</Length {len(stream)}>>stream\n{stream}\nendstream')
+    objects.append('<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>')
+    out = '%PDF-1.4\n'
+    offsets = []
+    for number, body in enumerate(objects, 1):
+        offsets.append(len(out))
+        out += f'{number} 0 obj{body}endobj\n'
+    start = len(out)
+    out += f'xref\n0 {len(objects) + 1}\n0000000000 65535 f \n'
+    out += ''.join(f'{offset:010d} 00000 n \n' for offset in offsets)
+    out += f'trailer<</Size {len(objects) + 1}/Root 1 0 R>>\nstartxref\n{start}\n%%EOF'
+    (folder / name).write_bytes(out.encode('latin-1'))
+
+pdf('biology.pdf', ['Cells and tissues', 'Photosynthesis needs sunlight', 'Respiration releases energy'])
+pdf('scanned.pdf', ['', ''])
