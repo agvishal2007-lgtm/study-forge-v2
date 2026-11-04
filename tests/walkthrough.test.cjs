@@ -180,10 +180,10 @@ test('every step opens the real screen and puts a box around the real section', 
 
 test('Back returns to the earlier section', async () => {
   await press('Back');
-  await atStep(16);
-  assert.equal(await card().getAttribute('data-step'), 'record-safe');
+  await atStep(17);
+  assert.equal(await card().getAttribute('data-step'), 'backup');
   await page.locator('[data-testid=tour-card]').getByRole('button', { name: 'Back' }).waitFor();
-  assert.match(await count(), /79% complete/);
+  assert.match(await count(), /84% complete/);
 });
 
 test('a reload closes it, and the button picks up at the same step, on the right screen', async () => {
@@ -192,17 +192,17 @@ test('a reload closes it, and the button picks up at the same step, on the right
     const request = indexedDB.open('study-forge');
     request.onsuccess = () => {
       const read = request.result.transaction('meta').objectStore('meta').get('walkthrough');
-      read.onsuccess = () => { request.result.close(); resolve(read.result?.step === 15); };
+      read.onsuccess = () => { request.result.close(); resolve(read.result?.step === 16); };
     };
   }));
   await page.reload();
-  await page.getByRole('heading', { name: 'Record a lecture' }).waitFor();
+  await page.getByRole('heading', { name: 'Settings' }).waitFor();
   await page.waitForTimeout(300);
   assert.equal(await card().count(), 0);
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(16);
+  await atStep(17);
   await page.getByTestId('tour-box').waitFor();
-  assert.ok(page.url().endsWith('#/record'));
+  assert.ok(page.url().endsWith('#/settings'));
 });
 
 test('the X cleans up completely, and it does not come back by itself', async () => {
@@ -220,11 +220,11 @@ test('the X cleans up completely, and it does not come back by itself', async ()
 
 test('Escape also leaves, and the question mark resumes at the same step', async () => {
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(16);
+  await atStep(17);
   await page.keyboard.press('Escape');
   await card().waitFor({ state: 'detached' });
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(16);
+  await atStep(17);
 });
 
 test('tapping the button the moment the page opens still resumes at the saved step', async () => {
@@ -233,7 +233,7 @@ test('tapping the button the moment the page opens still resumes at the saved st
   await page.waitForTimeout(200);
   await page.reload();
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(16);
+  await atStep(17);
 });
 
 test('Start over returns to the beginning at 0%', async () => {
