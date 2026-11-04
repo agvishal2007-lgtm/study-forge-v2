@@ -322,6 +322,17 @@ Files can come from the device, Google Drive, or Dropbox. Picked files are copie
 
 The buttons and saving are tested with a stand-in for each service. On 2026-11-04 the owner confirmed the real Google Drive window worked on the live site. The Dropbox button stays hidden until its key is added, and the real Dropbox window hasn't been tried. OneDrive isn't built yet.
 
+## Works offline
+
+After one visit, a service worker keeps a copy of the site on the device, so it opens with no internet. It holds only the site's own files. Students' work stays in the browser's storage as before.
+
+- A notice says when the device is offline. Courses, files, notes, the planner, flashcards, practice, lessons, and recording keep working, and online saving catches up later.
+- Signing in, saving online, and adding files from Google Drive need the internet, and say so.
+- A new version waits until the student presses Refresh now, so nothing changes in the middle of their work.
+- Settings shows whether the site is saved for offline use, with an Install button where the browser offers one and instructions where it doesn't.
+
+Tested in a real browser with the network turned off: opening, reloading on an inner screen, saving work, viewing a PDF, the sign-in message, and a new version being offered. Not tried yet on a real phone, in Safari or Firefox, or as an installed app.
+
 ## How the code is organized
 
 - `src/data/` holds saved data, and nothing else talks to storage directly.
@@ -337,6 +348,7 @@ The buttons and saving are tested with a stand-in for each service. On 2026-11-0
   - `practice.ts` saves practice work, and `practiceRules.ts` holds its rules.
   - `cloudImport.ts` picks files from Google Drive and Dropbox.
   - `authMessages.ts` and `knownAccounts.ts` support signing in and recovery.
+  - `offline.ts` tracks offline status and updates, and `sw-template.js` is the service worker.
   - `planner.ts` saves planner items, and `plannerRules.ts` holds the date rules.
   - `account.ts` keeps each account's storage separate, and `sync.ts` holds the saving-online rules.
 - `src/components/` holds pieces used on several screens, such as the saving panel and the recorder.

@@ -162,6 +162,13 @@ export const TOUR_STEPS: TourStep[] = [
     body: 'Your files and recordings live only on this device. Create a backup regularly and keep it somewhere safe. You can restore it on any computer.',
   },
   {
+    id: 'offline',
+    route: '/settings',
+    target: ['[data-tour="offline"]'],
+    title: 'Study without internet',
+    body: 'After your first visit, Study Forge opens with no internet, and your work on this device keeps saving. You can also install it on your phone or computer like an app.',
+  },
+  {
     id: 'finish',
     route: '/',
     title: 'You\'re ready',

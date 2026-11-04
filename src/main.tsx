@@ -8,8 +8,10 @@ import '@fontsource/zilla-slab/700.css';
 import './styles.css';
 import { App } from './App';
 import { getActiveAccount } from './data/account';
+import { startOffline } from './data/offline';
 import { cleanUpInterruptedSaves } from './data/store';
 
+startOffline();
 void cleanUpInterruptedSaves().catch(() => undefined);
 
 // Syncing only starts for a student who has signed in.

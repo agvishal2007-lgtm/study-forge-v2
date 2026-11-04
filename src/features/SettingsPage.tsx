@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AccountSection } from './AccountSection';
 import { BackupSection } from './BackupSection';
+import { OfflineSection } from './OfflineSection';
 import { formatBytes } from '../data/format';
 import { getActiveAccount } from '../data/account';
 import { getStorageStatus, requestKeepFiles } from '../data/store';
@@ -14,6 +15,7 @@ export function SettingsPage() {
       <h1>Settings</h1>
       <AccountSection />
       <BackupSection />
+      <OfflineSection />
       <section aria-labelledby="storage-heading">
         <h2 id="storage-heading">Storage on this device</h2>
         <p>{getActiveAccount()

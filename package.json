@@ -9,19 +9,22 @@
     "preview": "vite preview --port 4173 --strictPort",
     "typecheck": "tsc --noEmit",
     "build:account-test": "VITE_ACCOUNT_BACKEND=test vite build --outDir dist-account",
-    "test": "npm run build && node --test --test-reporter=spec tests/app.test.cjs tests/recording.test.cjs tests/screen.test.cjs tests/notes.test.cjs tests/backup.test.cjs tests/mastery.test.cjs tests/guided.test.cjs tests/walkthrough.test.cjs tests/planner.test.cjs tests/flashcards.test.cjs tests/dashboard.test.cjs tests/practice.test.cjs tests/auth-rules.test.cjs && npm run build:account-test && node --test --test-reporter=spec tests/account.test.cjs"
+    "test": "npm run build && node --test --test-reporter=spec tests/app.test.cjs tests/recording.test.cjs tests/screen.test.cjs tests/notes.test.cjs tests/backup.test.cjs tests/mastery.test.cjs tests/guided.test.cjs tests/walkthrough.test.cjs tests/planner.test.cjs tests/flashcards.test.cjs tests/dashboard.test.cjs tests/practice.test.cjs tests/auth-rules.test.cjs tests/offline.test.cjs && npm run build:account-test && node --test --test-reporter=spec tests/account.test.cjs"
   },
   "dependencies": {
     "@fontsource/atkinson-hyperlegible": "^5.3.0",
     "@fontsource/zilla-slab": "^5.3.0",
     "client-zip": "2.5.0",
+    "dompurify": "^3.4.17",
     "firebase": "13.0.0",
     "hash-wasm": "^4.12.0",
     "idb": "^8.0.4",
+    "mammoth": "^1.13.0",
     "pdfjs-dist": "^6.5.438",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-router-dom": "^7.18.5"
+    "react-router-dom": "^7.18.5",
+    "read-excel-file": "^9.3.14"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",

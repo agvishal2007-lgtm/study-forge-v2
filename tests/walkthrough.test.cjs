@@ -11,7 +11,7 @@ const URL_BASE = 'http://localhost:4180/';
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'sf-tour-'));
 const shots = path.join(__dirname, '..', 'test-output');
 fs.mkdirSync(shots, { recursive: true });
-const TOTAL = 18;
+const TOTAL = 19;
 let server;
 let context;
 let page;
@@ -100,7 +100,7 @@ test('it never opens by itself, and a new student can find it', async () => {
 test('the button starts it at 0%', async () => {
   await open('main');
   await card().waitFor();
-  assert.match(await count(), /Step 1 of 18, 0% complete/);
+  assert.match(await count(), /Step 1 of 19, 0% complete/);
   await page.getByRole('heading', { name: 'Welcome to Study Forge' }).waitFor();
   await settle();
   await page.screenshot({ path: path.join(shots, 'tour-welcome.png') });
@@ -142,6 +142,7 @@ const EXPECTED = [
   ['record-type', '#/record', '[data-tour=record-source]'],
   ['record-safe', '#/record', '[data-tour=record-start]'],
   ['backup', '#/settings', '[data-tour=backup]'],
+  ['offline', '#/settings', '[data-tour=offline]'],
 ];
 
 test('every step opens the real screen and puts a box around the real section', async () => {
@@ -182,7 +183,7 @@ test('Back returns to the earlier section', async () => {
   await atStep(16);
   assert.equal(await card().getAttribute('data-step'), 'record-safe');
   await page.locator('[data-testid=tour-card]').getByRole('button', { name: 'Back' }).waitFor();
-  assert.match(await count(), /83% complete/);
+  assert.match(await count(), /79% complete/);
 });
 
 test('a reload closes it, and the button picks up at the same step, on the right screen', async () => {
