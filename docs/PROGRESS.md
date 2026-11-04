@@ -333,6 +333,17 @@ After one visit, a service worker keeps a copy of the site on the device, so it 
 
 Tested in a real browser with the network turned off: opening, reloading on an inner screen, saving work, viewing a PDF, the sign-in message, and a new version being offered. Not tried yet on a real phone, in Safari or Firefox, or as an installed app.
 
+## Reading Office files in the app
+
+Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) files now open right in the viewer, with no link or download, and work offline. These are reading views, and each says so:
+
+- Word shows the text, headings, lists, tables, and pictures. Anything risky in the file is removed before it's shown.
+- Excel shows each sheet in a table with tabs. Formulas show their last saved result, and very long sheets stop at 2,000 rows with a message.
+- PowerPoint shows each slide's title, text, pictures, and speaker notes in order, but not the slide design.
+- Older .doc, .xls, and .ppt files can't be read in a browser, so they explain how to convert them. Anything that can't be read offers the download instead.
+
+Tested in a real browser using small test files. Not tried yet with real, complicated Office files.
+
 ## How the code is organized
 
 - `src/data/` holds saved data, and nothing else talks to storage directly.
@@ -349,6 +360,7 @@ Tested in a real browser with the network turned off: opening, reloading on an i
   - `cloudImport.ts` picks files from Google Drive and Dropbox.
   - `authMessages.ts` and `knownAccounts.ts` support signing in and recovery.
   - `offline.ts` tracks offline status and updates, and `sw-template.js` is the service worker.
+  - `pptxReader.ts` reads PowerPoint files.
   - `planner.ts` saves planner items, and `plannerRules.ts` holds the date rules.
   - `account.ts` keeps each account's storage separate, and `sync.ts` holds the saving-online rules.
 - `src/components/` holds pieces used on several screens, such as the saving panel and the recorder.

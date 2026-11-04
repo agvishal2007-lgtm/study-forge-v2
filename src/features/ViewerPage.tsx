@@ -5,12 +5,13 @@ import { NewNoteButton, NoteList } from '../components/NoteList';
 import { listNotes } from '../data/notes';
 import { useStillHere } from '../components/useStillHere';
 import { readBlob } from '../data/blobs';
-import { formatBytes, KIND_LABEL, kindOf } from '../data/format';
+import { formatBytes, KIND_LABEL, kindOf, olderOfficeAdvice } from '../data/format';
 import { deleteMaterial, fileMaterial, getMaterial, listCourses, listTopics } from '../data/store';
 import type { Material } from '../data/types';
 import { useLive } from '../data/useLive';
 
 const PdfViewer = lazy(() => import('./PdfViewer').then((module) => ({ default: module.PdfViewer })));
+const OfficeViewer = lazy(() => import('./OfficeViewer').then((module) => ({ default: module.OfficeViewer })));
 const TEXT_LIMIT = 2 * 1024 * 1024;
 
 function TextView({ blob }: { blob: Blob }) {
@@ -140,11 +141,13 @@ export default function ViewerPage() {
   else if (!blob) body = <p className="error" role="alert">This file is no longer on this device. The browser may have cleared it, or it was deleted in another tab.</p>;
   else if (viewFailure) body = fallback(`Study Forge couldn't display this ${KIND_LABEL[kind].toLowerCase()} file, but the original is safe. You can download it and open it in another app.`);
   else if (kind === 'pdf') body = <Suspense fallback={<p className="muted">Opening PDF…</p>}><PdfViewer blob={blob} onFail={fail} /></Suspense>;
+  else if (kind === 'word' || kind === 'sheet' || kind === 'slides') body = <Suspense fallback={<p className="muted">Opening file…</p>}><OfficeViewer kind={kind} blob={blob} onFail={fail} /></Suspense>;
   else if (!url) body = kind === 'text' ? <TextView blob={blob} /> : <p className="muted">Opening file…</p>;
   else if (kind === 'image') body = <ImageView url={url} name={material.name} />;
   else if (kind === 'audio') body = <audio controls src={url} data-testid="audio-player" onLoadedMetadata={measureLength} onError={() => fail('audio')} />;
   else if (kind === 'video') body = <video controls playsInline src={url} data-testid="video-player" onLoadedMetadata={measureLength} onError={() => fail('video')} />;
   else if (kind === 'text') body = <TextView blob={blob} />;
+  else if (olderOfficeAdvice(material.name)) body = fallback(olderOfficeAdvice(material.name));
   else body = fallback("Study Forge can't display this file type yet, but the original is safe. You can download it and open it in another app.");
 
   return (

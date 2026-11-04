@@ -14,6 +14,9 @@ export function kindOf(material: Pick<Material, 'name' | 'mimeType'>): MaterialK
   if (AUDIO.includes(ext)) return 'audio';
   if (VIDEO.includes(ext)) return 'video';
   if (TEXT.includes(ext)) return 'text';
+  if (ext === 'docx') return 'word';
+  if (ext === 'xlsx') return 'sheet';
+  if (ext === 'pptx') return 'slides';
   return 'other';
 }
 
@@ -23,8 +26,18 @@ export const KIND_LABEL: Record<MaterialKind, string> = {
   audio: 'Audio',
   video: 'Video',
   text: 'Text',
+  word: 'Word document',
+  sheet: 'Excel spreadsheet',
+  slides: 'PowerPoint',
   other: 'File',
 };
+
+/** Older Office formats that can't be read in a browser, with what to do instead. */
+export function olderOfficeAdvice(name: string): string {
+  const ext = extension(name);
+  const newer: Record<string, string> = { doc: 'Word as .docx', xls: 'Excel as .xlsx', ppt: 'PowerPoint as .pptx' };
+  return newer[ext] ? `This is an older .${ext} file, which can't be shown here. Save it from ${newer[ext]} and add that copy to read it right here, or download this one.` : '';
+}
 
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} bytes`;

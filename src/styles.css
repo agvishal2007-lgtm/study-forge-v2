@@ -481,3 +481,21 @@ input[type='radio']:checked { border-color: var(--accent); background: radial-gr
 
 /* Offline and updates */
 .site-notice { margin: 0; padding: .55rem 1.25rem; background: var(--accent-soft); font-size: .95rem; max-width: none; }
+
+/* Word, Excel, and PowerPoint */
+.office-note { clear: both; color: var(--muted); font-size: .9rem; margin: 0 0 .75rem; }
+.office-doc { clear: both; max-width: 72ch; line-height: 1.55; overflow-wrap: anywhere; }
+.office-doc img { max-width: 100%; height: auto; background: #fff; }
+.office-doc table, .sheet-table { border-collapse: collapse; }
+.office-doc td, .office-doc th, .sheet-table td { border: 1px solid var(--line); padding: .3rem .55rem; vertical-align: top; }
+.office-doc a { color: var(--accent); }
+.sheet-tabs { clear: both; display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .75rem; }
+.sheet-tabs .button[aria-pressed='true'] { background: var(--accent); color: var(--on-accent); }
+.sheet-scroll { overflow: auto; max-height: 70vh; max-width: 100%; }
+.sheet-table td { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sheet-table tr:first-child td { font-weight: 700; }
+.slide-card { clear: both; background: var(--ground); border-radius: 14px; padding: 1rem 1.25rem; margin-bottom: .75rem; overflow-wrap: anywhere; }
+.slide-card h2 { margin: .1rem 0 .5rem; font-size: 1.3rem; }
+.slide-card img { display: block; max-width: 100%; max-height: 420px; margin: .5rem 0; background: #fff; border-radius: 6px; }
+.slide-number { color: var(--muted); font-size: .85rem; margin: 0; }
+.slide-notes { margin-top: .6rem; color: var(--muted); font-size: .95rem; }
