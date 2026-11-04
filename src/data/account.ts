@@ -9,13 +9,15 @@ export interface ActiveAccount {
   uid: string;
   email: string;
   photoURL?: string;
+  /** Signed in with Google, so that account's calendar can be offered. */
+  usesGoogle?: boolean;
 }
 
 export function getActiveAccount(): ActiveAccount | null {
   try {
     const parsed = JSON.parse(localStorage.getItem(KEY) ?? 'null');
     if (!parsed || typeof parsed.uid !== 'string') return null;
-    return { uid: parsed.uid, email: String(parsed.email ?? ''), photoURL: typeof parsed.photoURL === 'string' ? parsed.photoURL : undefined };
+    return { uid: parsed.uid, email: String(parsed.email ?? ''), photoURL: typeof parsed.photoURL === 'string' ? parsed.photoURL : undefined, usesGoogle: parsed.usesGoogle === true };
   } catch {
     return null;
   }

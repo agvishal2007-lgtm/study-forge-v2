@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { listCalendarEvents, getGoogleConnection, setEventCompleted } from '../data/calendar';
 import { compareEvents, describeTime, minutesOf, monthGrid, monthOf, noClassesOn, shiftMonth, todaysPlan, visibleEvents } from '../data/calendarRules';
+import { getActiveAccount } from '../data/account';
+import { CalendarError, hasGoogleAccess, prepareGoogle } from '../data/googleCalendar';
+import { getLatestFromGoogle, reportWords } from '../data/googleConnect';
 import { listPlannerItems } from '../data/planner';
 import { describeDue, isDone, localNow } from '../data/plannerRules';
 import { listCourses } from '../data/store';
@@ -16,6 +19,7 @@ const VIEWS = [
 type View = (typeof VIEWS)[number]['id'];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const SHOWN_IN_CELL = 3;
+const AUTO_UPDATE_MS = 15 * 60 * 1000;
 
 const words = (date: string, options: Intl.DateTimeFormatOptions) => {
   const [year, month, day] = date.split('-').map(Number);
@@ -172,11 +176,38 @@ export function CalendarPage() {
   const view = (VIEWS.some((entry) => entry.id === params.get('view')) ? params.get('view') : 'today') as View;
   const courseFilter = params.get('course') ?? '';
   const month = /^\d{4}-\d{2}$/.test(params.get('month') ?? '') ? params.get('month') as string : monthOf(today);
+  const [googleReady, setGoogleReady] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [updateNote, setUpdateNote] = useState('');
   const [selected, setSelected] = useState(/^\d{4}-\d{2}-\d{2}$/.test(params.get('day') ?? '') ? params.get('day') as string : today);
   const { data, error } = useLive(async () => {
     const [events, planner, courses, connection] = await Promise.all([listCalendarEvents(), listPlannerItems(), listCourses(), getGoogleConnection()]);
     return { events, planner, courses, connection };
   }, []);
+  const connected = Boolean(data?.connection);
+  useEffect(() => {
+    if (!connected) return;
+    let active = true;
+    prepareGoogle().then(() => { if (active) setGoogleReady(true); }, () => undefined);
+    return () => { active = false; };
+  }, [connected]);
+  // Google's permission lasts about an hour, so while it's still good the calendar updates by itself.
+  const lastSync = data?.connection?.lastSync ?? 0;
+  useEffect(() => {
+    if (!connected || !hasGoogleAccess() || Date.now() - lastSync < AUTO_UPDATE_MS) return;
+    getLatestFromGoogle().then((report) => { if (report) setUpdateNote(reportWords(report)); }, () => undefined);
+  }, [connected, lastSync]);
+  const getLatest = () => {
+    setUpdating(true);
+    setUpdateNote('');
+    // Nothing is awaited before this call, so Google's window opens as part of the tap itself.
+    getLatestFromGoogle(getActiveAccount()?.email).then(
+      (report) => { if (report) setUpdateNote(reportWords(report)); },
+      (problem: unknown) => {
+        if (!(problem instanceof CalendarError && problem.cancelled)) setUpdateNote(problem instanceof Error ? problem.message : "Google Calendar couldn't be updated.");
+      },
+    ).finally(() => setUpdating(false));
+  };
   if (error) return <div className="page"><h1>Calendar</h1><p className="error" role="alert">Your calendar couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
   const { courses, connection } = data;
@@ -210,9 +241,11 @@ export function CalendarPage() {
         <div className="calendar-actions" data-tour="calendar-add">
           <Link className="button primary" to={`/calendar/event/new?date=${selected}`}>Add to calendar</Link>
           <Link className="button" to="/calendar/schedule">Add class schedule</Link>
+          {connection && <button className="button" onClick={getLatest} disabled={updating || !googleReady}>{updating ? 'Updating…' : 'Get the latest'}</button>}
           <Link className="button" to="/calendar/google">{connection ? 'Google Calendar' : 'Connect Google Calendar'}</Link>
         </div>
       </div>
+      {updateNote && <p className="notice" role="status" data-testid="calendar-update-note">{updateNote}</p>}
       <div className="calendar-tools">
         <div className="calendar-tabs" role="tablist" aria-label="Calendar views">
           {VIEWS.map((entry) => (

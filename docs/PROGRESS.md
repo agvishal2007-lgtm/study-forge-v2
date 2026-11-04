@@ -403,6 +403,8 @@ The Calendar section follows the owner's Notion calendar: **Today's Plan** (toda
 - Not automatic: updates happen when the student presses Get the latest, because Study Forge has no server.
 - Tested with a stand-in for Google, not yet against the real one. Until Google verifies the app, students see a warning, and there's a limit of 100 new users.
 
+After signing in with Google, a one-tap offer connects that same account's calendar, using first guesses that can be changed later. It reads the main calendar plus anything that looks like school or Canvas. Calendar has a Get the latest button. While Google's permission lasts, about an hour, opening Calendar also updates by itself. Asking inside the sign-in window itself would show every Google user the unverified warning, so that waits for Google's verification.
+
 ## Progress and streaks
 
 Progress shows the current and longest streak, a 12-week activity grid, and each course's lessons, flashcards, practice, planner, and latest mock exam. A study day means a flashcard review, a practice answer, a finished mock exam, or lesson work. It doesn't track study time or predict grades. Each device keeps its own daily counts, so two devices never overwrite each other.

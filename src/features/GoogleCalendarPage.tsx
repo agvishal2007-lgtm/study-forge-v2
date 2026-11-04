@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { getActiveAccount } from '../data/account';
-import { applyGoogleItems, choiceFor, clearGoogleConnection, courseForCode, getGoogleConnection, saveGoogleConnection, type CalendarChoice, type GoogleConnection, type GoogleReport } from '../data/calendar';
+import { applyGoogleItems, choiceFor, clearGoogleConnection, courseForCode, getGoogleConnection, saveGoogleConnection, type CalendarChoice, type GoogleConnection } from '../data/calendar';
 import { cleanTitle, courseTokenIn, fromCanvas, type Destination, type GoogleItem } from '../data/calendarRules';
 import { askGoogle, CalendarError, forgetGoogle, googleWindow, hasGoogleAccess, listGoogleCalendars, prepareGoogle, readGoogleItems, type GoogleCalendarInfo } from '../data/googleCalendar';
 import { formatTime } from '../data/calendarRules';
+import { getLatestFromGoogle, reportWords, startingCalendars } from '../data/googleConnect';
 import { localNow } from '../data/plannerRules';
 import { listCourses } from '../data/store';
 import { useLive } from '../data/useLive';
@@ -34,17 +35,6 @@ interface Row {
 const dayWords = (date: string) => {
   const [year, month, day] = date.split('-').map(Number);
   return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
-};
-
-const reportWords = (report: GoogleReport) => {
-  const parts = [
-    report.added > 0 && `${report.added} added to your calendar`,
-    report.updated > 0 && `${report.updated} updated`,
-    report.removed > 0 && `${report.removed} removed because they're gone from Google or were left out`,
-    report.deadlinesAdded > 0 && `${report.deadlinesAdded} ${report.deadlinesAdded === 1 ? 'deadline' : 'deadlines'} added to your Planner`,
-    report.deadlinesUpdated > 0 && `${report.deadlinesUpdated} ${report.deadlinesUpdated === 1 ? 'deadline' : 'deadlines'} updated`,
-  ].filter(Boolean);
-  return parts.length > 0 ? `Done: ${parts.join(', ')}.` : 'Everything is already up to date.';
 };
 
 export function GoogleCalendarPage() {
@@ -85,7 +75,7 @@ export function GoogleCalendarPage() {
     const found = await listGoogleCalendars();
     setCalendars(found);
     const saved = connection?.calendars.map((calendar) => calendar.id);
-    setPicked(saved ?? found.filter((calendar) => calendar.primary || /canvas/i.test(calendar.name)).map((calendar) => calendar.id));
+    setPicked(saved ?? startingCalendars(found).map((calendar) => calendar.id));
     setStep('calendars');
   });
 
@@ -161,11 +151,8 @@ export function GoogleCalendarPage() {
   };
 
   const update = () => start(async () => {
-    if (!connection) return;
-    const found = await readGoogleItems(connection.calendars, today);
-    const report = await applyGoogleItems(found, connection.choices, googleWindow(today), today, connection.calendars.map((calendar) => calendar.id));
-    await saveGoogleConnection({ ...connection, lastSync: Date.now() });
-    setMessage(reportWords(report));
+    const report = await getLatestFromGoogle();
+    if (report) setMessage(reportWords(report));
   });
 
   const lastSync = useMemo(() => (connection?.lastSync ? new Date(connection.lastSync).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''), [connection]);

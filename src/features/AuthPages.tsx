@@ -27,7 +27,7 @@ function finish(user: AccountUser, method: string) {
   rememberAccount(user.email, method);
   // Switching accounts reloads the site, so choose where it lands first.
   window.location.hash = '#/';
-  switchAccount({ uid: user.uid, email: user.email, photoURL: user.photoURL });
+  switchAccount({ uid: user.uid, email: user.email, photoURL: user.photoURL, usesGoogle: user.usesGoogle });
 }
 
 export function AuthPage({ mode }: { mode: 'sign-in' | 'sign-up' }) {
@@ -220,7 +220,7 @@ export function PrivacyPage() {
       <h2>Pictures of your schedule</h2>
       <p>A picture of your schedule is read on your device and isn't uploaded or saved. Only the classes you choose to save are kept.</p>
       <h2>Google Calendar</h2>
-      <p>If you connect Google Calendar, Study Forge can only read it, and never adds, changes, or deletes anything there. It reads the calendars you choose, and only when you open or update the connection. Items you keep are saved in Study Forge. With an account, they're also saved online with the rest of your text, and Delete my online copy removes them. Google's permission is kept only while the page is open. You can disconnect in Calendar, or remove Study Forge in your Google account settings.</p>
+      <p>If you connect Google Calendar, Study Forge can only read it, and never adds, changes, or deletes anything there. It reads your main calendar and school calendars, or the ones you choose, when you connect it, press Get the latest, or open Calendar shortly after that. Items you keep are saved in Study Forge. With an account, they're also saved online with the rest of your text, and Delete my online copy removes them. Google's permission is kept only while the page is open. You can disconnect in Calendar, or remove Study Forge in your Google account settings.</p>
       <h2>Advertising and selling data</h2>
       <p>Study Forge has no ads and doesn't sell your information.</p>
       <h2>Removing your data</h2>

@@ -75,8 +75,9 @@ main:focus { outline: none; }
 /* Frame: the bar and menu stay put while the screen scrolls. */
 .shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); height: 100dvh; }
 /* Two panels: the section buttons and the section each have their own draggable scrollbar. */
-.workspace { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; }
-main { overflow-y: scroll; min-width: 0; min-height: 0; }
+/* Any notices stack above the section, which takes the space that's left. */
+.workspace { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+main { flex: 1 1 0; overflow-y: scroll; min-width: 0; min-height: 0; }
 .nav-links { overflow-y: scroll; }
 main::-webkit-scrollbar, .nav-links::-webkit-scrollbar { width: 14px; }
 main::-webkit-scrollbar-track, .nav-links::-webkit-scrollbar-track { background: var(--scroll-track); }
@@ -826,6 +827,11 @@ label input, label select { margin-top: .35rem; }
 
 [data-testid='course-progress'] .table-scroll { margin-top: .75rem; }
 
+.calendar-offer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1.5rem; padding: .85rem clamp(1rem, 3.5vw, 3rem); }
+.calendar-offer > span:first-child { flex: 1 1 340px; max-width: 75ch; }
+.calendar-offer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .9rem; }
+.calendar-offer .error { flex-basis: 100%; }
+
 /* Links in lists read as names, and underline when pointed at. */
 .dash-what, .planner-main a, .files a, .lesson-row a, .checkpoints a, .plan-table a, .plan-list a, .search-group a { text-decoration: none; font-weight: 620; color: var(--paper); }
 .dash-what:hover, .planner-main a:hover, .files a:hover, .lesson-row a:hover, .checkpoints a:hover, .plan-table a:hover, .plan-list a:hover, .search-group a:hover { text-decoration: underline; color: var(--accent-text); }
@@ -863,3 +869,4 @@ label input, label select { margin-top: .35rem; }
 @media (max-width: 480px) {
   .theme-button { display: none; }
 }
+.topbar, .site-notice, .recording-bar { flex: none; }

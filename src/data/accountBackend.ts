@@ -2,6 +2,7 @@ export interface AccountUser {
   uid: string;
   email: string;
   photoURL?: string;
+  usesGoogle?: boolean;
 }
 
 export type LoginProvider = 'google' | 'microsoft';

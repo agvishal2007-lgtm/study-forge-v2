@@ -4,6 +4,7 @@ import { AccountMenu } from './components/AccountMenu';
 import { WalkthroughProvider } from './features/walkthrough/Walkthrough';
 import { RecorderProvider, RecordingBar } from './components/Recorder';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { CalendarOffer } from './components/CalendarOffer';
 import { OfflineNotices } from './components/OfflineNotices';
 import { SaveProvider, SavePanel } from './components/SaveQueue';
 import { CourseDetailPage } from './features/CourseDetailPage';
@@ -101,6 +102,7 @@ export function App() {
         <div className="workspace">
         <AccountMenu />
         <OfflineNotices />
+        <CalendarOffer />
         <main id="content" tabIndex={-1}>
           {updateBlocked && <p className="notice" role="alert">Study Forge was updated. Close its other tabs, then reload this one. Your files are safe.</p>}
           <RecordingBar />

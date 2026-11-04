@@ -36,10 +36,11 @@ function providerFor(provider: LoginProvider) {
 }
 
 export function createFirebaseBackend(_app: FirebaseApp, auth: Auth, db: Firestore, providers: LoginProvider[] = ['google']): AccountBackend {
-  const toUser = (user: { uid: string; email: string | null; displayName: string | null; photoURL: string | null }): AccountUser => ({
+  const toUser = (user: { uid: string; email: string | null; displayName: string | null; photoURL: string | null; providerData?: { providerId: string }[] }): AccountUser => ({
     uid: user.uid,
     email: user.email ?? user.displayName ?? 'Your account',
     photoURL: user.photoURL ?? undefined,
+    usesGoogle: user.providerData?.some((entry) => entry.providerId === 'google.com') ?? false,
   });
   return {
     providers,

@@ -754,6 +754,80 @@ test('deleting the online copy asks first, signs out, and keeps this device\'s c
   assert.equal(fake.state.items('alice-uid').length, 0);
 });
 
+test('after signing in with Google, that calendar connects in one tap, and other sign-ins are not asked', async () => {
+  const page = await device('calendar', { uid: 'calendar-uid', email: 'student@gmail.com', usesGoogle: true });
+  page.setDefaultTimeout(15000);
+  let scopes = '';
+  let hint = '';
+  await page.exposeFunction('__tokenAsked', (scope, who) => { scopes = scope; hint = who; });
+  await page.route('https://accounts.google.com/gsi/client', (route) => route.fulfill({
+    contentType: 'text/javascript',
+    body: `window.google = { accounts: { oauth2: { initTokenClient(config) { return { requestAccessToken: async () => { await window.__tokenAsked(config.scope, config.hint); config.callback({ access_token: 'fake', expires_in: 3600 }); } }; } } } };`,
+  }));
+  const stamp = (date, time) => new Date(`${date}T${time}:00-05:00`).toISOString();
+  const soon = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+  const events = {
+    'student@gmail.com': [{ id: 'eco', recurringEventId: 'ecos', summary: 'ECO 231', start: { dateTime: stamp(soon, '10:00') }, end: { dateTime: stamp(soon, '10:50') } }],
+    canvas: [{ id: 'quiz', summary: 'Quiz 1 [1268-ECO231-03]', start: { dateTime: stamp(soon, '23:00') }, end: { dateTime: stamp(soon, '23:00') } }],
+    birthdays: [{ id: 'bday', summary: 'Sam birthday', start: { date: soon }, end: { date: soon } }],
+  };
+  await page.route('https://www.googleapis.com/calendar/v3/**', (route) => {
+    const url = new URL(route.request().url());
+    const headers = { 'access-control-allow-origin': '*', 'content-type': 'application/json', 'access-control-allow-headers': 'authorization' };
+    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
+    if (url.pathname.endsWith('/calendarList')) return route.fulfill({ status: 200, headers, body: JSON.stringify({ items: [{ id: 'student@gmail.com', summary: 'Me', primary: true }, { id: 'canvas', summary: 'Canvas Calendar' }, { id: 'birthdays', summary: 'Birthdays' }] }) });
+    const id = decodeURIComponent(url.pathname.split('/calendars/')[1].split('/')[0]);
+    return route.fulfill({ status: 200, headers, body: JSON.stringify({ items: events[id] ?? [] }) });
+  });
+  await signInButton(page).click();
+  await googleButton(page).click();
+  const offer = page.getByTestId('calendar-offer');
+  await offer.waitFor();
+  assert.match(await offer.innerText(), /student@gmail.com/);
+  await page.waitForFunction(() => !!window.google);
+  await offer.getByRole('button', { name: 'Connect Google Calendar' }).click();
+  const done = page.getByTestId('calendar-offer-done');
+  await done.waitFor();
+  assert.match(await done.innerText(), /1 added to your calendar/);
+  assert.match(await done.innerText(), /1 deadline added to your Planner/);
+  assert.equal(hint, 'student@gmail.com', 'it asks about the same account');
+  assert.match(scopes, /calendar\.events\.readonly/);
+  await page.getByRole('link', { name: 'See your calendar' }).click();
+  await page.locator(`[data-date="${soon}"]`).getByText('ECO 231').waitFor();
+  assert.equal(await page.getByText('Sam birthday').count(), 0, 'calendars that are not for school stay out');
+  await page.getByRole('tab', { name: 'Deadline Calendar' }).click();
+  await page.locator(`[data-date="${soon}"]`).getByText('Quiz 1').waitFor();
+  await page.getByRole('link', { name: 'Google Calendar', exact: true }).waitFor();
+
+  events['student@gmail.com'][0].summary = 'ECO 231 moved';
+  await page.getByRole('button', { name: 'Get the latest' }).click();
+  await page.getByTestId('calendar-update-note').getByText('1 updated').waitFor();
+  await page.reload();
+  await page.getByRole('heading', { name: 'Calendar', exact: true }).waitFor();
+  assert.equal(await offer.count(), 0, 'once connected it stops asking');
+
+  await nav(page, 'Courses');
+  await page.getByRole('link', { name: /ECO 231/ }).first().waitFor();
+  await close('calendar');
+
+  const other = await device('calendar-later', { uid: 'later-uid', email: 'later@gmail.com', usesGoogle: true });
+  await signInButton(other).click();
+  await googleButton(other).click();
+  await other.getByTestId('calendar-offer').getByRole('button', { name: 'Not now' }).click();
+  await other.getByTestId('calendar-offer').waitFor({ state: 'detached' });
+  await other.reload();
+  await other.getByRole('button', { name: /Account menu for/ }).waitFor();
+  assert.equal(await other.getByTestId('calendar-offer').count(), 0, 'not now is remembered');
+  await close('calendar-later');
+
+  const microsoft = await device('calendar-microsoft', { uid: 'ms-uid', email: 'ms@outlook.com' });
+  await signInButton(microsoft).click();
+  await microsoft.getByRole('button', { name: 'Continue with Microsoft' }).click();
+  await microsoft.getByRole('button', { name: /Account menu for/ }).waitFor();
+  assert.equal(await microsoft.getByTestId('calendar-offer').count(), 0, 'it only offers Google Calendar to Google accounts');
+  await close('calendar-microsoft');
+});
+
 test('no uncaught errors happened on any device', () => {
   for (const [name, entry] of open) assert.deepEqual(entry.errors, [], name);
 });

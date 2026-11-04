@@ -271,9 +271,9 @@ export async function startSync(): Promise<void> {
   backendInstance.watchUser((user) => {
     // Signed out somewhere else, or a different account: never keep showing the wrong data.
     if (!user) switchAccount(null);
-    else if (user.uid !== account.uid) switchAccount({ uid: user.uid, email: user.email, photoURL: user.photoURL });
-    else if (user.photoURL !== account.photoURL || user.email !== account.email) {
-      updateAccountDetails({ uid: user.uid, email: user.email, photoURL: user.photoURL });
+    else if (user.uid !== account.uid) switchAccount({ uid: user.uid, email: user.email, photoURL: user.photoURL, usesGoogle: user.usesGoogle });
+    else if (user.photoURL !== account.photoURL || user.email !== account.email || Boolean(user.usesGoogle) !== Boolean(account.usesGoogle)) {
+      updateAccountDetails({ uid: user.uid, email: user.email, photoURL: user.photoURL, usesGoogle: user.usesGoogle });
     }
   });
   subscribe(() => {
