@@ -22,7 +22,7 @@ const nav = (name) => page.getByRole('navigation').getByRole('link', { name, exa
 const status = () => page.getByTestId('save-status');
 const newNote = async () => {
   await page.getByRole('button', { name: /New note/ }).first().click();
-  await page.getByLabel('Your note', { exact: true }).waitFor();
+  await page.locator('textarea.note-body').waitFor();
 };
 
 before(async () => {
@@ -54,7 +54,7 @@ test('a blank note leaves nothing behind', async () => {
 test('a note saves itself and survives closing the browser', async () => {
   await newNote();
   await page.getByLabel('Title').fill('Accounting equation');
-  await page.getByLabel('Your note', { exact: true }).fill('Assets = Liabilities + Equity\nLine two');
+  await page.locator('textarea.note-body').fill('Assets = Liabilities + Equity\nLine two');
   await status().getByText('Saved').waitFor();
   await page.screenshot({ path: path.join(shots, 'note-editor.png') });
   await context.close();
@@ -63,11 +63,11 @@ test('a note saves itself and survives closing the browser', async () => {
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto(URL_BASE);
   await page.getByRole('link', { name: 'Accounting equation' }).click();
-  assert.equal(await page.getByLabel('Your note', { exact: true }).inputValue(), 'Assets = Liabilities + Equity\nLine two');
+  assert.equal(await page.locator('textarea.note-body').inputValue(), 'Assets = Liabilities + Equity\nLine two');
 });
 
 test('leaving right after typing still saves', async () => {
-  await page.getByLabel('Your note', { exact: true }).fill('Typed then left at once');
+  await page.locator('textarea.note-body').fill('Typed then left at once');
   await nav('Library');
   await page.getByRole('heading', { name: 'Library' }).waitFor();
   await nav('Notes');
@@ -76,9 +76,9 @@ test('leaving right after typing still saves', async () => {
 });
 
 test('reloading right after typing still saves', async () => {
-  await page.getByLabel('Your note', { exact: true }).fill('Assets = Liabilities + Equity');
+  await page.locator('textarea.note-body').fill('Assets = Liabilities + Equity');
   await status().getByText('Saved').waitFor();
-  await page.getByLabel('Your note', { exact: true }).fill('Typed then reloaded');
+  await page.locator('textarea.note-body').fill('Typed then reloaded');
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
   await status().getByText('Saved').waitFor();
   await page.reload();
@@ -88,7 +88,7 @@ test('reloading right after typing still saves', async () => {
 test('notes can be searched by their contents', async () => {
   await nav('Notes');
   await newNote();
-  await page.getByLabel('Your note', { exact: true }).fill('Mitochondria are the powerhouse');
+  await page.locator('textarea.note-body').fill('Mitochondria are the powerhouse');
   await status().getByText('Saved').waitFor();
   await nav('Notes');
   await page.getByLabel('Search your notes').fill('POWERHOUSE');
@@ -146,21 +146,21 @@ test('edits in two tabs never silently overwrite each other', async () => {
   const url = page.url();
   const other = await context.newPage();
   await other.goto(url);
-  await other.getByLabel('Your note', { exact: true }).fill('From the other tab');
+  await other.locator('textarea.note-body').fill('From the other tab');
   await other.getByTestId('save-status').getByText('Saved').waitFor();
 
-  await page.getByLabel('Your note', { exact: true }).fill('From this tab');
+  await page.locator('textarea.note-body').fill('From this tab');
   await page.getByTestId('note-conflict').waitFor();
   await page.screenshot({ path: path.join(shots, 'note-conflict.png') });
-  assert.equal(await page.getByLabel('Your note', { exact: true }).inputValue(), 'From this tab', 'text stays on screen');
+  assert.equal(await page.locator('textarea.note-body').inputValue(), 'From this tab', 'text stays on screen');
 
   await page.getByRole('button', { name: 'Use the other version' }).click();
-  assert.equal(await page.getByLabel('Your note', { exact: true }).inputValue(), 'From the other tab');
+  assert.equal(await page.locator('textarea.note-body').inputValue(), 'From the other tab');
 
   await other.reload();
-  await other.getByLabel('Your note', { exact: true }).fill('Other tab again');
+  await other.locator('textarea.note-body').fill('Other tab again');
   await other.getByTestId('save-status').getByText('Saved').waitFor();
-  await page.getByLabel('Your note', { exact: true }).fill('This tab wins');
+  await page.locator('textarea.note-body').fill('This tab wins');
   await page.getByTestId('note-conflict').waitFor();
   await page.getByRole('button', { name: "Keep what's on this screen" }).click();
   await status().getByText('Saved').waitFor();
@@ -168,9 +168,9 @@ test('edits in two tabs never silently overwrite each other', async () => {
   await other.waitForFunction(() => document.querySelector('textarea')?.value === 'This tab wins');
 
   // Walking away from a conflict keeps both versions.
-  await other.getByLabel('Your note', { exact: true }).fill('Other tab final');
+  await other.locator('textarea.note-body').fill('Other tab final');
   await other.getByTestId('save-status').getByText('Saved').waitFor();
-  await page.getByLabel('Your note', { exact: true }).fill('Walked away version');
+  await page.locator('textarea.note-body').fill('Walked away version');
   await page.getByTestId('note-conflict').waitFor();
   await nav('Notes');
   await page.getByRole('link', { name: /\(copy\)/ }).click();
@@ -185,9 +185,9 @@ test('a failed save says so, keeps the text, and can be retried', async () => {
     window.__put = IDBObjectStore.prototype.put;
     IDBObjectStore.prototype.put = () => { throw new DOMException('disk trouble', 'UnknownError'); };
   });
-  await page.getByLabel('Your note', { exact: true }).fill('Do not lose me');
+  await page.locator('textarea.note-body').fill('Do not lose me');
   await page.getByText("This note isn't saved").waitFor();
-  assert.equal(await page.getByLabel('Your note', { exact: true }).inputValue(), 'Do not lose me');
+  assert.equal(await page.locator('textarea.note-body').inputValue(), 'Do not lose me');
   await page.evaluate(() => { IDBObjectStore.prototype.put = window.__put; });
   await page.getByRole('button', { name: 'Try saving again' }).click();
   await status().getByText('Saved').waitFor();
@@ -198,7 +198,7 @@ test('a failed save says so, keeps the text, and can be retried', async () => {
 test('deleting asks first, and deleting a course or file keeps its notes', async () => {
   await page.getByRole('button', { name: 'Delete note' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
-  assert.equal(await page.getByLabel('Your note', { exact: true }).inputValue(), 'Do not lose me');
+  assert.equal(await page.locator('textarea.note-body').inputValue(), 'Do not lose me');
   await page.getByRole('button', { name: 'Delete note' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Delete note' }).click();
   await page.getByRole('heading', { name: 'Notes', exact: true }).waitFor();
@@ -216,7 +216,7 @@ test('deleting asks first, and deleting a course or file keeps its notes', async
   await nav('Notes');
   for (const name of ['Note about the file', 'Topic note', 'Course note']) await page.getByRole('link', { name }).waitFor();
   await page.getByRole('link', { name: 'Note about the file' }).click();
-  await page.getByLabel('Your note', { exact: true }).waitFor();
+  await page.locator('textarea.note-body').waitFor();
   assert.equal(await page.getByLabel('Course').inputValue(), '');
 });
 
@@ -235,7 +235,7 @@ test('phone layout keeps all six destinations with no sideways scrolling', async
   await page.screenshot({ path: path.join(shots, 'phone-settings-backup.png') });
   await nav('Notes');
   await page.getByRole('button', { name: 'New note' }).click();
-  await page.getByLabel('Your note', { exact: true }).waitFor();
+  await page.locator('textarea.note-body').waitFor();
   await page.screenshot({ path: path.join(shots, 'phone-note.png') });
   await page.setViewportSize({ width: 1280, height: 800 });
 });

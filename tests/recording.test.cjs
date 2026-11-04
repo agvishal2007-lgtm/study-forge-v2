@@ -103,7 +103,7 @@ test('existing students keep their courses when the site updates', async () => {
   await page.getByRole('button', { name: 'Start recording' }).waitFor();
   await nav('Notes');
   await page.getByRole('button', { name: 'New note' }).click();
-  await page.getByLabel('Your note', { exact: true }).fill('Works after updating');
+  await page.locator('textarea.note-body').fill('Works after updating');
   await page.getByTestId('save-status').getByText('Saved').waitFor();
   await context.close();
 });

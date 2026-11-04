@@ -140,12 +140,12 @@ test('set up a realistic study library, including a recording', async () => {
 
   await page.locator('.file-notes').getByRole('button', { name: 'New note' }).click();
   await page.getByLabel('Title').fill('About the lecture');
-  await page.getByLabel('Your note', { exact: true }).fill('Linked to the recording.\nSecond line é 第');
+  await page.locator('textarea.note-body').fill('Linked to the recording.\nSecond line é 第');
   await page.getByTestId('save-status').getByText('Saved').waitFor();
   await nav('Notes');
   await page.getByRole('button', { name: 'New note' }).click();
   await page.getByLabel('Title').fill('Loose note');
-  await page.getByLabel('Your note', { exact: true }).fill('Not in any course');
+  await page.locator('textarea.note-body').fill('Not in any course');
   await page.getByTestId('save-status').getByText('Saved').waitFor();
   await nav('Today');
   await page.getByTestId('backup-reminder').waitFor();
@@ -218,7 +218,7 @@ test('restoring again changes nothing', async () => {
 test('restoring never overwrites newer work, and copies do not pile up', async () => {
   await nav('Notes');
   await page.getByRole('link', { name: 'Loose note' }).click();
-  await page.getByLabel('Your note', { exact: true }).fill('Changed after the backup');
+  await page.locator('textarea.note-body').fill('Changed after the backup');
   await page.getByTestId('save-status').getByText('Saved').waitFor();
   await page.getByRole('button', { name: 'Delete file' }).count();
   assert.match(await restore(backupPath), /1 note differed/);
@@ -325,7 +325,7 @@ with zipfile.ZipFile(dst, 'w') as b:
   assert.match(spine, /^#[0-9a-fA-F]{6}$/);
   await nav('Notes');
   await page.getByRole('link', { name: /<script>/ }).click();
-  await page.getByLabel('Your note', { exact: true }).waitFor();
+  await page.locator('textarea.note-body').waitFor();
   assert.equal(await page.getByLabel('Course').inputValue(), '', 'links to things that do not exist are dropped');
   assert.equal(await page.evaluate(() => window.__pwned), undefined);
 });
