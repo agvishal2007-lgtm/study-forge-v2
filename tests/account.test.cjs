@@ -380,7 +380,6 @@ test('a second student on the same computer cannot open the first student\'s wor
   const laptop = await device('laptop');
   await nav(laptop, 'Settings');
   await signOutButton(laptop);
-  await laptop.getByRole('button', { name: 'Sign out and keep it here' }).click();
   await signInButton(laptop).waitFor();
   await nav(laptop, 'Notes');
   await laptop.getByRole('link', { name: 'Guest note' }).waitFor();
@@ -403,7 +402,6 @@ test('a second student on the same computer cannot open the first student\'s wor
   assert.ok(!fake.state.items('bob-uid').some((item) => item.json.includes('Edited on the phone')));
   await nav(asBob, 'Settings');
   await signOutButton(asBob);
-  await asBob.getByRole('button', { name: 'Sign out and keep it here' }).click();
   await signInButton(asBob).waitFor();
   await close('laptop');
 
@@ -415,6 +413,20 @@ test('a second student on the same computer cannot open the first student\'s wor
   await nav(asAlice, 'Notes');
   await asAlice.getByRole('link', { name: 'Shared note', exact: true }).waitFor();
   assert.equal(await asAlice.getByRole('link', { name: 'Bob private' }).count(), 0);
+});
+
+test('signing out is one click, works offline, and keeps the work on this device', async () => {
+  const laptop = await device('laptop');
+  fake.state.mode = 'down';
+  await signOutButton(laptop);
+  await signInButton(laptop).waitFor();
+  assert.equal(await laptop.getByRole('dialog').count(), 0, 'no questions asked');
+  fake.state.mode = 'ok';
+  await close('laptop');
+  const back = await device('laptop', ALICE);
+  await signIn(back);
+  await nav(back, 'Library');
+  await back.getByRole('link', { name: 'chapter.txt' }).waitFor();
 });
 
 test('offline and full quota say so, keep the work, and catch up later', async () => {
@@ -448,24 +460,21 @@ test('work closed before saving online goes up on the next visit', async () => {
   assert.ok(fake.state.items('alice-uid').some((item) => item.json.includes('Then the lid shut')));
 });
 
-test('removing from a shared computer asks twice, needs a good sync, and clears the device', async () => {
+test('removing from a shared computer asks first, needs a good sync, and clears the device', async () => {
   const laptop = await device('laptop');
   await nav(laptop, 'Settings');
   fake.state.mode = 'down';
-  await signOutButton(laptop);
-  await laptop.getByRole('button', { name: 'Sign out and remove from this device' }).click();
+  await laptop.getByRole('button', { name: 'Remove my work from this device' }).click();
   await laptop.getByRole('dialog').getByRole('button', { name: 'Remove and sign out' }).click();
   await laptop.getByRole('alert').getByText('nothing was removed from this device').waitFor();
   fake.state.mode = 'ok';
   await nav(laptop, 'Library');
   await laptop.getByRole('link', { name: 'chapter.txt' }).waitFor();
   await nav(laptop, 'Settings');
-  await signOutButton(laptop);
-  await laptop.getByRole('button', { name: 'Sign out and remove from this device' }).click();
+  await laptop.getByRole('button', { name: 'Remove my work from this device' }).click();
   await laptop.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
   await laptop.getByTestId('sync-status').waitFor();
-  await signOutButton(laptop);
-  await laptop.getByRole('button', { name: 'Sign out and remove from this device' }).click();
+  await laptop.getByRole('button', { name: 'Remove my work from this device' }).click();
   await laptop.getByRole('dialog').getByRole('button', { name: 'Remove and sign out' }).click();
   await signInButton(laptop).waitFor();
   const left = await laptop.evaluate(async () => {

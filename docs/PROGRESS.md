@@ -182,7 +182,7 @@ The numbers are starting values, not research findings, and should change after 
 - Sign-in is optional. Students who don't sign in save nothing online, though every screen loads the sign-in code so Google's window can open on the first tap.
 - Courses, topics, notes, lessons, and study progress save online a few seconds after changes. Files and recordings stay on the device.
 - Each account has separate storage on the device, so a second student on a shared computer can't open the first student's work in the app.
-- When signing out, a student can remove their work from a shared computer. It warns that files will be deleted and refuses unless the text saved online first.
+- Sign out is one click, and the student's work stays on the device under their account. For shared computers, Settings has an option to remove it, which warns that files will be deleted and refuses unless the text saved online first.
 - Work from before signing in is only added to an account if the student chooses.
 - If two devices change a note or checkpoint, both versions are kept. Progress combines the answers from both devices. A course, topic, or lesson renamed on two devices keeps the name on the device that syncs last.
 - Being offline, reaching the free daily limit, or being refused all show plain messages. Work stays safe on the device and catches up later.

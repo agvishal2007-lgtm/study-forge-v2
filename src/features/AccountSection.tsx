@@ -1,7 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { getActiveAccount, switchAccount } from '../data/account';
-import { getGuestSummary, openGuestAsBackup, removeGuestData, type GuestSummary } from '../data/accountData';
+import { getGuestSummary, openGuestAsBackup, removeAccountFromDevice, removeGuestData, type GuestSummary } from '../data/accountData';
 import { restoreBackup, type RestoreReport } from '../data/backup';
 import { formatDate } from '../data/format';
 import { deleteOnlineCopy, getSyncState, signOutOfAccount, subscribeSync, syncNow, type SyncPhase } from '../data/sync';
@@ -25,7 +25,7 @@ export function AccountSection() {
   const [failure, setFailure] = useState('');
   const [guest, setGuest] = useState<GuestSummary | null>(null);
   const [report, setReport] = useState<RestoreReport | null>(null);
-  const [confirm, setConfirm] = useState<'' | 'delete-online' | 'remove-guest'>('');
+  const [confirm, setConfirm] = useState<'' | 'remove-device' | 'delete-online' | 'remove-guest'>('');
   const [notice, setNotice] = useState('');
 
   useEffect(() => {
@@ -74,6 +74,7 @@ export function AccountSection() {
       <p className="muted">Courses, notes, lessons, and progress follow you. Files and recordings stay on this device, so keep making backups of those.</p>
       <div className="row-actions">
         <button className="button" disabled={busy} onClick={() => void syncNow()}>Save online now</button>
+        <button className="text-button danger-text" disabled={busy} onClick={() => setConfirm('remove-device')}>Remove my work from this device</button>
         <button className="text-button danger-text" disabled={busy} onClick={() => setConfirm('delete-online')}>Delete my online copy</button>
       </div>
       {failure && <p className="error" role="alert">{failure}</p>}
@@ -99,6 +100,35 @@ export function AccountSection() {
         </div>
       )}
 
+      {confirm === 'remove-device' && (
+        <ConfirmDialog
+          title="Remove your work from this device?"
+          confirmLabel="Remove and sign out"
+          onCancel={() => setConfirm('')}
+          onConfirm={async () => {
+            setConfirm('');
+            setBusy(true);
+            setFailure('');
+            try {
+              await syncNow();
+              if (getSyncState().phase !== 'synced') {
+                setFailure("Your work couldn't be saved online just now, so nothing was removed from this device. Connect to the internet and try again.");
+                setBusy(false);
+                return;
+              }
+              await removeAccountFromDevice();
+              await signOutOfAccount();
+              switchAccount(null);
+            } catch (error) {
+              setFailure(`This didn't finish. ${(error as Error).message}`);
+              setBusy(false);
+            }
+          }}
+        >
+          <p>For shared computers. This signs you out and clears your account from this device.</p>
+          <p>Your courses, notes, lessons, and progress stay in your account. Your <strong>files and recordings will be permanently deleted from this device</strong> unless you've made a backup. It can't be undone.</p>
+        </ConfirmDialog>
+      )}
       {confirm === 'delete-online' && (
         <ConfirmDialog
           title="Delete your online copy?"

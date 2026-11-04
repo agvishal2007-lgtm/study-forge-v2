@@ -2,9 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
 import { getActiveAccount, switchAccount } from '../data/account';
 import type { AccountBackend } from '../data/accountBackend';
-import { removeAccountFromDevice } from '../data/accountData';
 import { getSyncState, loadBackend, signOutOfAccount, subscribeSync, syncNow } from '../data/sync';
-import { ConfirmDialog } from './ConfirmDialog';
 
 function describeSignInFailure(error: unknown): string {
   const code = String((error as { code?: string }).code ?? '');
@@ -84,7 +82,6 @@ function SignedIn() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState('');
-  const [confirm, setConfirm] = useState<'' | 'sign-out' | 'remove-device'>('');
   const [account, setAccount] = useState(getActiveAccount());
   const sync = useSyncExternalStore(subscribeSync, getSyncState);
   const menu = useRef<HTMLDivElement>(null);
@@ -114,18 +111,14 @@ function SignedIn() {
     };
   }, [open]);
 
-  const signOut = async (removeHere: boolean) => {
-    setConfirm('');
+  const signOut = async () => {
+    setOpen(false);
     setBusy(true);
     setFailure('');
     try {
-      await syncNow();
-      if (removeHere && getSyncState().phase !== 'synced') {
-        setFailure("Your work couldn't be saved online just now, so nothing was removed from this device. Connect to the internet and try again.");
-        setBusy(false);
-        return;
-      }
-      if (removeHere) await removeAccountFromDevice();
+      // Save anything recent if it's quick. A slow connection never holds this up, because the
+      // work stays on this device and saves online the next time this student signs in.
+      await Promise.race([syncNow(), new Promise((resolve) => setTimeout(resolve, 3000))]);
       await signOutOfAccount();
       switchAccount(null);
     } catch (error) {
@@ -153,27 +146,10 @@ function SignedIn() {
           <p className="account-email">{account.email}</p>
           {syncLine && <p className="muted account-sync">{syncLine}</p>}
           <Link className="dropdown-item" to="/settings" onClick={() => setOpen(false)}>Settings</Link>
-          <button className="dropdown-item" onClick={() => { setOpen(false); setConfirm('sign-out'); }}>Sign out</button>
+          <button className="dropdown-item" onClick={() => void signOut()}>Sign out</button>
         </div>
       )}
       {failure && <p className="topbar-message error" role="alert">{failure}</p>}
-      {confirm === 'sign-out' && (
-        <ConfirmDialog
-          title="Sign out?"
-          confirmLabel="Sign out and remove from this device"
-          onCancel={() => setConfirm('')}
-          onConfirm={() => setConfirm('remove-device')}
-        >
-          <p>Your work stays on this device under your account, and it comes back when you sign in again.</p>
-          <p>On a shared computer, remove it instead. That permanently deletes your files and recordings from this device, because they aren't saved online.</p>
-          <div className="dialog-extra"><button className="button primary" onClick={() => void signOut(false)}>Sign out and keep it here</button></div>
-        </ConfirmDialog>
-      )}
-      {confirm === 'remove-device' && (
-        <ConfirmDialog title="Remove your work from this device?" confirmLabel="Remove and sign out" onCancel={() => setConfirm('')} onConfirm={() => void signOut(true)}>
-          <p>Your courses, notes, lessons, and progress stay in your account. Your <strong>files and recordings will be permanently deleted from this device</strong> unless you've made a backup. It can't be undone.</p>
-        </ConfirmDialog>
-      )}
     </div>
   );
 }
