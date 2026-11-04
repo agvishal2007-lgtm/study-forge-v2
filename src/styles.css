@@ -365,3 +365,8 @@ main::-webkit-scrollbar-thumb, .nav-links::-webkit-scrollbar-thumb { border-radi
 input[type='radio'] { appearance: none; -webkit-appearance: none; border: 2px solid var(--muted); border-radius: 50%; background: transparent; padding: 0; }
 input[type='radio']:hover { border-color: var(--paper); }
 input[type='radio']:checked { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 45%, transparent 50%); }
+
+.tour-close { position: absolute; top: .5rem; right: .5rem; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--paper); cursor: pointer; }
+.tour-close:hover { background: var(--raised-hover); }
+.tour-count { padding-right: 2.25rem; }
+.tour-card .tour-try { margin-right: 2.25rem; }

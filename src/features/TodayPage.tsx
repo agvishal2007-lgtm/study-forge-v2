@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useWalkthrough } from './walkthrough/Walkthrough';
 import { Link } from 'react-router-dom';
 import { MaterialList } from '../components/MaterialList';
 import { NewCourseForm } from '../components/NewCourseForm';
@@ -15,6 +16,7 @@ import { useLive } from '../data/useLive';
 const BACKUP_REMINDER_MS = 14 * 24 * 60 * 60 * 1000;
 
 export function TodayPage() {
+  const { start } = useWalkthrough();
   const [askedToKeep, setAskedToKeep] = useState(false);
   const { data, error } = useLive(async () => {
     const [courses, materials, storage, unfinished, notes, lastBackup] = await Promise.all([listCourses(), listMaterials(), getStorageStatus(), listUnfinished(), listNotes(), getLastBackupAt()]);
@@ -33,6 +35,7 @@ export function TodayPage() {
         <h1>Start with one course</h1>
         <p>Add a course, then keep its slides, readings, and recordings together. Everything stays in this browser on this device.</p>
         <NewCourseForm />
+        <p><button className="text-button" onClick={start}>New here? Take the walkthrough</button></p>
       </div>
     );
   }

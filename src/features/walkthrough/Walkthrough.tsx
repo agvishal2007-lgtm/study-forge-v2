@@ -281,6 +281,11 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
         data-trying={trying && !notFound}
         style={cardPosition ? { top: cardPosition.top, left: cardPosition.left } : { visibility: 'hidden', top: 0, left: 0 }}
       >
+        <button className="tour-close" aria-label="Close walkthrough" title="Close walkthrough" onClick={onPause}>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
         <p className="tour-count" data-testid="tour-count">Step {step + 1} of {TOUR_STEPS.length}, {percent}% complete</p>
         <div className="meter" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-label="Walkthrough progress">
           <span style={{ width: `${percent}%` }} />
@@ -295,7 +300,6 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
             ? <button ref={primary} className="button primary" onClick={onFinish}>Finish</button>
             : <button ref={primary} className="button primary" disabled={waiting || nextLocked} onClick={() => onStep(step + 1)}>{isFirst ? 'Start' : 'Next'}</button>}
           {!isFirst && <button className="button" onClick={() => onStep(step - 1)}>Back</button>}
-          {!isLast && <button className="text-button" onClick={onPause}>Skip for now</button>}
           {!isFirst && !isLast && <button className="text-button" onClick={onRestart}>Start over</button>}
         </div>
       </div>
@@ -321,24 +325,16 @@ export function WalkthroughProvider({ children }: { children: ReactNode }) {
     setStep(clamped);
   }, []);
 
-  // A new student sees it once. Coming back mid-way picks up at the same step.
+  // It never opens by itself. Students start it when they want to, and it remembers their place.
   useEffect(() => {
     let active = true;
-    void loadTour().then((saved) => {
-      if (!active) return;
-      savedRef.current = saved;
-      // Automated browsers only get it when a test asks, so other tests aren't interrupted.
-      const automated = navigator.webdriver && !(window as unknown as { __testWalkthrough?: boolean }).__testWalkthrough;
-      if (automated) return;
-      if (!saved) open(0);
-      else if (saved.status === 'active') open(saved.step);
-    }).catch(() => undefined);
+    void loadTour().then((saved) => { if (active) savedRef.current = saved; }).catch(() => undefined);
     return () => { active = false; };
-  }, [open]);
+  }, []);
 
   const begin = useCallback(() => {
     const saved = savedRef.current;
-    open(saved?.status === 'paused' ? saved.step : 0);
+    open(saved && saved.status !== 'finished' ? saved.step : 0);
   }, [open]);
 
   const start = useCallback(() => {

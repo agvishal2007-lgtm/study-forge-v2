@@ -214,13 +214,13 @@ Whoever owns the Firebase project can technically view stored data in its admin 
 **The goal:** a new student learns what each part of the site does, on the real screens.
 
 ### What works
-- It starts by itself the first time, and the question mark at the top right reopens it.
+- It never opens by itself. Students start it with the question mark at the top right, or a link on the welcome screen.
 - There are 15 steps, covering only what exists today. Planner, Exam Hall, and Tutor aren't built, so they aren't included.
 - Everything goes dark except a box around the part being explained, and nothing outside the walkthrough can be clicked or reached by keyboard.
 - It opens each real screen by itself and scrolls to the right spot.
-- Back, Next, Skip for now, Start over, and Finish are available where they apply, and Esc also leaves.
+- An X closes it at any time, as does Esc. Back, Next, Start over, and Finish are there where they apply.
 - It starts at 0%, and only finished steps count.
-- It resumes at the same step after skipping or reloading, and doesn't return by itself after being skipped or finished.
+- Reopening it resumes at the same step, unless it was finished, which starts it over.
 - If a part isn't on screen, it says so and carries on instead of crashing.
 - Starting it from the lesson editor warns first, because moving between screens would lose unsaved changes.
 

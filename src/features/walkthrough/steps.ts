@@ -31,7 +31,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'welcome',
     route: '/',
     title: 'Welcome to Study Forge',
-    body: 'This is your one place for courses, files, lectures, notes, and studying. This walkthrough shows you each part. It takes about two minutes, and you can leave and come back anytime.',
+    body: 'This is your one place for courses, files, lectures, notes, and studying. This walkthrough shows you each part. It takes about two minutes. Use the X to leave anytime, and it remembers your place.',
   },
   {
     id: 'sections',

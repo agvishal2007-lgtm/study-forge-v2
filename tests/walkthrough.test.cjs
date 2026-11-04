@@ -20,12 +20,13 @@ const pageErrors = [];
 async function open(profile, { auto = true, viewport = { width: 1280, height: 800 }, mobile = false } = {}) {
   await context?.close().catch(() => undefined);
   context = await chromium.launchPersistentContext(path.join(work, profile), { viewport, isMobile: mobile, hasTouch: mobile });
-  if (auto) await context.addInitScript('window.__testWalkthrough = true;');
   page = context.pages()[0] ?? (await context.newPage());
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto(URL_BASE);
+  if (auto) await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
 }
 const card = () => page.getByTestId('tour-card');
+const closeTour = () => page.getByRole('button', { name: 'Close walkthrough' }).click();
 const count = () => page.getByTestId('tour-count').textContent();
 const press = (name) => card().getByRole('button', { name, exact: true }).click();
 async function atStep(number) {
@@ -77,7 +78,26 @@ after(async () => {
   fs.rmSync(work, { recursive: true, force: true });
 });
 
-test('a new student gets it automatically, starting at 0%', async () => {
+test('it never opens by itself, and a new student can find it', async () => {
+  await open('first-visit', { auto: false });
+  await page.getByRole('heading', { name: 'Start with one course' }).waitFor();
+  await page.waitForTimeout(400);
+  assert.equal(await card().count(), 0);
+  await page.reload();
+  await page.getByRole('heading', { name: 'Start with one course' }).waitFor();
+  await page.waitForTimeout(400);
+  assert.equal(await card().count(), 0, 'nor on coming back');
+  await page.getByRole('button', { name: 'New here? Take the walkthrough' }).click();
+  await atStep(1);
+  // It's beside Settings, to its left.
+  await closeTour();
+  const help = await page.getByRole('button', { name: 'Walkthrough', exact: true }).boundingBox();
+  const gear = await page.getByRole('link', { name: 'Settings' }).boundingBox();
+  assert.ok(help.x + help.width <= gear.x, 'the walkthrough button is left of Settings');
+  assert.ok(Math.abs(help.y - gear.y) < 4, 'in the same row');
+});
+
+test('the button starts it at 0%', async () => {
   await open('main');
   await card().waitFor();
   assert.match(await count(), /Step 1 of 15, 0% complete/);
@@ -162,15 +182,19 @@ test('Back returns to the earlier section', async () => {
   assert.match(await count(), /80% complete/);
 });
 
-test('a reload picks up at the same step, on the right screen', async () => {
+test('a reload closes it, and the button picks up at the same step, on the right screen', async () => {
   await page.reload();
+  await page.getByRole('heading', { name: 'Record a lecture' }).waitFor();
+  await page.waitForTimeout(300);
+  assert.equal(await card().count(), 0);
+  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
   await atStep(13);
   await page.getByTestId('tour-box').waitFor();
   assert.ok(page.url().endsWith('#/record'));
 });
 
-test('skipping cleans up completely, and it does not come back by itself', async () => {
-  await press('Skip for now');
+test('the X cleans up completely, and it does not come back by itself', async () => {
+  await closeTour();
   await card().waitFor({ state: 'detached' });
   assert.equal(await page.getByTestId('tour-blocker').count(), 0);
   assert.equal(await page.evaluate(() => document.getElementById('root').hasAttribute('inert')), false);
@@ -183,11 +207,11 @@ test('skipping cleans up completely, and it does not come back by itself', async
 });
 
 test('Escape also leaves, and the question mark resumes at the same step', async () => {
-  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
   await atStep(13);
   await page.keyboard.press('Escape');
   await card().waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
   await atStep(13);
 });
 
@@ -203,7 +227,7 @@ test('finishing reaches the last step, cleans up, and does not repeat', async ()
   await page.getByRole('heading', { name: "You're ready" }).waitFor();
   await settle();
   await page.screenshot({ path: path.join(shots, 'tour-finish.png') });
-  assert.equal(await card().getByRole('button', { name: 'Skip for now' }).count(), 0);
+  assert.equal(await page.getByRole('button', { name: 'Close walkthrough' }).count(), 1, 'the X is on every step');
   await press('Finish');
   await card().waitFor({ state: 'detached' });
   assert.equal(await page.evaluate(() => document.getElementById('root').hasAttribute('inert')), false);
@@ -213,13 +237,13 @@ test('finishing reaches the last step, cleans up, and does not repeat', async ()
   await page.getByRole('heading', { name: 'Courses', exact: true }).waitFor();
   await page.waitForTimeout(300);
   assert.equal(await card().count(), 0);
-  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
   await atStep(1);
-  await press('Skip for now');
+  await closeTour();
 });
 
 test('a section that is missing never crashes it', async () => {
-  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
   await atStep(1);
   await page.addStyleTag({ content: '[data-tour="add-files"] { display: none !important; }' });
   for (let i = 1; i < 6; i++) await next();
@@ -228,13 +252,13 @@ test('a section that is missing never crashes it', async () => {
   assert.equal(await page.getByTestId('tour-box').count(), 0);
   await next();
   await page.getByTestId('tour-box').waitFor();
-  await press('Skip for now');
+  await closeTour();
 });
 
 test('a hands-on step whose part is missing never traps anyone', async () => {
   await open('trapped', { auto: false });
   await page.addStyleTag({ content: '[data-tour="add-course"] { display: none !important; }' });
-  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
   await atStep(1);
   await page.addStyleTag({ content: '[data-tour="add-course"] { display: none !important; }' });
   for (let i = 1; i < 4; i++) await next();
@@ -242,7 +266,7 @@ test('a hands-on step whose part is missing never traps anyone', async () => {
   await atStep(5);
   await page.getByTestId('tour-missing').waitFor();
   assert.equal(await card().getByRole('button', { name: 'Next', exact: true }).isDisabled(), false);
-  await press('Skip for now');
+  await closeTour();
 });
 
 test('a student with real content gets accurate boxes too, and their work is untouched', async () => {
@@ -252,7 +276,7 @@ test('a student with real content gets accurate boxes too, and their work is unt
   await page.getByRole('heading', { name: /Lesson 1/ }).waitFor();
   await page.getByRole('navigation').getByRole('link', { name: 'Today', exact: true }).click();
   await page.getByRole('link', { name: /Sample: Accounting Basics/ }).waitFor();
-  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
   await atStep(1);
   for (let i = 1; i < TOTAL; i++) {
     await next();
@@ -267,14 +291,14 @@ test('starting from an unsaved lesson editor asks first', async () => {
   await page.getByRole('link', { name: /Lesson 1/ }).click();
   await page.getByRole('button', { name: 'Add checkpoint' }).click();
   await page.getByLabel('Checkpoint title').fill('Half written');
-  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
   assert.equal(await page.getByLabel('Checkpoint title').inputValue(), 'Half written');
   assert.equal(await card().count(), 0);
-  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Leave and start walkthrough' }).click();
   await atStep(1);
-  await press('Skip for now');
+  await closeTour();
 });
 
 test('it works on a phone: the box fits and the explanation stays on screen', async () => {
@@ -329,6 +353,7 @@ test('during a hands-on step, only the highlighted part works', async () => {
   assert.equal(await card().getByRole('button', { name: 'Next', exact: true }).isDisabled(), true);
   // Pausing and returning keeps the same step, still locked.
   await page.reload();
+  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
   await atStep(5);
   await page.getByTestId('tour-try').waitFor();
   await page.getByLabel('Course name').fill('Biology');
@@ -337,7 +362,7 @@ test('during a hands-on step, only the highlighted part works', async () => {
   assert.equal(await page.evaluate(() => document.getElementById('root').hasAttribute('inert')), true, 'everything is locked again');
   await next();
   // Their work is real and stays.
-  await press('Skip for now');
+  await closeTour();
   await page.getByRole('navigation').getByRole('link', { name: 'Courses', exact: true }).click();
   await page.getByRole('link', { name: /Biology/ }).waitFor();
 });
@@ -347,21 +372,14 @@ test('work already done is not asked for again', async () => {
   await page.getByLabel('Course name').fill('Existing');
   await page.getByRole('button', { name: 'Create course' }).click();
   await page.getByRole('heading', { name: 'Existing' }).waitFor();
-  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
   await atStep(1);
   for (let i = 1; i < 5; i++) await next();
   assert.equal(await card().getAttribute('data-step'), 'courses');
   await page.getByTestId('tour-done').waitFor();
   assert.equal(await page.getByTestId('tour-try').count(), 0);
   assert.equal(await card().getByRole('button', { name: 'Next', exact: true }).isDisabled(), false);
-  await press('Skip for now');
-});
-
-test('it stays out of the way for existing tests and automated browsers', async () => {
-  await open('automated', { auto: false });
-  await page.getByRole('heading', { name: 'Start with one course' }).waitFor();
-  await page.waitForTimeout(300);
-  assert.equal(await card().count(), 0);
+  await closeTour();
 });
 
 test('no uncaught errors happened during the whole run', () => {
