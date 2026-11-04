@@ -326,15 +326,17 @@ export function WalkthroughProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // It never opens by itself. Students start it when they want to, and it remembers their place.
+  const placeLoaded = useRef<Promise<void> | null>(null);
   useEffect(() => {
-    let active = true;
-    void loadTour().then((saved) => { if (active) savedRef.current = saved; }).catch(() => undefined);
-    return () => { active = false; };
+    placeLoaded.current = loadTour().then((saved) => { savedRef.current = saved; }).catch(() => undefined);
   }, []);
 
   const begin = useCallback(() => {
-    const saved = savedRef.current;
-    open(saved && saved.status !== 'finished' ? saved.step : 0);
+    // A tap right after the page opens waits for the saved place, so it can't be overwritten with step 1.
+    void (placeLoaded.current ?? Promise.resolve()).then(() => {
+      const saved = savedRef.current;
+      open(saved && saved.status !== 'finished' ? saved.step : 0);
+    });
   }, [open]);
 
   const start = useCallback(() => {

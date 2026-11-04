@@ -184,6 +184,14 @@ test('Back returns to the earlier section', async () => {
 });
 
 test('a reload closes it, and the button picks up at the same step, on the right screen', async () => {
+  // The place is saved a moment after the tap, so give that time to land before reloading.
+  await page.waitForFunction(() => new Promise((resolve) => {
+    const request = indexedDB.open('study-forge');
+    request.onsuccess = () => {
+      const read = request.result.transaction('meta').objectStore('meta').get('walkthrough');
+      read.onsuccess = () => { request.result.close(); resolve(read.result?.step === 13); };
+    };
+  }));
   await page.reload();
   await page.getByRole('heading', { name: 'Record a lecture' }).waitFor();
   await page.waitForTimeout(300);
@@ -212,6 +220,15 @@ test('Escape also leaves, and the question mark resumes at the same step', async
   await atStep(14);
   await page.keyboard.press('Escape');
   await card().waitFor({ state: 'detached' });
+  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
+  await atStep(14);
+});
+
+test('tapping the button the moment the page opens still resumes at the saved step', async () => {
+  await closeTour();
+  await card().waitFor({ state: 'detached' });
+  await page.waitForTimeout(200);
+  await page.reload();
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
   await atStep(14);
 });

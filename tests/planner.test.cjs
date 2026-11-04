@@ -278,7 +278,7 @@ test('someone already using the site keeps everything when the Planner arrives',
       db.createObjectStore('checkpoints', { keyPath: 'id' }).createIndex('lessonId', 'lessonId');
       db.createObjectStore('checkpointProgress', { keyPath: 'checkpointId' });
       db.createObjectStore('syncMeta');
-      request.transaction.objectStore('courses').put({ id: 'old-course', name: 'Older Course', code: '', term: '', color: '#7DD3FC', createdAt: 1000, updatedAt: 1000 });
+      request.transaction.objectStore('courses').put({ id: 'old-course', name: 'Older Course', code: '', color: '#7DD3FC', createdAt: 1000 });
     };
     request.onerror = () => reject(request.error);
     request.onsuccess = () => { request.result.close(); resolve(); };
