@@ -52,7 +52,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/',
     target: ['#content .page'],
     title: 'Today',
-    body: 'Your starting point. Today shows what is due soon, what to study next and why, your courses, and your recent files and notes.',
+    body: 'Your starting point. Today is your dashboard. It counts what needs attention, then lists what is due, your flashcards, what to study next and why, and your recent work.',
   },
   {
     id: 'courses',

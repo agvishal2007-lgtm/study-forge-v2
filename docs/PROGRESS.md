@@ -278,6 +278,20 @@ Not built yet:
 - Importing cards, pictures on cards, and text formatting.
 - A smarter schedule that adapts to each student.
 
+## Dashboard
+
+Today now follows the owner's Daily Dashboard format: a dated title, a one-line summary, a row of count tiles, then cards listing what needs attention. A course shelf, recent work, and shortcut buttons from the blueprint are included too.
+
+- The tiles count items due in 7 days, overdue items, flashcards due, weak cards, and lessons needing review.
+- Each deadline shows when it's due, its next step, its priority, and its course, with a one-tap Done button.
+- The next step comes only from the item's type and status, such as Start studying or Submit it.
+- Overdue work sits in Still open from before, as in the Daily Dashboard format. It also appears in the tiles and the summary, so it can't be missed at the top.
+- What this counts explains every number on the page.
+
+Tested in a real browser with a fixed clock: the welcome screen for new students, honest zeros, tiles and lists matching saved work, numbers updating after changes, and a phone-sized screen.
+
+Not built yet: study streaks, practice accuracy, exam readiness, and AI usage from the blueprint's dashboard list, because the features behind them don't exist yet. Exams aren't separated from other deadlines yet.
+
 ## How the code is organized
 
 - `src/data/` holds saved data, and nothing else talks to storage directly.
@@ -289,6 +303,7 @@ Not built yet:
   - `backup.ts` and `zipReader.ts` create and restore backups.
   - `mastery.ts` holds the Guided Study rules, and `guided.ts` saves lessons and progress.
   - `flashcards.ts` saves decks, cards, and reviews, and `flashcardRules.ts` holds the schedule.
+  - `dashboard.ts` writes the dashboard's summary and next steps.
   - `planner.ts` saves planner items, and `plannerRules.ts` holds the date rules.
   - `account.ts` keeps each account's storage separate, and `sync.ts` holds the saving-online rules.
 - `src/components/` holds pieces used on several screens, such as the saving panel and the recorder.

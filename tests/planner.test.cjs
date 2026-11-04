@@ -164,17 +164,19 @@ test('Today shows what is due soon, most urgent first, and leaves out the rest',
   const due = page.getByTestId('due-soon');
   await due.waitFor();
   const text = await due.innerText();
-  assert.ok(text.indexOf('Late essay') < text.indexOf('Morning quiz') && text.indexOf('Morning quiz') < text.indexOf('Evening reading') && text.indexOf('Evening reading') < text.indexOf('Midterm'));
-  assert.doesNotMatch(text, /Final paper|Read ahead/);
+  assert.ok(text.indexOf('Evening reading') >= 0 && text.indexOf('Evening reading') < text.indexOf('Midterm') && text.indexOf('Midterm') < text.indexOf('Group project'));
+  assert.doesNotMatch(text, /Final paper|Read ahead|Late essay/);
+  const overdue = await page.getByTestId('overdue').innerText();
+  assert.ok(overdue.indexOf('Late essay') >= 0 && overdue.indexOf('Late essay') < overdue.indexOf('Morning quiz'));
   await page.screenshot({ path: path.join(shots, 'today-planner.png') });
 });
 
 test('marking something done works from Today, is saved, and can be undone', async () => {
   await page.getByRole('button', { name: 'Mark Late essay done' }).click();
-  await page.getByTestId('due-soon').getByRole('link', { name: 'Late essay' }).waitFor({ state: 'detached' });
+  await page.getByTestId('overdue').getByRole('link', { name: 'Late essay' }).waitFor({ state: 'detached' });
   await page.reload();
-  await page.getByTestId('due-soon').waitFor();
-  assert.doesNotMatch(await page.getByTestId('due-soon').innerText(), /Late essay/);
+  await page.getByTestId('overdue').waitFor();
+  assert.doesNotMatch(await page.getByTestId('overdue').innerText(), /Late essay/);
   await nav('Planner');
   assert.match(await groupText('done'), /Late essay[\s\S]*Was due/);
   assert.doesNotMatch(await groupText('overdue'), /Late essay/);

@@ -3,22 +3,58 @@ import { useWalkthrough } from './walkthrough/Walkthrough';
 import { Link } from 'react-router-dom';
 import { MaterialList } from '../components/MaterialList';
 import { NewCourseForm } from '../components/NewCourseForm';
+import { NoteList } from '../components/NoteList';
 import { Shelf } from '../components/Shelf';
-import { getStorageStatus, listCourses, listMaterials, requestKeepFiles } from '../data/store';
 import { getLastBackupAt } from '../data/backup';
+import { daySummary, nextStep } from '../data/dashboard';
+import { listCardProgress, listCards, listDecks } from '../data/flashcards';
+import { isDue, isWeak } from '../data/flashcardRules';
 import { listCheckpoints, listLessons, listProgress } from '../data/guided';
 import { recommendNext } from '../data/mastery';
-import { NoteList } from '../components/NoteList';
-import { PlannerList } from '../components/PlannerList';
-import { listCardProgress, listCards } from '../data/flashcards';
-import { isDue } from '../data/flashcardRules';
-import { listPlannerItems } from '../data/planner';
-import { groupOf, localNow, comparePlanner } from '../data/plannerRules';
 import { listNotes } from '../data/notes';
+import { listPlannerItems, setPlannerStatus } from '../data/planner';
+import { comparePlanner, describeDue, groupOf, localNow } from '../data/plannerRules';
 import { listUnfinished } from '../data/recordings';
+import { getStorageStatus, listCourses, listMaterials, requestKeepFiles } from '../data/store';
+import type { Course, PlannerItem } from '../data/types';
 import { useLive } from '../data/useLive';
 
 const BACKUP_REMINDER_MS = 14 * 24 * 60 * 60 * 1000;
+const SHOWN_ROWS = 8;
+
+const shortWhen = (text: string) => {
+  const words = text.replace(/^Due /, '');
+  return words.charAt(0).toUpperCase() + words.slice(1);
+};
+
+function DeadlineRows({ items, courses }: { items: PlannerItem[]; courses: Course[] }) {
+  const [failure, setFailure] = useState('');
+  const now = localNow();
+  return (
+    <>
+      {failure && <p className="error" role="alert">{failure}</p>}
+      <ul className="dash-rows">
+        {items.map((item) => (
+          <li key={item.id} className="dash-row" data-testid="dash-row">
+            <span className="dash-when">{shortWhen(describeDue(item, now))}</span>
+            <Link className="dash-what" to={`/planner/${item.id}`}>{item.title}</Link>
+            <span className="dash-next">{nextStep(item)}</span>
+            <span className={item.priority === 'High' ? 'dash-priority high' : 'dash-priority'}>{item.priority === 'Normal' ? '' : item.priority}</span>
+            <span className="dash-from">{courses.find((course) => course.id === item.courseId)?.name ?? item.type}</span>
+            <button
+              className="button dash-done"
+              aria-label={`Mark ${item.title} done`}
+              onClick={() => {
+                setFailure('');
+                setPlannerStatus(item.id, 'Completed').catch((error: Error) => setFailure(`That wasn't saved. ${error.message}`));
+              }}
+            >Done</button>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
 
 export function TodayPage() {
   const { start } = useWalkthrough();
@@ -26,19 +62,16 @@ export function TodayPage() {
   const { data, error } = useLive(async () => {
     const [courses, materials, storage, unfinished, notes, lastBackup] = await Promise.all([listCourses(), listMaterials(), getStorageStatus(), listUnfinished(), listNotes(), getLastBackupAt()]);
     const [lessons, checkpoints, progress, plannerItems] = await Promise.all([listLessons(), listCheckpoints(), listProgress(), listPlannerItems()]);
-    const [cards, cardProgress] = await Promise.all([listCards(), listCardProgress()]);
-    const cardsDue = cards.filter((card) => isDue(cardProgress.get(card.id), localNow().date)).length;
-    return { courses, materials, storage, unfinished, notes, lastBackup, plannerItems, cardCount: cards.length, cardsDue, next: recommendNext(lessons, checkpoints, progress) };
+    const [decks, cards, cardProgress] = await Promise.all([listDecks(), listCards(), listCardProgress()]);
+    return { courses, materials, storage, unfinished, notes, lastBackup, plannerItems, decks, cards, cardProgress, progress, next: recommendNext(lessons, checkpoints, progress) };
   }, [askedToKeep]);
 
   if (error) return <div className="page"><h1>Today</h1><p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, cardCount, cardsDue } = data;
-  const now = localNow();
-  const upcoming = plannerItems.filter((item) => ['overdue', 'today', 'tomorrow', 'week'].includes(groupOf(item, now))).sort(comparePlanner);
+  const { courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress } = data;
   const backupDue = (materials.length > 0 || notes.length > 0) && (lastBackup === null || Date.now() - lastBackup > BACKUP_REMINDER_MS);
 
-  if (courses.length === 0 && materials.length === 0 && unfinished.length === 0 && notes.length === 0 && plannerItems.length === 0 && cardCount === 0) {
+  if (courses.length === 0 && materials.length === 0 && unfinished.length === 0 && notes.length === 0 && plannerItems.length === 0 && cards.length === 0 && decks.length === 0) {
     return (
       <div className="page welcome">
         <h1>Start with one course</h1>
@@ -49,9 +82,43 @@ export function TodayPage() {
     );
   }
 
+  const now = localNow();
+  const sorted = [...plannerItems].sort(comparePlanner);
+  const overdue = sorted.filter((item) => groupOf(item, now) === 'overdue');
+  const dueSoon = sorted.filter((item) => ['today', 'tomorrow', 'week'].includes(groupOf(item, now)));
+  const dueCards = cards.filter((card) => isDue(cardProgress.get(card.id), now.date));
+  const weakCards = cards.filter((card) => isWeak(cardProgress.get(card.id)));
+  const decksDue = decks
+    .map((deck) => ({ deck, due: dueCards.filter((card) => card.deckId === deck.id).length }))
+    .filter((entry) => entry.due > 0)
+    .sort((a, b) => b.due - a.due);
+  const toReview = [...progress.values()].filter((entry) => entry.status === 'needs-review').length;
+  const [year, month, day] = now.date.split('-').map(Number);
+  const dateWords = new Date(year, month - 1, day).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+
+  const tiles = [
+    { label: 'Due in 7 days', value: dueSoon.length, to: '/planner', id: 'due' },
+    { label: 'Overdue', value: overdue.length, to: '/planner', id: 'overdue' },
+    { label: 'Flashcards due', value: dueCards.length, to: dueCards.length > 0 ? '/cards/review' : '/cards', id: 'cards' },
+    { label: 'Weak cards', value: weakCards.length, to: '/cards', id: 'weak' },
+    { label: 'Lessons to review', value: toReview, to: '/study', id: 'lessons' },
+  ];
+
   return (
-    <div className="page">
-      <h1>Today</h1>
+    <div className="page dashboard">
+      <header>
+        <h1>Today: {dateWords}</h1>
+        <p className="dash-lead" data-testid="day-summary">
+          {daySummary({
+            overdue: overdue.length,
+            dueSoon: dueSoon.length,
+            cardsDue: dueCards.length,
+            firstOverdue: overdue[0]?.title,
+            firstDue: dueSoon[0]?.title,
+            nextLesson: next?.checkpoint.title,
+          })}
+        </p>
+      </header>
       {unfinished.length > 0 && (
         <p className="notice">
           A recording was interrupted, and what was captured is safe. <Link to="/record">Save or discard it</Link>
@@ -69,46 +136,113 @@ export function TodayPage() {
           {askedToKeep && <span> The browser didn't agree yet. It may need you to use the site more or install it.</span>}
         </p>
       )}
-      {upcoming.length > 0 && (
-        <section aria-labelledby="due-heading" data-testid="due-soon">
+
+      <div className="dash-tiles">
+        {tiles.map((tile) => (
+          <Link key={tile.id} className="dash-tile" to={tile.to} data-testid={`tile-${tile.id}`}>
+            <b>{tile.value}</b>
+            <span>{tile.label}</span>
+          </Link>
+        ))}
+      </div>
+
+      <div className="dash-actions">
+        <Link className="button" to="/library">Add a file</Link>
+        <Link className="button" to="/planner/new">Add a deadline</Link>
+        <Link className="button" to="/notes">Write a note</Link>
+        <Link className="button" to="/record">Record a lecture</Link>
+      </div>
+
+      <div className="dash-grid">
+        <section className="dash-card" aria-labelledby="due-heading" data-testid="due-soon">
           <div className="section-head">
-            <h2 id="due-heading">Due soon</h2>
+            <h2 id="due-heading">Due for class and school</h2>
             <Link to="/planner">See all</Link>
           </div>
-          <PlannerList items={upcoming.slice(0, 8)} courses={courses} />
-          {upcoming.length > 8 && <p className="muted">And {upcoming.length - 8} more in your <Link to="/planner">Planner</Link>.</p>}
+          <p className="dash-note">Everything due in the next 7 days, soonest first.</p>
+          {dueSoon.length > 0
+            ? <DeadlineRows items={dueSoon.slice(0, SHOWN_ROWS)} courses={courses} />
+            : <p className="muted">Nothing due in the next 7 days.</p>}
+          {dueSoon.length > SHOWN_ROWS && <p className="muted">And {dueSoon.length - SHOWN_ROWS} more in your <Link to="/planner">Planner</Link>.</p>}
         </section>
-      )}
-      {cardsDue > 0 && (
-        <p className="session-actions" data-testid="today-cards">
-          <Link className="button" to="/cards/review">Review {cardsDue} {cardsDue === 1 ? 'flashcard' : 'flashcards'}</Link>
-        </p>
-      )}
-      {next && (
-        <section aria-labelledby="next-heading" className="next-up" data-testid="next-up">
-          <h2 id="next-heading">Study next</h2>
-          <p><Link to={`/study/checkpoints/${next.checkpoint.id}`}>{next.checkpoint.title}</Link></p>
-          <p className="muted">{next.lesson.title}. {next.reason}</p>
+
+        <section className="dash-card" aria-labelledby="cards-heading" data-testid="today-cards">
+          <div className="section-head">
+            <h2 id="cards-heading">Flashcards</h2>
+            <Link to="/cards">See all</Link>
+          </div>
+          <p className="dash-note">Cards that are new or due today.</p>
+          {dueCards.length > 0 && (
+            <>
+              <ul className="dash-rows">
+                {decksDue.slice(0, 5).map(({ deck, due }) => (
+                  <li key={deck.id} className="dash-simple-row">
+                    <Link className="dash-what" to={`/cards/${deck.id}`}>{deck.name}</Link>
+                    <span className="dash-next">{due} due</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="session-actions"><Link className="button primary" to="/cards/review">Review {dueCards.length} {dueCards.length === 1 ? 'flashcard' : 'flashcards'}</Link></p>
+            </>
+          )}
+          {dueCards.length === 0 && <p className="muted">{cards.length > 0 ? 'Nothing due today.' : <>No cards yet. <Link to="/cards">Make your first deck</Link>.</>}</p>}
         </section>
-      )}
-      {courses.length > 0 && (
-        <section aria-labelledby="shelf-heading">
-          <h2 id="shelf-heading">Your courses</h2>
-          <Shelf courses={courses} materials={materials} />
+
+        <section className="dash-card next-up" aria-labelledby="next-heading" data-testid="next-up">
+          <div className="section-head">
+            <h2 id="next-heading">Study next</h2>
+            <Link to="/study">See all</Link>
+          </div>
+          {next
+            ? (
+              <>
+                <p className="dash-next-title"><Link to={`/study/checkpoints/${next.checkpoint.id}`}>{next.checkpoint.title}</Link></p>
+                <p className="muted">{next.lesson.title}. {next.reason}</p>
+              </>
+            )
+            : <p className="muted">No lessons waiting. <Link to="/study">Go to Study</Link> to add one.</p>}
         </section>
-      )}
-      <section aria-labelledby="recent-heading">
-        <h2 id="recent-heading">Recent files</h2>
-        {materials.length > 0
-          ? <MaterialList materials={materials.slice(0, 6)} courses={courses} />
-          : <p className="muted">No files yet. Open a course and add your first one, or use the <Link to="/library">Library</Link>.</p>}
-      </section>
-      {notes.length > 0 && (
-        <section aria-labelledby="recent-notes">
-          <h2 id="recent-notes">Recent notes</h2>
-          <NoteList notes={notes.slice(0, 4)} courses={courses} />
+
+        <section className="dash-card" aria-labelledby="recent-heading">
+          <h2 id="recent-heading">Recent files</h2>
+          {materials.length > 0
+            ? <MaterialList materials={materials.slice(0, 4)} courses={courses} />
+            : <p className="muted">No files yet. Open a course and add your first one, or use the <Link to="/library">Library</Link>.</p>}
         </section>
-      )}
+
+        {notes.length > 0 && (
+          <section className="dash-card" aria-labelledby="recent-notes">
+            <h2 id="recent-notes">Recent notes</h2>
+            <NoteList notes={notes.slice(0, 4)} courses={courses} />
+          </section>
+        )}
+
+        {courses.length > 0 && (
+          <section className="dash-card dash-wide" aria-labelledby="shelf-heading">
+            <h2 id="shelf-heading">Your courses</h2>
+            <Shelf courses={courses} materials={materials} />
+          </section>
+        )}
+
+        <section className="dash-card dash-wide" aria-labelledby="overdue-heading" data-testid="overdue">
+          <h2 id="overdue-heading">Still open from before</h2>
+          <p className="dash-note">Past their due dates and not marked done. Some may already be finished, so mark those done.</p>
+          {overdue.length > 0
+            ? <DeadlineRows items={overdue} courses={courses} />
+            : <p className="muted">Nothing overdue.</p>}
+        </section>
+
+        <section className="dash-card dash-wide" aria-labelledby="counts-heading" data-testid="what-this-counts">
+          <h2 id="counts-heading">What this counts</h2>
+          <p className="dash-note">Every number comes from what you've saved. Study Forge never makes up assignments or dates.</p>
+          <dl className="dash-defs">
+            <dt>Due and overdue</dt><dd>Planner items that aren't Submitted, Waiting for Grade, or Completed.</dd>
+            <dt>Flashcards due</dt><dd>Cards you haven't reviewed yet, plus cards whose review date is today or earlier.</dd>
+            <dt>Weak cards</dt><dd>Your last answer was Again, or you've pressed Again twice or more and haven't since pressed Good or Easy enough to recover.</dd>
+            <dt>Lessons to review</dt><dd>Lesson checkpoints marked Needs review from your answers.</dd>
+          </dl>
+        </section>
+      </div>
     </div>
   );
 }
