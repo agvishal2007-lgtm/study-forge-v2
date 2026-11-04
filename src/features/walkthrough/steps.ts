@@ -71,7 +71,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/library',
     target: ['[data-tour="add-files"]'],
     title: 'Add your files',
-    body: 'Add slides, readings, and other files here. Choose them or drag them in. Files stay on this device, and if you add the same file twice, Study Forge notices.',
+    body: 'Add slides, readings, and other files here. Choose them or drag them in. Files stay on this device, and if you add the same file twice, Study Forge notices. You can add them from your device or Google Drive.',
   },
   {
     id: 'viewer',

@@ -320,7 +320,7 @@ Tested with a stand-in server, plus the real sign-in code against Firebase's emu
 
 Files can come from the device, Google Drive, or Dropbox. Picked files are copied to the device and saved like any other file. Google's own Docs, Sheets, and Slides are saved as PDFs. Drive access only reaches files the student picks. Each source appears once its key is added to `src/data/cloudSetup.ts`.
 
-The buttons and saving are tested with a stand-in for each service. The real Google and Dropbox windows haven't been tried, because they need the owner's keys. OneDrive isn't built yet.
+The buttons and saving are tested with a stand-in for each service. On 2026-11-04 the owner confirmed the real Google Drive window worked on the live site. The Dropbox button stays hidden until its key is added, and the real Dropbox window hasn't been tried. OneDrive isn't built yet.
 
 ## How the code is organized
 
