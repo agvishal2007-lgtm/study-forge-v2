@@ -211,6 +211,16 @@ test('search reads inside PDFs, Word, Excel, and PowerPoint, and opens the right
   await page.locator('canvas[data-rendered-page="3"]').waitFor({ state: 'attached' });
 });
 
+test('opening a result right after typing stays on that result', async () => {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    await searchFor('mitochondria');
+    await page.getByLabel('Search everything').fill(`mitochondria ${'x'.repeat(0)}`);
+    await page.getByTestId('search-Notes').getByRole('link', { name: 'Biology review' }).click();
+    await page.waitForTimeout(450);
+    assert.match(page.url(), /#\/notes\//, 'it did not bounce back to Search');
+  }
+});
+
 test('deleting a file removes it from search', async () => {
   await searchFor('photosynthesis');
   await page.getByTestId('search-Files').getByRole('link', { name: 'biology.pdf' }).click();

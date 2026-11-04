@@ -72,7 +72,10 @@ export function SearchPage() {
   }, [materialIds]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setParams(query.trim() ? { q: query } : {}, { replace: true }), 300);
+    const timer = setTimeout(() => {
+      // The student may have just opened a result, and this must not pull them back.
+      if (window.location.hash.startsWith('#/search')) setParams(query.trim() ? { q: query } : {}, { replace: true });
+    }, 300);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
