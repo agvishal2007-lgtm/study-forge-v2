@@ -176,3 +176,22 @@ label input, label select { margin-top: .25rem; font-weight: 400; }
 .screen-help ol { margin: .4rem 0; padding-left: 1.4rem; max-width: 68ch; }
 .screen-help li { margin-bottom: .35rem; }
 .error-box { border: 1px solid var(--danger); border-left-width: 4px; padding: .75rem 1rem; border-radius: 4px; margin-bottom: .75rem; max-width: 68ch; }
+
+/* Notes */
+textarea { font: inherit; color: var(--paper); background: var(--ground); border: 1px solid var(--muted); border-radius: 4px; padding: .75rem .85rem; width: 100%; line-height: 1.6; }
+.note-title-label { flex: 1 1 280px; max-width: 640px; }
+.note-title { font: 500 1.5rem/1.2 var(--display); }
+.note-body-label { margin-top: 1rem; max-width: 80ch; }
+.note-body { display: block; margin-top: .25rem; font-weight: 400; min-height: 50vh; resize: vertical; }
+.note-editor .error-box { margin-top: 1rem; }
+.conflict-actions { margin-top: .6rem; }
+.topic-note { margin-top: .75rem; }
+.file-notes { margin-top: 2rem; }
+@media (max-width: 720px) {
+  .nav-links a, .nav-bottom a { font-size: .82rem; }
+  .nav-links { flex: 5; }
+}
+
+/* Backup */
+.backup-progress { margin-top: 1rem; max-width: 520px; }
+.row-actions + .error, .row-actions + .notice { margin-top: 1rem; }

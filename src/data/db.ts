@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { Course, Material, RecordingSession, Topic } from './types';
+import type { Course, Material, Note, RecordingSession, Topic } from './types';
 
 /**
  * IndexedDB is the single source of truth for courses, topics, and file records.
@@ -12,12 +12,14 @@ interface StudyForgeDB extends DBSchema {
   blobs: { key: string; value: Blob };
   recordings: { key: string; value: RecordingSession };
   recordingChunks: { key: [string, number]; value: Blob };
+  notes: { key: string; value: Note };
+  meta: { key: string; value: unknown };
 }
 
 let dbPromise: Promise<IDBPDatabase<StudyForgeDB>> | null = null;
 
 export function getDb() {
-  dbPromise ??= openDB<StudyForgeDB>('study-forge', 2, {
+  dbPromise ??= openDB<StudyForgeDB>('study-forge', 3, {
     upgrade(db, oldVersion) {
       // Each step only adds to what's there, so existing students keep their data.
       if (oldVersion < 1) {
@@ -31,6 +33,10 @@ export function getDb() {
       if (oldVersion < 2) {
         db.createObjectStore('recordings', { keyPath: 'id' });
         db.createObjectStore('recordingChunks');
+      }
+      if (oldVersion < 3) {
+        db.createObjectStore('notes', { keyPath: 'id' });
+        db.createObjectStore('meta');
       }
     },
     // An older open tab is holding the database, so the update has to wait for it.

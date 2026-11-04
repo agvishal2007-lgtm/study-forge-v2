@@ -25,6 +25,18 @@ export interface Material {
   createdAt: number;
 }
 
+/** A student's own writing. Plain text, filed under a course or topic, and optionally about one file. */
+export interface Note {
+  id: string;
+  title: string;
+  body: string;
+  courseId: string | null;
+  topicId: string | null;
+  materialId: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
 /** A recording in progress, or one a crash left unfinished. Its audio is saved in small pieces. */
 export interface RecordingSession {
   id: string;

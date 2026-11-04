@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { NewNoteButton, NoteList } from '../components/NoteList';
+import { listNotes } from '../data/notes';
 import { useStillHere } from '../components/useStillHere';
 import { readBlob } from '../data/blobs';
 import { formatBytes, KIND_LABEL, kindOf } from '../data/format';
@@ -93,6 +95,7 @@ export default function ViewerPage() {
   const { data: material, loading } = useLive(() => getMaterial(id), [id]);
   const { data: blob, error: blobError, loading: blobLoading } = useLive(() => readBlob(id), [id]);
   const [url, setUrl] = useState<string | null>(null);
+  const { data: notes } = useLive(async () => (await listNotes()).filter((note) => note.materialId === id), [id]);
 
   // Files read back from storage lose their type, and some browsers need it to play them.
   const mimeType = material?.mimeType;
@@ -162,6 +165,11 @@ export default function ViewerPage() {
         {body}
       </div>
       {failure && <p className="error" role="alert">{failure}</p>}
+      <section className="file-notes" aria-labelledby="file-notes-heading">
+        <h2 id="file-notes-heading">Notes on this file</h2>
+        <NewNoteButton courseId={material.courseId} topicId={material.topicId} materialId={material.id} />
+        {notes && notes.length > 0 && <NoteList notes={notes} />}
+      </section>
       {confirm && (
         <ConfirmDialog
           title={`Delete ${material.name}?`}
@@ -178,7 +186,7 @@ export default function ViewerPage() {
             }
           }}
         >
-          <p>This permanently removes the file from this device. It can't be undone.</p>
+          <p>This permanently removes the file from this device. It can't be undone. Any notes about it are kept.</p>
         </ConfirmDialog>
       )}
     </div>

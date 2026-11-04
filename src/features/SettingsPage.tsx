@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { BackupSection } from './BackupSection';
 import { formatBytes } from '../data/format';
 import { getStorageStatus, requestKeepFiles } from '../data/store';
 import { useLive } from '../data/useLive';
@@ -9,10 +10,11 @@ export function SettingsPage() {
   return (
     <div className="page">
       <h1>Settings</h1>
+      <BackupSection />
       <section aria-labelledby="storage-heading">
         <h2 id="storage-heading">Storage on this device</h2>
         <p>Your courses and files are saved only in this browser on this device. They don't sync to your other devices.</p>
-        <p>Clearing this browser's site data or losing this device removes them. Backup isn't available yet, so keep your own copies of anything important.</p>
+        <p>Clearing this browser's site data or losing this device removes them, so create a backup regularly.</p>
         {data?.usage != null && data.quota != null && (
           <p>Using {formatBytes(data.usage)} of about {formatBytes(data.quota)} that this browser allows.</p>
         )}

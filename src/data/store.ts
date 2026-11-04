@@ -28,7 +28,7 @@ export const getCourse = async (id: string) => (await getDb()).get('courses', id
 /** Removes the course but keeps every file: its files stay in the Library. */
 export async function deleteCourse(id: string): Promise<void> {
   const db = await getDb();
-  const tx = db.transaction(['courses', 'topics', 'materials'], 'readwrite');
+  const tx = db.transaction(['courses', 'topics', 'materials', 'notes'], 'readwrite');
   for (const topicId of await tx.objectStore('topics').index('courseId').getAllKeys(id)) {
     await tx.objectStore('topics').delete(topicId);
   }
@@ -36,6 +36,9 @@ export async function deleteCourse(id: string): Promise<void> {
     if (material.courseId === id) {
       await tx.objectStore('materials').put({ ...material, courseId: null, topicId: null });
     }
+  }
+  for (const note of await tx.objectStore('notes').getAll()) {
+    if (note.courseId === id) await tx.objectStore('notes').put({ ...note, courseId: null, topicId: null });
   }
   await tx.objectStore('courses').delete(id);
   await tx.done;
@@ -56,9 +59,12 @@ export async function createTopic(courseId: string, name: string): Promise<void>
 /** Removes the topic but keeps its files in the course. */
 export async function deleteTopic(id: string): Promise<void> {
   const db = await getDb();
-  const tx = db.transaction(['topics', 'materials'], 'readwrite');
+  const tx = db.transaction(['topics', 'materials', 'notes'], 'readwrite');
   for (const material of await tx.objectStore('materials').getAll()) {
     if (material.topicId === id) await tx.objectStore('materials').put({ ...material, topicId: null });
+  }
+  for (const note of await tx.objectStore('notes').getAll()) {
+    if (note.topicId === id) await tx.objectStore('notes').put({ ...note, topicId: null });
   }
   await tx.objectStore('topics').delete(id);
   await tx.done;
@@ -83,12 +89,17 @@ export async function fileMaterial(id: string, courseId: string | null, topicId:
 /** Only ever called after the student confirms. The file goes first, then its record. */
 export async function deleteMaterial(id: string): Promise<void> {
   await deleteBlob(id);
-  await (await getDb()).delete('materials', id);
+  const tx = (await getDb()).transaction(['materials', 'notes'], 'readwrite');
+  for (const note of await tx.objectStore('notes').getAll()) {
+    if (note.materialId === id) await tx.objectStore('notes').put({ ...note, materialId: null });
+  }
+  await tx.objectStore('materials').delete(id);
+  await tx.done;
   notifyChanged();
 }
 
 export async function hashFile(
-  file: File,
+  file: Blob,
   signal: AbortSignal,
   onProgress: (bytesRead: number) => void,
 ): Promise<string> {
@@ -120,16 +131,17 @@ export async function storeMaterial(
   target: { courseId: string | null; topicId: string | null },
   signal: AbortSignal,
   onProgress: (bytesSaved: number) => void,
+  restored?: { id: string; createdAt: number },
 ): Promise<Material> {
   const material: Material = {
-    id: crypto.randomUUID(),
+    id: restored?.id ?? crypto.randomUUID(),
     name: file.name,
     mimeType: file.type,
     size: file.size,
     hash,
     courseId: target.courseId,
     topicId: target.topicId,
-    createdAt: Date.now(),
+    createdAt: restored?.createdAt ?? Date.now(),
   };
   // The file and its record count as one save, so cleanup can't run between them.
   await whileSaving(async () => {

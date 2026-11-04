@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AddFiles } from '../components/AddFiles';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MaterialList } from '../components/MaterialList';
+import { NewNoteButton, NoteList } from '../components/NoteList';
+import { listNotes } from '../data/notes';
 import { useStillHere } from '../components/useStillHere';
 import { createTopic, deleteCourse, deleteTopic, getCourse, listMaterials, listTopics } from '../data/store';
 import type { Topic } from '../data/types';
@@ -17,13 +19,18 @@ export function CourseDetailPage() {
   const [confirmTopic, setConfirmTopic] = useState<Topic | null>(null);
   const [failure, setFailure] = useState('');
   const { data, error } = useLive(async () => {
-    const [course, topics, materials] = await Promise.all([getCourse(id), listTopics(id), listMaterials()]);
-    return { course, topics, materials: materials.filter((material) => material.courseId === id) };
+    const [course, topics, materials, notes] = await Promise.all([getCourse(id), listTopics(id), listMaterials(), listNotes()]);
+    return {
+      course,
+      topics,
+      materials: materials.filter((material) => material.courseId === id),
+      notes: notes.filter((note) => note.courseId === id),
+    };
   }, [id]);
 
   if (error) return <div className="page"><p className="error" role="alert">This course couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { course, topics, materials } = data;
+  const { course, topics, materials, notes } = data;
   if (!course) return <div className="page"><h1>This course doesn't exist</h1><Link to="/courses">Go to Courses</Link></div>;
 
   const attempt = async (action: () => Promise<void>) => {
@@ -56,6 +63,14 @@ export function CourseDetailPage() {
           : topics.length === 0 && <p className="muted">No files in this course yet.</p>}
       </section>
 
+      <section aria-labelledby="course-notes">
+        <h2 id="course-notes">Notes</h2>
+        <NewNoteButton courseId={course.id} />
+        {notes.some((note) => !note.topicId)
+          ? <NoteList notes={notes.filter((note) => !note.topicId)} />
+          : notes.length === 0 && <p className="muted">No notes in this course yet.</p>}
+      </section>
+
       <section aria-labelledby="course-topics">
         <h2 id="course-topics">Topics</h2>
         <form
@@ -79,6 +94,8 @@ export function CourseDetailPage() {
               </header>
               <AddFiles courseId={course.id} topicId={topic.id} />
               {files.length > 0 && <MaterialList materials={files} />}
+              <div className="topic-note"><NewNoteButton courseId={course.id} topicId={topic.id} label="New note for this topic" /></div>
+              {notes.some((note) => note.topicId === topic.id) && <NoteList notes={notes.filter((note) => note.topicId === topic.id)} />}
             </article>
           );
         })}
@@ -91,7 +108,7 @@ export function CourseDetailPage() {
           onCancel={() => setConfirmCourse(false)}
           onConfirm={() => void attempt(async () => { await deleteCourse(course.id); if (stillHere.current) navigate('/courses', { replace: true }); })}
         >
-          <p>The course and its topics will be removed. Its {materials.length === 1 ? '1 file stays' : `${materials.length} files stay`} in your Library.</p>
+          <p>The course and its topics will be removed. Its {materials.length === 1 ? '1 file stays' : `${materials.length} files stay`} in your Library, and its {notes.length === 1 ? '1 note stays' : `${notes.length} notes stay`} in Notes.</p>
         </ConfirmDialog>
       )}
       {confirmTopic && (
@@ -101,7 +118,7 @@ export function CourseDetailPage() {
           onCancel={() => setConfirmTopic(null)}
           onConfirm={() => void attempt(async () => { await deleteTopic(confirmTopic.id); setConfirmTopic(null); })}
         >
-          <p>The topic will be removed. Its files stay in this course.</p>
+          <p>The topic will be removed. Its files and notes stay in this course.</p>
         </ConfirmDialog>
       )}
     </div>
