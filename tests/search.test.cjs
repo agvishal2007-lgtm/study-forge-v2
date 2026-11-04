@@ -26,6 +26,12 @@ test('notes read their marks, and plain notes stay as they are', async () => {
   assert.equal(JSON.stringify(parseNote('<script>alert(1)</script>')).includes('<script>'), true, 'it stays as words');
 });
 
+test('search results show a note\'s words without its marks', async () => {
+  const { plainNote } = await format();
+  assert.equal(plainNote('## Title\n**bold** and *soft*\n- item\n1. one\n- [x] done'), 'Title\nbold and soft\nitem\none\ndone');
+  assert.equal(plainNote('2 * 3 * 4'), '2 * 3 * 4');
+});
+
 test('toolbar edits wrap and unwrap the selection', async () => {
   const { formatEdit, applyEdit } = await format();
   const run = (text, start, end, kind) => applyEdit(text, formatEdit(text, start, end, kind));
@@ -169,6 +175,7 @@ test('search finds notes, flashcards, practice, and the planner, and highlights 
   await page.getByTestId('search-Planner').getByRole('link', { name: 'Mitochondria quiz' }).waitFor();
   await page.getByTestId('search-Practice').getByRole('link', { name: 'Name the powerhouse' }).waitFor();
   assert.ok((await page.locator('mark').count()) >= 3);
+  assert.doesNotMatch(await page.getByTestId('search-Notes').innerText(), /\*\*/);
   await page.screenshot({ path: path.join(shots, 'search-results.png') });
   await page.getByLabel('Search everything').fill('zzzznothing');
   await page.getByTestId('search-empty').waitFor();

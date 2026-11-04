@@ -4,6 +4,7 @@ import { listCards, listDecks } from '../data/flashcards';
 import { listFileText, readNewFiles } from '../data/fileText';
 import { listCheckpoints, listLessons } from '../data/guided';
 import { listNotes } from '../data/notes';
+import { plainNote } from '../data/noteFormat';
 import { listPlannerItems } from '../data/planner';
 import { listPracticeQuestions, listPracticeSets } from '../data/practice';
 import { highlight, runSearch, searchTerms, type Searchable } from '../data/searchRules';
@@ -17,7 +18,7 @@ async function loadSearchable(): Promise<{ items: Searchable[]; scanned: number;
     listNotes(), listMaterials(), listFileText(), listDecks(), listCards(), listPracticeSets(), listPracticeQuestions(), listPlannerItems(), listLessons(), listCheckpoints(), listCourses(),
   ]);
   const items: Searchable[] = [];
-  for (const note of notes) items.push({ group: 'Notes', title: note.title || 'Untitled note', body: note.body, to: `/notes/${note.id}` });
+  for (const note of notes) items.push({ group: 'Notes', title: note.title || 'Untitled note', body: plainNote(note.body), to: `/notes/${note.id}` });
   const read = new Map(fileText.map((entry) => [entry.materialId, entry]));
   for (const material of materials) {
     items.push({ group: 'Files', title: material.name, body: '', to: `/files/${material.id}` });

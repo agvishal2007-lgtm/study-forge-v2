@@ -58,6 +58,11 @@ export function parseNote(text: string): Block[] {
   return blocks.filter((block) => block.type !== 'paragraph' || block.lines.length > 0);
 }
 
+/** A note's words without its marks, for showing in search results. */
+export const plainNote = (text: string) => text.split('\n')
+  .map((line) => parseInline(line.replace(/^(#{1,3} +|\s*- \[[ xX]\] +|\s*[-•] +|\s*\d+\. +)/, '')).map((part) => part.text).join(''))
+  .join('\n');
+
 export type FormatKind = 'bold' | 'italic' | 'heading' | 'bullet' | 'number' | 'check';
 
 export interface FormatEdit {
