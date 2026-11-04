@@ -26,8 +26,11 @@ export interface PullResult {
 export type BackendErrorKind = 'offline' | 'quota' | 'denied' | 'other';
 
 export class BackendError extends Error {
-  constructor(public kind: BackendErrorKind, message: string) {
+  kind: BackendErrorKind;
+
+  constructor(kind: BackendErrorKind, message: string) {
     super(message);
+    this.kind = kind;
   }
 }
 
