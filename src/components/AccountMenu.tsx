@@ -2,19 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
 import { WalkthroughButton } from '../features/walkthrough/Walkthrough';
 import { getActiveAccount, switchAccount } from '../data/account';
-import type { AccountBackend } from '../data/accountBackend';
 import { getSyncState, loadBackend, signOutOfAccount, subscribeSync, syncNow } from '../data/sync';
-
-function describeSignInFailure(error: unknown): string {
-  const code = String((error as { code?: string }).code ?? '');
-  if (code.includes('popup-closed') || code.includes('cancelled-popup')) return '';
-  if (code.includes('popup-blocked')) return 'Your browser blocked the sign-in window. Allow pop-ups for this site, then try again.';
-  if (code.includes('network')) return "Study Forge can't reach the internet, so you can't sign in right now.";
-  if (code.includes('unauthorized-domain')) return "This site isn't set up to allow sign-in yet. Tell whoever runs it.";
-  if (code.includes('web-storage') || code.includes('storage')) return 'Your browser is blocking the site data that sign-in needs. Allow site data, or leave private browsing, then try again.';
-  if (code.includes('admin') || code.includes('access-denied')) return "Your school blocked this sign-in. You can still use Study Forge without an account, or ask your school's IT help desk to allow it.";
-  return `Sign-in didn't work. ${(error as Error).message}`;
-}
 
 function GearIcon() {
   return (
@@ -36,45 +24,13 @@ function Avatar({ photoURL, email }: { photoURL?: string; email: string }) {
 }
 
 function SignedOut() {
-  // Phones block a sign-in window that opens late, so its code must be ready before the tap.
-  const [backend, setBackend] = useState<AccountBackend | null>(null);
-  const [loadFailed, setLoadFailed] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [failure, setFailure] = useState('');
-
-  useEffect(() => {
-    let active = true;
-    loadBackend().then(
-      (loaded) => { if (active) setBackend(loaded); },
-      () => { if (active) setLoadFailed(true); },
-    );
-    return () => { active = false; };
-  }, []);
-
-  const signIn = async () => {
-    if (!backend) {
-      setFailure("Sign-in couldn't load. Check your internet connection, then reload this page.");
-      return;
-    }
-    setBusy(true);
-    setFailure('');
-    try {
-      // Nothing is awaited before this call, so the window opens as part of the tap itself.
-      const user = await backend.signIn();
-      switchAccount({ uid: user.uid, email: user.email, photoURL: user.photoURL });
-    } catch (error) {
-      setFailure(describeSignInFailure(error));
-      setBusy(false);
-    }
-  };
-
+  // Getting this ready early means the sign-in window can open as soon as it's tapped.
+  useEffect(() => { void loadBackend().catch(() => undefined); }, []);
   return (
     <>
       <Link className="icon-button" to="/settings" aria-label="Settings" title="Settings"><GearIcon /></Link>
-      <button className="button primary" disabled={busy || (!backend && !loadFailed)} onClick={() => void signIn()}>
-        {busy ? 'Signing in…' : 'Sign in'}
-      </button>
-      {failure && <p className="topbar-message error" role="alert">{failure}</p>}
+      <Link className="button" to="/sign-in">Sign in</Link>
+      <Link className="button primary" to="/sign-up">Sign up</Link>
     </>
   );
 }

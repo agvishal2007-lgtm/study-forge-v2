@@ -467,3 +467,14 @@ input[type='radio']:checked { border-color: var(--accent); background: radial-gr
 .confidence input { width: 1.1rem; height: 1.1rem; min-height: 0; margin: 0; accent-color: var(--accent); }
 .practice-verdict { margin: .5rem 0 1rem; padding: .7rem .9rem; border-radius: 14px; background: var(--accent-soft); }
 .practice-verdict.good { color: var(--success); }
+
+/* Sign in and sign up */
+.auth-page { max-width: 480px; }
+.auth-providers { display: grid; gap: .5rem; margin-top: 1rem; }
+.auth-providers .button { width: 100%; }
+.auth-divider { display: flex; align-items: center; gap: .75rem; color: var(--muted); font-size: .9rem; margin: 1.25rem 0 .25rem; }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; border-top: 1px solid var(--line); }
+.auth-show { display: flex; align-items: center; gap: .5rem; font-weight: 400; }
+.auth-show input { width: 1.1rem; height: 1.1rem; min-height: 0; margin: 0; accent-color: var(--accent); }
+.auth-links { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: .4rem; }
+.drop-problem { flex-basis: 100%; margin: 0; }

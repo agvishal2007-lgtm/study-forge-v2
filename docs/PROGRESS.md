@@ -292,6 +292,36 @@ Tested in a real browser with a fixed clock: the welcome screen for new students
 
 Not built yet: study streaks, practice accuracy, exam readiness, and AI usage from the blueprint's dashboard list, because the features behind them don't exist yet. Exams aren't separated from other deadlines yet.
 
+## Practice
+
+Students write question sets by course and topic, then answer without their notes. Types are multiple choice, short answer, fill in the blank, definition, formula application, worked problem, and concept explanation.
+
+- Nothing is selected at the start, an empty answer can't be submitted, and the answer isn't in the page until after submitting.
+- Multiple choice grades itself, and typed answers matching an accepted answer do too. Other typed answers are compared with the model answer and labelled self-checked.
+- An optional "How sure are you?" lets feedback call out being sure and wrong as a likely misunderstanding.
+- A reload restores the same question and any draft. Each presented question counts once.
+- Accuracy uses the latest answer to each question, with partly right counting as half. Under 70% is a weak topic, which is a starting value.
+- Review mistakes and weak-topic practice repeat what was missed. Accuracy and weak topics appear on Today.
+- Sets, questions, and answers are in backups and saved online.
+
+Not built yet: making questions with AI, timed mock exams, and Cram Mode. Practice on a phone uses small section buttons, since nine now share the bottom bar.
+
+## Sign up, email login, and recovery
+
+- A Sign up button sits beside Sign in, and both open a page with email and password plus Google. Microsoft and Facebook appear once each is set up and added to `LOGIN_PROVIDERS`.
+- Password accounts get a confirmation email, with a reminder and resend in Settings. Confirming isn't required to use the account.
+- Forgot password sends Firebase's reset email and never reveals whether an account exists.
+- Forgot email shows shortened hints of accounts used in this browser, plus places to look. It can't search by name, because that would reveal who has an account.
+- A Privacy page says what's kept and how to remove it. Facebook requires one.
+
+Tested with a stand-in server, plus the real sign-in code against Firebase's emulator for email accounts. Real Microsoft and Facebook sign-in, and real emails arriving, haven't been tried. Texted codes aren't on the free plan, emailed sign-in links stop at 5 a day, and Firebase has no Instagram login.
+
+## Adding files from other services
+
+Files can come from the device, Google Drive, or Dropbox. Picked files are copied to the device and saved like any other file. Google's own Docs, Sheets, and Slides are saved as PDFs. Drive access only reaches files the student picks. Each source appears once its key is added to `src/data/cloudSetup.ts`.
+
+The buttons and saving are tested with a stand-in for each service. The real Google and Dropbox windows haven't been tried, because they need the owner's keys. OneDrive isn't built yet.
+
 ## How the code is organized
 
 - `src/data/` holds saved data, and nothing else talks to storage directly.
@@ -304,6 +334,9 @@ Not built yet: study streaks, practice accuracy, exam readiness, and AI usage fr
   - `mastery.ts` holds the Guided Study rules, and `guided.ts` saves lessons and progress.
   - `flashcards.ts` saves decks, cards, and reviews, and `flashcardRules.ts` holds the schedule.
   - `dashboard.ts` writes the dashboard's summary and next steps.
+  - `practice.ts` saves practice work, and `practiceRules.ts` holds its rules.
+  - `cloudImport.ts` picks files from Google Drive and Dropbox.
+  - `authMessages.ts` and `knownAccounts.ts` support signing in and recovery.
   - `planner.ts` saves planner items, and `plannerRules.ts` holds the date rules.
   - `account.ts` keeps each account's storage separate, and `sync.ts` holds the saving-online rules.
 - `src/components/` holds pieces used on several screens, such as the saving panel and the recorder.

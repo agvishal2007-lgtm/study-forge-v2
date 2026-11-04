@@ -15,6 +15,7 @@ import { LessonPage } from './features/guided/LessonPage';
 import { SessionPage } from './features/guided/SessionPage';
 import { StudyPage } from './features/guided/StudyPage';
 import { RecordPage } from './features/RecordPage';
+import { AuthPage, ForgotEmailPage, ForgotPasswordPage, PrivacyPage } from './features/AuthPages';
 import { DeckPage } from './features/DeckPage';
 import { FlashcardsPage } from './features/FlashcardsPage';
 import { ReviewPage } from './features/ReviewPage';
@@ -97,6 +98,11 @@ export function App() {
                 <Route path="/cards" element={<FlashcardsPage />} />
                 <Route path="/cards/review" element={<ReviewPage />} />
                 <Route path="/cards/:id" element={<DeckPage />} />
+                <Route path="/sign-in" element={<AuthPage mode="sign-in" />} />
+                <Route path="/sign-up" element={<AuthPage mode="sign-up" />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/forgot-email" element={<ForgotEmailPage />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/practice" element={<PracticePage />} />
                 <Route path="/practice/session" element={<PracticeSessionPage />} />
                 <Route path="/practice/:id" element={<PracticeSetPage />} />

@@ -1,10 +1,11 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import { Link } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { getActiveAccount, switchAccount } from '../data/account';
 import { getGuestSummary, openGuestAsBackup, removeAccountFromDevice, removeGuestData, type GuestSummary } from '../data/accountData';
 import { restoreBackup, type RestoreReport } from '../data/backup';
 import { formatDate } from '../data/format';
-import { deleteOnlineCopy, getSyncState, signOutOfAccount, subscribeSync, syncNow, type SyncPhase } from '../data/sync';
+import { deleteOnlineCopy, getSyncState, loadBackend, signOutOfAccount, subscribeSync, syncNow, type SyncPhase } from '../data/sync';
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
@@ -19,6 +20,14 @@ const PHASE_TEXT: Record<SyncPhase, string> = {
 };
 
 export function AccountSection() {
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+  const [confirmationSent, setConfirmationSent] = useState(false);
+  useEffect(() => {
+    if (!getActiveAccount()) return undefined;
+    let active = true;
+    void loadBackend().then((backend) => backend.needsEmailConfirmation()).then((needed) => { if (active) setNeedsConfirmation(needed); }).catch(() => undefined);
+    return () => { active = false; };
+  }, []);
   const account = getActiveAccount();
   const sync = useSyncExternalStore(subscribeSync, getSyncState);
   const [busy, setBusy] = useState(false);
@@ -58,7 +67,7 @@ export function AccountSection() {
           <li>School Google accounts work if your school allows it. If yours blocks it, you'll see a message and can keep using Study Forge without signing in.</li>
           <li>Other students can't read your work. It's stored in Google's Firebase service, and whoever runs this site could technically view it, so don't save anything highly sensitive.</li>
         </ul>
-        <p className="muted">Use the Sign in button at the top right.</p>
+        <p className="muted">Use Sign in or Sign up at the top right. <Link to="/privacy">Privacy</Link></p>
       </section>
     );
   }
@@ -70,6 +79,15 @@ export function AccountSection() {
       <p className={trouble ? 'notice' : 'muted'} role="status" data-testid="sync-status" data-phase={sync.phase}>
         {PHASE_TEXT[sync.phase]}{sync.phase === 'synced' && sync.lastSyncedAt ? ` on ${formatDate(sync.lastSyncedAt)}.` : ''}
       </p>
+      {needsConfirmation && (
+        <p className="notice" data-testid="confirm-email">
+          Please confirm your email, so you can reset your password if you ever forget it. Look for our email, including in spam.{' '}
+          <button className="text-button" disabled={confirmationSent} onClick={() => {
+            setConfirmationSent(true);
+            void loadBackend().then((backend) => backend.sendEmailConfirmation()).catch(() => setConfirmationSent(false));
+          }}>{confirmationSent ? 'Sent again' : 'Send it again'}</button>
+        </p>
+      )}
       {sync.tooLarge.length > 0 && <p className="error" role="alert">Too large to save online, so only on this device: {sync.tooLarge.join(', ')}.</p>}
       <p className="muted">Courses, notes, lessons, and progress follow you. Files and recordings stay on this device, so keep making backups of those.</p>
       <div className="row-actions">

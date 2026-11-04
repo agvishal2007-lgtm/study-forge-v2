@@ -1,7 +1,11 @@
 import { initializeApp } from 'firebase/app';
 import { browserLocalPersistence, initializeAuth, browserPopupRedirectResolver } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore/lite';
+import type { LoginProvider } from './accountBackend';
 import { createFirebaseBackend } from './firebaseBackend';
+
+// Add 'microsoft' or 'facebook' here once each is set up in the Firebase console.
+const LOGIN_PROVIDERS: LoginProvider[] = ['google'];
 
 // These values identify the project and are meant to be public. The security rules protect the data.
 const app = initializeApp({
@@ -17,4 +21,4 @@ const auth = initializeAuth(app, { persistence: browserLocalPersistence, popupRe
 // Waiting here means the sign-in button only turns on once sign-in can actually start.
 await auth.authStateReady();
 
-export const backend = createFirebaseBackend(app, auth, getFirestore(app));
+export const backend = createFirebaseBackend(app, auth, getFirestore(app), LOGIN_PROVIDERS);

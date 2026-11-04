@@ -17,7 +17,44 @@ async function call<T>(path: string, body: unknown): Promise<T> {
   return response.json();
 }
 
+async function authCall(path: string, body: unknown): Promise<AccountUser> {
+  let response: Response;
+  try {
+    response = await fetch(`${SERVER}${path}`, { method: 'POST', body: JSON.stringify(body) });
+  } catch {
+    throw Object.assign(new Error('offline'), { code: 'auth/network-request-failed' });
+  }
+  const answer = await response.json();
+  if (!response.ok) throw Object.assign(new Error(answer.code), { code: answer.code });
+  return answer;
+}
+
+const storedUser = (): (AccountUser & { password?: boolean }) | null => JSON.parse(localStorage.getItem(STORED) ?? 'null');
+
 export const backend: AccountBackend = {
+  providers: ['google', 'microsoft', 'facebook'],
+  async signUpWithEmail(email, password) {
+    const user = await authCall('/signUp', { email, password });
+    localStorage.setItem(STORED, JSON.stringify({ ...user, password: true }));
+    return user;
+  },
+  async signInWithEmail(email, password) {
+    const user = await authCall('/signIn', { email, password });
+    localStorage.setItem(STORED, JSON.stringify({ ...user, password: true }));
+    return user;
+  },
+  async sendPasswordReset(email) {
+    await authCall('/reset', { email });
+  },
+  async needsEmailConfirmation() {
+    const user = storedUser();
+    if (!user?.password) return false;
+    const answer = await authCall('/confirmed', { email: user.email }) as unknown as { confirmed: boolean };
+    return !answer.confirmed;
+  },
+  async sendEmailConfirmation() {
+    await authCall('/sendConfirmation', { email: storedUser()?.email });
+  },
   watchUser(listener) {
     const stored = localStorage.getItem(STORED);
     setTimeout(() => listener(stored ? JSON.parse(stored) : null), 0);

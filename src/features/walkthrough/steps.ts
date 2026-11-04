@@ -45,7 +45,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/',
     target: ['.topbar'],
     title: 'Your account',
-    body: 'Sign in here with Google, including a college account if your school allows it. Your courses, notes, lessons, and progress then follow you between devices. Signing in is optional.',
+    body: 'Sign up or sign in here with an email and password or with Google, including a college account if your school allows it. Your courses, notes, lessons, and progress then follow you between devices. Signing in is optional.',
   },
   {
     id: 'today',

@@ -52,13 +52,15 @@ async function nav(page, name) {
   }
   await page.getByRole('navigation').getByRole('link', { name, exact: true }).click();
 }
-const signInButton = (page) => page.getByRole('button', { name: 'Sign in', exact: true });
+const signInButton = (page) => page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name: 'Sign in', exact: true });
+const googleButton = (page) => page.getByRole('button', { name: 'Continue with Google' });
 const signOutButton = async (page) => {
   await openMenu(page);
   await page.getByTestId('account-dropdown').getByRole('button', { name: 'Sign out' }).click();
 };
 async function signIn(page) {
   await signInButton(page).click();
+  await googleButton(page).click();
   await page.getByRole('button', { name: /Account menu for/ }).waitFor();
   await nav(page, 'Settings');
   await page.getByTestId('sync-status').waitFor();
@@ -127,8 +129,9 @@ test('the sign-in button waits until sign-in can open immediately', async () => 
     await route.continue();
   });
   await slow.goto(URL_BASE);
-  assert.equal(await signInButton(slow).isDisabled(), true);
-  await slow.waitForFunction(() => [...document.querySelectorAll('button')].some((b) => b.textContent === 'Sign in' && !b.disabled));
+  await signInButton(slow).click();
+  assert.equal(await googleButton(slow).isDisabled(), true);
+  await slow.waitForFunction(() => [...document.querySelectorAll('button')].some((b) => b.textContent === 'Continue with Google' && !b.disabled));
   await entry.close();
 });
 
@@ -184,12 +187,15 @@ test('closing the sign-in window is quiet, and a school block explains what to d
   const page = await device('laptop', 'auth/popup-closed-by-user');
   await nav(page, 'Settings');
   await signInButton(page).click();
-  await signInButton(page).waitFor();
+  await googleButton(page).click();
+  await googleButton(page).waitFor();
+  await page.waitForFunction(() => [...document.querySelectorAll('button')].some((b) => b.textContent === 'Continue with Google' && !b.disabled));
   assert.equal(await page.getByRole('alert').count(), 0);
   await close('laptop');
   const blocked = await device('laptop', 'auth/admin-restricted-operation');
   await nav(blocked, 'Settings');
   await signInButton(blocked).click();
+  await googleButton(blocked).click();
   await blocked.getByRole('alert').getByText('Your school blocked this sign-in').waitFor();
   await nav(blocked, 'Notes');
   await blocked.getByRole('link', { name: 'Guest note' }).waitFor();
@@ -197,6 +203,7 @@ test('closing the sign-in window is quiet, and a school block explains what to d
   const popup = await device('laptop', 'auth/popup-blocked');
   await nav(popup, 'Settings');
   await signInButton(popup).click();
+  await googleButton(popup).click();
   await popup.getByRole('alert').getByText('Allow pop-ups').waitFor();
   await close('laptop');
 });
@@ -425,6 +432,159 @@ test('practice sets and answers follow the student', async () => {
   await saved(laptop);
   await nav(laptop, 'Practice');
   await laptop.getByTestId('set-row').getByText('1 question, 0% accuracy').waitFor();
+});
+
+test('a new student can sign up with an email and password, and sign in again later', async () => {
+  const page = await device('emailer', null);
+  await page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name: 'Sign up' }).click();
+  await page.getByRole('heading', { name: 'Create your account' }).waitFor();
+  await page.screenshot({ path: path.join(shots, 'sign-up.png') });
+  for (const name of ['Continue with Google', 'Continue with Microsoft', 'Continue with Facebook']) await page.getByRole('button', { name }).waitFor();
+  const create = () => page.getByRole('button', { name: 'Create account' }).click();
+  const problems = page.getByTestId('auth-problems');
+  await create();
+  await problems.getByText('Enter your email').waitFor();
+  await page.getByLabel('Email').fill('dana@school.edu');
+  await page.getByLabel('Password', { exact: true }).fill('short');
+  await create();
+  await problems.getByText('at least 8 characters').waitFor();
+  await page.getByLabel('Password', { exact: true }).fill('long enough now');
+  await page.getByLabel('Type the password again').fill('not the same');
+  await create();
+  await problems.getByText("don't match").waitFor();
+  assert.equal(fake.state.accounts.size, 0, 'nothing was created yet');
+  assert.equal(await page.getByLabel('Password', { exact: true }).getAttribute('type'), 'password');
+  await page.getByLabel('Show password').check();
+  assert.equal(await page.getByLabel('Password', { exact: true }).getAttribute('type'), 'text');
+  await page.getByLabel('Type the password again').fill('long enough now');
+  await create();
+  await page.getByRole('button', { name: /Account menu for dana@school.edu/ }).waitFor();
+  assert.match(page.url(), /#\/$/, 'it lands on Today');
+
+  // The email isn't confirmed yet, and the student can ask for it again.
+  await nav(page, 'Settings');
+  await page.getByTestId('confirm-email').waitFor();
+  await page.getByRole('button', { name: 'Send it again' }).click();
+  await page.getByRole('button', { name: 'Sent again' }).waitFor();
+  assert.equal(fake.state.accounts.get('dana@school.edu').confirmations, 2);
+
+  // Work saves online like any other account.
+  await addNote(page, 'Email note', 'Saved by an email account');
+  await saved(page);
+  await signOutButton(page);
+  await signInButton(page).waitFor();
+
+  // A wrong password gets one message that doesn't reveal whether the account exists.
+  await signInButton(page).click();
+  await page.getByLabel('Email').fill('dana@school.edu');
+  await page.getByLabel('Password', { exact: true }).fill('wrong password');
+  await page.getByRole('main').getByRole('button', { name: 'Sign in', exact: true }).click();
+  await problems.getByText("That email and password don't match").waitFor();
+  const wrongMessage = await problems.innerText();
+  await page.getByLabel('Email').fill('nobody@school.edu');
+  await page.getByRole('main').getByRole('button', { name: 'Sign in', exact: true }).click();
+  await page.waitForTimeout(150);
+  assert.equal(await problems.innerText(), wrongMessage);
+  await page.getByLabel('Email').fill('dana@school.edu');
+  await page.getByLabel('Password', { exact: true }).fill('long enough now');
+  await page.getByRole('main').getByRole('button', { name: 'Sign in', exact: true }).click();
+  await page.getByRole('button', { name: /Account menu for dana@school.edu/ }).waitFor();
+  await saved(page);
+  await nav(page, 'Notes');
+  await page.getByRole('link', { name: 'Email note' }).waitFor();
+  await signOutButton(page);
+  await signInButton(page).waitFor();
+
+  // Signing up again with the same email points to signing in.
+  await page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name: 'Sign up' }).click();
+  await page.getByLabel('Email').fill('dana@school.edu');
+  await page.getByLabel('Password', { exact: true }).fill('another password');
+  await page.getByLabel('Type the password again').fill('another password');
+  await create();
+  await problems.getByText('already exists').waitFor();
+});
+
+test('forgot password never reveals who has an account', async () => {
+  const page = await device('emailer', null);
+  await signInButton(page).click();
+  await page.getByRole('link', { name: 'Forgot your password?' }).click();
+  await page.getByRole('button', { name: 'Send reset link' }).click();
+  await page.getByRole('alert').getByText('Enter your email').waitFor();
+  await page.getByLabel('Email').fill('dana@school.edu');
+  await page.getByRole('button', { name: 'Send reset link' }).click();
+  const sentText = (await page.getByTestId('reset-sent').innerText()).replace('dana@school.edu', 'X');
+  assert.deepEqual(fake.state.resets, ['dana@school.edu']);
+  await page.getByRole('link', { name: 'Back to sign in' }).click();
+  await page.getByRole('heading', { name: 'Sign in', exact: true }).waitFor();
+  await page.getByRole('link', { name: 'Forgot your password?' }).click();
+  await page.getByRole('heading', { name: 'Reset your password' }).waitFor();
+  await page.getByLabel('Email').fill('stranger@school.edu');
+  await page.getByRole('button', { name: 'Send reset link' }).click();
+  assert.equal((await page.getByTestId('reset-sent').innerText()).replace('stranger@school.edu', 'X'), sentText);
+  assert.equal(fake.state.resets.length, 1, 'no email goes to an address with no account');
+});
+
+test('forgot email shows shortened hints from this browser, which can be removed', async () => {
+  const page = await device('emailer', null);
+  await signInButton(page).click();
+  await page.getByRole('link', { name: 'Forgot which email you used?' }).click();
+  const known = page.getByTestId('known-accounts');
+  await known.getByText('da***@school.edu').waitFor();
+  assert.match(await known.innerText(), /Signed in with email and password/);
+  assert.doesNotMatch(await page.content(), /dana@school\.edu/, 'the full address is not kept');
+  await page.screenshot({ path: path.join(shots, 'forgot-email.png') });
+  await page.getByRole('button', { name: 'Remove these hints from this browser' }).click();
+  await page.getByText('No accounts have been used in this browser').waitFor();
+  await page.reload();
+  await page.getByText('No accounts have been used in this browser').waitFor();
+});
+
+test('privacy is one tap from signing in and says what is kept', async () => {
+  const page = await device('emailer', null);
+  await signInButton(page).click();
+  await page.getByRole('main').getByRole('link', { name: 'Privacy' }).click();
+  const text = await page.getByTestId('privacy').innerText();
+  for (const words of ['Files and recordings aren\'t saved online', 'Removing your data', 'no ads']) assert.ok(text.includes(words), words);
+  await close('emailer');
+});
+
+test('Microsoft and Facebook use the same sign-in path as Google', async () => {
+  const page = await device('social', { uid: 'social-uid', email: 'sam@outlook.com' });
+  await signInButton(page).click();
+  await page.getByRole('button', { name: 'Continue with Microsoft' }).click();
+  await page.getByRole('button', { name: /Account menu for sam@outlook.com/ }).waitFor();
+  await signOutButton(page);
+  await signInButton(page).click();
+  await page.getByRole('button', { name: 'Continue with Facebook' }).click();
+  await page.getByRole('button', { name: /Account menu for sam@outlook.com/ }).waitFor();
+  await nav(page, 'Settings');
+  await page.getByTestId('sync-status').waitFor();
+  assert.equal(await page.getByTestId('confirm-email').count(), 0, 'only password accounts are asked to confirm');
+  await close('social');
+});
+
+test('files can come from Google Drive and Dropbox, and problems are explained', async () => {
+  const page = await device('importer', null);
+  await page.evaluate(() => { window.__testCloudPick = { files: ['Drive slides.txt', 'Second.txt'], failed: ['Too big.mov'] }; });
+  await nav(page, 'Library');
+  await page.getByRole('button', { name: 'From Google Drive' }).click();
+  await page.getByRole('alert').getByText("These couldn't be copied from Google Drive: Too big.mov").waitFor();
+  await page.getByRole('link', { name: 'Drive slides.txt' }).waitFor();
+  await page.getByRole('link', { name: 'Second.txt' }).waitFor();
+  await page.screenshot({ path: path.join(shots, 'library-cloud.png') });
+  await page.evaluate(() => { window.__testCloudPick = 'cancelled'; });
+  await page.getByRole('button', { name: 'From Dropbox' }).click();
+  await page.waitForFunction(() => [...document.querySelectorAll('button')].some((b) => b.textContent === 'From Dropbox' && !b.disabled));
+  assert.equal(await page.getByRole('alert').count(), 0, 'cancelling stays quiet');
+  await page.evaluate(() => { window.__testCloudPick = "That service couldn't be reached."; });
+  await page.getByRole('button', { name: 'From Dropbox' }).click();
+  await page.getByRole('alert').getByText("That service couldn't be reached").waitFor();
+  await page.evaluate(() => { window.__testCloudPick = { files: ['Dropbox reading.txt'] }; });
+  await page.getByRole('button', { name: 'From Dropbox' }).click();
+  await page.getByRole('link', { name: 'Dropbox reading.txt' }).waitFor();
+  await page.reload();
+  await page.getByRole('link', { name: 'Dropbox reading.txt' }).waitFor();
+  await close('importer');
 });
 
 test('a half-typed answer stays on its own device', async () => {

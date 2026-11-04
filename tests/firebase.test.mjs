@@ -111,6 +111,26 @@ test('practice sets, questions, and answers can be saved', async () => {
   }
 });
 
+test('email accounts work with the real sign-in code, and stay private', async () => {
+  const dana = client('dana');
+  const email = `dana-${Date.now()}@school.edu`;
+  const user = await dana.backend.signUpWithEmail(email, 'long enough now');
+  assert.equal(user.email, email);
+  assert.equal(await dana.backend.needsEmailConfirmation(), true);
+  await dana.backend.sendEmailConfirmation();
+  const { conflicts } = await dana.backend.push(user.uid, [item('dana-note')]);
+  assert.deepEqual(conflicts, []);
+  await denied(alice.backend.pull(user.uid, 0), 'another student cannot read an email account');
+  await dana.backend.signOut();
+  await assert.rejects(dana.backend.signInWithEmail(email, 'wrong password'), (error) => String(error.code).startsWith('auth/'));
+  const again = await dana.backend.signInWithEmail(email, 'long enough now');
+  assert.equal(again.uid, user.uid);
+  await assert.rejects(dana.backend.signUpWithEmail(email, 'another password'), (error) => String(error.code).includes('email-already-in-use'));
+  await dana.backend.sendPasswordReset(email);
+  await dana.backend.sendPasswordReset(`nobody-${Date.now()}@school.edu`).catch(() => undefined);
+  assert.equal(await alice.backend.needsEmailConfirmation(), false, 'a Google account has no password to confirm');
+});
+
 test('badly shaped or oversized items are refused, so the free storage can\'t be abused', async () => {
   const ref = doc(alice.db, 'users', alice.uid, 'items', 'bad');
   await denied(() => setDoc(ref, validDoc({ collection: 'materials' })), 'a file record');

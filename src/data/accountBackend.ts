@@ -4,6 +4,8 @@ export interface AccountUser {
   photoURL?: string;
 }
 
+export type LoginProvider = 'google' | 'microsoft' | 'facebook';
+
 export type SyncCollection = 'courses' | 'topics' | 'notes' | 'lessons' | 'checkpoints' | 'checkpointProgress' | 'plannerItems' | 'decks' | 'cards' | 'cardProgress' | 'practiceSets' | 'practiceQuestions' | 'practiceAttempts';
 
 export interface RemoteItem {
@@ -38,7 +40,15 @@ export class BackendError extends Error {
 /** Everything the app needs from the online service, so the sync rules don't depend on one vendor. */
 export interface AccountBackend {
   watchUser(listener: (user: AccountUser | null) => void): void;
-  signIn(): Promise<AccountUser>;
+  /** The sign-in buttons this site has been set up for. */
+  providers: LoginProvider[];
+  signIn(provider?: LoginProvider): Promise<AccountUser>;
+  signUpWithEmail(email: string, password: string): Promise<AccountUser>;
+  signInWithEmail(email: string, password: string): Promise<AccountUser>;
+  sendPasswordReset(email: string): Promise<void>;
+  /** True when this account uses a password and its email hasn't been confirmed yet. */
+  needsEmailConfirmation(): Promise<boolean>;
+  sendEmailConfirmation(): Promise<void>;
   signOut(): Promise<void>;
   pull(uid: string, since: number): Promise<PullResult>;
   /** Writes what it can and returns the items refused because another device got there first. */

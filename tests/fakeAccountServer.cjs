@@ -5,7 +5,7 @@ const http = require('node:http');
 function createServer() {
   const users = new Map();
   let tick = 1;
-  const state = { mode: 'ok', pushes: 0, items: (uid) => [...(users.get(uid)?.values() ?? [])] };
+  const state = { accounts: new Map(), resets: [], mode: 'ok', pushes: 0, items: (uid) => [...(users.get(uid)?.values() ?? [])] };
   const server = http.createServer((req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', '*');
@@ -18,6 +18,30 @@ function createServer() {
       if (state.mode === 'quota') return send(429, {});
       if (state.mode === 'denied') return send(403, {});
       if (state.mode === 'down') return req.socket.destroy();
+      const authReply = () => {
+        const account = state.accounts.get(body.email);
+        if (req.url === '/signUp') {
+          if (account) return send(400, { code: 'auth/email-already-in-use' });
+          state.accounts.set(body.email, { password: body.password, confirmed: false, confirmations: 1 });
+          return send(200, { uid: `email-${body.email}`, email: body.email });
+        }
+        if (req.url === '/signIn') {
+          if (!account || account.password !== body.password) return send(400, { code: 'auth/invalid-credential' });
+          return send(200, { uid: `email-${body.email}`, email: body.email });
+        }
+        if (req.url === '/reset') {
+          // As with the real service, the answer never reveals whether an account exists.
+          if (account) state.resets.push(body.email);
+          return send(200, {});
+        }
+        if (req.url === '/confirmed') return send(200, { confirmed: account?.confirmed ?? false });
+        if (req.url === '/sendConfirmation') {
+          if (account) account.confirmations += 1;
+          return send(200, {});
+        }
+        return null;
+      };
+      if (['/signUp', '/signIn', '/reset', '/confirmed', '/sendConfirmation'].includes(req.url)) return authReply();
       const store = users.get(body.uid) ?? new Map();
       users.set(body.uid, store);
       if (req.url === '/pull') {
