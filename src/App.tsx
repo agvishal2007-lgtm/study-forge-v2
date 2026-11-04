@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { AccountMenu } from './components/AccountMenu';
+import { WalkthroughProvider } from './features/walkthrough/Walkthrough';
 import { RecorderProvider, RecordingBar } from './components/Recorder';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SaveProvider, SavePanel } from './components/SaveQueue';
@@ -49,6 +50,7 @@ export function App() {
   return (
     <SaveProvider>
     <RecorderProvider>
+    <WalkthroughProvider>
       <div className="shell">
         <a className="skip" href="#content" onClick={(event) => {
           event.preventDefault();
@@ -95,6 +97,7 @@ export function App() {
         </div>
         <SavePanel />
       </div>
+    </WalkthroughProvider>
     </RecorderProvider>
     </SaveProvider>
   );

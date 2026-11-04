@@ -140,7 +140,7 @@ export function RecordPage() {
 
       {running ? <Recording /> : (
         <section className="studio" aria-label="Set up a recording">
-          <fieldset className="source-choice">
+          <fieldset className="source-choice" data-tour="record-source">
             <legend>Where is the lecture?</legend>
             <label className={source === 'microphone' ? 'source chosen' : 'source'}>
               <input type="radio" name="source" checked={source === 'microphone'} onChange={() => setSource('microphone')} />
@@ -184,6 +184,7 @@ export function RecordPage() {
             </div>
           )}
           <button
+            data-tour="record-start"
             className="button primary record-button"
             disabled={phase !== 'idle'}
             onClick={() => void start({ source, withMicrophone, name: title.trim() || defaultName(), courseId: courseId || null, topicId: topicId || null })}

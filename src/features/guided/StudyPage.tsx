@@ -30,7 +30,7 @@ export function StudyPage() {
   return (
     <div className="page">
       <h1>Study</h1>
-      <p className="muted">Learn one small piece at a time: first the idea, then an example, then practice, then explain it in your own words.</p>
+      <p className="muted" data-tour="study-intro">Learn one small piece at a time: first the idea, then an example, then practice, then explain it in your own words.</p>
       {failure && <p className="error" role="alert">{failure}</p>}
 
       {next && (
@@ -80,7 +80,7 @@ export function StudyPage() {
           <p>Try a short sample lesson on accounting basics, or write your own below.</p>
         </section>
       )}
-      <div className="session-actions">
+      <div className="session-actions" data-tour="sample-lesson">
         <button
           className={lessons.length === 0 ? 'button primary' : 'button'}
           onClick={async () => {
@@ -97,7 +97,7 @@ export function StudyPage() {
         </button>
       </div>
 
-      <section aria-labelledby="new-lesson">
+      <section aria-labelledby="new-lesson" data-tour="new-lesson">
         <h2 id="new-lesson">Write your own lesson</h2>
         <form
           className="inline-form"

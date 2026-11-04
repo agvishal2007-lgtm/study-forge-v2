@@ -8,6 +8,7 @@ export function AddFiles({ courseId = null, topicId = null }: { courseId?: strin
   const { addFiles } = useSaveQueue();
   return (
     <div
+      data-tour="add-files"
       className={over ? 'drop over' : 'drop'}
       onDragOver={(event) => { event.preventDefault(); setOver(true); }}
       onDragLeave={() => setOver(false)}

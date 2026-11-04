@@ -121,7 +121,7 @@ export function BackupSection() {
   const summary = data?.summary;
 
   return (
-    <section aria-labelledby="backup-heading">
+    <section aria-labelledby="backup-heading" data-tour="backup">
       <h2 id="backup-heading">Backup</h2>
       <p>Save everything to one .zip file, then keep it somewhere safe, like Google Drive or a USB drive. You can also open it on any computer to get your files and notes.</p>
       {summary && <p className="muted" data-testid="backup-summary">

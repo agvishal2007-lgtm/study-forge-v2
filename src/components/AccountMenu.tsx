@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
+import { WalkthroughButton } from '../features/walkthrough/Walkthrough';
 import { getActiveAccount, switchAccount } from '../data/account';
 import type { AccountBackend } from '../data/accountBackend';
 import { getSyncState, loadBackend, signOutOfAccount, subscribeSync, syncNow } from '../data/sync';
@@ -158,6 +159,7 @@ function SignedIn() {
 export function AccountMenu() {
   return (
     <nav className="topbar" aria-label="Account">
+      <WalkthroughButton />
       {getActiveAccount() ? <SignedIn /> : <SignedOut />}
     </nav>
   );

@@ -273,3 +273,15 @@ textarea { font: inherit; color: var(--paper); background: var(--ground); border
 .account-sync { padding: 0 .6rem .4rem; margin: 0; font-size: .92rem; border-bottom: 1px solid var(--line); }
 .dropdown-item { display: block; width: 100%; min-height: 44px; padding: .6rem; margin-top: .15rem; background: none; border: 0; border-radius: 3px; color: var(--paper); font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
 .dropdown-item:hover { background: #2c3c50; }
+
+/* Walkthrough: everything goes dark except a box around the part being explained. */
+.tour-blocker { position: fixed; inset: 0; z-index: 1000; }
+.tour-dark { position: fixed; inset: 0; z-index: 1001; background: #05090ed9; pointer-events: none; }
+.tour-box { position: fixed; z-index: 1001; border: 3px solid var(--brass); border-radius: 6px; box-shadow: 0 0 0 100vmax #05090ed9; pointer-events: none; transition: top .2s ease, left .2s ease, width .2s ease, height .2s ease; }
+.tour-card { position: fixed; z-index: 1002; width: min(380px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; background: var(--raised); color: var(--paper); border: 1px solid var(--muted); border-radius: 6px; padding: 1.1rem 1.25rem; box-shadow: 0 10px 30px #000a; }
+.tour-card h2 { margin: .75rem 0 .4rem; }
+.tour-card p { margin: .35rem 0; }
+.tour-count { color: var(--muted); font-size: .92rem; }
+.tour-card .meter { margin-top: .35rem; }
+.tour-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; margin-top: 1rem; }
+@media (prefers-reduced-motion: reduce) { .tour-box { transition: none; } }

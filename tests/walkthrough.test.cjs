@@ -1,0 +1,280 @@
+// The walkthrough, in a real browser, on the real screens.
+const { test, before, after } = require('node:test');
+const assert = require('node:assert/strict');
+const { spawn } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { chromium } = require('playwright');
+
+const URL_BASE = 'http://localhost:4180/';
+const work = fs.mkdtempSync(path.join(os.tmpdir(), 'sf-tour-'));
+const shots = path.join(__dirname, '..', 'test-output');
+fs.mkdirSync(shots, { recursive: true });
+const TOTAL = 15;
+let server;
+let context;
+let page;
+const pageErrors = [];
+
+async function open(profile, { auto = true, viewport = { width: 1280, height: 800 }, mobile = false } = {}) {
+  await context?.close().catch(() => undefined);
+  context = await chromium.launchPersistentContext(path.join(work, profile), { viewport, isMobile: mobile, hasTouch: mobile });
+  if (auto) await context.addInitScript('window.__testWalkthrough = true;');
+  page = context.pages()[0] ?? (await context.newPage());
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  await page.goto(URL_BASE);
+}
+const card = () => page.getByTestId('tour-card');
+const count = () => page.getByTestId('tour-count').textContent();
+const press = (name) => card().getByRole('button', { name, exact: true }).click();
+async function atStep(number) {
+  await page.locator(`[data-testid=tour-count]`, { hasText: `Step ${number} of ${TOTAL}` }).waitFor();
+}
+async function next() {
+  const now = Number((await count()).match(/Step (\d+)/)[1]);
+  await press(now === 1 ? 'Start' : 'Next');
+  await atStep(now + 1);
+}
+const settle = () => page.waitForFunction(() => {
+  const el = document.querySelector('[data-testid=tour-box]') ?? document.querySelector('[data-testid=tour-card]');
+  const now = JSON.stringify(el.getBoundingClientRect());
+  const same = window.__lastRect === now;
+  window.__lastRect = now;
+  return same && document.querySelector('[data-testid=tour-card]').style.visibility !== 'hidden';
+}, null, { polling: 150 });
+
+before(async () => {
+  server = spawn('npx', ['vite', 'preview', '--port', '4180', '--strictPort'], { cwd: path.join(__dirname, '..'), stdio: 'ignore', detached: true });
+  for (let i = 0; i < 60; i++) {
+    try { if ((await fetch(URL_BASE)).ok) break; } catch { /* still starting */ }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+});
+
+after(async () => {
+  await context?.close().catch(() => undefined);
+  try { if (server) process.kill(-server.pid); } catch { /* already stopped */ }
+  fs.rmSync(work, { recursive: true, force: true });
+});
+
+test('a new student gets it automatically, starting at 0%', async () => {
+  await open('main');
+  await card().waitFor();
+  assert.match(await count(), /Step 1 of 15, 0% complete/);
+  await page.getByRole('heading', { name: 'Welcome to Study Forge' }).waitFor();
+  await settle();
+  await page.screenshot({ path: path.join(shots, 'tour-welcome.png') });
+});
+
+test('nothing outside the walkthrough can be clicked or tabbed to', async () => {
+  const hit = await page.evaluate(() => {
+    const link = document.querySelector('.nav-links a');
+    const { x, y, width, height } = link.getBoundingClientRect();
+    return document.elementFromPoint(x + width / 2, y + height / 2).dataset.testid ?? document.elementFromPoint(x + width / 2, y + height / 2).className;
+  });
+  assert.match(hit, /tour-(blocker|dark)|tour-blocker/);
+  assert.equal(await page.evaluate(() => document.getElementById('root').hasAttribute('inert')), true);
+  await page.mouse.click(60, 145);
+  await page.waitForTimeout(150);
+  assert.ok(!page.url().includes('courses'), 'clicking Courses behind it does nothing');
+  for (let i = 0; i < 8; i++) {
+    await page.keyboard.press('Tab');
+    assert.equal(await page.evaluate(() => !!document.activeElement.closest('[data-testid=tour-card]')), true, 'focus stays in the walkthrough');
+  }
+  await page.keyboard.press('Shift+Tab');
+  assert.equal(await page.evaluate(() => !!document.activeElement.closest('[data-testid=tour-card]')), true);
+});
+
+const EXPECTED = [
+  ['sections', '#/', '.nav-links'],
+  ['account', '#/', '.topbar'],
+  ['today', '#/', '#content .page'],
+  ['courses', '#/courses', '[data-tour=add-course]'],
+  ['library', '#/library', '[data-tour=add-files]'],
+  ['viewer', '#/library', '#content .page'],
+  ['study', '#/study', '[data-tour=study-intro]'],
+  ['mastery', '#/study', '[data-tour=sample-lesson]'],
+  ['write-lesson', '#/study', '[data-tour=new-lesson]'],
+  ['notes', '#/notes', '#content .page'],
+  ['record-type', '#/record', '[data-tour=record-source]'],
+  ['record-safe', '#/record', '[data-tour=record-start]'],
+  ['backup', '#/settings', '[data-tour=backup]'],
+];
+
+test('every step opens the real screen and puts a box around the real section', async () => {
+  for (const [index, [id, hash, selector]] of EXPECTED.entries()) {
+    await next();
+    assert.equal(await card().getAttribute('data-step'), id);
+    assert.match(await count(), new RegExp(`${Math.round(((index + 1) / TOTAL) * 100)}% complete`));
+    assert.equal(new URL(page.url()).hash || '#/', hash, `${id} is on the right screen`);
+    await page.getByTestId('tour-box').waitFor();
+    await settle();
+    const fit = await page.evaluate((target) => {
+      const box = document.querySelector('[data-testid=tour-box]').getBoundingClientRect();
+      const element = document.querySelector(target).getBoundingClientRect();
+      const panel = document.querySelector(target).closest('main')?.getBoundingClientRect();
+      const top = Math.max(element.top, panel?.top ?? 0, 0);
+      const bottom = Math.min(element.bottom, panel?.bottom ?? innerHeight, innerHeight);
+      const left = Math.max(element.left, 0);
+      const right = Math.min(element.right, innerWidth);
+      const c = document.querySelector('[data-testid=tour-card]').getBoundingClientRect();
+      return {
+        // At the very edge of the screen, the box sits just inside it so its border can be seen.
+        surrounds: box.top <= top + 4 && box.bottom >= bottom - 4 && box.left <= left + 4 && box.right >= right - 4,
+        close: box.top >= top - 12 && box.bottom <= bottom + 12,
+        visible: bottom - top,
+        cardOnScreen: c.top >= 0 && c.left >= 0 && c.bottom <= innerHeight && c.right <= innerWidth,
+      };
+    }, selector);
+    assert.ok(fit.surrounds, `${id}: the box surrounds the section`);
+    assert.ok(fit.close, `${id}: the box fits the section`);
+    assert.ok(fit.visible > 10, `${id}: the section is scrolled into view`);
+    assert.ok(fit.cardOnScreen, `${id}: the explanation is fully on screen`);
+    if (['courses', 'study', 'record-type', 'backup'].includes(id)) await page.screenshot({ path: path.join(shots, `tour-${id}.png`) });
+  }
+});
+
+test('Back returns to the earlier section', async () => {
+  await press('Back');
+  await atStep(13);
+  assert.equal(await card().getAttribute('data-step'), 'record-safe');
+  await page.locator('[data-testid=tour-card]').getByRole('button', { name: 'Back' }).waitFor();
+  assert.match(await count(), /80% complete/);
+});
+
+test('a reload picks up at the same step, on the right screen', async () => {
+  await page.reload();
+  await atStep(13);
+  await page.getByTestId('tour-box').waitFor();
+  assert.ok(page.url().endsWith('#/record'));
+});
+
+test('skipping cleans up completely, and it does not come back by itself', async () => {
+  await press('Skip for now');
+  await card().waitFor({ state: 'detached' });
+  assert.equal(await page.getByTestId('tour-blocker').count(), 0);
+  assert.equal(await page.evaluate(() => document.getElementById('root').hasAttribute('inert')), false);
+  await page.getByRole('navigation').getByRole('link', { name: 'Notes', exact: true }).click();
+  await page.getByRole('heading', { name: 'Notes', exact: true }).waitFor();
+  await page.reload();
+  await page.getByRole('heading', { name: 'Notes', exact: true }).waitFor();
+  await page.waitForTimeout(300);
+  assert.equal(await card().count(), 0);
+});
+
+test('Escape also leaves, and the question mark resumes at the same step', async () => {
+  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await atStep(13);
+  await page.keyboard.press('Escape');
+  await card().waitFor({ state: 'detached' });
+  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await atStep(13);
+});
+
+test('Start over returns to the beginning at 0%', async () => {
+  await press('Start over');
+  await atStep(1);
+  assert.match(await count(), /0% complete/);
+  assert.equal(new URL(page.url()).hash || '#/', '#/');
+});
+
+test('finishing reaches the last step, cleans up, and does not repeat', async () => {
+  for (let i = 1; i < TOTAL; i++) await next();
+  await page.getByRole('heading', { name: "You're ready" }).waitFor();
+  await settle();
+  await page.screenshot({ path: path.join(shots, 'tour-finish.png') });
+  assert.equal(await card().getByRole('button', { name: 'Skip for now' }).count(), 0);
+  await press('Finish');
+  await card().waitFor({ state: 'detached' });
+  assert.equal(await page.evaluate(() => document.getElementById('root').hasAttribute('inert')), false);
+  await page.getByRole('navigation').getByRole('link', { name: 'Courses', exact: true }).click();
+  await page.getByRole('heading', { name: 'Courses', exact: true }).waitFor();
+  await page.reload();
+  await page.getByRole('heading', { name: 'Courses', exact: true }).waitFor();
+  await page.waitForTimeout(300);
+  assert.equal(await card().count(), 0);
+  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await atStep(1);
+  await press('Skip for now');
+});
+
+test('a section that is missing never crashes it', async () => {
+  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await atStep(1);
+  await page.addStyleTag({ content: '[data-tour="add-course"] { display: none !important; }' });
+  for (let i = 1; i < 5; i++) await next();
+  assert.equal(await card().getAttribute('data-step'), 'courses');
+  await page.getByTestId('tour-missing').waitFor();
+  assert.equal(await page.getByTestId('tour-box').count(), 0);
+  await next();
+  await page.getByTestId('tour-box').waitFor();
+  await press('Skip for now');
+});
+
+test('a student with real content gets accurate boxes too, and their work is untouched', async () => {
+  await open('with-content', { auto: false });
+  await page.getByRole('navigation').getByRole('link', { name: 'Study', exact: true }).click();
+  await page.getByRole('button', { name: 'Add sample lesson' }).click();
+  await page.getByRole('heading', { name: /Lesson 1/ }).waitFor();
+  await page.getByRole('navigation').getByRole('link', { name: 'Today', exact: true }).click();
+  await page.getByRole('link', { name: /Sample: Accounting Basics/ }).waitFor();
+  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await atStep(1);
+  for (let i = 1; i < TOTAL; i++) {
+    await next();
+    if (i < TOTAL - 1) await page.getByTestId('tour-box').waitFor();
+  }
+  await press('Finish');
+  await page.getByRole('link', { name: /Sample: Accounting Basics/ }).waitFor();
+});
+
+test('starting from an unsaved lesson editor asks first', async () => {
+  await page.getByRole('navigation').getByRole('link', { name: 'Study', exact: true }).click();
+  await page.getByRole('link', { name: /Lesson 1/ }).click();
+  await page.getByRole('button', { name: 'Add checkpoint' }).click();
+  await page.getByLabel('Checkpoint title').fill('Half written');
+  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
+  assert.equal(await page.getByLabel('Checkpoint title').inputValue(), 'Half written');
+  assert.equal(await card().count(), 0);
+  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Leave and start walkthrough' }).click();
+  await atStep(1);
+  await press('Skip for now');
+});
+
+test('it works on a phone: the box fits and the explanation stays on screen', async () => {
+  await open('phone', { viewport: { width: 360, height: 640 }, mobile: true });
+  await card().waitFor();
+  for (let i = 1; i <= TOTAL; i++) {
+    await settle();
+    const fit = await page.evaluate(() => {
+      const c = document.querySelector('[data-testid=tour-card]').getBoundingClientRect();
+      const box = document.querySelector('[data-testid=tour-box]')?.getBoundingClientRect();
+      return {
+        card: c.top >= 0 && c.left >= 0 && c.bottom <= innerHeight && c.right <= innerWidth,
+        box: !box || (box.left >= 0 && box.right <= innerWidth && box.top >= 0 && box.bottom <= innerHeight),
+        over: document.documentElement.scrollWidth - innerWidth,
+      };
+    });
+    assert.ok(fit.card, `step ${i}: the explanation is on screen`);
+    assert.ok(fit.box, `step ${i}: the box is on screen`);
+    assert.ok(fit.over <= 0, `step ${i}: no sideways scrolling`);
+    if (i === 2 || i === 5 || i === 12) await page.screenshot({ path: path.join(shots, `tour-phone-${i}.png`) });
+    if (i < TOTAL) await next();
+  }
+  await press('Finish');
+  await card().waitFor({ state: 'detached' });
+});
+
+test('it stays out of the way for existing tests and automated browsers', async () => {
+  await open('automated', { auto: false });
+  await page.getByRole('heading', { name: 'Start with one course' }).waitFor();
+  await page.waitForTimeout(300);
+  assert.equal(await card().count(), 0);
+});
+
+test('no uncaught errors happened during the whole run', () => {
+  assert.deepEqual(pageErrors, []);
+});
