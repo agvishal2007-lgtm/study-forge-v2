@@ -4,8 +4,8 @@ import { getFirestore } from 'firebase/firestore/lite';
 import type { LoginProvider } from './accountBackend';
 import { createFirebaseBackend } from './firebaseBackend';
 
-// Add 'microsoft' or 'facebook' here once each is set up in the Firebase console.
-const LOGIN_PROVIDERS: LoginProvider[] = ['google'];
+// Add 'facebook' here once it's set up in the Firebase console.
+const LOGIN_PROVIDERS: LoginProvider[] = ['google', 'microsoft'];
 
 // These values identify the project and are meant to be public. The security rules protect the data.
 const app = initializeApp({

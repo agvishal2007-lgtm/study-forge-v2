@@ -308,7 +308,7 @@ Not built yet: making questions with AI, timed mock exams, and Cram Mode. Practi
 
 ## Sign up, email login, and recovery
 
-- A Sign up button sits beside Sign in, and both open a page with email and password plus Google. Microsoft and Facebook appear once each is set up and added to `LOGIN_PROVIDERS`.
+- A Sign up button sits beside Sign in, and both open a page with email and password plus Google. Microsoft is on. Facebook appears once it's set up and added to `LOGIN_PROVIDERS`.
 - Password accounts get a confirmation email, with a reminder and resend in Settings. Confirming isn't required to use the account.
 - Forgot password sends Firebase's reset email and never reveals whether an account exists.
 - Forgot email shows shortened hints of accounts used in this browser, plus places to look. It can't search by name, because that would reveal who has an account.
