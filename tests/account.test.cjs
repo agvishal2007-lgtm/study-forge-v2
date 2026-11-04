@@ -13,7 +13,8 @@ const URL_BASE = 'http://localhost:4179/';
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'sf-account-'));
 const shots = path.join(__dirname, '..', 'test-output');
 fs.mkdirSync(shots, { recursive: true });
-const ALICE = { uid: 'alice-uid', email: 'alice@tcnj.edu' };
+const PICTURE = 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
+const ALICE = { uid: 'alice-uid', email: 'alice@tcnj.edu', photoURL: PICTURE };
 const BOB = { uid: 'bob-uid', email: 'bob@gmail.com' };
 const textFile = path.join(work, 'chapter.txt');
 fs.writeFileSync(textFile, 'Chapter one text\n');
@@ -39,11 +40,28 @@ const close = async (name) => {
   await open.get(name)?.context.close();
   open.delete(name);
 };
-const nav = (page, name) => page.getByRole('navigation').getByRole('link', { name, exact: true }).click();
+async function openMenu(page) {
+  if (!(await page.getByTestId('account-dropdown').count())) await page.getByRole('button', { name: /Account menu for/ }).click();
+  await page.getByTestId('account-dropdown').waitFor();
+}
+async function nav(page, name) {
+  if (name === 'Settings' && (await page.getByRole('button', { name: /Account menu for/ }).count())) {
+    await openMenu(page);
+    await page.getByTestId('account-dropdown').getByRole('link', { name: 'Settings' }).click();
+    return;
+  }
+  await page.getByRole('navigation').getByRole('link', { name, exact: true }).click();
+}
+const signInButton = (page) => page.getByRole('button', { name: 'Sign in', exact: true });
+const signOutButton = async (page) => {
+  await openMenu(page);
+  await page.getByTestId('account-dropdown').getByRole('button', { name: 'Sign out' }).click();
+};
 async function signIn(page) {
+  await signInButton(page).click();
+  await page.getByRole('button', { name: /Account menu for/ }).waitFor();
   await nav(page, 'Settings');
-  await page.getByRole('button', { name: 'Sign in with Google' }).click();
-  await page.getByTestId('account-email').waitFor();
+  await page.getByTestId('sync-status').waitFor();
 }
 const status = (page) => page.getByTestId('sync-status');
 async function saved(page) {
@@ -93,14 +111,14 @@ test('everything works with no account and contacts nothing online', async () =>
   await addNote(page, 'Guest note', 'Written with no account');
   await addCourse(page, 'Guest course');
   await nav(page, 'Settings');
-  await page.getByRole('button', { name: 'Sign in with Google' }).waitFor();
+  await signInButton(page).waitFor();
   await page.screenshot({ path: path.join(shots, 'account-signed-out.png') });
   assert.equal(fake.state.pushes, 0);
   await page.getByText('whoever runs this site could technically view it').waitFor();
 });
 
 test('the sign-in button waits until sign-in can open immediately', async () => {
-  const page = await device('laptop');
+  await device('laptop');
   await close('laptop');
   const entry = await chromium.launchPersistentContext(path.join(work, 'laptop'), { viewport: { width: 1280, height: 800 } });
   const slow = entry.pages()[0] ?? (await entry.newPage());
@@ -108,33 +126,77 @@ test('the sign-in button waits until sign-in can open immediately', async () => 
     await new Promise((resolve) => setTimeout(resolve, 1200));
     await route.continue();
   });
-  await slow.goto(`${URL_BASE}#/settings`);
-  const waiting = slow.getByRole('button', { name: 'Getting sign-in ready…' });
-  await waiting.waitFor();
-  assert.equal(await waiting.isDisabled(), true);
-  await slow.getByRole('button', { name: 'Sign in with Google' }).waitFor();
-  assert.equal(await slow.getByRole('button', { name: 'Sign in with Google' }).isDisabled(), false);
+  await slow.goto(URL_BASE);
+  assert.equal(await signInButton(slow).isDisabled(), true);
+  await slow.waitForFunction(() => [...document.querySelectorAll('button')].some((b) => b.textContent === 'Sign in' && !b.disabled));
   await entry.close();
-  assert.ok(page);
+});
+
+test('two panels scroll separately, each with its own scrollbar', async () => {
+  const entry = await chromium.launchPersistentContext(path.join(work, 'layout'), { viewport: { width: 1000, height: 220 }, ignoreDefaultArgs: ['--hide-scrollbars'] });
+  const page = entry.pages()[0] ?? (await entry.newPage());
+  await page.goto(`${URL_BASE}#/settings`);
+  await page.getByRole('heading', { name: 'Settings', exact: true }).waitFor();
+  const read = () => page.evaluate(() => {
+    const left = document.querySelector('.nav-links');
+    const right = document.querySelector('main');
+    return {
+      left: left.scrollTop, right: right.scrollTop,
+      leftFits: left.scrollHeight <= left.clientHeight, rightFits: right.scrollHeight <= right.clientHeight,
+      leftBar: getComputedStyle(left).overflowY, rightBar: getComputedStyle(right).overflowY,
+      leftWidth: left.offsetWidth - left.clientWidth, rightWidth: right.offsetWidth - right.clientWidth,
+    };
+  });
+  const start = await read();
+  assert.equal(start.leftBar, 'scroll');
+  assert.equal(start.rightBar, 'scroll');
+  assert.ok(start.leftWidth > 0 && start.rightWidth > 0, 'both scrollbars take up real space');
+  assert.equal(start.leftFits, false);
+  assert.equal(start.rightFits, false);
+  await page.evaluate(() => { document.querySelector('main').scrollTop = 150; });
+  let now = await read();
+  assert.ok(now.right > 0);
+  assert.equal(now.left, 0, 'scrolling the section leaves the buttons alone');
+  await page.evaluate(() => { document.querySelector('main').scrollTop = 0; document.querySelector('.nav-links').scrollTop = 60; });
+  now = await read();
+  assert.ok(now.left > 0);
+  assert.equal(now.right, 0, 'scrolling the buttons leaves the section alone');
+  await page.setViewportSize({ width: 1000, height: 800 });
+  await page.screenshot({ path: path.join(shots, 'layout-two-panels.png') });
+  assert.equal(await page.locator('.nav-links').getByRole('link', { name: 'Settings' }).count(), 0, 'Settings left the sidebar');
+  await entry.close();
+});
+
+test('the account controls stay at the top right on every screen', async () => {
+  const page = await device('laptop');
+  for (const name of ['Today', 'Courses', 'Library', 'Study', 'Notes', 'Record']) {
+    await page.locator('.nav-links').getByRole('link', { name, exact: true }).click();
+    const box = await signInButton(page).boundingBox();
+    assert.ok(box.x > 900, `${name}: Sign in is on the right`);
+    assert.ok(box.y < 60, `${name}: Sign in is at the top`);
+    await page.getByRole('link', { name: 'Settings' }).waitFor();
+  }
+  await page.screenshot({ path: path.join(shots, 'layout-signed-out.png') });
+  await close('laptop');
 });
 
 test('closing the sign-in window is quiet, and a school block explains what to do', async () => {
   const page = await device('laptop', 'auth/popup-closed-by-user');
   await nav(page, 'Settings');
-  await page.getByRole('button', { name: 'Sign in with Google' }).click();
-  await page.getByRole('button', { name: 'Sign in with Google' }).waitFor();
+  await signInButton(page).click();
+  await signInButton(page).waitFor();
   assert.equal(await page.getByRole('alert').count(), 0);
   await close('laptop');
   const blocked = await device('laptop', 'auth/admin-restricted-operation');
   await nav(blocked, 'Settings');
-  await blocked.getByRole('button', { name: 'Sign in with Google' }).click();
+  await signInButton(blocked).click();
   await blocked.getByRole('alert').getByText('Your school blocked this sign-in').waitFor();
   await nav(blocked, 'Notes');
   await blocked.getByRole('link', { name: 'Guest note' }).waitFor();
   await close('laptop');
   const popup = await device('laptop', 'auth/popup-blocked');
   await nav(popup, 'Settings');
-  await popup.getByRole('button', { name: 'Sign in with Google' }).click();
+  await signInButton(popup).click();
   await popup.getByRole('alert').getByText('Allow pop-ups').waitFor();
   await close('laptop');
 });
@@ -142,9 +204,23 @@ test('closing the sign-in window is quiet, and a school block explains what to d
 test('signing in starts a separate space, and copying earlier work is the student\'s choice', async () => {
   const page = await device('laptop', ALICE);
   await signIn(page);
-  await page.getByTestId('account-email').getByText('alice@tcnj.edu').waitFor();
+  await page.getByRole('button', { name: /Account menu for alice@tcnj.edu/ }).waitFor();
   await page.getByTestId('guest-offer').getByText('1 course, 0 files, 1 note').waitFor();
   await page.screenshot({ path: path.join(shots, 'account-signed-in.png') });
+  // The profile picture replaced Sign in, and the menu opens, closes, and leads to Settings.
+  assert.equal(await signInButton(page).count(), 0);
+  const picture = page.locator('.avatar-button img');
+  assert.match(await picture.getAttribute('src'), /^data:image/);
+  const pictureBox = await picture.boundingBox();
+  assert.ok(pictureBox.x > 1150 && pictureBox.y < 60, 'picture is at the top right');
+  await openMenu(page);
+  await page.getByTestId('account-dropdown').getByText('alice@tcnj.edu').waitFor();
+  await page.screenshot({ path: path.join(shots, 'account-dropdown.png') });
+  await page.keyboard.press('Escape');
+  await page.getByTestId('account-dropdown').waitFor({ state: 'detached' });
+  await openMenu(page);
+  await page.locator('h1').click(); // Clicking elsewhere closes it.
+  await page.getByTestId('account-dropdown').waitFor({ state: 'detached' });
   await nav(page, 'Notes');
   await page.getByText('No notes yet').waitFor();
   assert.equal(await page.getByRole('link', { name: 'Guest note' }).count(), 0, 'not added without asking');
@@ -303,9 +379,9 @@ test('files stay on the device and only their text-side records travel', async (
 test('a second student on the same computer cannot open the first student\'s work', async () => {
   const laptop = await device('laptop');
   await nav(laptop, 'Settings');
-  await laptop.getByRole('button', { name: 'Sign out' }).click();
+  await signOutButton(laptop);
   await laptop.getByRole('button', { name: 'Sign out and keep it here' }).click();
-  await laptop.getByRole('button', { name: 'Sign in with Google' }).waitFor();
+  await signInButton(laptop).waitFor();
   await nav(laptop, 'Notes');
   await laptop.getByRole('link', { name: 'Guest note' }).waitFor();
   assert.equal(await laptop.getByRole('link', { name: 'Shared note', exact: true }).count(), 0, 'signed out shows only no-account work');
@@ -315,7 +391,8 @@ test('a second student on the same computer cannot open the first student\'s wor
   await close('laptop');
   const asBob = await device('laptop', BOB);
   await signIn(asBob);
-  await asBob.getByTestId('account-email').getByText('bob@gmail.com').waitFor();
+  await asBob.getByRole('button', { name: /Account menu for bob@gmail.com/ }).waitFor();
+  await asBob.locator('.avatar-letter', { hasText: 'B' }).waitFor(); // No picture shows their first letter.
   await nav(asBob, 'Notes');
   await asBob.getByText('No notes yet').waitFor();
   await nav(asBob, 'Library');
@@ -325,9 +402,9 @@ test('a second student on the same computer cannot open the first student\'s wor
   assert.ok(!fake.state.items('alice-uid').some((item) => item.json.includes('Only for Bob')));
   assert.ok(!fake.state.items('bob-uid').some((item) => item.json.includes('Edited on the phone')));
   await nav(asBob, 'Settings');
-  await asBob.getByRole('button', { name: 'Sign out' }).click();
+  await signOutButton(asBob);
   await asBob.getByRole('button', { name: 'Sign out and keep it here' }).click();
-  await asBob.getByRole('button', { name: 'Sign in with Google' }).waitFor();
+  await signInButton(asBob).waitFor();
   await close('laptop');
 
   // Alice returns, and her work, including her file, is still here.
@@ -375,7 +452,7 @@ test('removing from a shared computer asks twice, needs a good sync, and clears 
   const laptop = await device('laptop');
   await nav(laptop, 'Settings');
   fake.state.mode = 'down';
-  await laptop.getByRole('button', { name: 'Sign out' }).click();
+  await signOutButton(laptop);
   await laptop.getByRole('button', { name: 'Sign out and remove from this device' }).click();
   await laptop.getByRole('dialog').getByRole('button', { name: 'Remove and sign out' }).click();
   await laptop.getByRole('alert').getByText('nothing was removed from this device').waitFor();
@@ -383,14 +460,14 @@ test('removing from a shared computer asks twice, needs a good sync, and clears 
   await nav(laptop, 'Library');
   await laptop.getByRole('link', { name: 'chapter.txt' }).waitFor();
   await nav(laptop, 'Settings');
-  await laptop.getByRole('button', { name: 'Sign out' }).click();
+  await signOutButton(laptop);
   await laptop.getByRole('button', { name: 'Sign out and remove from this device' }).click();
   await laptop.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
-  await laptop.getByTestId('account-email').waitFor();
-  await laptop.getByRole('button', { name: 'Sign out' }).click();
+  await laptop.getByTestId('sync-status').waitFor();
+  await signOutButton(laptop);
   await laptop.getByRole('button', { name: 'Sign out and remove from this device' }).click();
   await laptop.getByRole('dialog').getByRole('button', { name: 'Remove and sign out' }).click();
-  await laptop.getByRole('button', { name: 'Sign in with Google' }).waitFor();
+  await signInButton(laptop).waitFor();
   const left = await laptop.evaluate(async () => {
     const dbs = (await indexedDB.databases()).map((database) => database.name);
     const root = await navigator.storage.getDirectory();
@@ -420,7 +497,7 @@ test('deleting the online copy asks first, signs out, and keeps this device\'s c
   assert.ok(fake.state.items('alice-uid').length > 0);
   await phone.getByRole('button', { name: 'Delete my online copy' }).click();
   await phone.getByRole('dialog').getByRole('button', { name: 'Delete online copy' }).click();
-  await phone.getByRole('button', { name: 'Sign in with Google' }).waitFor();
+  await signInButton(phone).waitFor();
   assert.equal(fake.state.items('alice-uid').length, 0);
 });
 

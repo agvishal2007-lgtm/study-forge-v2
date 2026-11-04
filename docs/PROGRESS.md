@@ -179,7 +179,7 @@ The numbers are starting values, not research findings, and should change after 
 **The goal:** students can sign in with Google so their work follows them, and nobody can reach anyone else's work.
 
 ### What works
-- Sign-in is optional. Students who don't sign in send nothing to the online service, though the Settings screen loads the sign-in code so Google's window can open on the first tap.
+- Sign-in is optional. Students who don't sign in save nothing online, though every screen loads the sign-in code so Google's window can open on the first tap.
 - Courses, topics, notes, lessons, and study progress save online a few seconds after changes. Files and recordings stay on the device.
 - Each account has separate storage on the device, so a second student on a shared computer can't open the first student's work in the app.
 - When signing out, a student can remove their work from a shared computer. It warns that files will be deleted and refuses unless the text saved online first.

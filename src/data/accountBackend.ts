@@ -1,6 +1,7 @@
 export interface AccountUser {
   uid: string;
   email: string;
+  photoURL?: string;
 }
 
 export type SyncCollection = 'courses' | 'topics' | 'notes' | 'lessons' | 'checkpoints' | 'checkpointProgress';

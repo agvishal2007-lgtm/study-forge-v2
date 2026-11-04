@@ -220,9 +220,9 @@ test('deleting asks first, and deleting a course or file keeps its notes', async
   assert.equal(await page.getByLabel('Course').inputValue(), '');
 });
 
-test('phone layout keeps all six destinations with no sideways scrolling', async () => {
+test('phone layout keeps every destination with no sideways scrolling', async () => {
   await page.setViewportSize({ width: 360, height: 700 });
-  for (const name of ['Today', 'Courses', 'Library', 'Notes', 'Record', 'Settings']) {
+  for (const name of ['Today', 'Courses', 'Library', 'Study', 'Notes', 'Record', 'Settings']) {
     await nav(name);
     await page.waitForTimeout(100);
     const overflow = await page.evaluate(() => {

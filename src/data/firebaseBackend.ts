@@ -22,7 +22,11 @@ function translate(error: unknown): BackendError {
 const docId = (item: { collection: string; id: string }) => encodeURIComponent(itemKey(item.collection, item.id));
 
 export function createFirebaseBackend(_app: FirebaseApp, auth: Auth, db: Firestore): AccountBackend {
-  const toUser = (user: { uid: string; email: string | null }): AccountUser => ({ uid: user.uid, email: user.email ?? '' });
+  const toUser = (user: { uid: string; email: string | null; photoURL: string | null }): AccountUser => ({
+    uid: user.uid,
+    email: user.email ?? '',
+    photoURL: user.photoURL ?? undefined,
+  });
   return {
     watchUser(listener) {
       onAuthStateChanged(auth, (user) => listener(user ? toUser(user) : null));

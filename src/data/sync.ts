@@ -1,5 +1,5 @@
 import { BackendError, itemKey, type AccountBackend, type PushItem, type RemoteItem, type SyncCollection } from './accountBackend';
-import { getActiveAccount, switchAccount } from './account';
+import { getActiveAccount, switchAccount, updateAccountDetails } from './account';
 import { getDb, notifyChanged, subscribe } from './db';
 import type { Checkpoint, CheckpointProgress, Note } from './types';
 
@@ -261,7 +261,10 @@ export async function startSync(): Promise<void> {
   backendInstance.watchUser((user) => {
     // Signed out somewhere else, or a different account: never keep showing the wrong data.
     if (!user) switchAccount(null);
-    else if (user.uid !== account.uid) switchAccount({ uid: user.uid, email: user.email });
+    else if (user.uid !== account.uid) switchAccount({ uid: user.uid, email: user.email, photoURL: user.photoURL });
+    else if (user.photoURL !== account.photoURL || user.email !== account.email) {
+      updateAccountDetails({ uid: user.uid, email: user.email, photoURL: user.photoURL });
+    }
   });
   subscribe(() => {
     clearTimeout(timer);

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
+import { AccountMenu } from './components/AccountMenu';
 import { RecorderProvider, RecordingBar } from './components/Recorder';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SaveProvider, SavePanel } from './components/SaveQueue';
@@ -63,10 +64,9 @@ export function App() {
               <NavLink key={link.to} to={link.to} end={link.end}>{link.label}</NavLink>
             ))}
           </div>
-          <div className="nav-bottom">
-            <NavLink to="/settings">Settings</NavLink>
-          </div>
         </nav>
+        <div className="workspace">
+        <AccountMenu />
         <main id="content" tabIndex={-1}>
           {updateBlocked && <p className="notice" role="alert">Study Forge was updated. Close its other tabs, then reload this one. Your files are safe.</p>}
           <RecordingBar />
@@ -92,6 +92,7 @@ export function App() {
             </Suspense>
           </ErrorBoundary>
         </main>
+        </div>
         <SavePanel />
       </div>
     </RecorderProvider>

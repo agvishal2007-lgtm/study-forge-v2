@@ -8,12 +8,14 @@ const KEY = 'study-forge-account';
 export interface ActiveAccount {
   uid: string;
   email: string;
+  photoURL?: string;
 }
 
 export function getActiveAccount(): ActiveAccount | null {
   try {
     const parsed = JSON.parse(localStorage.getItem(KEY) ?? 'null');
-    return parsed && typeof parsed.uid === 'string' ? { uid: parsed.uid, email: String(parsed.email ?? '') } : null;
+    if (!parsed || typeof parsed.uid !== 'string') return null;
+    return { uid: parsed.uid, email: String(parsed.email ?? ''), photoURL: typeof parsed.photoURL === 'string' ? parsed.photoURL : undefined };
   } catch {
     return null;
   }
@@ -24,6 +26,12 @@ export function switchAccount(account: ActiveAccount | null): void {
   if (account) localStorage.setItem(KEY, JSON.stringify(account));
   else localStorage.removeItem(KEY);
   location.reload();
+}
+
+/** Refreshes account details, such as a new profile picture, without reloading anything. */
+export function updateAccountDetails(account: ActiveAccount): void {
+  localStorage.setItem(KEY, JSON.stringify(account));
+  window.dispatchEvent(new Event('study-forge-account-updated'));
 }
 
 const safe = (uid: string) => uid.replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -37,7 +45,9 @@ export const CURRENT_FOLDER = folderNameFor(active?.uid ?? null);
 
 // Another tab signing in or out must not leave this tab showing the wrong account.
 if (typeof window !== 'undefined') {
+  const openedAs = active?.uid ?? null;
   window.addEventListener('storage', (event) => {
-    if (event.key === KEY) location.reload();
+    // Only a different person needs a reload, not a refreshed profile picture.
+    if (event.key === KEY && (getActiveAccount()?.uid ?? null) !== openedAs) location.reload();
   });
 }
