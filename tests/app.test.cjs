@@ -315,7 +315,7 @@ test('phone layout has no sideways scrolling and keeps every destination', async
   await page.setViewportSize({ width: 375, height: 700 });
   for (const [label, heading] of [['Today', 'Today'], ['Courses', 'Courses'], ['Library', 'Library'], ['Settings', 'Settings']]) {
     await page.getByRole('navigation').getByRole('link', { name: label, exact: true }).click();
-    await page.getByRole('heading', { name: heading, exact: true }).first().waitFor();
+    await page.getByRole('heading', { name: heading === 'Today' ? /^Today:/ : heading, exact: heading === 'Today' ? undefined : true }).first().waitFor();
     const overflow = await page.evaluate(() => {
       const main = document.querySelector('main');
       return Math.max(document.documentElement.scrollWidth - innerWidth, main.scrollWidth - main.clientWidth);
