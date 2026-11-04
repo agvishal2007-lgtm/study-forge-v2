@@ -346,7 +346,7 @@ Tested in a real browser using small test files. Not tried yet with real, compli
 
 ## Exam Hall and Cram Mode
 
-Exam Hall gathers exam preparation in one place. It's in the sidebar on computers. On phones it's reached from Today or Practice, because the bottom bar is full.
+Exam Hall gathers exam preparation in one place. It's in the sidebar on computers, and in the sliding bottom bar on phones.
 
 - Mock exams pull shuffled questions from practice sets, by course, with a question count and an optional time limit. The clock keeps running if the page closes, and time running out submits the exam.
 - Answers and feedback stay hidden until the end. Unanswered questions count as wrong. Written answers that don't match an accepted answer wait for the student to check them, and no score shows until they're checked.
@@ -391,3 +391,18 @@ Limits: scanned PDFs have no words to read, and Study Forge says so. Files over 
 - `tests/` holds the browser tests.
 
 This split answers the old prototype's problems: one 8,000-line file, four competing data stores, and uploads stuck at 99%. A file here counts as saved only after the whole original is stored, and AI has no part in it.
+
+## Calendar and schedule
+
+The Calendar section follows the owner's Notion calendar: **Today's Plan** (today's unfinished items, in order), **Plan Calendar** (the whole month), plus a **Deadline Calendar** (Planner due dates), so when work happens stays separate from when it's due.
+
+- Each meeting of a class is its own saved item, so one can be marked completed or changed without touching the rest. Editing can also apply to later meetings.
+- Add class schedule reads a pasted schedule (MWF, TR, TTh, MoWeFr, Mon/Wed, and whole day names), shows it for checking, and saves every meeting between the first and last day of classes. Lines it can't read are shown, never guessed. Saving again updates rather than copies.
+- Connect Google Calendar is read-only. The student picks calendars and checks first guesses before anything is saved. Canvas comes through when it's added to Google Calendar, and its work goes in the Planner with the course tag tidied away. Get the latest updates what changed and keeps the student's course, type, notes, and status. Things they removed stay removed.
+- Older deadlines from Google aren't added. A deadline that disappears from Google stays in the Planner. A class already saved from the schedule isn't added twice.
+- Not automatic: updates happen when the student presses Get the latest, because Study Forge has no server.
+- Tested with a stand-in for Google, not yet against the real one. Until Google verifies the app, students see a warning, and there's a limit of 100 new users.
+
+## Progress and streaks
+
+Progress shows the current and longest streak, a 12-week activity grid, and each course's lessons, flashcards, practice, planner, and latest mock exam. A study day means a flashcard review, a practice answer, a finished mock exam, or lesson work. It doesn't track study time or predict grades. Each device keeps its own daily counts, so two devices never overwrite each other.

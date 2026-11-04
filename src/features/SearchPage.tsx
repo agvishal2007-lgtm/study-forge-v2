@@ -5,6 +5,7 @@ import { listFileText, readNewFiles } from '../data/fileText';
 import { listCheckpoints, listLessons } from '../data/guided';
 import { listNotes } from '../data/notes';
 import { plainNote } from '../data/noteFormat';
+import { listCalendarEvents } from '../data/calendar';
 import { listPlannerItems } from '../data/planner';
 import { listPracticeQuestions, listPracticeSets } from '../data/practice';
 import { highlight, runSearch, searchTerms, type Searchable } from '../data/searchRules';
@@ -14,8 +15,8 @@ import { useLive } from '../data/useLive';
 const MAX_SHOWN = 30;
 
 async function loadSearchable(): Promise<{ items: Searchable[]; scanned: number; materials: Awaited<ReturnType<typeof listMaterials>> }> {
-  const [notes, materials, fileText, decks, cards, sets, questions, planner, lessons, checkpoints, courses] = await Promise.all([
-    listNotes(), listMaterials(), listFileText(), listDecks(), listCards(), listPracticeSets(), listPracticeQuestions(), listPlannerItems(), listLessons(), listCheckpoints(), listCourses(),
+  const [notes, materials, fileText, decks, cards, sets, questions, planner, lessons, checkpoints, courses, calendar] = await Promise.all([
+    listNotes(), listMaterials(), listFileText(), listDecks(), listCards(), listPracticeSets(), listPracticeQuestions(), listPlannerItems(), listLessons(), listCheckpoints(), listCourses(), listCalendarEvents(),
   ]);
   const items: Searchable[] = [];
   for (const note of notes) items.push({ group: 'Notes', title: note.title || 'Untitled note', body: plainNote(note.body), to: `/notes/${note.id}` });
@@ -35,6 +36,9 @@ async function loadSearchable(): Promise<{ items: Searchable[]; scanned: number;
     items.push({ group: 'Practice', title: question.prompt, body: [question.topic, question.modelAnswer, question.explanation, question.source, ...question.options].filter(Boolean).join(' '), to: `/practice/${question.setId}`, detail: setNames.get(question.setId) });
   }
   for (const item of planner) items.push({ group: 'Planner', title: item.title, body: item.details, to: `/planner/${item.id}`, detail: item.type });
+  // A class that meets 45 times shows up once.
+  const shownSeries = new Set<string>();
+  for (const event of calendar.filter((entry) => !entry.hidden && (!entry.seriesId || !shownSeries.has(entry.seriesId) && shownSeries.add(entry.seriesId)))) items.push({ group: 'Calendar', title: event.title, body: [event.location, event.whatToDo].filter(Boolean).join(' '), to: `/calendar/event/${event.id}`, detail: event.date });
   for (const lesson of lessons) items.push({ group: 'Lessons', title: lesson.title, body: '', to: `/study/lessons/${lesson.id}`, detail: 'Lesson' });
   for (const checkpoint of checkpoints) {
     const teaching = checkpoint.teaching;

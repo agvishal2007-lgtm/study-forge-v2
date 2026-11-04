@@ -138,6 +138,14 @@ test('mock exam results can be saved', async () => {
   assert.ok(items.some((entry) => entry.id === 'exam-1' && entry.collection === 'examResults'));
 });
 
+test('calendar items and study days can be saved', async () => {
+  const { conflicts } = await alice.backend.push(alice.uid, [item('event-1', { collection: 'calendarEvents' }), item('day-1', { collection: 'studyDays' })]);
+  assert.deepEqual(conflicts, []);
+  const { items } = await alice.backend.pull(alice.uid, 0);
+  assert.ok(items.some((entry) => entry.id === 'event-1' && entry.collection === 'calendarEvents'));
+  assert.ok(items.some((entry) => entry.id === 'day-1' && entry.collection === 'studyDays'));
+});
+
 test('badly shaped or oversized items are refused, so the free storage can\'t be abused', async () => {
   const ref = doc(alice.db, 'users', alice.uid, 'items', 'bad');
   await denied(() => setDoc(ref, validDoc({ collection: 'materials' })), 'a file record');

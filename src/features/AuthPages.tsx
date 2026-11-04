@@ -211,12 +211,14 @@ export function PrivacyPage() {
       <h2>With an account</h2>
       <ul className="plain-list">
         <li>Your email address, plus your name and picture if you sign in with Google or Microsoft, are used to sign you in.</li>
-        <li>The text you create is saved online so it can follow you: courses, topics, notes, lessons, planner items, flashcards, practice questions, and your progress.</li>
+        <li>The text you create is saved online so it can follow you: courses, topics, notes, lessons, planner items, calendar items, flashcards, practice questions, and your progress.</li>
         <li>Files and recordings aren't saved online. They stay on your device.</li>
         <li>This is stored in Google's Firebase service. Other students can't read it, but whoever runs this site could technically view it, so don't save anything you wouldn't want seen.</li>
       </ul>
       <h2>Files from Google Drive or Dropbox</h2>
       <p>Study Forge only gets the files you pick. They're copied to your device, and aren't saved online by Study Forge. Screens where you add files load a small piece of code from those services, so the button is ready when you tap it.</p>
+      <h2>Google Calendar</h2>
+      <p>If you connect Google Calendar, Study Forge can only read it, and never adds, changes, or deletes anything there. It reads the calendars you choose, and only when you open or update the connection. Items you keep are saved in Study Forge. With an account, they're also saved online with the rest of your text, and Delete my online copy removes them. Google's permission is kept only while the page is open. You can disconnect in Calendar, or remove Study Forge in your Google account settings.</p>
       <h2>Advertising and selling data</h2>
       <p>Study Forge has no ads and doesn't sell your information.</p>
       <h2>Removing your data</h2>

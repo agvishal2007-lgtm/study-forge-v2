@@ -22,7 +22,7 @@ export function PlannerItemPage() {
   const [title, setTitle] = useState('');
   const [courseId, setCourseId] = useState(params.get('course') ?? '');
   const [type, setType] = useState<PlannerType>('Assignment');
-  const [dueDate, setDueDate] = useState('');
+  const [dueDate, setDueDate] = useState(params.get('date') ?? '');
   const [dueTime, setDueTime] = useState('');
   const [status, setStatus] = useState<PlannerStatus>('Not Started');
   const [priority, setPriority] = useState<PlannerPriority>('Normal');
@@ -107,6 +107,7 @@ export function PlannerItemPage() {
     <div className="page planner-form">
       <header className="course-head">
         <h1>{isNew ? 'Add item' : 'Edit item'}</h1>
+        {!isNew && <Link to={`/calendar/event/new?plannerItem=${id}&title=${encodeURIComponent(title)}&course=${courseId}`}>Schedule time for this</Link>}
         {!isNew && <button className="text-button danger-text" onClick={() => setConfirmDelete(true)}>Delete item</button>}
       </header>
       <form onSubmit={(event) => { event.preventDefault(); void save(); }}>

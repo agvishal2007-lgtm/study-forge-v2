@@ -15,6 +15,11 @@ import { listNotes } from '../data/notes';
 import { listAllTopics, listPracticeAttempts, listPracticeQuestions, listPracticeSets } from '../data/practice';
 import { accuracyOf, latestAnswers, mistakesIn, weakTopics } from '../data/practiceRules';
 import { topicLabeler } from './PracticePage';
+import { listCalendarEvents, setEventCompleted } from '../data/calendar';
+import { describeTime, noClassesOn, todaysPlan } from '../data/calendarRules';
+import { dayOf, streaksFrom } from '../data/progressRules';
+import { listStudyDays } from '../data/studyLog';
+import { listExamResults } from '../data/exams';
 import { listPlannerItems, setPlannerStatus } from '../data/planner';
 import { comparePlanner, describeDue, groupOf, localNow } from '../data/plannerRules';
 import { listUnfinished } from '../data/recordings';
@@ -67,15 +72,16 @@ export function TodayPage() {
     const [lessons, checkpoints, progress, plannerItems] = await Promise.all([listLessons(), listCheckpoints(), listProgress(), listPlannerItems()]);
     const [decks, cards, cardProgress] = await Promise.all([listDecks(), listCards(), listCardProgress()]);
     const [practiceSets, practiceQuestions, practiceAttempts, topics] = await Promise.all([listPracticeSets(), listPracticeQuestions(), listPracticeAttempts(), listAllTopics()]);
-    return { practiceSets, practiceQuestions, practiceAttempts, topics, courses, materials, storage, unfinished, notes, lastBackup, plannerItems, decks, cards, cardProgress, progress, next: recommendNext(lessons, checkpoints, progress) };
+    const [calendarEvents, studyDays, examResults] = await Promise.all([listCalendarEvents(), listStudyDays(), listExamResults()]);
+    return { calendarEvents, studyDays, examResults, practiceSets, practiceQuestions, practiceAttempts, topics, courses, materials, storage, unfinished, notes, lastBackup, plannerItems, decks, cards, cardProgress, progress, next: recommendNext(lessons, checkpoints, progress) };
   }, [askedToKeep]);
 
   if (error) return <div className="page"><h1>Today</h1><p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress, practiceSets, practiceQuestions, practiceAttempts, topics } = data;
+  const { courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress, practiceSets, practiceQuestions, practiceAttempts, topics, calendarEvents, studyDays, examResults } = data;
   const backupDue = (materials.length > 0 || notes.length > 0) && (lastBackup === null || Date.now() - lastBackup > BACKUP_REMINDER_MS);
 
-  if (courses.length === 0 && materials.length === 0 && unfinished.length === 0 && notes.length === 0 && plannerItems.length === 0 && cards.length === 0 && decks.length === 0 && practiceSets.length === 0) {
+  if (courses.length === 0 && materials.length === 0 && unfinished.length === 0 && notes.length === 0 && plannerItems.length === 0 && cards.length === 0 && decks.length === 0 && practiceSets.length === 0 && calendarEvents.length === 0) {
     return (
       <div className="page welcome">
         <h1>Start with one course</h1>
@@ -100,6 +106,16 @@ export function TodayPage() {
   const practiceAccuracy = accuracyOf([...latestAnswers(practiceAttempts).values()]);
   const practiceMistakes = mistakesIn(practiceQuestions, practiceAttempts);
   const weak = weakTopics(practiceQuestions, practiceAttempts, topicLabeler(practiceSets, topics));
+  const plan = todaysPlan(calendarEvents, now.date);
+  const noClasses = noClassesOn(calendarEvents, now.date);
+  const studied = new Set<string>([
+    ...studyDays.map((entry) => entry.date),
+    ...practiceAttempts.map((attempt) => dayOf(attempt.at)),
+    ...examResults.map((result) => dayOf(result.finishedAt)),
+    ...[...cardProgress.values()].map((entry) => dayOf(entry.lastReviewedAt)),
+    ...[...progress.values()].map((entry) => dayOf(entry.lastStudiedAt)),
+  ]);
+  const streak = streaksFrom(studied, now.date);
   const [year, month, day] = now.date.split('-').map(Number);
   const dateWords = new Date(year, month - 1, day).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -110,6 +126,7 @@ export function TodayPage() {
     { label: 'Weak cards', value: weakCards.length, to: '/cards', id: 'weak' },
     { label: 'Practice accuracy', value: practiceAccuracy === null ? '—' : `${practiceAccuracy}%`, to: '/practice', id: 'practice' },
     { label: 'Lessons to review', value: toReview, to: '/study', id: 'lessons' },
+    { label: 'Study streak', value: streak.current, to: '/progress', id: 'streak' },
   ];
 
   return (
@@ -163,6 +180,28 @@ export function TodayPage() {
       </div>
 
       <div className="dash-grid">
+        <section className="dash-card" aria-labelledby="plan-heading" data-testid="today-plan">
+          <div className="section-head">
+            <h2 id="plan-heading">Today's plan</h2>
+            <Link to="/calendar">See calendar</Link>
+          </div>
+          <p className="dash-note">Classes and plans still left today.</p>
+          {noClasses.map((event) => <p key={event.id} className="notice">No classes today: {event.title}</p>)}
+          {plan.length > 0
+            ? (
+              <ul className="dash-rows">
+                {plan.slice(0, SHOWN_ROWS).map((event) => (
+                  <li key={event.id} className="dash-simple-row">
+                    <span className="dash-when">{describeTime(event)}</span>
+                    <Link className="dash-what" to={`/calendar/event/${event.id}`}>{event.title}</Link>
+                    <button className="button dash-done" aria-label={`Mark ${event.title} completed`} onClick={() => { void setEventCompleted(event.id, true); }}>Done</button>
+                  </li>
+                ))}
+              </ul>
+            )
+            : <p className="muted">{calendarEvents.length > 0 ? 'Nothing left on your plan today.' : <>Nothing here yet. <Link to="/calendar/schedule">Add your class schedule</Link>.</>}</p>}
+        </section>
+
         <section className="dash-card" aria-labelledby="due-heading" data-testid="due-soon">
           <div className="section-head">
             <h2 id="due-heading">Due for class and school</h2>
@@ -270,6 +309,7 @@ export function TodayPage() {
             <dt>Weak cards</dt><dd>Your last answer was Again, or you've pressed Again twice or more and haven't since pressed Good or Easy enough to recover.</dd>
             <dt>Practice accuracy</dt><dd>Your latest answer to each practice question. A partly right answer counts as half. Weak topics are under 70%.</dd>
             <dt>Lessons to review</dt><dd>Lesson checkpoints marked Needs review from your answers.</dd>
+            <dt>Study streak</dt><dd>Days in a row with a flashcard review, a practice answer, a mock exam, or lesson work.</dd>
           </dl>
         </section>
       </div>

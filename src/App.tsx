@@ -31,6 +31,11 @@ import { PracticeSessionPage } from './features/PracticeSessionPage';
 import { PracticeSetPage } from './features/PracticeSetPage';
 import { PlannerItemPage } from './features/PlannerItemPage';
 import { PlannerPage } from './features/PlannerPage';
+import { CalendarEventPage } from './features/CalendarEventPage';
+import { CalendarPage } from './features/CalendarPage';
+import { GoogleCalendarPage } from './features/GoogleCalendarPage';
+import { ProgressPage } from './features/ProgressPage';
+import { SchedulePage } from './features/SchedulePage';
 import { SettingsPage } from './features/SettingsPage';
 import { TodayPage } from './features/TodayPage';
 
@@ -42,9 +47,11 @@ const MAIN_LINKS = [
   { to: '/courses', label: 'Courses', end: false },
   { to: '/library', label: 'Library', end: false },
   { to: '/planner', label: 'Planner', end: false },
+  { to: '/calendar', label: 'Calendar', end: false },
   { to: '/cards', label: 'Flashcards', end: false },
   { to: '/practice', label: 'Practice', end: false },
   { to: '/exams', label: 'Exam Hall', end: false },
+  { to: '/progress', label: 'Progress', end: false },
   { to: '/study', label: 'Study', end: false },
   { to: '/notes', label: 'Notes', end: false },
   { to: '/record', label: 'Record', end: false },
@@ -62,6 +69,10 @@ function NotFound() {
 export function App() {
   const { pathname } = useLocation();
   const [updateBlocked, setUpdateBlocked] = useState(false);
+  useEffect(() => {
+    // On a phone the bar slides, so the current section is kept in view.
+    document.querySelector('.nav-links a.active')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+  }, [pathname]);
   useEffect(() => {
     const show = () => setUpdateBlocked(true);
     window.addEventListener('study-forge-update-blocked', show);
@@ -102,6 +113,11 @@ export function App() {
                 <Route path="/courses/:id" element={<CourseDetailPage />} />
                 <Route path="/library" element={<LibraryPage />} />
                 <Route path="/files/:id" element={<ViewerPage />} />
+                <Route path="/calendar" element={<CalendarPage />} />
+                <Route path="/calendar/schedule" element={<SchedulePage />} />
+                <Route path="/calendar/google" element={<GoogleCalendarPage />} />
+                <Route path="/calendar/event/:id" element={<CalendarEventPage />} />
+                <Route path="/progress" element={<ProgressPage />} />
                 <Route path="/planner" element={<PlannerPage />} />
                 <Route path="/planner/:id" element={<PlannerItemPage />} />
                 <Route path="/cards" element={<FlashcardsPage />} />

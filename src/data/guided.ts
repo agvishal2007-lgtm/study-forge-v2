@@ -1,3 +1,4 @@
+import { logStudy } from './studyLog';
 import { getDb, notifyChanged } from './db';
 import { applyStudyAction, newProgress, type StudyAction } from './mastery';
 import type { Checkpoint, CheckpointProgress, Lesson, Teaching } from './types';
@@ -72,7 +73,10 @@ export async function recordStudyAction(checkpoint: Checkpoint, action: StudyAct
   const next = applyStudyAction(checkpoint, current, action, now);
   await tx.store.put(next);
   await tx.done;
-  if (action.type !== 'draft') notifyChanged();
+  if (action.type !== 'draft') {
+    await logStudy('lessons');
+    notifyChanged();
+  }
   return next;
 }
 

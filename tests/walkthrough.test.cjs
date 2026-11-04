@@ -11,7 +11,7 @@ const URL_BASE = 'http://localhost:4180/';
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'sf-tour-'));
 const shots = path.join(__dirname, '..', 'test-output');
 fs.mkdirSync(shots, { recursive: true });
-const TOTAL = 21;
+const TOTAL = 23;
 let server;
 let context;
 let page;
@@ -139,6 +139,8 @@ const EXPECTED = [
   ['flashcards', '#/cards', '[data-tour=new-deck]'],
   ['practice', '#/practice', '[data-tour=new-practice]'],
   ['exams', '#/exams', '[data-tour=exam-start]'],
+  ['calendar', '#/calendar', '[data-tour=calendar-add]'],
+  ['progress', '#/progress', '[data-tour=progress-streak]'],
   ['notes', '#/notes', '[data-tour=new-note]'],
   ['record-type', '#/record', '[data-tour=record-source]'],
   ['record-safe', '#/record', '[data-tour=record-start]'],
@@ -185,7 +187,7 @@ test('Back returns to the earlier section', async () => {
   await atStep(19);
   assert.equal(await card().getAttribute('data-step'), 'offline');
   await page.locator('[data-testid=tour-card]').getByRole('button', { name: 'Back' }).waitFor();
-  assert.match(await count(), /86% complete/);
+  assert.match(await count(), /87% complete/);
 });
 
 test('a reload closes it, and the button picks up at the same step, on the right screen', async () => {
@@ -194,7 +196,7 @@ test('a reload closes it, and the button picks up at the same step, on the right
     const request = indexedDB.open('study-forge');
     request.onsuccess = () => {
       const read = request.result.transaction('meta').objectStore('meta').get('walkthrough');
-      read.onsuccess = () => { request.result.close(); resolve(read.result?.step === 18); };
+      read.onsuccess = () => { request.result.close(); resolve(read.result?.step === 20); };
     };
   }));
   await page.reload();

@@ -28,7 +28,7 @@ export const getCourse = async (id: string) => (await getDb()).get('courses', id
 /** Removes the course but keeps every file: its files stay in the Library. */
 export async function deleteCourse(id: string): Promise<void> {
   const db = await getDb();
-  const tx = db.transaction(['courses', 'topics', 'materials', 'notes', 'lessons', 'plannerItems', 'decks', 'practiceSets', 'examResults'], 'readwrite');
+  const tx = db.transaction(['courses', 'topics', 'materials', 'notes', 'lessons', 'plannerItems', 'decks', 'practiceSets', 'examResults', 'calendarEvents'], 'readwrite');
   for (const topicId of await tx.objectStore('topics').index('courseId').getAllKeys(id)) {
     await tx.objectStore('topics').delete(topicId);
   }
@@ -51,6 +51,9 @@ export async function deleteCourse(id: string): Promise<void> {
   }
   for (const result of await tx.objectStore('examResults').getAll()) {
     if (result.courseId === id) await tx.objectStore('examResults').put({ ...result, courseId: null, updatedAt: Math.max(Date.now(), result.updatedAt + 1) });
+  }
+  for (const event of await tx.objectStore('calendarEvents').getAll()) {
+    if (event.courseId === id) await tx.objectStore('calendarEvents').put({ ...event, courseId: null, updatedAt: Math.max(Date.now(), event.updatedAt + 1) });
   }
   for (const lesson of await tx.objectStore('lessons').getAll()) {
     if (lesson.courseId === id) await tx.objectStore('lessons').put({ ...lesson, courseId: null });

@@ -132,7 +132,21 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/exams',
     target: ['[data-tour="exam-start"]'],
     title: 'Exam Hall',
-    body: 'Take timed mock exams from your practice questions, check your final revision list, and use Cram Mode when you are short on time. On a phone, you can reach it from Today or Practice.',
+    body: 'Take timed mock exams from your practice questions, check your final revision list, and use Cram Mode when you are short on time.',
+  },
+  {
+    id: 'calendar',
+    route: '/calendar',
+    target: ['[data-tour="calendar-add"]'],
+    title: 'Your calendar',
+    body: 'Today\'s Plan shows what\'s left today. Plan Calendar shows when things happen, and Deadline Calendar shows when work is due. Add your class schedule here, or connect Google Calendar to bring in your classes and Canvas work.',
+  },
+  {
+    id: 'progress',
+    route: '/progress',
+    target: ['[data-tour="progress-streak"]'],
+    title: 'See your progress',
+    body: 'Your study streak, the days you studied, and how each course is going. Every number comes from work you\'ve saved, and it never guesses a grade.',
   },
   {
     id: 'notes',

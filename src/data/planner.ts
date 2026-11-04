@@ -1,4 +1,5 @@
 import { getDb, notifyChanged } from './db';
+import { localNow } from './plannerRules';
 import type { PlannerItem, PlannerStatus } from './types';
 
 export async function listPlannerItems(): Promise<PlannerItem[]> {
@@ -25,6 +26,17 @@ export async function setPlannerStatus(id: string, status: PlannerStatus): Promi
 }
 
 export async function deletePlannerItem(id: string): Promise<void> {
-  await (await getDb()).delete('plannerItems', id);
+  const tx = (await getDb()).transaction(['plannerItems', 'calendarEvents'], 'readwrite');
+  const item = await tx.objectStore('plannerItems').get(id);
+  await tx.objectStore('plannerItems').delete(id);
+  if (item?.sourceId) {
+    // It came from a connected calendar, so this is remembered or the next update would add it back.
+    const now = Date.now();
+    await tx.objectStore('calendarEvents').put({
+      id: `removed-${id}`, title: item.title, courseId: null, kind: 'Event', date: item.dueDate || localNow().date, startTime: '', endTime: '', location: '', whatToDo: '', priority: 'Normal',
+      completed: true, seriesId: '', plannerItemId: null, source: 'manual', sourceCalendar: '', hidden: true, createdAt: now, updatedAt: now,
+    });
+  }
+  await tx.done;
   notifyChanged();
 }

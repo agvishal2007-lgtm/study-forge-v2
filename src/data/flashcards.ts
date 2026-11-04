@@ -1,3 +1,4 @@
+import { logStudy } from './studyLog';
 import { getDb, notifyChanged } from './db';
 import { nextProgress } from './flashcardRules';
 import { localNow } from './plannerRules';
@@ -78,5 +79,6 @@ export async function rateCard(cardId: string, rating: CardRating): Promise<void
   const current = await tx.objectStore('cardProgress').get(cardId);
   await tx.objectStore('cardProgress').put(nextProgress(cardId, current, rating, localNow().date, Date.now()));
   await tx.done;
+  await logStudy('cards');
   notifyChanged();
 }

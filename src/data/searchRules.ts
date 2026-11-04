@@ -50,7 +50,7 @@ export function snippet(text: string, terms: string[], width = 160): string {
   return `${start > 0 ? '…' : ''}${flat.slice(start, end).trim()}${end < flat.length ? '…' : ''}`;
 }
 
-export const SEARCH_GROUPS = ['Notes', 'Files', 'Flashcards', 'Practice', 'Planner', 'Lessons', 'Courses'] as const;
+export const SEARCH_GROUPS = ['Notes', 'Files', 'Flashcards', 'Practice', 'Planner', 'Calendar', 'Lessons', 'Courses'] as const;
 export type SearchGroup = (typeof SEARCH_GROUPS)[number];
 
 export interface Searchable {

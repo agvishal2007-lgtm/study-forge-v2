@@ -5,7 +5,7 @@ import { noteLabel } from './notes';
 import { listUnfinished } from './recordings';
 import { findByHash, getStorageStatus, hashFile, storeMaterial } from './store';
 import {
-  OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem, type ExamResult, type ExamItem, type PracticeAttempt, type PracticeQuestion, type PracticeSet, CONFIDENCE_LEVELS, PRACTICE_KINDS, type CardProgress, type Deck, type Flashcard, CARD_RATINGS,
+  CALENDAR_KINDS, PLAN_PRIORITIES, type CalendarEvent, type StudyDay, OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem, type ExamResult, type ExamItem, type PracticeAttempt, type PracticeQuestion, type PracticeSet, CONFIDENCE_LEVELS, PRACTICE_KINDS, type CardProgress, type Deck, type Flashcard, CARD_RATINGS,
   type AnswerRecord, type Checkpoint, type CheckpointProgress, type Course, type ExplanationRecord, type GuidedQuestion,
   type KeyPointRating, type Lesson, type Material, type MasteryStatus, type Note, type QuestionKind, type Reteach, type Topic,
 } from './types';
@@ -19,7 +19,7 @@ import { NotAZip, readZipEntries, type ZipEntry } from './zipReader';
  */
 const MANIFEST_PATH = 'study-forge-backup.json';
 const FORMAT = 'study-forge-backup';
-const VERSION = 6;
+const VERSION = 7;
 const LAST_BACKUP_KEY = 'lastBackupAt';
 
 export interface BackupManifest {
@@ -41,6 +41,8 @@ export interface BackupManifest {
   practiceQuestions: PracticeQuestion[];
   practiceAttempts: PracticeAttempt[];
   examResults: ExamResult[];
+  calendarEvents: CalendarEvent[];
+  studyDays: StudyDay[];
 }
 
 export class BackupError extends Error {}
@@ -136,11 +138,11 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     : null;
 
   const db = await getDb();
-  const [courses, topics, notes, materials, lessons, checkpoints, progress, plannerItems, decks, cards, cardProgress, practiceSets, practiceQuestions, practiceAttempts, examResults] = await Promise.all([
+  const [courses, topics, notes, materials, lessons, checkpoints, progress, plannerItems, decks, cards, cardProgress, practiceSets, practiceQuestions, practiceAttempts, examResults, calendarEvents, studyDays] = await Promise.all([
     db.getAll('courses'), db.getAll('topics'), db.getAll('notes'), db.getAll('materials'),
     db.getAll('lessons'), db.getAll('checkpoints'), db.getAll('checkpointProgress'), db.getAll('plannerItems'),
     db.getAll('decks'), db.getAll('cards'), db.getAll('cardProgress'),
-    db.getAll('practiceSets'), db.getAll('practiceQuestions'), db.getAll('practiceAttempts'), db.getAll('examResults'),
+    db.getAll('practiceSets'), db.getAll('practiceQuestions'), db.getAll('practiceAttempts'), db.getAll('examResults'), db.getAll('calendarEvents'), db.getAll('studyDays'),
   ]);
   const courseFolder = (courseId: string | null, topicId: string | null) => {
     const course = courses.find((candidate) => candidate.id === courseId);
@@ -180,6 +182,8 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     practiceQuestions,
     practiceAttempts,
     examResults,
+    calendarEvents,
+    studyDays,
   };
   const noteFiles = notes.map((note) => ({
     name: pathFor(`Notes/${courseFolder(note.courseId, note.topicId)}`, `${safeName(noteLabel(note), 'Note')}.txt`),
@@ -350,7 +354,41 @@ function cleanPlannerItem(raw: unknown): PlannerItem | null {
     details: isText(raw.details) ? raw.details : '',
     createdAt: raw.createdAt,
     updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.createdAt,
+    ...(isText(raw.sourceId) && raw.sourceId ? { sourceId: raw.sourceId } : {}),
   };
+}
+
+function cleanCalendarEvent(raw: unknown): CalendarEvent | null {
+  if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.title) || !isOptionalId(raw.courseId) || !isTime(raw.createdAt)) return null;
+  if (!isText(raw.date) || !isValidDate(raw.date)) return null;
+  const pick = <T extends string>(list: readonly T[], value: unknown, fallback: T): T => (list.includes(value as T) ? value as T : fallback);
+  const clock = (value: unknown) => (isText(value) && /^\d{2}:\d{2}$/.test(value) ? value : '');
+  return {
+    id: raw.id,
+    title: raw.title,
+    courseId: raw.courseId,
+    kind: pick(CALENDAR_KINDS, raw.kind, 'Event'),
+    date: raw.date,
+    startTime: clock(raw.startTime),
+    endTime: clock(raw.endTime),
+    location: isText(raw.location) ? raw.location : '',
+    whatToDo: isText(raw.whatToDo) ? raw.whatToDo : '',
+    priority: pick(PLAN_PRIORITIES, raw.priority, 'Normal'),
+    completed: raw.completed === true,
+    seriesId: isText(raw.seriesId) ? raw.seriesId : '',
+    plannerItemId: isText(raw.plannerItemId) && raw.plannerItemId ? raw.plannerItemId : null,
+    source: pick(['manual', 'schedule', 'google'] as const, raw.source, 'manual'),
+    sourceCalendar: isText(raw.sourceCalendar) ? raw.sourceCalendar : '',
+    hidden: raw.hidden === true,
+    createdAt: raw.createdAt,
+    updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.createdAt,
+  };
+}
+
+function cleanStudyDay(raw: unknown): StudyDay | null {
+  if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.date) || !isValidDate(raw.date)) return null;
+  const amount = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0);
+  return { id: raw.id, date: raw.date, cards: amount(raw.cards), lessons: amount(raw.lessons), updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : 0 };
 }
 
 function cleanDeck(raw: unknown): Deck | null {
@@ -488,6 +526,8 @@ export async function openBackup(file: File): Promise<OpenedBackup> {
     practiceQuestions: raw.practiceQuestions === undefined ? [] : cleanList(raw.practiceQuestions, cleanPracticeQuestion),
     practiceAttempts: raw.practiceAttempts === undefined ? [] : cleanList(raw.practiceAttempts, cleanPracticeAttempt),
     examResults: raw.examResults === undefined ? [] : cleanList(raw.examResults, cleanExamResult),
+    calendarEvents: raw.calendarEvents === undefined ? [] : cleanList(raw.calendarEvents, cleanCalendarEvent),
+    studyDays: raw.studyDays === undefined ? [] : cleanList(raw.studyDays, cleanStudyDay),
   };
 
   let neededBytes = 0;
@@ -518,6 +558,7 @@ export interface RestoreReport {
   cardsAdded: number;
   practiceAdded: number;
   examsAdded: number;
+  eventsAdded: number;
 }
 
 /**
@@ -531,7 +572,7 @@ export async function restoreBackup(
 ): Promise<RestoreReport> {
   const report: RestoreReport = {
     coursesAdded: 0, topicsAdded: 0, filesAdded: 0, filesAlreadyHere: 0,
-    notesAdded: 0, notesAlreadyHere: 0, notesCopied: 0, damaged: [], stoppedEarly: '', lessonsAdded: 0, plannerAdded: 0, cardsAdded: 0, practiceAdded: 0, examsAdded: 0,
+    notesAdded: 0, notesAlreadyHere: 0, notesCopied: 0, damaged: [], stoppedEarly: '', lessonsAdded: 0, plannerAdded: 0, cardsAdded: 0, practiceAdded: 0, examsAdded: 0, eventsAdded: 0,
   };
   const db = await getDb();
 
@@ -691,6 +732,15 @@ export async function restoreBackup(
       await db.put('examResults', { ...result, courseId: courseOrNull(result.courseId) });
       report.examsAdded += 1;
     }
+  }
+  for (const event of manifest.calendarEvents) {
+    if (!(await db.getKey('calendarEvents', event.id))) {
+      await db.put('calendarEvents', { ...event, courseId: courseOrNull(event.courseId) });
+      if (!event.hidden) report.eventsAdded += 1;
+    }
+  }
+  for (const day of manifest.studyDays) {
+    if (!(await db.getKey('studyDays', day.id))) await db.put('studyDays', day);
   }
   // Answers are added, never replaced, and only for questions that are here.
   for (const attempt of manifest.practiceAttempts) {
