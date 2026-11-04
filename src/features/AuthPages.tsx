@@ -44,8 +44,8 @@ export function AuthPage({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   useEffect(() => { setProblems([]); setPassword(''); setConfirm(''); }, [mode]);
   if (getActiveAccount()) return <Navigate to="/" replace />;
 
-  const fail = (error: unknown) => {
-    const message = describeAuthFailure(error);
+  const fail = (error: unknown, provider?: string) => {
+    const message = describeAuthFailure(error, provider);
     setProblems(message ? [message] : []);
     setBusy(false);
   };
@@ -55,7 +55,7 @@ export function AuthPage({ mode }: { mode: 'sign-in' | 'sign-up' }) {
     setBusy(true);
     setProblems([]);
     // Nothing is awaited before this call, so the window opens as part of the tap itself.
-    backend.signIn(provider).then((user) => finish(user, PROVIDER_LABEL[provider]), fail);
+    backend.signIn(provider).then((user) => finish(user, PROVIDER_LABEL[provider]), (error) => fail(error, PROVIDER_LABEL[provider]));
   };
 
   const withEmail = async (event: React.FormEvent) => {

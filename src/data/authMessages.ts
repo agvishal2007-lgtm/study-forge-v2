@@ -1,6 +1,10 @@
 /** Plain words for sign-in problems. Returns nothing when the student simply closed the window. */
-export function describeAuthFailure(error: unknown): string {
+export function describeAuthFailure(error: unknown, provider?: string): string {
   const code = String((error as { code?: string }).code ?? '');
+  // No email or password was typed, so the failure can't be about them.
+  if (provider && (code.includes('invalid-credential') || code.includes('invalid-login'))) {
+    return `${provider} sign-in didn't finish. Please press the button and try again. If it keeps happening, tell whoever runs this site that the code was ${code}.`;
+  }
   if (code.includes('popup-closed') || code.includes('cancelled-popup')) return '';
   if (code.includes('popup-blocked')) return 'Your browser blocked the sign-in window. Allow pop-ups for this site, then try again.';
   if (code.includes('network')) return "Study Forge can't reach the internet, so you can't sign in right now.";

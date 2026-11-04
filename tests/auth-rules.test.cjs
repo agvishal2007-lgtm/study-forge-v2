@@ -19,6 +19,9 @@ test('sign-in problems read in plain words, and closing the window stays quiet',
   assert.equal(say('auth/cancelled-popup-request'), '');
   assert.equal(say('auth/invalid-credential'), say('auth/user-not-found'), 'it never reveals which part was wrong');
   assert.equal(say('auth/invalid-credential'), say('auth/wrong-password'));
+  const microsoft = describeAuthFailure({ code: 'auth/invalid-credential' }, 'Microsoft');
+  assert.match(microsoft, /Microsoft sign-in didn't finish/);
+  assert.doesNotMatch(microsoft, /password/i, 'no password was typed, so it never blames one');
   assert.match(say('auth/email-already-in-use'), /already exists/);
   assert.match(say('auth/account-exists-with-different-credential'), /different way/);
   assert.match(say('auth/too-many-requests'), /Too many tries/);

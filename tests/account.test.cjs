@@ -560,6 +560,19 @@ test('Microsoft uses the same sign-in path as Google', async () => {
   await close('social');
 });
 
+test('a failed Microsoft sign-in never blames an email or password, and trying again works', async () => {
+  const page = await device('retry', 'auth/invalid-credential');
+  await signInButton(page).click();
+  await page.getByRole('button', { name: 'Continue with Microsoft' }).click();
+  const alert = page.getByTestId('auth-problems');
+  await alert.getByText("Microsoft sign-in didn't finish").waitFor();
+  assert.doesNotMatch(await alert.innerText(), /password/i);
+  await page.evaluate(() => { window.__testSignIn = { uid: 'retry-uid', email: 'retry@outlook.com' }; });
+  await page.getByRole('button', { name: 'Continue with Microsoft' }).click();
+  await page.getByRole('button', { name: /Account menu for retry@outlook.com/ }).waitFor();
+  await close('retry');
+});
+
 test('files can come from Google Drive and Dropbox, and problems are explained', async () => {
   const page = await device('importer', null);
   await page.evaluate(() => { window.__testCloudPick = { files: ['Drive slides.txt', 'Second.txt'], failed: ['Too big.mov'] }; });
