@@ -21,8 +21,14 @@ export function applyFormat(box: HTMLTextAreaElement, kind: FormatKind, onChange
   } catch {
     typed = false;
   }
-  if (!typed) onChange(applyEdit(box.value, edit));
-  requestAnimationFrame(() => box.setSelectionRange(edit.selectionStart, edit.selectionEnd));
+  if (typed) {
+    // Set right away, because anything later could move the cursor while the student is typing.
+    box.setSelectionRange(edit.selectionStart, edit.selectionEnd);
+  } else {
+    // This route has to wait for the page to show the new text first.
+    onChange(applyEdit(box.value, edit));
+    requestAnimationFrame(() => box.setSelectionRange(edit.selectionStart, edit.selectionEnd));
+  }
 }
 
 export function NoteToolbar({ box, onChange }: { box: RefObject<HTMLTextAreaElement | null>; onChange: (text: string) => void }) {
