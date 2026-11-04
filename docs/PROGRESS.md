@@ -25,7 +25,6 @@
 - Real course files, such as a long scanned PDF.
 
 ### Not built yet
-- Notes and backup export.
 - Working offline after the first visit. Saved files stay on the device, but the site itself still has to load from the internet.
 - Search inside PDFs, PDF outlines, and next/previous file buttons.
 - Viewing Office files such as Word and PowerPoint. They can be saved and downloaded.
@@ -90,6 +89,54 @@ Earlier repeat runs found a real bug, now fixed: a save cut off by a reload coul
 - Long recordings. Several hours would be over 1 GB, and joining that many pieces hasn't been tried.
 - Whether the saved video's seek bar works well on long recordings.
 
+## Notes
+
+**The goal:** a student's own writing lives with their courses and is never lost by accident.
+
+### What works
+- Notes save as you type, including when leaving the screen or the page right after typing.
+- A note can be filed under a course and topic, and can be about a specific file or recording.
+- Notes appear in Notes, on their course, under their topic, on their file, and on Today.
+- Search covers titles and note text.
+- A blank note saves nothing.
+- If two tabs edit one note, the student chooses which version to keep. Leaving without choosing keeps both.
+- If a save fails, the app says so, keeps the text on screen, and offers a retry.
+- Deleting a note asks first. Deleting its course, topic, or file keeps the note.
+
+### Not built yet
+- Formatting, such as bold, headings, and lists. Notes are plain text.
+- Jumping to a moment in a recording from a note.
+- Turning notes into flashcards or practice questions.
+
+## Backup and restore
+
+**The goal:** losing a device doesn't mean losing everything.
+
+### What works
+- Settings creates one .zip file with folders a person can browse, so files and notes open without Study Forge.
+- Browsers that allow it write straight to the chosen location, so a large backup doesn't have to be built in memory first. Others build it in browser storage, then download it.
+- Each backup's contents are listed and checked after it's created. Files the browser has lost are named.
+- Restore shows what's in the backup first and only ever adds. Nothing on the device is replaced or deleted.
+- Every restored file is checked against the fingerprint saved in the backup. Damaged files are named and skipped, and the rest still restore.
+- Restoring twice changes nothing. A note that differs from the device's version comes back as a copy marked "from backup".
+- Cancelling is safe at any point, and restoring again finishes the job.
+- Files that aren't Study Forge backups, are damaged, were recompressed, or came from a newer version are refused with a clear message.
+- Today reminds the student if they've never backed up, or haven't in 14 days.
+
+### How it was tested
+`tests/backup.test.cjs` restores a real backup into a fresh browser and compares every file byte for byte, including a recording, a non-English file name, and two files with the same name. Python's zip tools independently confirm the file is a valid zip. Hand-damaged and deliberately unsafe backups are tried too. `tests/notes.test.cjs` covers notes.
+
+All 73 tests across the five test files passed six runs in a row. Every publish now runs the tests first, and a failure stops it.
+
+### Not tested yet
+- **Backups over 350 MB.** The format for zips over 4 GB was only tested with a small hand-built file, so a real multi-gigabyte backup still needs a try.
+- Safari, Firefox, and real phones. Only Chromium was used. Browsers without a save-location choice may struggle with very large backups.
+- Restoring until a device runs out of space.
+
+### Not built yet
+- Automatic or scheduled backups, and syncing between devices. A student makes each backup by hand.
+- Backups don't include interrupted recordings, until they're saved. The app warns about this.
+
 ## How the code is organized
 
 - `src/data/` holds saved data, and nothing else talks to storage directly.
@@ -97,6 +144,8 @@ Earlier repeat runs found a real bug, now fixed: a save cut off by a reload coul
   - `blobs.ts` stores the original files.
   - `store.ts` holds the actions, such as "create course" and "delete file".
   - `recordings.ts` saves recordings in small pieces and turns them into finished files.
+  - `notes.ts` saves notes and catches changes from another tab.
+  - `backup.ts` and `zipReader.ts` create and restore backups.
 - `src/components/` holds pieces used on several screens, such as the saving panel and the recorder.
 - `src/features/` holds one file per screen.
 - `tests/` holds the browser tests.
