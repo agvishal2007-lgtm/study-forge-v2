@@ -52,7 +52,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/',
     target: ['#content .page'],
     title: 'Today',
-    body: 'Your starting point. Today shows what to study next and why, your courses, and your recent files and notes.',
+    body: 'Your starting point. Today shows what is due soon, what to study next and why, your courses, and your recent files and notes.',
   },
   {
     id: 'courses',
@@ -79,6 +79,13 @@ export const TOUR_STEPS: TourStep[] = [
     target: ['#content .page'],
     title: 'Open your files',
     body: 'The Library holds every file you\'ve saved. Open one to read it right here, including PDFs, images, audio, and video. You can download the original anytime.',
+  },
+  {
+    id: 'planner',
+    route: '/planner',
+    target: ['[data-tour="add-planner"]'],
+    title: 'Planner',
+    body: 'Add assignments and exams with their due dates. Anything due soon shows up on Today, so you can see what needs attention first.',
   },
   {
     id: 'study',

@@ -165,3 +165,29 @@ export interface CheckpointProgress {
   lastStudiedAt: number;
   masteredAt: number | null;
 }
+
+/* Planner */
+export const PLANNER_TYPES = ['Assignment', 'Exam', 'Quiz', 'Project', 'Presentation', 'Reading', 'Study session'] as const;
+export type PlannerType = (typeof PLANNER_TYPES)[number];
+export const PLANNER_STATUSES = ['Not Started', 'In Progress', 'Ready to Submit', 'Submitted', 'Waiting for Grade', 'Completed'] as const;
+export type PlannerStatus = (typeof PLANNER_STATUSES)[number];
+export const PLANNER_PRIORITIES = ['Low', 'Normal', 'High'] as const;
+export type PlannerPriority = (typeof PLANNER_PRIORITIES)[number];
+
+export interface PlannerItem {
+  id: string;
+  title: string;
+  courseId: string | null;
+  type: PlannerType;
+  /** The calendar date as written, YYYY-MM-DD, so it never shifts between time zones. Empty means no date. */
+  dueDate: string;
+  /** Optional local time, HH:MM. */
+  dueTime: string;
+  status: PlannerStatus;
+  priority: PlannerPriority;
+  /** Estimated hours of work. Null means not estimated. */
+  estimateHours: number | null;
+  details: string;
+  createdAt: number;
+  updatedAt: number;
+}

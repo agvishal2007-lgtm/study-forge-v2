@@ -59,6 +59,7 @@ export function CourseDetailPage() {
         <AddFiles courseId={course.id} />
         <p><Link to={`/record?course=${course.id}`}>Record a lecture for this course</Link></p>
         <p><Link to={`/study?course=${course.id}`}>Study this course</Link></p>
+        <p><Link to={`/planner?course=${course.id}`}>Assignments and exams for this course</Link></p>
         {loose.length > 0
           ? <MaterialList materials={loose} />
           : topics.length === 0 && <p className="muted">No files in this course yet.</p>}
@@ -109,7 +110,7 @@ export function CourseDetailPage() {
           onCancel={() => setConfirmCourse(false)}
           onConfirm={() => void attempt(async () => { await deleteCourse(course.id); if (stillHere.current) navigate('/courses', { replace: true }); })}
         >
-          <p>The course and its topics will be removed. Its {materials.length === 1 ? '1 file stays' : `${materials.length} files stay`} in your Library, and its {notes.length === 1 ? '1 note stays' : `${notes.length} notes stay`} in Notes. Any lessons stay in Study.</p>
+          <p>The course and its topics will be removed. Its {materials.length === 1 ? '1 file stays' : `${materials.length} files stay`} in your Library, and its {notes.length === 1 ? '1 note stays' : `${notes.length} notes stay`} in Notes. Any lessons stay in Study, and any assignments stay in Planner.</p>
         </ConfirmDialog>
       )}
       {confirmTopic && (

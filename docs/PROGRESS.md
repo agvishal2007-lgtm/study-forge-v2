@@ -237,6 +237,27 @@ Whoever owns the Firebase project can technically view stored data in its admin 
 
 The owner asked to replace the yellow and square buttons. The site now uses a sky blue accent on navy, fully rounded bubble buttons, and softer corners throughout. Older courses with the yellow color update automatically, including when restored from a backup.
 
+## Planner
+
+Students add assignments, exams, quizzes, projects, presentations, readings, and study sessions, each with an optional course, due date, due time, priority, estimated hours, and details. Each item has one of six statuses, from Not Started through Completed.
+
+What it does:
+- The Planner groups items into Overdue, Today, Tomorrow, Next 7 days, Later, No due date, and Done, with the soonest first and importance breaking ties.
+- Today shows a Due soon list covering anything overdue or due within 7 days, above the existing study recommendation.
+- Submitted, Waiting for Grade, and Completed count as done, so finished work never shows as overdue.
+- Dates are kept as the calendar date the student wrote, so they don't shift between time zones.
+- Study Forge never makes up assignments or dates. It shows only what the student entered.
+- Deleting a course keeps its planner items, with no course attached. Deleting an item asks first.
+- Items are included in backups and saved online. If two devices change the same item, the most recent change wins.
+
+Tested with a real browser and a fixed clock: the groups and wording, month and year changes, the US clock change, the form's checks, marking done from Today, filtering by course, backup and restore into a fresh browser, updating from the previous version's database, a phone-sized screen, and two devices syncing. Syncing is tested against a stand-in server and the Firebase emulator, not two real devices.
+
+Not built yet:
+- Reminders or notifications.
+- Linking an item to specific files or notes.
+- A calendar view, repeating items, and completion percentage.
+- Weak-topic recommendations mixed into one queue. Today shows Due soon and Study next side by side, and there's no time-based ranking between them.
+
 ## How the code is organized
 
 - `src/data/` holds saved data, and nothing else talks to storage directly.
@@ -247,6 +268,7 @@ The owner asked to replace the yellow and square buttons. The site now uses a sk
   - `notes.ts` saves notes and catches changes from another tab.
   - `backup.ts` and `zipReader.ts` create and restore backups.
   - `mastery.ts` holds the Guided Study rules, and `guided.ts` saves lessons and progress.
+  - `planner.ts` saves planner items, and `plannerRules.ts` holds the date rules.
   - `account.ts` keeps each account's storage separate, and `sync.ts` holds the saving-online rules.
 - `src/components/` holds pieces used on several screens, such as the saving panel and the recorder.
 - `src/features/` holds one file per screen.

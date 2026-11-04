@@ -82,6 +82,13 @@ test('nothing outside a student\'s own items is reachable, even for them', async
   await denied(() => setDoc(doc(alice.db, 'users', alice.uid, 'other', 'x'), validDoc()), 'other subcollections');
 });
 
+test('planner items can be saved', async () => {
+  const { conflicts } = await alice.backend.push(alice.uid, [item('plan-1', { collection: 'plannerItems' })]);
+  assert.deepEqual(conflicts, []);
+  const { items } = await alice.backend.pull(alice.uid, 0);
+  assert.ok(items.some((entry) => entry.id === 'plan-1' && entry.collection === 'plannerItems'));
+});
+
 test('badly shaped or oversized items are refused, so the free storage can\'t be abused', async () => {
   const ref = doc(alice.db, 'users', alice.uid, 'items', 'bad');
   await denied(() => setDoc(ref, validDoc({ collection: 'materials' })), 'a file record');

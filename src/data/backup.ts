@@ -5,10 +5,11 @@ import { noteLabel } from './notes';
 import { listUnfinished } from './recordings';
 import { findByHash, getStorageStatus, hashFile, storeMaterial } from './store';
 import {
-  OLD_YELLOW, SPINE_COLORS,
+  OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem,
   type AnswerRecord, type Checkpoint, type CheckpointProgress, type Course, type ExplanationRecord, type GuidedQuestion,
   type KeyPointRating, type Lesson, type Material, type MasteryStatus, type Note, type QuestionKind, type Reteach, type Topic,
 } from './types';
+import { isValidDate } from './plannerRules';
 import { NotAZip, readZipEntries, type ZipEntry } from './zipReader';
 
 /**
@@ -18,7 +19,7 @@ import { NotAZip, readZipEntries, type ZipEntry } from './zipReader';
  */
 const MANIFEST_PATH = 'study-forge-backup.json';
 const FORMAT = 'study-forge-backup';
-const VERSION = 2;
+const VERSION = 3;
 const LAST_BACKUP_KEY = 'lastBackupAt';
 
 export interface BackupManifest {
@@ -32,6 +33,7 @@ export interface BackupManifest {
   lessons: Lesson[];
   checkpoints: Checkpoint[];
   progress: CheckpointProgress[];
+  plannerItems: PlannerItem[];
 }
 
 export class BackupError extends Error {}
@@ -127,9 +129,9 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     : null;
 
   const db = await getDb();
-  const [courses, topics, notes, materials, lessons, checkpoints, progress] = await Promise.all([
+  const [courses, topics, notes, materials, lessons, checkpoints, progress, plannerItems] = await Promise.all([
     db.getAll('courses'), db.getAll('topics'), db.getAll('notes'), db.getAll('materials'),
-    db.getAll('lessons'), db.getAll('checkpoints'), db.getAll('checkpointProgress'),
+    db.getAll('lessons'), db.getAll('checkpoints'), db.getAll('checkpointProgress'), db.getAll('plannerItems'),
   ]);
   const courseFolder = (courseId: string | null, topicId: string | null) => {
     const course = courses.find((candidate) => candidate.id === courseId);
@@ -161,6 +163,7 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     lessons,
     checkpoints,
     progress,
+    plannerItems,
   };
   const noteFiles = notes.map((note) => ({
     name: pathFor(`Notes/${courseFolder(note.courseId, note.topicId)}`, `${safeName(noteLabel(note), 'Note')}.txt`),
@@ -315,6 +318,25 @@ function cleanProgress(raw: unknown): CheckpointProgress | null {
   };
 }
 
+function cleanPlannerItem(raw: unknown): PlannerItem | null {
+  if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.title) || !isOptionalId(raw.courseId) || !isTime(raw.createdAt)) return null;
+  const pick = <T extends string>(list: readonly T[], value: unknown, fallback: T): T => (list.includes(value as T) ? value as T : fallback);
+  return {
+    id: raw.id,
+    title: raw.title,
+    courseId: raw.courseId,
+    type: pick(PLANNER_TYPES, raw.type, 'Assignment'),
+    dueDate: isText(raw.dueDate) && isValidDate(raw.dueDate) ? raw.dueDate : '',
+    dueTime: isText(raw.dueTime) && /^\d{2}:\d{2}$/.test(raw.dueTime) ? raw.dueTime : '',
+    status: pick(PLANNER_STATUSES, raw.status, 'Not Started'),
+    priority: pick(PLANNER_PRIORITIES, raw.priority, 'Normal'),
+    estimateHours: typeof raw.estimateHours === 'number' && Number.isFinite(raw.estimateHours) && raw.estimateHours > 0 ? raw.estimateHours : null,
+    details: isText(raw.details) ? raw.details : '',
+    createdAt: raw.createdAt,
+    updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.createdAt,
+  };
+}
+
 function cleanList<T>(raw: unknown, clean: (item: unknown) => T | null): T[] {
   if (!Array.isArray(raw)) throw new BackupError('This backup is damaged, so it can\'t be restored.');
   return raw.map(clean).map((item) => {
@@ -367,6 +389,7 @@ export async function openBackup(file: File): Promise<OpenedBackup> {
     lessons: raw.lessons === undefined ? [] : cleanList(raw.lessons, cleanLesson),
     checkpoints: raw.checkpoints === undefined ? [] : cleanList(raw.checkpoints, cleanCheckpoint),
     progress: raw.progress === undefined ? [] : cleanList(raw.progress, cleanProgress),
+    plannerItems: raw.plannerItems === undefined ? [] : cleanList(raw.plannerItems, cleanPlannerItem),
   };
 
   let neededBytes = 0;
@@ -393,6 +416,7 @@ export interface RestoreReport {
   damaged: string[];
   stoppedEarly: string;
   lessonsAdded: number;
+  plannerAdded: number;
 }
 
 /**
@@ -406,7 +430,7 @@ export async function restoreBackup(
 ): Promise<RestoreReport> {
   const report: RestoreReport = {
     coursesAdded: 0, topicsAdded: 0, filesAdded: 0, filesAlreadyHere: 0,
-    notesAdded: 0, notesAlreadyHere: 0, notesCopied: 0, damaged: [], stoppedEarly: '', lessonsAdded: 0,
+    notesAdded: 0, notesAlreadyHere: 0, notesCopied: 0, damaged: [], stoppedEarly: '', lessonsAdded: 0, plannerAdded: 0,
   };
   const db = await getDb();
 
@@ -523,6 +547,12 @@ export async function restoreBackup(
   for (const progress of manifest.progress) {
     if (added.has(progress.checkpointId) && !(await db.getKey('checkpointProgress', progress.checkpointId))) {
       await db.put('checkpointProgress', progress);
+    }
+  }
+  for (const item of manifest.plannerItems) {
+    if (!(await db.getKey('plannerItems', item.id))) {
+      await db.put('plannerItems', { ...item, courseId: courseOrNull(item.courseId) });
+      report.plannerAdded += 1;
     }
   }
   notifyChanged();

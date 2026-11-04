@@ -1,6 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { CURRENT_DB } from './account';
-import { OLD_YELLOW, SPINE_COLORS, type Checkpoint, CheckpointProgress, Course, Lesson, Material, Note, RecordingSession, Topic } from './types';
+import { OLD_YELLOW, SPINE_COLORS, type Checkpoint, type PlannerItem, CheckpointProgress, Course, Lesson, Material, Note, RecordingSession, Topic } from './types';
 
 /**
  * IndexedDB is the single source of truth for courses, topics, and file records.
@@ -19,12 +19,13 @@ interface StudyForgeDB extends DBSchema {
   checkpoints: { key: string; value: Checkpoint; indexes: { lessonId: string } };
   checkpointProgress: { key: string; value: CheckpointProgress };
   syncMeta: { key: string; value: { hash: string | null; rev: number } };
+  plannerItems: { key: string; value: PlannerItem };
 }
 
 let dbPromise: Promise<IDBPDatabase<StudyForgeDB>> | null = null;
 
 export function getDb() {
-  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 6, {
+  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 7, {
     async upgrade(db, oldVersion, _newVersion, transaction) {
       // Each step only adds to what's there, so existing students keep their data.
       if (oldVersion < 1) {
@@ -50,6 +51,9 @@ export function getDb() {
       }
       if (oldVersion < 5) {
         db.createObjectStore('syncMeta');
+      }
+      if (oldVersion < 7) {
+        db.createObjectStore('plannerItems', { keyPath: 'id' });
       }
       if (oldVersion >= 1 && oldVersion < 6) {
         for (let cursor = await transaction.objectStore('courses').openCursor(); cursor; cursor = await cursor.continue()) {

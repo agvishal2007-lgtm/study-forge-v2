@@ -28,7 +28,7 @@ export const getCourse = async (id: string) => (await getDb()).get('courses', id
 /** Removes the course but keeps every file: its files stay in the Library. */
 export async function deleteCourse(id: string): Promise<void> {
   const db = await getDb();
-  const tx = db.transaction(['courses', 'topics', 'materials', 'notes', 'lessons'], 'readwrite');
+  const tx = db.transaction(['courses', 'topics', 'materials', 'notes', 'lessons', 'plannerItems'], 'readwrite');
   for (const topicId of await tx.objectStore('topics').index('courseId').getAllKeys(id)) {
     await tx.objectStore('topics').delete(topicId);
   }
@@ -39,6 +39,9 @@ export async function deleteCourse(id: string): Promise<void> {
   }
   for (const note of await tx.objectStore('notes').getAll()) {
     if (note.courseId === id) await tx.objectStore('notes').put({ ...note, courseId: null, topicId: null });
+  }
+  for (const item of await tx.objectStore('plannerItems').getAll()) {
+    if (item.courseId === id) await tx.objectStore('plannerItems').put({ ...item, courseId: null });
   }
   for (const lesson of await tx.objectStore('lessons').getAll()) {
     if (lesson.courseId === id) await tx.objectStore('lessons').put({ ...lesson, courseId: null });

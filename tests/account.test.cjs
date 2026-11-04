@@ -353,6 +353,31 @@ test('study progress follows the student, and evidence from both devices combine
   assert.equal(JSON.parse(items[0].json).answers.length, 3, 'one answer, plus one from each device');
 });
 
+test('planner items follow the student, and the newest change wins', async () => {
+  const laptop = await device('laptop');
+  const phone = await device('phone');
+  await nav(laptop, 'Planner');
+  await laptop.getByRole('button', { name: 'Add item' }).click();
+  await laptop.getByLabel('Name', { exact: true }).fill('Synced homework');
+  await laptop.getByRole('button', { name: 'Save item' }).click();
+  await laptop.getByTestId('planner-row').getByRole('link', { name: 'Synced homework' }).waitFor();
+  await saved(laptop);
+  await saved(phone);
+  await nav(phone, 'Planner');
+  await phone.getByRole('link', { name: 'Synced homework' }).waitFor();
+  // Both change it before syncing. The phone's change comes later.
+  await nav(laptop, 'Planner');
+  await laptop.getByLabel('Status of Synced homework').selectOption('In Progress');
+  await laptop.waitForTimeout(30);
+  await phone.getByRole('button', { name: 'Mark Synced homework done' }).click();
+  await phone.locator('[data-testid=planner-row][data-done=true]').waitFor();
+  await saved(laptop);
+  await saved(phone);
+  await saved(laptop);
+  await nav(laptop, 'Planner');
+  await laptop.locator('[data-testid=planner-row][data-done=true]', { hasText: 'Synced homework' }).waitFor();
+});
+
 test('a half-typed answer stays on its own device', async () => {
   const items = fake.state.items('alice-uid').filter((item) => item.collection === 'checkpointProgress');
   assert.equal(JSON.parse(items[0].json).draft, '');

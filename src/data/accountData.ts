@@ -41,8 +41,8 @@ export async function getGuestSummary(): Promise<GuestSummary | null> {
 /** Presents the no-account work in the same shape as a backup, so copying it follows the same safe rules. */
 export async function openGuestAsBackup(): Promise<OpenedBackup | null> {
   return readGuest(async (db) => {
-    const [courses, topics, notes, materials, lessons, checkpoints, progress] = await Promise.all(
-      ['courses', 'topics', 'notes', 'materials', 'lessons', 'checkpoints', 'checkpointProgress'].map((store) => all(db, store)),
+    const [courses, topics, notes, materials, lessons, checkpoints, progress, plannerItems] = await Promise.all(
+      ['courses', 'topics', 'notes', 'materials', 'lessons', 'checkpoints', 'checkpointProgress', 'plannerItems'].map((store) => all(db, store)),
     );
     const entries = new Map<string, ZipEntry>();
     const blobs = has(db, 'blobs') ? new Map((await db.getAllKeys('blobs')).map((key) => [String(key), key])) : new Map();
@@ -70,7 +70,7 @@ export async function openGuestAsBackup(): Promise<OpenedBackup | null> {
     }
     const manifest: BackupManifest = {
       format: 'study-forge-backup',
-      version: 2,
+      version: 3,
       createdAt: Date.now(),
       courses,
       topics,
@@ -78,6 +78,7 @@ export async function openGuestAsBackup(): Promise<OpenedBackup | null> {
       lessons,
       checkpoints,
       progress,
+      plannerItems,
       materials: materials.map((material) => ({ ...material, path: material.id })),
     };
     return { manifest, entries, neededBytes: 0, newFiles: materials.length, freeBytes: null };

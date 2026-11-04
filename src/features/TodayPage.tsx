@@ -9,6 +9,9 @@ import { getLastBackupAt } from '../data/backup';
 import { listCheckpoints, listLessons, listProgress } from '../data/guided';
 import { recommendNext } from '../data/mastery';
 import { NoteList } from '../components/NoteList';
+import { PlannerList } from '../components/PlannerList';
+import { listPlannerItems } from '../data/planner';
+import { groupOf, localNow, comparePlanner } from '../data/plannerRules';
 import { listNotes } from '../data/notes';
 import { listUnfinished } from '../data/recordings';
 import { useLive } from '../data/useLive';
@@ -20,16 +23,18 @@ export function TodayPage() {
   const [askedToKeep, setAskedToKeep] = useState(false);
   const { data, error } = useLive(async () => {
     const [courses, materials, storage, unfinished, notes, lastBackup] = await Promise.all([listCourses(), listMaterials(), getStorageStatus(), listUnfinished(), listNotes(), getLastBackupAt()]);
-    const [lessons, checkpoints, progress] = await Promise.all([listLessons(), listCheckpoints(), listProgress()]);
-    return { courses, materials, storage, unfinished, notes, lastBackup, next: recommendNext(lessons, checkpoints, progress) };
+    const [lessons, checkpoints, progress, plannerItems] = await Promise.all([listLessons(), listCheckpoints(), listProgress(), listPlannerItems()]);
+    return { courses, materials, storage, unfinished, notes, lastBackup, plannerItems, next: recommendNext(lessons, checkpoints, progress) };
   }, [askedToKeep]);
 
   if (error) return <div className="page"><h1>Today</h1><p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { courses, materials, storage, unfinished, notes, lastBackup, next } = data;
+  const { courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems } = data;
+  const now = localNow();
+  const upcoming = plannerItems.filter((item) => ['overdue', 'today', 'tomorrow', 'week'].includes(groupOf(item, now))).sort(comparePlanner);
   const backupDue = (materials.length > 0 || notes.length > 0) && (lastBackup === null || Date.now() - lastBackup > BACKUP_REMINDER_MS);
 
-  if (courses.length === 0 && materials.length === 0 && unfinished.length === 0 && notes.length === 0) {
+  if (courses.length === 0 && materials.length === 0 && unfinished.length === 0 && notes.length === 0 && plannerItems.length === 0) {
     return (
       <div className="page welcome">
         <h1>Start with one course</h1>
@@ -59,6 +64,16 @@ export function TodayPage() {
           <button className="text-button" onClick={async () => { await requestKeepFiles(); setAskedToKeep(true); }}>Ask to keep them</button>
           {askedToKeep && <span> The browser didn't agree yet. It may need you to use the site more or install it.</span>}
         </p>
+      )}
+      {upcoming.length > 0 && (
+        <section aria-labelledby="due-heading" data-testid="due-soon">
+          <div className="section-head">
+            <h2 id="due-heading">Due soon</h2>
+            <Link to="/planner">See all</Link>
+          </div>
+          <PlannerList items={upcoming.slice(0, 8)} courses={courses} />
+          {upcoming.length > 8 && <p className="muted">And {upcoming.length - 8} more in your <Link to="/planner">Planner</Link>.</p>}
+        </section>
       )}
       {next && (
         <section aria-labelledby="next-heading" className="next-up" data-testid="next-up">
