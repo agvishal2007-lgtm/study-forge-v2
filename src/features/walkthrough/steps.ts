@@ -139,7 +139,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/calendar',
     target: ['[data-tour="calendar-add"]'],
     title: 'Your calendar',
-    body: 'Today\'s Plan shows what\'s left today. Plan Calendar shows when things happen, and Deadline Calendar shows when work is due. Add your class schedule here, or connect Google Calendar to bring in your classes and Canvas work.',
+    body: 'Today\'s Plan shows what\'s left today. Plan Calendar shows when things happen, and Deadline Calendar shows when work is due. Add your class schedule from a picture or pasted text, or connect Google Calendar to bring in your classes and Canvas work.',
   },
   {
     id: 'progress',

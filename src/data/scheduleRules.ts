@@ -77,6 +77,18 @@ const DATE_RANGE = /\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s*(?:-|–|—|to)\s*(\d{1
 const fullYear = (year: string) => (year.length === 2 ? `20${year}` : year);
 const isoDate = (month: string, day: string, year: string) => `${fullYear(year)}-${pad(+month)}-${pad(+day)}`;
 
+/**
+ * Text read from a picture often mixes up similar shapes inside times, such as 1O:5O or l0.00.
+ * Only pieces that look like a time are touched, so names and rooms stay as they were read.
+ */
+export function cleanReadText(text: string): string {
+  const digits = (piece: string) => piece.replace(/[Oo]/g, '0').replace(/[lI|]/g, '1').replace(/[Ss]/g, '5');
+  return text
+    .replace(/(?<![A-Za-z0-9])([0-9OlI|]{1,2})[:.;,]\s?([0-9OolI|Ss]{2})(?=\s*(?:[ap]\.?m|[AP]\.?M|[-–—~]|to\b|\s|$))/g, (_, hour, minute) => `${digits(hour)}:${digits(minute)}`)
+    .replace(/(\d{1,2}(?::\d{2})?\s*(?:[ap]\.?m\.?)?)\s*[~_=]\s*(\d)/gi, '$1 - $2')
+    .replace(/[ \t]{2,}/g, '   ');
+}
+
 const tidy = (text: string) => text.replace(/^[\s\-–—:|,.]+|[\s\-–—:|,.]+$/g, '');
 
 /** Takes the days from the words just before the time, and returns what's left in front of them. */
@@ -113,7 +125,19 @@ export function readSchedule(text: string): { rows: ScheduleRow[]; unread: strin
     }
     const before = line.slice(0, time.index);
     let after = line.slice((time.index ?? 0) + time[0].length);
-    const { days, rest } = splitDays(before);
+    const split = splitDays(before);
+    let { days } = split;
+    let { rest } = split;
+    if (!days) {
+      // Some tables put the days just after the time.
+      const next = after.trim().split(/\s+/)[0] ?? '';
+      const found = readDays(next);
+      if (found) {
+        days = found;
+        rest = before;
+        after = after.replace(next, '');
+      }
+    }
     if (!days) {
       unread.push(original.trim());
       continue;

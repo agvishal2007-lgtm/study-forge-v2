@@ -1,10 +1,8 @@
+import '@fontsource-variable/figtree/wght.css';
+import { watchDeviceTheme } from './data/theme';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
-import '@fontsource/atkinson-hyperlegible/400.css';
-import '@fontsource/atkinson-hyperlegible/700.css';
-import '@fontsource/zilla-slab/500.css';
-import '@fontsource/zilla-slab/700.css';
 import './styles.css';
 import { App } from './App';
 import { getActiveAccount } from './data/account';
@@ -24,3 +22,5 @@ createRoot(document.getElementById('root')!).render(
     </HashRouter>
   </StrictMode>,
 );
+
+watchDeviceTheme();

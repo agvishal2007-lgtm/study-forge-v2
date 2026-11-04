@@ -111,6 +111,14 @@ test('a pasted schedule is read in the ways schools print it', async () => {
   assert.equal(after.rows[0].code, 'ECO 231');
   assert.equal(after.rows[0].location, 'Bliss');
 
+  const table = readSchedule('Course Title Days Time Room\nECO 231 Microeconomics MWF 10:00 AM - 10:50 AM Bliss 123\nBUS 200 Intro 2:00 PM - 3:20 PM TR Bus 101');
+  assert.deepEqual(table.rows.map((row) => [row.code, row.name, row.days]), [['ECO 231', 'Microeconomics', [1, 3, 5]], ['BUS 200', 'Intro', [2, 4]]]);
+  assert.equal(table.rows[1].location, 'Bus 101');
+  const { cleanReadText } = await schedule();
+  assert.equal(cleanReadText('MWF 1O:OO AM - 1O:5O AM'), 'MWF 10:00 AM - 10:50 AM');
+  assert.equal(cleanReadText('TR l0.30am - ll.45am Room O12'), 'TR 10:30am - 11:45am Room O12', 'names and rooms stay as read');
+  assert.equal(cleanReadText('Biology Lab'), 'Biology Lab');
+
   const bad = readSchedule('Monday maybe sometime\nECO 231 XYZ 10:00-10:50am\nGeneral information');
   assert.equal(bad.rows.length, 0);
   assert.equal(bad.unread.length, 2, 'lines that look like classes are handed back, never guessed');
@@ -227,7 +235,7 @@ test('a pasted schedule is checked, saved, and shows on the calendar', async () 
   await page.getByTestId('schedule-saved').getByText('Saved 1 class with 6 meetings').waitFor();
 
   await nav('Courses');
-  await page.getByText('BUS 200 Management').first().waitFor();
+  await page.getByRole('link', { name: /Management/ }).first().waitFor();
 
   await nav('Calendar');
   const row = page.getByTestId('plan-row');
@@ -556,6 +564,63 @@ test('calendar items survive a backup and restore, and restoring twice adds noth
   await fresh.getByRole('dialog').getByRole('button', { name: 'Restore' }).click();
   await fresh.getByTestId('restore-report').getByText('and 0 calendar items').waitFor();
   await second.close();
+});
+
+test('a screenshot of a schedule is read on the device and checked before saving', async () => {
+  const shot = await context.newPage();
+  await shot.setViewportSize({ width: 760, height: 260 });
+  await shot.setContent(`<body style="font: 18px Arial; padding: 16px; background: #fff; color: #222">
+    <p><b>HIS 110 - World History</b><br>TuTh 9:30AM - 10:50AM &nbsp;&nbsp; Forcina Hall 204</p>
+    <p><b>MAT 127 - Calculus A</b><br>MoWeFr 1:00PM - 1:50PM &nbsp;&nbsp; Science 101</p></body>`);
+  const picture = path.join(work, 'schedule.png');
+  await shot.screenshot({ path: picture });
+  await shot.close();
+  await page.goto(`${URL_BASE}#/calendar/schedule`);
+  await page.getByLabel('Choose a picture of your schedule').setInputFiles(picture);
+  await page.getByTestId('schedule-rows').waitFor({ timeout: 90000 });
+  await page.getByRole('img', { name: 'The schedule you added' }).waitFor();
+  assert.equal(await page.getByTestId('schedule-row').count(), 2);
+  const first = page.getByTestId('schedule-row').first();
+  assert.match(await first.getByLabel('Name').inputValue(), /HIS 110/);
+  assert.equal(await first.getByLabel('Starts').inputValue(), '09:30');
+  assert.equal(await first.getByLabel('Ends').inputValue(), '10:50');
+  assert.match(await first.getByLabel('Place').inputValue(), /Forcina/);
+  assert.equal(await page.getByLabel('Days for class 1').getByLabel('Tue').isChecked(), true);
+  assert.equal(await page.getByLabel('Days for class 1').getByLabel('Thu').isChecked(), true);
+  const second = page.getByTestId('schedule-row').nth(1);
+  assert.match(await second.getByLabel('Name').inputValue(), /MAT 127/);
+  assert.equal(await second.getByLabel('Starts').inputValue(), '13:00');
+  await page.screenshot({ path: path.join(shots, 'schedule-picture.png') });
+});
+
+test('something that is not a picture explains itself', async () => {
+  const bad = path.join(work, 'not-a-picture.png');
+  fs.writeFileSync(bad, 'just text');
+  await page.goto(`${URL_BASE}#/calendar/schedule`);
+  await page.getByLabel('Choose a picture of your schedule').setInputFiles(bad);
+  await page.getByTestId('schedule-picture-problem').waitFor();
+});
+
+test('light is the default, and dark can be chosen and is remembered', async () => {
+  await page.goto(`${URL_BASE}#/settings`);
+  await page.reload();
+  const theme = () => page.evaluate(() => document.documentElement.dataset.theme);
+  const background = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  assert.equal(await theme(), 'light');
+  const light = await background();
+  await page.getByRole('button', { name: 'Switch to dark mode' }).click();
+  assert.equal(await theme(), 'dark');
+  assert.notEqual(await background(), light);
+  await page.reload();
+  assert.equal(await theme(), 'dark', 'it stays after reopening');
+  assert.equal(await page.getByRole('radio', { name: 'Dark' }).isChecked(), true);
+  await page.getByText('Match my device').click();
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'light');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
+  await page.getByText('Light', { exact: true }).click();
+  assert.equal(await theme(), 'light');
 });
 
 test('no uncaught errors happened during the whole run', () => {

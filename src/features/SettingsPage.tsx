@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AccountSection } from './AccountSection';
+import { AppearanceSection } from './AppearanceSection';
 import { BackupSection } from './BackupSection';
 import { OfflineSection } from './OfflineSection';
 import { formatBytes } from '../data/format';
@@ -14,6 +15,7 @@ export function SettingsPage() {
     <div className="page">
       <h1>Settings</h1>
       <AccountSection />
+      <AppearanceSection />
       <BackupSection />
       <OfflineSection />
       <section aria-labelledby="storage-heading">

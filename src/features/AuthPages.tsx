@@ -217,6 +217,8 @@ export function PrivacyPage() {
       </ul>
       <h2>Files from Google Drive or Dropbox</h2>
       <p>Study Forge only gets the files you pick. They're copied to your device, and aren't saved online by Study Forge. Screens where you add files load a small piece of code from those services, so the button is ready when you tap it.</p>
+      <h2>Pictures of your schedule</h2>
+      <p>A picture of your schedule is read on your device and isn't uploaded or saved. Only the classes you choose to save are kept.</p>
       <h2>Google Calendar</h2>
       <p>If you connect Google Calendar, Study Forge can only read it, and never adds, changes, or deletes anything there. It reads the calendars you choose, and only when you open or update the connection. Items you keep are saved in Study Forge. With an account, they're also saved online with the rest of your text, and Delete my online copy removes them. Google's permission is kept only while the page is open. You can disconnect in Calendar, or remove Study Forge in your Google account settings.</p>
       <h2>Advertising and selling data</h2>

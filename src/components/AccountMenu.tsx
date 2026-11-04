@@ -2,7 +2,22 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
 import { WalkthroughButton } from '../features/walkthrough/Walkthrough';
 import { getActiveAccount, switchAccount } from '../data/account';
+import { setThemeChoice, useIsDark } from '../data/theme';
 import { getSyncState, loadBackend, signOutOfAccount, subscribeSync, syncNow } from '../data/sync';
+
+/** One tap between light and dark. On small phones this lives in Settings, because the bar is full. */
+function ThemeButton() {
+  const dark = useIsDark();
+  return (
+    <button className="icon-button theme-button" onClick={() => setThemeChoice(dark ? 'light' : 'dark')} aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'} title={dark ? 'Switch to light mode' : 'Switch to dark mode'}>
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {dark
+          ? <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>
+          : <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" />}
+      </svg>
+    </button>
+  );
+}
 
 function GearIcon() {
   return (
@@ -118,6 +133,7 @@ export function AccountMenu() {
       <Link className="icon-button" to="/search" aria-label="Search" title="Search">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
       </Link>
+      <ThemeButton />
       <WalkthroughButton />
       {getActiveAccount() ? <SignedIn /> : <SignedOut />}
     </nav>

@@ -406,3 +406,11 @@ The Calendar section follows the owner's Notion calendar: **Today's Plan** (toda
 ## Progress and streaks
 
 Progress shows the current and longest streak, a 12-week activity grid, and each course's lessons, flashcards, practice, planner, and latest mock exam. A study day means a flashcard review, a practice answer, a finished mock exam, or lesson work. It doesn't track study time or predict grades. Each device keeps its own daily counts, so two devices never overwrite each other.
+
+## Schedule pictures
+
+Add class schedule also takes a picture: a file, a dragged picture, or a pasted screenshot. It's read in the browser with Tesseract, so nothing is uploaded and it's free. Table lines are erased and dark screenshots are flipped first. The text goes in the box to fix, and the classes go through the usual check. The reader is about 7 MB, downloads on first use, and then works offline. Weekly-grid pictures aren't understood yet, because the days come from column positions. Tested with generated pictures, not real school schedules or real phone photos.
+
+## Look
+
+Clean and light by default, with a dark mode. The moon or sun button at the top switches modes, and Settings also has Match my device. On small phones the switch is only in Settings. Colors are tokens at the top of `src/styles.css`, so both modes stay matched. The font is Figtree. Buttons stay rounded bubbles and blue is the one accent, as the owner chose earlier. The bookshelf stays as the signature.
