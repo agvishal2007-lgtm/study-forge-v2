@@ -771,7 +771,7 @@ test('after signing in with Google, that calendar connects in one tap, and other
   const soon = '2026-11-06';
   const events = {
     'student@gmail.com': [{ id: 'eco', recurringEventId: 'ecos', summary: 'ECO 231', start: { dateTime: stamp(soon, '10:00') }, end: { dateTime: stamp(soon, '10:50') } }],
-    canvas: [{ id: 'quiz', summary: 'Quiz 1 [1268-ECO231-03]', start: { dateTime: stamp(soon, '23:00') }, end: { dateTime: stamp(soon, '23:00') } }],
+    canvas: [{ id: 'quiz', summary: 'Quiz 1 [1268-ECO231-03]', start: { dateTime: stamp(soon, '14:00') }, end: { dateTime: stamp(soon, '14:00') } }],
     birthdays: [{ id: 'bday', summary: 'Sam birthday', start: { date: soon }, end: { date: soon } }],
   };
   await page.route('https://www.googleapis.com/calendar/v3/**', (route) => {
