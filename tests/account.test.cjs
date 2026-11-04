@@ -345,7 +345,7 @@ test('study progress follows the student, and evidence from both devices combine
 
   // Both devices answer before either syncs: nothing is lost.
   await nav(laptop, 'Today');
-  await laptop.getByRole('heading', { name: 'Today' }).waitFor();
+  await laptop.getByRole('heading', { name: /^Today:/ }).waitFor();
   await nav(laptop, 'Study');
   await laptop.getByTestId('next-up').getByRole('link', { name: 'The accounting equation' }).click();
   await laptop.getByRole('button', { name: 'Continue' }).click();
