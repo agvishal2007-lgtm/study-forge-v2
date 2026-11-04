@@ -220,7 +220,7 @@ export function PrivacyPage() {
       <h2>Advertising and selling data</h2>
       <p>Study Forge has no ads and doesn't sell your information.</p>
       <h2>Removing your data</h2>
-      <p>While signed in, open Settings and use Delete online copy in the Account section. That also covers anything from signing in with Facebook, Microsoft, or Google. To stop those companies sharing your details, remove Study Forge in your account settings with them.</p>
+      <p>While signed in, open Settings and use Delete my online copy in the Account section. That also covers anything from signing in with Facebook, Microsoft, or Google. To stop those companies sharing your details, remove Study Forge in your account settings with them.</p>
       <p><Link to="/">Go to Today</Link></p>
     </div>
   );

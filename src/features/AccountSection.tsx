@@ -22,6 +22,7 @@ const PHASE_TEXT: Record<SyncPhase, string> = {
 export function AccountSection() {
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [confirmationSent, setConfirmationSent] = useState(false);
+  const [confirmationFailed, setConfirmationFailed] = useState(false);
   useEffect(() => {
     if (!getActiveAccount()) return undefined;
     let active = true;
@@ -83,9 +84,10 @@ export function AccountSection() {
         <p className="notice" data-testid="confirm-email">
           Please confirm your email, so you can reset your password if you ever forget it. Look for our email, including in spam.{' '}
           <button className="text-button" disabled={confirmationSent} onClick={() => {
-            setConfirmationSent(true);
-            void loadBackend().then((backend) => backend.sendEmailConfirmation()).catch(() => setConfirmationSent(false));
+            setConfirmationFailed(false);
+            void loadBackend().then((backend) => backend.sendEmailConfirmation()).then(() => setConfirmationSent(true), () => setConfirmationFailed(true));
           }}>{confirmationSent ? 'Sent again' : 'Send it again'}</button>
+          {confirmationFailed && <span> That didn't send. Wait a few minutes and try again.</span>}
         </p>
       )}
       {sync.tooLarge.length > 0 && <p className="error" role="alert">Too large to save online, so only on this device: {sync.tooLarge.join(', ')}.</p>}
