@@ -12,7 +12,7 @@ import { cleanUpInterruptedSaves } from './data/store';
 
 void cleanUpInterruptedSaves().catch(() => undefined);
 
-// Students who haven't signed in never load anything from the online service.
+// Syncing only starts for a student who has signed in.
 if (getActiveAccount()) void import('./data/sync').then(({ startSync }) => startSync()).catch(() => undefined);
 
 createRoot(document.getElementById('root')!).render(

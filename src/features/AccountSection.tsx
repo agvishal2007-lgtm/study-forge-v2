@@ -1,4 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import type { AccountBackend } from '../data/accountBackend';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { getActiveAccount, switchAccount } from '../data/account';
 import { getGuestSummary, openGuestAsBackup, removeAccountFromDevice, removeGuestData, type GuestSummary } from '../data/accountData';
@@ -38,16 +39,29 @@ export function AccountSection() {
   const [report, setReport] = useState<RestoreReport | null>(null);
   const [confirm, setConfirm] = useState<'' | 'sign-out' | 'remove-device' | 'delete-online' | 'remove-guest'>('');
   const [notice, setNotice] = useState('');
+  // Phones block a sign-in window that opens late, so its code must be ready before the tap.
+  const [backend, setBackend] = useState<AccountBackend | null>(null);
+
+  useEffect(() => {
+    if (account) return;
+    let active = true;
+    loadBackend().then(
+      (loaded) => { if (active) setBackend(loaded); },
+      () => { if (active) setFailure("Sign-in couldn't load. Check your internet connection, then reload this page."); },
+    );
+    return () => { active = false; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (account) void getGuestSummary().then(setGuest).catch(() => setGuest(null));
   }, [account?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const signIn = async () => {
+    if (!backend) return;
     setBusy(true);
     setFailure('');
     try {
-      const backend = await loadBackend();
+      // Nothing is awaited before this call, so the window opens as part of the tap itself.
       const user = await backend.signIn();
       switchAccount({ uid: user.uid, email: user.email });
     } catch (error) {
@@ -102,7 +116,7 @@ export function AccountSection() {
           <li>School Google accounts work if your school allows it. If yours blocks it, you'll see a message and can keep using Study Forge without signing in.</li>
           <li>Other students can't read your work. It's stored in Google's Firebase service, and whoever runs this site could technically view it, so don't save anything highly sensitive.</li>
         </ul>
-        <button className="button primary" disabled={busy} onClick={() => void signIn()}>{busy ? 'Waiting for Google…' : 'Sign in with Google'}</button>
+        <button className="button primary" disabled={busy || !backend} onClick={() => void signIn()}>{busy ? 'Waiting for Google…' : backend ? 'Sign in with Google' : 'Getting sign-in ready…'}</button>
         {failure && <p className="error" role="alert">{failure}</p>}
       </section>
     );

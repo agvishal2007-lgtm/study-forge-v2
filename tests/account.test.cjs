@@ -99,6 +99,25 @@ test('everything works with no account and contacts nothing online', async () =>
   await page.getByText('whoever runs this site could technically view it').waitFor();
 });
 
+test('the sign-in button waits until sign-in can open immediately', async () => {
+  const page = await device('laptop');
+  await close('laptop');
+  const entry = await chromium.launchPersistentContext(path.join(work, 'laptop'), { viewport: { width: 1280, height: 800 } });
+  const slow = entry.pages()[0] ?? (await entry.newPage());
+  await slow.route('**/testBackend-*.js', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    await route.continue();
+  });
+  await slow.goto(`${URL_BASE}#/settings`);
+  const waiting = slow.getByRole('button', { name: 'Getting sign-in ready…' });
+  await waiting.waitFor();
+  assert.equal(await waiting.isDisabled(), true);
+  await slow.getByRole('button', { name: 'Sign in with Google' }).waitFor();
+  assert.equal(await slow.getByRole('button', { name: 'Sign in with Google' }).isDisabled(), false);
+  await entry.close();
+  assert.ok(page);
+});
+
 test('closing the sign-in window is quiet, and a school block explains what to do', async () => {
   const page = await device('laptop', 'auth/popup-closed-by-user');
   await nav(page, 'Settings');

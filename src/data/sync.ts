@@ -253,7 +253,7 @@ export async function syncNow(): Promise<void> {
 let timer: ReturnType<typeof setTimeout> | undefined;
 let lastFocusCheck = 0;
 
-/** Starts syncing for the signed-in account. Nothing about Firebase loads for students without one. */
+/** Starts syncing for the signed-in account. */
 export async function startSync(): Promise<void> {
   const account = getActiveAccount();
   if (!account) return;

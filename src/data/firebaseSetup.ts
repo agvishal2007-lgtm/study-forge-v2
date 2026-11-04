@@ -14,4 +14,7 @@ const app = initializeApp({
 });
 const auth = initializeAuth(app, { persistence: browserLocalPersistence, popupRedirectResolver: browserPopupRedirectResolver });
 
+// Waiting here means the sign-in button only turns on once sign-in can actually start.
+await auth.authStateReady();
+
 export const backend = createFirebaseBackend(app, auth, getFirestore(app));
