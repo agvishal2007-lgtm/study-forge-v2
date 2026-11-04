@@ -53,7 +53,7 @@ function fingerprint(text: string): string {
   return `${text.length}-${(b >>> 0).toString(36)}${(a >>> 0).toString(36)}`;
 }
 
-const idField = (collection: SyncCollection) => (collection === 'checkpointProgress' ? 'checkpointId' : 'id');
+const idField = (collection: SyncCollection) => (collection === 'checkpointProgress' ? 'checkpointId' : collection === 'cardProgress' ? 'cardId' : 'id');
 
 /** A half-typed answer belongs to this device, so it isn't part of what's compared or sent. */
 function serialize(collection: SyncCollection, record: unknown): string {

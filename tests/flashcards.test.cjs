@@ -167,7 +167,7 @@ test('Today counts what is due, and the answer stays hidden until revealed', asy
   await page.screenshot({ path: path.join(shots, 'review-front.png') });
   await reveal();
   await page.getByTestId('card-back').getByText(BACK_ONE).waitFor();
-  assert.match(await rating('Again').innerText(), /Again today/);
+  assert.match(await rating('Again').innerText(), /Today/);
   assert.match(await rating('Hard').innerText(), /1 day/);
   assert.match(await rating('Good').innerText(), /1 day/);
   assert.match(await rating('Easy').innerText(), /5 days/);

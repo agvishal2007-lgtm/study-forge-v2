@@ -62,7 +62,7 @@ export function dueQueue(cards: Flashcard[], progress: Map<string, CardProgress>
     });
 }
 
-export const describeInterval = (days: number) => (days === 0 ? 'Again today' : days === 1 ? '1 day' : `${days} days`);
+export const describeInterval = (days: number) => (days === 0 ? 'Today' : days === 1 ? '1 day' : `${days} days`);
 
 /** Plain words for when a card comes back, such as "Due today" or "Due Nov 10". */
 export function describeCardDue(progress: Pick<CardProgress, 'dueDate'> | null | undefined, today: string): string {
