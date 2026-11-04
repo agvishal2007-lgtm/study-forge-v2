@@ -92,6 +92,20 @@ test('a new student is asked to create a course', async () => {
   await page.getByText('Enter a course name.').waitFor();
 });
 
+test('buttons are blue bubbles, with no yellow left on the page', async () => {
+  const look = await page.getByRole('button', { name: 'Create course' }).evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { background: style.backgroundColor, radius: parseFloat(style.borderTopLeftRadius), height: el.offsetHeight };
+  });
+  assert.equal(look.background, 'rgb(125, 211, 252)');
+  assert.ok(look.radius >= look.height / 2, 'fully rounded');
+  const yellow = await page.evaluate(() => [...document.querySelectorAll('*')].filter((el) => {
+    const style = getComputedStyle(el);
+    return [style.color, style.backgroundColor, style.borderTopColor].some((value) => value === 'rgb(232, 185, 79)');
+  }).length);
+  assert.equal(yellow, 0);
+});
+
 test('create a course and a topic', async () => {
   await page.getByLabel('Course name').fill('Financial Accounting');
   await page.getByLabel('Course code').fill('ACC 211');

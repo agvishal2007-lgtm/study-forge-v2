@@ -5,7 +5,7 @@ import { noteLabel } from './notes';
 import { listUnfinished } from './recordings';
 import { findByHash, getStorageStatus, hashFile, storeMaterial } from './store';
 import {
-  SPINE_COLORS,
+  OLD_YELLOW, SPINE_COLORS,
   type AnswerRecord, type Checkpoint, type CheckpointProgress, type Course, type ExplanationRecord, type GuidedQuestion,
   type KeyPointRating, type Lesson, type Material, type MasteryStatus, type Note, type QuestionKind, type Reteach, type Topic,
 } from './types';
@@ -212,7 +212,7 @@ const isOptionalId = (value: unknown): value is string | null => value === null 
 
 function cleanCourse(raw: unknown): Course | null {
   if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.name) || !isTime(raw.createdAt)) return null;
-  const color = isText(raw.color) && /^#[0-9a-f]{6}$/i.test(raw.color) ? raw.color : SPINE_COLORS[0];
+  const color = isText(raw.color) && /^#[0-9a-f]{6}$/i.test(raw.color) && raw.color !== OLD_YELLOW ? raw.color : SPINE_COLORS[0];
   return { id: raw.id, name: raw.name, code: isText(raw.code) ? raw.code : '', color, createdAt: raw.createdAt };
 }
 

@@ -4,7 +4,7 @@ import {
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
-import { getDb } from '../../data/db';
+import { getDb, subscribe } from '../../data/db';
 import { TOUR_STEPS } from './steps';
 
 const STATE_KEY = 'walkthrough';
@@ -108,12 +108,37 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
   const [notFound, setNotFound] = useState(false);
   const [cardPosition, setCardPosition] = useState<{ top: number; left: number } | null>(null);
 
-  // The rest of the app can't be clicked, tabbed to, or read out while this is open.
+  // Whether the action this step asks for is done yet. Null means still checking.
+  const [actionDone, setActionDone] = useState<boolean | null>(definition.action ? null : true);
+  useEffect(() => {
+    const action = definition.action;
+    if (!action) {
+      setActionDone(true);
+      return;
+    }
+    let active = true;
+    setActionDone(null);
+    const check = () => action.isDone().then((done) => { if (active) setActionDone(done); }, () => { if (active) setActionDone(true); });
+    void check();
+    const unsubscribe = subscribe(() => void check());
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [definition]);
+
+  // Only the highlighted part can be used, and only while the student is trying it.
+  const trying = !!definition.action && actionDone === false;
+
+  // Otherwise the rest of the app can't be clicked, tabbed to, or read out while this is open.
   useEffect(() => {
     const root = document.getElementById('root');
-    root?.setAttribute('inert', '');
+    if (trying) root?.removeAttribute('inert');
+    else root?.setAttribute('inert', '');
     return () => root?.removeAttribute('inert');
-  }, []);
+  }, [trying]);
+
+  const trackedElement = useRef<Element | null>(null);
 
   useEffect(() => {
     if (definition.route && definition.route !== pathname) navigate(definition.route);
@@ -132,8 +157,12 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
     const started = performance.now();
     const tick = () => {
       // A fresh visit has no address after the #, which means the home screen.
-      const routeOk = !definition.route || (window.location.hash.replace(/^#/, '').split('?')[0] || '/') === definition.route;
-      const element = routeOk ? findTarget(definition.target) : null;
+      const path = window.location.hash.replace(/^#/, '').split('?')[0] || '/';
+      const routeOk = !definition.route || path === definition.route;
+      // An action can lead to another screen, such as a new note, so the box follows it there.
+      const followed = definition.action?.follow?.find((item) => item.match.test(path));
+      const element = followed ? findTarget(followed.target) : routeOk ? findTarget(definition.target) : null;
+      trackedElement.current = element;
       if (element) {
         if (scrolledTo !== element) {
           scrolledTo = element;
@@ -174,17 +203,24 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
-  }, [box, step, notFound]);
+  }, [box, step, notFound, actionDone, trying]);
 
   const isFirst = step === 0;
   const isLast = step === TOUR_STEPS.length - 1;
   const percent = Math.round((step / TOUR_STEPS.length) * 100);
-  const waiting = !!definition.target && !box && !notFound;
+  const waiting = !!definition.target && !box && !notFound && actionDone !== true;
+  // If the part to try isn't on screen, it can't be done, so nobody gets stuck here.
+  const nextLocked = (trying && !notFound) || actionDone === null;
 
   // The Next button is briefly disabled while a section is found, so focus waits until it's ready.
   useEffect(() => {
-    if (!waiting) primary.current?.focus({ preventScroll: true });
-  }, [step, waiting]);
+    // While trying something, focus waits on the card, so a phone's keyboard doesn't jump up.
+    if (nextLocked) card.current?.focus({ preventScroll: true });
+    else if (!waiting) primary.current?.focus({ preventScroll: true });
+  }, [step, waiting, nextLocked]);
+
+  const actionFinishedRef = useRef(true);
+  actionFinishedRef.current = !trying;
 
   // Keys work even if focus has landed nowhere, and Tab can't leave the walkthrough.
   useEffect(() => {
@@ -193,12 +229,15 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
         event.preventDefault();
         onPause();
       } else if (event.key === 'Tab') {
-        const items = [...(card.current?.querySelectorAll<HTMLElement>('button:not(:disabled)') ?? [])];
+        const inTarget = trackedElement.current && !actionFinishedRef.current
+          ? [...trackedElement.current.querySelectorAll<HTMLElement>('a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled)')]
+          : [];
+        const items = [...inTarget, ...(card.current?.querySelectorAll<HTMLElement>('button:not(:disabled)') ?? [])];
         if (items.length === 0) return;
         const first = items[0];
         const last = items[items.length - 1];
         const active = document.activeElement;
-        if (!card.current?.contains(active)) {
+        if (!items.includes(active as HTMLElement) && active !== card.current) {
           event.preventDefault();
           first.focus();
         } else if (event.shiftKey && active === first) {
@@ -217,19 +256,29 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
   return createPortal(
     <div className="tour">
       {/* Catches every click outside the explanation. */}
-      <div className="tour-blocker" data-testid="tour-blocker" />
-      {box
+      {trying && box ? (
+        // Four walls around the box, so only the highlighted part can be used.
+        <>
+          <div className="tour-blocker" data-testid="tour-blocker" style={{ bottom: `calc(100% - ${box.top}px)` }} />
+          <div className="tour-blocker" style={{ top: box.top + box.height }} />
+          <div className="tour-blocker" style={{ top: box.top, height: box.height, right: `calc(100% - ${box.left}px)` }} />
+          <div className="tour-blocker" style={{ top: box.top, height: box.height, left: box.left + box.width }} />
+        </>
+      ) : <div className="tour-blocker" data-testid="tour-blocker" />}
+      {box && !(definition.action && actionDone === true && !findTarget(definition.target))
         ? <div className="tour-box" data-testid="tour-box" style={{ top: box.top, left: box.left, width: box.width, height: box.height }} />
         : <div className="tour-dark" />}
       <div
         ref={card}
         className="tour-card"
         role="dialog"
-        aria-modal="true"
+        tabIndex={-1}
         aria-labelledby="tour-title"
         aria-describedby="tour-body"
         data-testid="tour-card"
         data-step={definition.id}
+        data-action-pending={nextLocked}
+        data-trying={trying && !notFound}
         style={cardPosition ? { top: cardPosition.top, left: cardPosition.left } : { visibility: 'hidden', top: 0, left: 0 }}
       >
         <p className="tour-count" data-testid="tour-count">Step {step + 1} of {TOUR_STEPS.length}, {percent}% complete</p>
@@ -238,11 +287,13 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
         </div>
         <h2 id="tour-title" aria-live="polite">{definition.title}</h2>
         <p id="tour-body">{definition.body}</p>
-        {notFound && <p className="muted" data-testid="tour-missing">This part isn't on the screen right now, so there's nothing to highlight. You can keep going.</p>}
+        {trying && !notFound && <p className="tour-try" data-testid="tour-try">{definition.action?.instruction}</p>}
+        {definition.action && actionDone === true && <p className="tour-done" data-testid="tour-done" role="status">{definition.action.doneMessage}</p>}
+        {notFound && actionDone !== true && <p className="muted" data-testid="tour-missing">This part isn't on the screen right now, so there's nothing to highlight. You can keep going.</p>}
         <div className="tour-actions">
           {isLast
             ? <button ref={primary} className="button primary" onClick={onFinish}>Finish</button>
-            : <button ref={primary} className="button primary" disabled={waiting} onClick={() => onStep(step + 1)}>{isFirst ? 'Start' : 'Next'}</button>}
+            : <button ref={primary} className="button primary" disabled={waiting || nextLocked} onClick={() => onStep(step + 1)}>{isFirst ? 'Start' : 'Next'}</button>}
           {!isFirst && <button className="button" onClick={() => onStep(step - 1)}>Back</button>}
           {!isLast && <button className="text-button" onClick={onPause}>Skip for now</button>}
           {!isFirst && !isLast && <button className="text-button" onClick={onRestart}>Start over</button>}

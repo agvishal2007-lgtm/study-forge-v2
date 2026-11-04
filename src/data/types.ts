@@ -51,7 +51,9 @@ export interface RecordingSession {
 
 export type MaterialKind = 'pdf' | 'image' | 'audio' | 'video' | 'text' | 'other';
 
-export const SPINE_COLORS = ['#E8B94F', '#4FB7A8', '#8EA2F0', '#E58FA9', '#9CCB6B', '#62B5E5'];
+export const SPINE_COLORS = ['#7DD3FC', '#6EE7C8', '#B4A7F5', '#F5A3C0', '#B5E48C', '#8FB3FF'];
+/** The old yellow course color, swapped for the new look when older courses are opened or restored. */
+export const OLD_YELLOW = '#E8B94F';
 
 /* Guided Study: Course → Lesson or chapter → Checkpoint → Teaching → Practice → Mastery */
 export type MasteryStatus = 'not-started' | 'learning' | 'practicing' | 'needs-review' | 'mastered';

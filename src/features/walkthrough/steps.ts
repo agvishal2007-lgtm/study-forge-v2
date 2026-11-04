@@ -1,3 +1,16 @@
+import { getDb } from '../../data/db';
+
+export interface TourAction {
+  /** Checks saved data. If this is already true, the student isn't asked again. */
+  isDone: () => Promise<boolean>;
+  /** Shown while Next is locked. */
+  instruction: string;
+  /** Shown once it's done. */
+  doneMessage: string;
+  /** Later screens this action passes through, and what to highlight on them. */
+  follow?: { match: RegExp; target: string[] }[];
+}
+
 export interface TourStep {
   id: string;
   /** The screen to open for this step. Leave out to stay on the current screen. */
@@ -6,7 +19,11 @@ export interface TourStep {
   target?: string[];
   title: string;
   body: string;
+  /** Something the student must really do before moving on. */
+  action?: TourAction;
 }
+
+const hasAny = (store: 'courses' | 'lessons' | 'notes') => async () => (await (await getDb()).count(store)) > 0;
 
 /** Each step describes only what really exists on the site today. */
 export const TOUR_STEPS: TourStep[] = [
@@ -43,6 +60,11 @@ export const TOUR_STEPS: TourStep[] = [
     target: ['[data-tour="add-course"]'],
     title: 'Courses',
     body: 'Add each class here. Inside a course, you can make topics, like chapters, and keep its files, notes, and recordings together.',
+    action: {
+      isDone: hasAny('courses'),
+      instruction: 'Try it: add one of your real classes, then press Create course.',
+      doneMessage: 'Nice, you have a course. You can add more anytime.',
+    },
   },
   {
     id: 'library',
@@ -70,7 +92,12 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/study',
     target: ['[data-tour="sample-lesson"]'],
     title: 'Mastery is earned',
-    body: 'Clicking through or guessing never counts. A topic is only mastered once you\'ve answered questions, applied the idea, and explained it. Try the sample lesson here when you\'re ready.',
+    body: 'Clicking through or guessing never counts. A topic is only mastered once you\'ve answered questions, applied the idea, and explained it.',
+    action: {
+      isDone: hasAny('lessons'),
+      instruction: 'Try it: press Add sample lesson. It stays in Study for when you\'re ready, and you can delete it anytime.',
+      doneMessage: 'The sample lesson is ready for you in Study.',
+    },
   },
   {
     id: 'write-lesson',
@@ -82,9 +109,15 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'notes',
     route: '/notes',
-    target: ['#content .page'],
+    target: ['[data-tour="new-note"]'],
     title: 'Notes',
-    body: 'Write notes here. They save as you type. You can file them under a course or topic, attach them to a file or recording, and search them all.',
+    body: 'Notes save as you type. You can file them under a course or topic, attach them to a file or recording, and search them all.',
+    action: {
+      isDone: hasAny('notes'),
+      instruction: 'Try it: press New note and type anything. It saves by itself.',
+      doneMessage: 'Your note is saved. You can find it in Notes anytime.',
+      follow: [{ match: /^\/notes\/.+/, target: ['.note-body-label'] }],
+    },
   },
   {
     id: 'record-type',

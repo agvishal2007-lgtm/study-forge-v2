@@ -16,7 +16,7 @@ export function NotesPage() {
     <div className="page">
       <h1>Notes</h1>
       <p className="muted">Everything you've written, across all your courses.</p>
-      <NewNoteButton primary />
+      <div data-tour="new-note" className="tour-inline"><NewNoteButton primary /></div>
       {error && <p className="error" role="alert">Your notes couldn't be loaded. {error.message}</p>}
       {data && data.notes.length > 0 && (
         <label className="search">Search your notes<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} /></label>

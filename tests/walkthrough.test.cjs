@@ -31,8 +31,27 @@ const press = (name) => card().getByRole('button', { name, exact: true }).click(
 async function atStep(number) {
   await page.locator(`[data-testid=tour-count]`, { hasText: `Step ${number} of ${TOTAL}` }).waitFor();
 }
+/** Does what a hands-on step asks for, proving Next stays locked until then. */
+async function doAction() {
+  const id = await card().getAttribute('data-step');
+  await page.getByTestId('tour-try').waitFor();
+  assert.equal(await card().getByRole('button', { name: 'Next', exact: true }).isDisabled(), true, `${id}: Next is locked`);
+  if (id === 'courses') {
+    await page.getByLabel('Course name').fill('Real class');
+    await page.getByRole('button', { name: 'Create course' }).click();
+  } else if (id === 'mastery') {
+    await page.getByRole('button', { name: 'Add sample lesson' }).click();
+  } else if (id === 'notes') {
+    await page.getByRole('button', { name: 'New note' }).click();
+    await page.locator('textarea.note-body').fill('My first note');
+  }
+  await page.getByTestId('tour-done').waitFor({ timeout: 8000 });
+}
 async function next() {
   const now = Number((await count()).match(/Step (\d+)/)[1]);
+  await page.waitForFunction(() => document.querySelector('[data-testid=tour-card]').dataset.actionPending !== undefined);
+  await settle();
+  if ((await card().getAttribute('data-action-pending')) === 'true' && (await page.getByTestId('tour-try').count())) await doAction();
   await press(now === 1 ? 'Start' : 'Next');
   await atStep(now + 1);
 }
@@ -96,7 +115,7 @@ const EXPECTED = [
   ['study', '#/study', '[data-tour=study-intro]'],
   ['mastery', '#/study', '[data-tour=sample-lesson]'],
   ['write-lesson', '#/study', '[data-tour=new-lesson]'],
-  ['notes', '#/notes', '#content .page'],
+  ['notes', '#/notes', '[data-tour=new-note]'],
   ['record-type', '#/record', '[data-tour=record-source]'],
   ['record-safe', '#/record', '[data-tour=record-start]'],
   ['backup', '#/settings', '[data-tour=backup]'],
@@ -202,13 +221,27 @@ test('finishing reaches the last step, cleans up, and does not repeat', async ()
 test('a section that is missing never crashes it', async () => {
   await page.getByRole('button', { name: 'Walkthrough' }).click();
   await atStep(1);
-  await page.addStyleTag({ content: '[data-tour="add-course"] { display: none !important; }' });
-  for (let i = 1; i < 5; i++) await next();
-  assert.equal(await card().getAttribute('data-step'), 'courses');
+  await page.addStyleTag({ content: '[data-tour="add-files"] { display: none !important; }' });
+  for (let i = 1; i < 6; i++) await next();
+  assert.equal(await card().getAttribute('data-step'), 'library');
   await page.getByTestId('tour-missing').waitFor();
   assert.equal(await page.getByTestId('tour-box').count(), 0);
   await next();
   await page.getByTestId('tour-box').waitFor();
+  await press('Skip for now');
+});
+
+test('a hands-on step whose part is missing never traps anyone', async () => {
+  await open('trapped', { auto: false });
+  await page.addStyleTag({ content: '[data-tour="add-course"] { display: none !important; }' });
+  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await atStep(1);
+  await page.addStyleTag({ content: '[data-tour="add-course"] { display: none !important; }' });
+  for (let i = 1; i < 4; i++) await next();
+  await press('Next');
+  await atStep(5);
+  await page.getByTestId('tour-missing').waitFor();
+  assert.equal(await card().getByRole('button', { name: 'Next', exact: true }).isDisabled(), false);
   await press('Skip for now');
 });
 
@@ -266,6 +299,62 @@ test('it works on a phone: the box fits and the explanation stays on screen', as
   }
   await press('Finish');
   await card().waitFor({ state: 'detached' });
+});
+
+test('during a hands-on step, only the highlighted part works', async () => {
+  await open('hands-on');
+  await card().waitFor();
+  for (let i = 1; i < 5; i++) await next();
+  assert.equal(await card().getAttribute('data-step'), 'courses');
+  await page.getByTestId('tour-try').waitFor();
+  await settle();
+  await page.screenshot({ path: path.join(shots, 'tour-hands-on.png') });
+  const hits = await page.evaluate(() => {
+    const at = (el) => {
+      const r = el.getBoundingClientRect();
+      return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    };
+    const input = document.querySelector('[data-tour=add-course] input');
+    return { field: at(input) === input, navBlocked: at(document.querySelector('.nav-links a')).className, top: at(document.querySelector('.topbar .button')).className };
+  });
+  assert.equal(hits.field, true, 'the highlighted form can be used');
+  assert.match(hits.navBlocked, /tour-blocker/);
+  assert.match(hits.top, /tour-blocker/);
+  await page.mouse.click(60, 190);
+  await page.waitForTimeout(150);
+  assert.ok(new URL(page.url()).hash.endsWith('/courses'), 'the sidebar still can\'t be clicked');
+  // An empty name doesn't count.
+  await page.getByRole('button', { name: 'Create course' }).click();
+  await page.getByText('Enter a course name.').waitFor();
+  assert.equal(await card().getByRole('button', { name: 'Next', exact: true }).isDisabled(), true);
+  // Pausing and returning keeps the same step, still locked.
+  await page.reload();
+  await atStep(5);
+  await page.getByTestId('tour-try').waitFor();
+  await page.getByLabel('Course name').fill('Biology');
+  await page.getByRole('button', { name: 'Create course' }).click();
+  await page.getByTestId('tour-done').waitFor();
+  assert.equal(await page.evaluate(() => document.getElementById('root').hasAttribute('inert')), true, 'everything is locked again');
+  await next();
+  // Their work is real and stays.
+  await press('Skip for now');
+  await page.getByRole('navigation').getByRole('link', { name: 'Courses', exact: true }).click();
+  await page.getByRole('link', { name: /Biology/ }).waitFor();
+});
+
+test('work already done is not asked for again', async () => {
+  await open('already', { auto: false });
+  await page.getByLabel('Course name').fill('Existing');
+  await page.getByRole('button', { name: 'Create course' }).click();
+  await page.getByRole('heading', { name: 'Existing' }).waitFor();
+  await page.getByRole('button', { name: 'Walkthrough' }).click();
+  await atStep(1);
+  for (let i = 1; i < 5; i++) await next();
+  assert.equal(await card().getAttribute('data-step'), 'courses');
+  await page.getByTestId('tour-done').waitFor();
+  assert.equal(await page.getByTestId('tour-try').count(), 0);
+  assert.equal(await card().getByRole('button', { name: 'Next', exact: true }).isDisabled(), false);
+  await press('Skip for now');
 });
 
 test('it stays out of the way for existing tests and automated browsers', async () => {

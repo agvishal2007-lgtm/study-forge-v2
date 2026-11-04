@@ -99,6 +99,8 @@ test('existing students keep their courses when the site updates', async () => {
   }));
   await page.goto(URL_BASE);
   await page.getByRole('link', { name: /Saved Before Update/ }).waitFor();
+  const color = await page.getByRole('link', { name: /Saved Before Update/ }).evaluate((el) => el.style.getPropertyValue('--spine'));
+  assert.equal(color, '#7DD3FC', 'old yellow course colors update with the new look');
   await nav('Record');
   await page.getByRole('button', { name: 'Start recording' }).waitFor();
   await nav('Notes');

@@ -1,6 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { CURRENT_DB } from './account';
-import type { Checkpoint, CheckpointProgress, Course, Lesson, Material, Note, RecordingSession, Topic } from './types';
+import { OLD_YELLOW, SPINE_COLORS, type Checkpoint, CheckpointProgress, Course, Lesson, Material, Note, RecordingSession, Topic } from './types';
 
 /**
  * IndexedDB is the single source of truth for courses, topics, and file records.
@@ -24,8 +24,8 @@ interface StudyForgeDB extends DBSchema {
 let dbPromise: Promise<IDBPDatabase<StudyForgeDB>> | null = null;
 
 export function getDb() {
-  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 5, {
-    upgrade(db, oldVersion) {
+  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 6, {
+    async upgrade(db, oldVersion, _newVersion, transaction) {
       // Each step only adds to what's there, so existing students keep their data.
       if (oldVersion < 1) {
         db.createObjectStore('courses', { keyPath: 'id' });
@@ -50,6 +50,11 @@ export function getDb() {
       }
       if (oldVersion < 5) {
         db.createObjectStore('syncMeta');
+      }
+      if (oldVersion >= 1 && oldVersion < 6) {
+        for (let cursor = await transaction.objectStore('courses').openCursor(); cursor; cursor = await cursor.continue()) {
+          if (cursor.value.color === OLD_YELLOW) await cursor.update({ ...cursor.value, color: SPINE_COLORS[0] });
+        }
       }
     },
     // An older open tab is holding the database, so the update has to wait for it.
