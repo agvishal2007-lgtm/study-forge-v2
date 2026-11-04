@@ -5,7 +5,7 @@ import { noteLabel } from './notes';
 import { listUnfinished } from './recordings';
 import { findByHash, getStorageStatus, hashFile, storeMaterial } from './store';
 import {
-  OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem,
+  OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem, type CardProgress, type Deck, type Flashcard, CARD_RATINGS,
   type AnswerRecord, type Checkpoint, type CheckpointProgress, type Course, type ExplanationRecord, type GuidedQuestion,
   type KeyPointRating, type Lesson, type Material, type MasteryStatus, type Note, type QuestionKind, type Reteach, type Topic,
 } from './types';
@@ -19,7 +19,7 @@ import { NotAZip, readZipEntries, type ZipEntry } from './zipReader';
  */
 const MANIFEST_PATH = 'study-forge-backup.json';
 const FORMAT = 'study-forge-backup';
-const VERSION = 3;
+const VERSION = 4;
 const LAST_BACKUP_KEY = 'lastBackupAt';
 
 export interface BackupManifest {
@@ -34,6 +34,9 @@ export interface BackupManifest {
   checkpoints: Checkpoint[];
   progress: CheckpointProgress[];
   plannerItems: PlannerItem[];
+  decks: Deck[];
+  cards: Flashcard[];
+  cardProgress: CardProgress[];
 }
 
 export class BackupError extends Error {}
@@ -129,9 +132,10 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     : null;
 
   const db = await getDb();
-  const [courses, topics, notes, materials, lessons, checkpoints, progress, plannerItems] = await Promise.all([
+  const [courses, topics, notes, materials, lessons, checkpoints, progress, plannerItems, decks, cards, cardProgress] = await Promise.all([
     db.getAll('courses'), db.getAll('topics'), db.getAll('notes'), db.getAll('materials'),
     db.getAll('lessons'), db.getAll('checkpoints'), db.getAll('checkpointProgress'), db.getAll('plannerItems'),
+    db.getAll('decks'), db.getAll('cards'), db.getAll('cardProgress'),
   ]);
   const courseFolder = (courseId: string | null, topicId: string | null) => {
     const course = courses.find((candidate) => candidate.id === courseId);
@@ -164,6 +168,9 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     checkpoints,
     progress,
     plannerItems,
+    decks,
+    cards,
+    cardProgress,
   };
   const noteFiles = notes.map((note) => ({
     name: pathFor(`Notes/${courseFolder(note.courseId, note.topicId)}`, `${safeName(noteLabel(note), 'Note')}.txt`),
@@ -337,6 +344,32 @@ function cleanPlannerItem(raw: unknown): PlannerItem | null {
   };
 }
 
+function cleanDeck(raw: unknown): Deck | null {
+  if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.name) || !isOptionalId(raw.courseId) || !isOptionalId(raw.topicId) || !isTime(raw.createdAt)) return null;
+  return { id: raw.id, name: raw.name, courseId: raw.courseId, topicId: raw.topicId, createdAt: raw.createdAt, updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.createdAt };
+}
+
+function cleanCard(raw: unknown): Flashcard | null {
+  if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.deckId) || !raw.deckId || !isText(raw.front) || !isText(raw.back) || !isTime(raw.createdAt)) return null;
+  return { id: raw.id, deckId: raw.deckId, front: raw.front, back: raw.back, createdAt: raw.createdAt, updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.createdAt };
+}
+
+function cleanCardProgress(raw: unknown): CardProgress | null {
+  const count = (value: unknown) => (typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : 0);
+  if (!isObject(raw) || !isText(raw.cardId) || !raw.cardId || !isText(raw.dueDate) || !isValidDate(raw.dueDate) || !isTime(raw.lastReviewedAt)) return null;
+  if (!CARD_RATINGS.includes(raw.lastRating as CardProgress['lastRating'])) return null;
+  return {
+    cardId: raw.cardId,
+    stage: typeof raw.stage === 'number' && Number.isInteger(raw.stage) ? Math.max(-1, Math.min(raw.stage, 3)) : 0,
+    dueDate: raw.dueDate,
+    lastRating: raw.lastRating as CardProgress['lastRating'],
+    lastReviewedAt: raw.lastReviewedAt,
+    reviews: count(raw.reviews),
+    lapses: count(raw.lapses),
+    updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.lastReviewedAt,
+  };
+}
+
 function cleanList<T>(raw: unknown, clean: (item: unknown) => T | null): T[] {
   if (!Array.isArray(raw)) throw new BackupError('This backup is damaged, so it can\'t be restored.');
   return raw.map(clean).map((item) => {
@@ -390,6 +423,9 @@ export async function openBackup(file: File): Promise<OpenedBackup> {
     checkpoints: raw.checkpoints === undefined ? [] : cleanList(raw.checkpoints, cleanCheckpoint),
     progress: raw.progress === undefined ? [] : cleanList(raw.progress, cleanProgress),
     plannerItems: raw.plannerItems === undefined ? [] : cleanList(raw.plannerItems, cleanPlannerItem),
+    decks: raw.decks === undefined ? [] : cleanList(raw.decks, cleanDeck),
+    cards: raw.cards === undefined ? [] : cleanList(raw.cards, cleanCard),
+    cardProgress: raw.cardProgress === undefined ? [] : cleanList(raw.cardProgress, cleanCardProgress),
   };
 
   let neededBytes = 0;
@@ -417,6 +453,7 @@ export interface RestoreReport {
   stoppedEarly: string;
   lessonsAdded: number;
   plannerAdded: number;
+  cardsAdded: number;
 }
 
 /**
@@ -430,7 +467,7 @@ export async function restoreBackup(
 ): Promise<RestoreReport> {
   const report: RestoreReport = {
     coursesAdded: 0, topicsAdded: 0, filesAdded: 0, filesAlreadyHere: 0,
-    notesAdded: 0, notesAlreadyHere: 0, notesCopied: 0, damaged: [], stoppedEarly: '', lessonsAdded: 0, plannerAdded: 0,
+    notesAdded: 0, notesAlreadyHere: 0, notesCopied: 0, damaged: [], stoppedEarly: '', lessonsAdded: 0, plannerAdded: 0, cardsAdded: 0,
   };
   const db = await getDb();
 
@@ -554,6 +591,24 @@ export async function restoreBackup(
       await db.put('plannerItems', { ...item, courseId: courseOrNull(item.courseId) });
       report.plannerAdded += 1;
     }
+  }
+  for (const deck of manifest.decks) {
+    if (!(await db.getKey('decks', deck.id))) {
+      const courseId = courseOrNull(deck.courseId);
+      await db.put('decks', { ...deck, courseId, topicId: topicOrNull(deck.topicId, courseId) });
+    }
+  }
+  const newCards = new Set<string>();
+  for (const card of manifest.cards) {
+    if ((await db.getKey('decks', card.deckId)) && !(await db.getKey('cards', card.id))) {
+      await db.put('cards', card);
+      newCards.add(card.id);
+      report.cardsAdded += 1;
+    }
+  }
+  // A card already here keeps its own schedule. Only cards just restored bring theirs.
+  for (const entry of manifest.cardProgress) {
+    if (newCards.has(entry.cardId)) await db.put('cardProgress', entry);
   }
   notifyChanged();
   return report;

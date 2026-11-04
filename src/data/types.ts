@@ -191,3 +191,39 @@ export interface PlannerItem {
   createdAt: number;
   updatedAt: number;
 }
+
+/* Flashcards */
+export const CARD_RATINGS = ['Again', 'Hard', 'Good', 'Easy'] as const;
+export type CardRating = (typeof CARD_RATINGS)[number];
+
+export interface Deck {
+  id: string;
+  name: string;
+  courseId: string | null;
+  topicId: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface Flashcard {
+  id: string;
+  deckId: string;
+  front: string;
+  back: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface CardProgress {
+  cardId: string;
+  /** Which review interval the card has reached, from 0 to 3. -1 means it's starting over. */
+  stage: number;
+  /** The calendar date it's next due, YYYY-MM-DD. */
+  dueDate: string;
+  lastRating: CardRating;
+  lastReviewedAt: number;
+  reviews: number;
+  /** How many times the student has pressed Again on this card. */
+  lapses: number;
+  updatedAt: number;
+}

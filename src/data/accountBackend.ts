@@ -4,7 +4,7 @@ export interface AccountUser {
   photoURL?: string;
 }
 
-export type SyncCollection = 'courses' | 'topics' | 'notes' | 'lessons' | 'checkpoints' | 'checkpointProgress' | 'plannerItems';
+export type SyncCollection = 'courses' | 'topics' | 'notes' | 'lessons' | 'checkpoints' | 'checkpointProgress' | 'plannerItems' | 'decks' | 'cards' | 'cardProgress';
 
 export interface RemoteItem {
   collection: SyncCollection;

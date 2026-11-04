@@ -114,6 +114,13 @@ export const TOUR_STEPS: TourStep[] = [
     body: 'Turn any class into lessons by writing the explanation, the practice questions, and the key points yourself.',
   },
   {
+    id: 'flashcards',
+    route: '/cards',
+    target: ['[data-tour="new-deck"]'],
+    title: 'Flashcards',
+    body: 'Group cards into decks, then test yourself. How well you remembered decides when each card comes back, so you spend your time on the ones you find hard.',
+  },
+  {
     id: 'notes',
     route: '/notes',
     target: ['[data-tour="new-note"]'],

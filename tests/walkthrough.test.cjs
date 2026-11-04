@@ -11,7 +11,7 @@ const URL_BASE = 'http://localhost:4180/';
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'sf-tour-'));
 const shots = path.join(__dirname, '..', 'test-output');
 fs.mkdirSync(shots, { recursive: true });
-const TOTAL = 16;
+const TOTAL = 17;
 let server;
 let context;
 let page;
@@ -100,7 +100,7 @@ test('it never opens by itself, and a new student can find it', async () => {
 test('the button starts it at 0%', async () => {
   await open('main');
   await card().waitFor();
-  assert.match(await count(), /Step 1 of 16, 0% complete/);
+  assert.match(await count(), /Step 1 of 17, 0% complete/);
   await page.getByRole('heading', { name: 'Welcome to Study Forge' }).waitFor();
   await settle();
   await page.screenshot({ path: path.join(shots, 'tour-welcome.png') });
@@ -136,6 +136,7 @@ const EXPECTED = [
   ['study', '#/study', '[data-tour=study-intro]'],
   ['mastery', '#/study', '[data-tour=sample-lesson]'],
   ['write-lesson', '#/study', '[data-tour=new-lesson]'],
+  ['flashcards', '#/cards', '[data-tour=new-deck]'],
   ['notes', '#/notes', '[data-tour=new-note]'],
   ['record-type', '#/record', '[data-tour=record-source]'],
   ['record-safe', '#/record', '[data-tour=record-start]'],
@@ -177,10 +178,10 @@ test('every step opens the real screen and puts a box around the real section', 
 
 test('Back returns to the earlier section', async () => {
   await press('Back');
-  await atStep(14);
+  await atStep(15);
   assert.equal(await card().getAttribute('data-step'), 'record-safe');
   await page.locator('[data-testid=tour-card]').getByRole('button', { name: 'Back' }).waitFor();
-  assert.match(await count(), /81% complete/);
+  assert.match(await count(), /82% complete/);
 });
 
 test('a reload closes it, and the button picks up at the same step, on the right screen', async () => {
@@ -189,7 +190,7 @@ test('a reload closes it, and the button picks up at the same step, on the right
     const request = indexedDB.open('study-forge');
     request.onsuccess = () => {
       const read = request.result.transaction('meta').objectStore('meta').get('walkthrough');
-      read.onsuccess = () => { request.result.close(); resolve(read.result?.step === 13); };
+      read.onsuccess = () => { request.result.close(); resolve(read.result?.step === 14); };
     };
   }));
   await page.reload();
@@ -197,7 +198,7 @@ test('a reload closes it, and the button picks up at the same step, on the right
   await page.waitForTimeout(300);
   assert.equal(await card().count(), 0);
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(14);
+  await atStep(15);
   await page.getByTestId('tour-box').waitFor();
   assert.ok(page.url().endsWith('#/record'));
 });
@@ -217,11 +218,11 @@ test('the X cleans up completely, and it does not come back by itself', async ()
 
 test('Escape also leaves, and the question mark resumes at the same step', async () => {
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(14);
+  await atStep(15);
   await page.keyboard.press('Escape');
   await card().waitFor({ state: 'detached' });
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(14);
+  await atStep(15);
 });
 
 test('tapping the button the moment the page opens still resumes at the saved step', async () => {
@@ -230,7 +231,7 @@ test('tapping the button the moment the page opens still resumes at the saved st
   await page.waitForTimeout(200);
   await page.reload();
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(14);
+  await atStep(15);
 });
 
 test('Start over returns to the beginning at 0%', async () => {

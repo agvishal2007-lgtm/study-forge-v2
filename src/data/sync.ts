@@ -1,7 +1,7 @@
 import { BackendError, itemKey, type AccountBackend, type PushItem, type RemoteItem, type SyncCollection } from './accountBackend';
 import { getActiveAccount, switchAccount, updateAccountDetails } from './account';
 import { getDb, notifyChanged, subscribe } from './db';
-import type { Checkpoint, CheckpointProgress, Note, PlannerItem } from './types';
+import type { Checkpoint, CheckpointProgress, Note } from './types';
 
 /**
  * Keeps this device's text in step with the student's online copy. Only courses, topics, notes,
@@ -10,7 +10,7 @@ import type { Checkpoint, CheckpointProgress, Note, PlannerItem } from './types'
  * When two devices changed the same thing, nothing written is thrown away: notes and checkpoints
  * keep both versions, and progress combines the answers from both.
  */
-const COLLECTIONS: SyncCollection[] = ['courses', 'topics', 'lessons', 'checkpoints', 'notes', 'checkpointProgress', 'plannerItems'];
+const COLLECTIONS: SyncCollection[] = ['courses', 'topics', 'lessons', 'checkpoints', 'notes', 'checkpointProgress', 'plannerItems', 'decks', 'cards', 'cardProgress'];
 const CURSOR_KEY = 'syncCursor';
 const MAX_ITEM_BYTES = 900_000;
 const MAX_BATCH_BYTES = 4_000_000;
@@ -138,10 +138,10 @@ async function applyPulled(items: RemoteItem[]): Promise<number> {
       }
       await metaStore.put({ hash: meta?.hash ?? null, rev: item.rev }, key);
       changed += 1;
-    } else if (item.collection === 'plannerItems') {
+    } else if (['plannerItems', 'decks', 'cards', 'cardProgress'].includes(item.collection)) {
       // Both devices changed this. The most recent change wins, so "done" isn't undone by an old edit.
-      const incoming = JSON.parse(item.json) as PlannerItem;
-      if (incoming.updatedAt > (local as PlannerItem).updatedAt) {
+      const incoming = JSON.parse(item.json) as { updatedAt: number };
+      if (incoming.updatedAt > (local as { updatedAt: number }).updatedAt) {
         await store.put(incoming as never);
         await metaStore.put({ hash: remotePrint, rev: item.rev }, key);
         changed += 1;

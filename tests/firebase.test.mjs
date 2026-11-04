@@ -89,6 +89,17 @@ test('planner items can be saved', async () => {
   assert.ok(items.some((entry) => entry.id === 'plan-1' && entry.collection === 'plannerItems'));
 });
 
+test('decks, cards, and card progress can be saved', async () => {
+  const { conflicts } = await alice.backend.push(alice.uid, [
+    item('deck-1', { collection: 'decks' }), item('card-1', { collection: 'cards' }), item('card-1-progress', { collection: 'cardProgress' }),
+  ]);
+  assert.deepEqual(conflicts, []);
+  const { items } = await alice.backend.pull(alice.uid, 0);
+  for (const [id, collection] of [['deck-1', 'decks'], ['card-1', 'cards'], ['card-1-progress', 'cardProgress']]) {
+    assert.ok(items.some((entry) => entry.id === id && entry.collection === collection));
+  }
+});
+
 test('badly shaped or oversized items are refused, so the free storage can\'t be abused', async () => {
   const ref = doc(alice.db, 'users', alice.uid, 'items', 'bad');
   await denied(() => setDoc(ref, validDoc({ collection: 'materials' })), 'a file record');

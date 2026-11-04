@@ -378,6 +378,30 @@ test('planner items follow the student, and the newest change wins', async () =>
   await laptop.locator('[data-testid=planner-row][data-done=true]', { hasText: 'Synced homework' }).waitFor();
 });
 
+test('flashcards and their schedule follow the student', async () => {
+  const laptop = await device('laptop');
+  const phone = await device('phone');
+  await nav(laptop, 'Flashcards');
+  await laptop.getByLabel('New deck').fill('Synced deck');
+  await laptop.getByRole('button', { name: 'Create deck' }).click();
+  await laptop.getByLabel('Front', { exact: true }).fill('Synced question');
+  await laptop.getByLabel('Back', { exact: true }).fill('Synced answer');
+  await laptop.getByRole('button', { name: 'Add card' }).click();
+  await laptop.getByTestId('card-row').waitFor();
+  await saved(laptop);
+  await saved(phone);
+  await nav(phone, 'Flashcards');
+  await phone.getByRole('link', { name: 'Review Synced deck' }).click();
+  await phone.getByRole('button', { name: 'Reveal answer' }).click();
+  await phone.getByTestId('card-back').getByText('Synced answer').waitFor();
+  await phone.getByRole('button', { name: /^Good/ }).click();
+  await phone.getByRole('heading', { name: 'All done' }).waitFor();
+  await saved(phone);
+  await saved(laptop);
+  await nav(laptop, 'Flashcards');
+  await laptop.getByTestId('deck-row').getByText('1 card, 0 due').waitFor();
+});
+
 test('a half-typed answer stays on its own device', async () => {
   const items = fake.state.items('alice-uid').filter((item) => item.collection === 'checkpointProgress');
   assert.equal(JSON.parse(items[0].json).draft, '');

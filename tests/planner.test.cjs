@@ -309,7 +309,7 @@ test('it works on a phone with every destination in reach', async () => {
   assert.ok((await overflow()) <= 0);
   await page.screenshot({ path: path.join(shots, 'phone-planner-form.png'), fullPage: true });
   await page.getByRole('link', { name: 'Cancel' }).click();
-  for (const name of ['Today', 'Courses', 'Library', 'Planner', 'Study', 'Notes', 'Record', 'Settings']) {
+  for (const name of ['Today', 'Courses', 'Library', 'Planner', 'Flashcards', 'Study', 'Notes', 'Record', 'Settings']) {
     await nav(name);
     await page.waitForTimeout(80);
     assert.ok((await overflow()) <= 0, `${name} overflows`);

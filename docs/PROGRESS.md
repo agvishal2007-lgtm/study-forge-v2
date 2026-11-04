@@ -258,6 +258,26 @@ Not built yet:
 - A calendar view, repeating items, and completion percentage.
 - Weak-topic recommendations mixed into one queue. Today shows Due soon and Study next side by side, and there's no time-based ranking between them.
 
+## Flashcards
+
+Students write cards in decks, optionally filed under a course and topic, then review them. The answer isn't in the page until Reveal answer is pressed. After that, Again, Hard, Good, and Easy each show when the card will come back.
+
+The schedule, from the blueprint's 1, 5, 10, and 15 day steps:
+- Good moves a card to the next step. Easy skips a step. A new card's first Good is 1 day, and Easy is 5 days.
+- Hard brings it back tomorrow without moving it forward.
+- Again starts it over and shows it again in the same session.
+- Weak means Again was the last answer, or Again came up twice or more and Good hasn't followed twice in a row since.
+- These numbers are starting values, to adjust after real use.
+
+Practice all and Practice weak cards never change the schedule. Keyboard: Space reveals, and 1 to 4 rate. Deleting a course keeps its decks. Deleting a deck or card asks first. Cards and their schedule are in backups and saved online, and the most recent change wins if two devices differ.
+
+Tested in a real browser with a fixed clock: the answer hidden until revealed, ratings and dates, resuming after a reload, a double key press counting once, practice leaving the schedule alone, editing, deleting, backup and restore, updating from the previous database, and a phone-sized screen. Syncing is tested against a stand-in server and the Firebase emulator, not two real devices.
+
+Not built yet:
+- Making cards from documents, notes, or lecture transcripts, which needs AI.
+- Importing cards, pictures on cards, and text formatting.
+- A smarter schedule that adapts to each student.
+
 ## How the code is organized
 
 - `src/data/` holds saved data, and nothing else talks to storage directly.
@@ -268,6 +288,7 @@ Not built yet:
   - `notes.ts` saves notes and catches changes from another tab.
   - `backup.ts` and `zipReader.ts` create and restore backups.
   - `mastery.ts` holds the Guided Study rules, and `guided.ts` saves lessons and progress.
+  - `flashcards.ts` saves decks, cards, and reviews, and `flashcardRules.ts` holds the schedule.
   - `planner.ts` saves planner items, and `plannerRules.ts` holds the date rules.
   - `account.ts` keeps each account's storage separate, and `sync.ts` holds the saving-online rules.
 - `src/components/` holds pieces used on several screens, such as the saving panel and the recorder.
