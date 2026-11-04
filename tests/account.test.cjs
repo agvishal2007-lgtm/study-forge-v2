@@ -340,7 +340,7 @@ test('study progress follows the student, and evidence from both devices combine
   await nav(laptop, 'Today');
   await laptop.getByRole('heading', { name: 'Today' }).waitFor();
   await nav(laptop, 'Study');
-  await laptop.getByTestId('next-up').getByRole('link').click();
+  await laptop.getByTestId('next-up').getByRole('link', { name: 'The accounting equation' }).click();
   await laptop.getByRole('button', { name: 'Continue' }).click();
   await laptop.getByRole('radio', { name: '$6,000', exact: true }).check();
   await laptop.getByRole('button', { name: 'Submit answer' }).click();
