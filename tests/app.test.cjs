@@ -99,7 +99,7 @@ test('buttons are blue bubbles, with no yellow left on the page', async () => {
     const style = getComputedStyle(el);
     return { background: style.backgroundColor, radius: parseFloat(style.borderTopLeftRadius), height: el.offsetHeight };
   });
-  assert.equal(look.background, 'rgb(125, 211, 252)');
+  assert.equal(look.background, 'rgb(23, 99, 204)');
   assert.ok(look.radius >= look.height / 2, 'fully rounded');
   const yellow = await page.evaluate(() => [...document.querySelectorAll('*')].filter((el) => {
     const style = getComputedStyle(el);
