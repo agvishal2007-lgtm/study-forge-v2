@@ -1,4 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import { CURRENT_DB } from './account';
 import type { Checkpoint, CheckpointProgress, Course, Lesson, Material, Note, RecordingSession, Topic } from './types';
 
 /**
@@ -17,12 +18,13 @@ interface StudyForgeDB extends DBSchema {
   lessons: { key: string; value: Lesson };
   checkpoints: { key: string; value: Checkpoint; indexes: { lessonId: string } };
   checkpointProgress: { key: string; value: CheckpointProgress };
+  syncMeta: { key: string; value: { hash: string | null; rev: number } };
 }
 
 let dbPromise: Promise<IDBPDatabase<StudyForgeDB>> | null = null;
 
 export function getDb() {
-  dbPromise ??= openDB<StudyForgeDB>('study-forge', 4, {
+  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 5, {
     upgrade(db, oldVersion) {
       // Each step only adds to what's there, so existing students keep their data.
       if (oldVersion < 1) {
@@ -46,6 +48,9 @@ export function getDb() {
         db.createObjectStore('checkpoints', { keyPath: 'id' }).createIndex('lessonId', 'lessonId');
         db.createObjectStore('checkpointProgress', { keyPath: 'checkpointId' });
       }
+      if (oldVersion < 5) {
+        db.createObjectStore('syncMeta');
+      }
     },
     // An older open tab is holding the database, so the update has to wait for it.
     blocked() {
@@ -63,8 +68,14 @@ export function getDb() {
   return dbPromise;
 }
 
+export async function closeDb(): Promise<void> {
+  const open = dbPromise;
+  dbPromise = null;
+  (await open)?.close();
+}
+
 // Tells every open screen and browser tab that saved data changed.
-const channel = 'BroadcastChannel' in window ? new BroadcastChannel('study-forge') : null;
+const channel = 'BroadcastChannel' in window ? new BroadcastChannel(CURRENT_DB) : null;
 const listeners = new Set<() => void>();
 channel?.addEventListener('message', () => listeners.forEach((listener) => listener()));
 

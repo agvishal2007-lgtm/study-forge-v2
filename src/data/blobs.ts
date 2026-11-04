@@ -1,3 +1,4 @@
+import { CURRENT_FOLDER } from './account';
 import { getDb } from './db';
 
 /**
@@ -14,7 +15,7 @@ const supportsStreaming = () =>
 
 async function folder() {
   const root = await navigator.storage.getDirectory();
-  return root.getDirectoryHandle('materials', { create: true });
+  return root.getDirectoryHandle(CURRENT_FOLDER, { create: true });
 }
 
 export async function saveBlob(

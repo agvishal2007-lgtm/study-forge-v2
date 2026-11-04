@@ -3,7 +3,7 @@ name: Publish site
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   workflow_dispatch:
 
 permissions:
@@ -12,7 +12,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -31,8 +31,16 @@ jobs:
       - run: npm install --no-save playwright@1.63.0
       - run: npx playwright install --with-deps chromium
       - run: npm test
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      # Tests the real privacy rules and sync code against Google's emulators.
+      - run: npx -y firebase-tools@15.34.2 emulators:exec --only auth,firestore --project demo-study-forge "node --test --test-reporter=spec tests/firebase.test.mjs"
+  # Only main is published. Other branches just run the tests.
   build:
     needs: test
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +56,7 @@ jobs:
           path: dist
   deploy:
     needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

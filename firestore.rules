@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Each student can reach only their own items. Everything else is refused.
+    match /users/{uid}/items/{itemId} {
+      function isOwner() {
+        return request.auth != null && request.auth.uid == uid;
+      }
+      function isValidItem() {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['collection', 'id', 'json', 'deleted', 'rev', 'syncedAt'])
+          && data.keys().hasAll(['collection', 'id', 'json', 'deleted', 'rev', 'syncedAt'])
+          && data.collection in ['courses', 'topics', 'notes', 'lessons', 'checkpoints', 'checkpointProgress']
+          && data.id is string && data.id.size() <= 512
+          && data.json is string && data.json.size() <= 900000
+          && data.deleted is bool
+          && data.rev is int
+          && data.syncedAt == request.time;
+      }
+      allow read, delete: if isOwner();
+      allow create, update: if isOwner() && isValidItem();
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
