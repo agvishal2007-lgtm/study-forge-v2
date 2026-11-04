@@ -174,8 +174,40 @@ The numbers are starting values, not research findings, and should change after 
 - Checkpoints can't be reordered after they're created.
 - The sample lesson hasn't been reviewed by an accounting instructor.
 
-### Next
-Optional Google sign-in, with courses, topics, notes, lessons, and progress saved across devices. Files and recordings stay on the device. It needs a free Firebase project under the owner's account.
+## Google sign-in and saving online
+
+**The goal:** students can sign in with Google so their work follows them, and nobody can reach anyone else's work.
+
+### What works
+- Sign-in is optional, and students who don't sign in never load anything from the online service.
+- Courses, topics, notes, lessons, and study progress save online a few seconds after changes. Files and recordings stay on the device.
+- Each account has separate storage on the device, so a second student on a shared computer can't open the first student's work in the app.
+- When signing out, a student can remove their work from a shared computer. It warns that files will be deleted and refuses unless the text saved online first.
+- Work from before signing in is only added to an account if the student chooses.
+- If two devices change a note or checkpoint, both versions are kept. Progress combines the answers from both devices. A course, topic, or lesson renamed on two devices keeps the name on the device that syncs last.
+- Being offline, reaching the free daily limit, or being refused all show plain messages. Work stays safe on the device and catches up later.
+- Students can delete their online copy.
+
+### How privacy works
+`firestore.rules` allows a signed-in student to reach only their own items and refuses everything else. It also limits what can be stored, so the free storage is harder to abuse.
+
+Whoever owns the Firebase project can technically view stored data in its admin console, and the app says so. The data isn't end-to-end encrypted.
+
+### How it was tested
+- `tests/firebase.test.mjs` runs the real rules and sync code on Google's Auth and Firestore emulators on GitHub. Another student and someone not signed in are refused for reading, listing, changing, and deleting.
+- `tests/account.test.cjs` runs two-device sync and shared-computer separation in real browsers, using a stand-in for the online service.
+- All 128 browser and rule tests passed four runs in a row here, and GitHub's full run passed, including all 11 emulator tests.
+
+### Not tested yet
+- **Real Google sign-in, and any TCNJ account.** Automated tests skip Google's real sign-in window, so the owner must try it. TCNJ may block unapproved apps, and accounts marked under 18 may need the school's approval.
+- The real Firebase project, including whether its rules were saved correctly.
+- Sign-in on phones. Google's window can behave differently there, and pop-up blockers may interfere.
+
+### Limits
+- Saving online shares Firebase's free daily limits across all students: about 50,000 reads, 20,000 writes, and 1 GB of storage. On the free plan, it stops rather than charging, so the project must stay on the free plan unless the owner chooses otherwise.
+- On a new device, notes keep their text, but links to files that aren't on that device don't open.
+- A single note or checkpoint over about 900 KB stays on the device, and the app names it.
+- A Google account's data is separate from the student's backups, which are still the only protection for files and recordings.
 
 ## How the code is organized
 
@@ -187,6 +219,7 @@ Optional Google sign-in, with courses, topics, notes, lessons, and progress save
   - `notes.ts` saves notes and catches changes from another tab.
   - `backup.ts` and `zipReader.ts` create and restore backups.
   - `mastery.ts` holds the Guided Study rules, and `guided.ts` saves lessons and progress.
+  - `account.ts` keeps each account's storage separate, and `sync.ts` holds the saving-online rules.
 - `src/components/` holds pieces used on several screens, such as the saving panel and the recorder.
 - `src/features/` holds one file per screen.
 - `tests/` holds the browser tests.

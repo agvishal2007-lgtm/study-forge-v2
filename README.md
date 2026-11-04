@@ -2,9 +2,9 @@
 
 A free study website where students keep their courses, files, notes, and lecture recordings in one place, and study from them.
 
-Files stay in the student's own browser on their own device. There's no account and nothing is uploaded to a server.
+Files and recordings stay in the student's own browser on their own device. Signing in with Google is optional, and saves courses, notes, lessons, and progress across devices.
 
-**Status:** Courses, files, lecture recording, notes, backup, and Guided Study are built. See [docs/PROGRESS.md](docs/PROGRESS.md) for what works, what doesn't yet, and how it was tested.
+**Status:** Courses, files, lecture recording, notes, backup, Guided Study, and optional Google sign-in are built. See [docs/PROGRESS.md](docs/PROGRESS.md) for what works, what doesn't yet, and how it was tested.
 
 ## Run it on your computer
 
