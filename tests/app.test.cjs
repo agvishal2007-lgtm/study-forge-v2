@@ -93,6 +93,8 @@ test('a new student is asked to create a course', async () => {
 });
 
 test('buttons are blue bubbles, with no yellow left on the page', async () => {
+  await page.mouse.move(0, 0); // A button under the mouse shows its lighter hover color.
+  await page.waitForTimeout(300);
   const look = await page.getByRole('button', { name: 'Create course' }).evaluate((el) => {
     const style = getComputedStyle(el);
     return { background: style.backgroundColor, radius: parseFloat(style.borderTopLeftRadius), height: el.offsetHeight };
