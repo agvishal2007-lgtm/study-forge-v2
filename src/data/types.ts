@@ -52,3 +52,114 @@ export interface RecordingSession {
 export type MaterialKind = 'pdf' | 'image' | 'audio' | 'video' | 'text' | 'other';
 
 export const SPINE_COLORS = ['#E8B94F', '#4FB7A8', '#8EA2F0', '#E58FA9', '#9CCB6B', '#62B5E5'];
+
+/* Guided Study: Course → Lesson or chapter → Checkpoint → Teaching → Practice → Mastery */
+export type MasteryStatus = 'not-started' | 'learning' | 'practicing' | 'needs-review' | 'mastered';
+export type QuestionKind = 'multiple' | 'short' | 'recall' | 'worked' | 'application';
+
+export interface Lesson {
+  id: string;
+  courseId: string | null;
+  /** The student's own word for this level, such as "Chapter" or "Lesson". */
+  label: string;
+  title: string;
+  order: number;
+  createdAt: number;
+}
+
+export interface GuidedQuestion {
+  id: string;
+  kind: QuestionKind;
+  prompt: string;
+  /** Answer choices. Empty means the student types an answer. */
+  options: string[];
+  correctOption: number | null;
+  /** Typed answers that count as correct automatically. */
+  accepted: string[];
+  /** What a good answer looks like, shown after submitting. */
+  modelAnswer: string;
+  explanation: string;
+  /** The part of the checkpoint this tests, so a miss gets a targeted reteach. */
+  idea: string;
+}
+
+export interface Reteach {
+  idea: string;
+  explanation: string;
+  example: string;
+}
+
+export interface Teaching {
+  intro: string;
+  meaning: string;
+  why: string;
+  parts: string[];
+  example: string;
+  walkthrough: string[];
+  keyIdea: string;
+}
+
+export interface Checkpoint {
+  id: string;
+  lessonId: string;
+  title: string;
+  order: number;
+  teaching: Teaching;
+  questions: GuidedQuestion[];
+  explainPrompt: string;
+  keyPoints: string[];
+  reteach: Reteach[];
+  /** Where this content came from, in the student's words. */
+  sourceNote: string;
+  /** An original file this is based on. */
+  materialId: string | null;
+  createdAt: number;
+}
+
+export interface AnswerRecord {
+  /** One presented question. A repeated submission of the same attempt never counts twice. */
+  attemptId: string;
+  questionId: string;
+  answer: string;
+  correct: boolean;
+  method: 'automatic' | 'self-checked';
+  at: number;
+}
+
+export type KeyPointRating = 'included' | 'partly' | 'missed';
+
+export interface ExplanationRecord {
+  text: string;
+  ratings: KeyPointRating[];
+  passed: boolean;
+  method: 'self-checked';
+  at: number;
+}
+
+export type StudyStage =
+  | { kind: 'teach'; step: number }
+  | { kind: 'question'; questionId: string; attemptId: string }
+  | { kind: 'self-check'; questionId: string; attemptId: string; answer: string }
+  | { kind: 'feedback'; attemptId: string }
+  | { kind: 'reteach'; idea: string }
+  | { kind: 'stuck'; idea: string }
+  | { kind: 'explain' }
+  | { kind: 'explain-check'; text: string }
+  | { kind: 'explain-result' }
+  | { kind: 'mastered' };
+
+export interface CheckpointProgress {
+  checkpointId: string;
+  status: MasteryStatus;
+  teachingFinished: boolean;
+  teachingSkipped: boolean;
+  stage: StudyStage;
+  answers: AnswerRecord[];
+  misses: Record<string, number>;
+  reteachCount: number;
+  explanations: ExplanationRecord[];
+  /** A typed answer that hasn't been submitted. Never counts as an answer. */
+  draft: string;
+  lastStudiedAt: number;
+  masteredAt: number | null;
+}

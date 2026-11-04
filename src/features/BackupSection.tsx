@@ -125,7 +125,7 @@ export function BackupSection() {
       <h2 id="backup-heading">Backup</h2>
       <p>Save everything to one .zip file, then keep it somewhere safe, like Google Drive or a USB drive. You can also open it on any computer to get your files and notes.</p>
       {summary && <p className="muted" data-testid="backup-summary">
-        {plural(summary.courses, 'course')}, {plural(summary.files, 'file')} ({formatBytes(summary.bytes)}), and {plural(summary.notes, 'note')}. {data?.last ? `Last backup: ${formatDate(data.last)}.` : 'You haven\'t made a backup yet.'}
+        {plural(summary.courses, 'course')}, {plural(summary.files, 'file')} ({formatBytes(summary.bytes)}), {plural(summary.notes, 'note')}, and {plural(summary.lessons, 'lesson')}. {data?.last ? `Last backup: ${formatDate(data.last)}.` : 'You haven\'t made a backup yet.'}
       </p>}
       {summary && summary.interrupted > 0 && (
         <p className="notice">{plural(summary.interrupted, 'interrupted recording')} won't be in the backup. Save or discard {summary.interrupted === 1 ? 'it' : 'them'} on the Record screen first.</p>
@@ -162,7 +162,7 @@ export function BackupSection() {
       )}
       {report && (
         <div className="notice" role="status" data-testid="restore-report">
-          <p>Restore finished. Added {plural(report.coursesAdded, 'course')}, {plural(report.topicsAdded, 'topic')}, {plural(report.filesAdded, 'file')}, and {plural(report.notesAdded, 'note')}.</p>
+          <p>Restore finished. Added {plural(report.coursesAdded, 'course')}, {plural(report.topicsAdded, 'topic')}, {plural(report.filesAdded, 'file')}, {plural(report.notesAdded, 'note')}, and {plural(report.lessonsAdded, 'lesson')}.</p>
           {(report.filesAlreadyHere > 0 || report.notesAlreadyHere > 0) && <p>Already here, so left alone: {plural(report.filesAlreadyHere, 'file')} and {plural(report.notesAlreadyHere, 'note')}.</p>}
           {report.notesCopied > 0 && <p>{plural(report.notesCopied, 'note')} differed from this device's version, so the backup's version was added as a copy marked “from backup”.</p>}
           {report.damaged.length > 0 && <p className="error">{plural(report.damaged.length, 'file')} in the backup {report.damaged.length === 1 ? 'is' : 'are'} damaged and weren't restored: {report.damaged.join(', ')}.</p>}
@@ -173,7 +173,7 @@ export function BackupSection() {
       {opened && (
         <dialog ref={dialog} className="dialog" aria-labelledby="restore-title" onCancel={() => setOpened(null)}>
           <h2 id="restore-title">Restore this backup?</h2>
-          <p>Made on {formatDate(opened.manifest.createdAt)}, with {plural(opened.manifest.courses.length, 'course')}, {plural(opened.manifest.materials.length, 'file')}, and {plural(opened.manifest.notes.length, 'note')}.</p>
+          <p>Made on {formatDate(opened.manifest.createdAt)}, with {plural(opened.manifest.courses.length, 'course')}, {plural(opened.manifest.materials.length, 'file')}, {plural(opened.manifest.notes.length, 'note')}, and {plural(opened.manifest.lessons.length, 'lesson')}.</p>
           <p>This only adds what's missing. Nothing on this device is replaced or deleted.</p>
           <p className="muted">{plural(opened.newFiles, 'new file')}, needing {formatBytes(opened.neededBytes)}{opened.freeBytes !== null ? ` of about ${formatBytes(opened.freeBytes)} available` : ''}.</p>
           {noSpace && <p className="error" role="alert">This device doesn't have enough space for all of it. Files are restored until space runs out, and you can restore again after freeing some.</p>}

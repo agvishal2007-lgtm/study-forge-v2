@@ -28,7 +28,7 @@ export const getCourse = async (id: string) => (await getDb()).get('courses', id
 /** Removes the course but keeps every file: its files stay in the Library. */
 export async function deleteCourse(id: string): Promise<void> {
   const db = await getDb();
-  const tx = db.transaction(['courses', 'topics', 'materials', 'notes'], 'readwrite');
+  const tx = db.transaction(['courses', 'topics', 'materials', 'notes', 'lessons'], 'readwrite');
   for (const topicId of await tx.objectStore('topics').index('courseId').getAllKeys(id)) {
     await tx.objectStore('topics').delete(topicId);
   }
@@ -39,6 +39,9 @@ export async function deleteCourse(id: string): Promise<void> {
   }
   for (const note of await tx.objectStore('notes').getAll()) {
     if (note.courseId === id) await tx.objectStore('notes').put({ ...note, courseId: null, topicId: null });
+  }
+  for (const lesson of await tx.objectStore('lessons').getAll()) {
+    if (lesson.courseId === id) await tx.objectStore('lessons').put({ ...lesson, courseId: null });
   }
   await tx.objectStore('courses').delete(id);
   await tx.done;
@@ -89,7 +92,10 @@ export async function fileMaterial(id: string, courseId: string | null, topicId:
 /** Only ever called after the student confirms. The file goes first, then its record. */
 export async function deleteMaterial(id: string): Promise<void> {
   await deleteBlob(id);
-  const tx = (await getDb()).transaction(['materials', 'notes'], 'readwrite');
+  const tx = (await getDb()).transaction(['materials', 'notes', 'checkpoints'], 'readwrite');
+  for (const checkpoint of await tx.objectStore('checkpoints').getAll()) {
+    if (checkpoint.materialId === id) await tx.objectStore('checkpoints').put({ ...checkpoint, materialId: null });
+  }
   for (const note of await tx.objectStore('notes').getAll()) {
     if (note.materialId === id) await tx.objectStore('notes').put({ ...note, materialId: null });
   }

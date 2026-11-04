@@ -5,6 +5,8 @@ import { NewCourseForm } from '../components/NewCourseForm';
 import { Shelf } from '../components/Shelf';
 import { getStorageStatus, listCourses, listMaterials, requestKeepFiles } from '../data/store';
 import { getLastBackupAt } from '../data/backup';
+import { listCheckpoints, listLessons, listProgress } from '../data/guided';
+import { recommendNext } from '../data/mastery';
 import { NoteList } from '../components/NoteList';
 import { listNotes } from '../data/notes';
 import { listUnfinished } from '../data/recordings';
@@ -16,12 +18,13 @@ export function TodayPage() {
   const [askedToKeep, setAskedToKeep] = useState(false);
   const { data, error } = useLive(async () => {
     const [courses, materials, storage, unfinished, notes, lastBackup] = await Promise.all([listCourses(), listMaterials(), getStorageStatus(), listUnfinished(), listNotes(), getLastBackupAt()]);
-    return { courses, materials, storage, unfinished, notes, lastBackup };
+    const [lessons, checkpoints, progress] = await Promise.all([listLessons(), listCheckpoints(), listProgress()]);
+    return { courses, materials, storage, unfinished, notes, lastBackup, next: recommendNext(lessons, checkpoints, progress) };
   }, [askedToKeep]);
 
   if (error) return <div className="page"><h1>Today</h1><p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { courses, materials, storage, unfinished, notes, lastBackup } = data;
+  const { courses, materials, storage, unfinished, notes, lastBackup, next } = data;
   const backupDue = (materials.length > 0 || notes.length > 0) && (lastBackup === null || Date.now() - lastBackup > BACKUP_REMINDER_MS);
 
   if (courses.length === 0 && materials.length === 0 && unfinished.length === 0 && notes.length === 0) {
@@ -53,6 +56,13 @@ export function TodayPage() {
           <button className="text-button" onClick={async () => { await requestKeepFiles(); setAskedToKeep(true); }}>Ask to keep them</button>
           {askedToKeep && <span> The browser didn't agree yet. It may need you to use the site more or install it.</span>}
         </p>
+      )}
+      {next && (
+        <section aria-labelledby="next-heading" className="next-up" data-testid="next-up">
+          <h2 id="next-heading">Study next</h2>
+          <p><Link to={`/study/checkpoints/${next.checkpoint.id}`}>{next.checkpoint.title}</Link></p>
+          <p className="muted">{next.lesson.title}. {next.reason}</p>
+        </section>
       )}
       {courses.length > 0 && (
         <section aria-labelledby="shelf-heading">

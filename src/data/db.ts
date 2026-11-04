@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { Course, Material, Note, RecordingSession, Topic } from './types';
+import type { Checkpoint, CheckpointProgress, Course, Lesson, Material, Note, RecordingSession, Topic } from './types';
 
 /**
  * IndexedDB is the single source of truth for courses, topics, and file records.
@@ -14,12 +14,15 @@ interface StudyForgeDB extends DBSchema {
   recordingChunks: { key: [string, number]; value: Blob };
   notes: { key: string; value: Note };
   meta: { key: string; value: unknown };
+  lessons: { key: string; value: Lesson };
+  checkpoints: { key: string; value: Checkpoint; indexes: { lessonId: string } };
+  checkpointProgress: { key: string; value: CheckpointProgress };
 }
 
 let dbPromise: Promise<IDBPDatabase<StudyForgeDB>> | null = null;
 
 export function getDb() {
-  dbPromise ??= openDB<StudyForgeDB>('study-forge', 3, {
+  dbPromise ??= openDB<StudyForgeDB>('study-forge', 4, {
     upgrade(db, oldVersion) {
       // Each step only adds to what's there, so existing students keep their data.
       if (oldVersion < 1) {
@@ -37,6 +40,11 @@ export function getDb() {
       if (oldVersion < 3) {
         db.createObjectStore('notes', { keyPath: 'id' });
         db.createObjectStore('meta');
+      }
+      if (oldVersion < 4) {
+        db.createObjectStore('lessons', { keyPath: 'id' });
+        db.createObjectStore('checkpoints', { keyPath: 'id' }).createIndex('lessonId', 'lessonId');
+        db.createObjectStore('checkpointProgress', { keyPath: 'checkpointId' });
       }
     },
     // An older open tab is holding the database, so the update has to wait for it.

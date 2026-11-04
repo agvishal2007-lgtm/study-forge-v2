@@ -8,6 +8,10 @@ import { CoursesPage } from './features/CoursesPage';
 import { LibraryPage } from './features/LibraryPage';
 import { NoteEditorPage } from './features/NoteEditorPage';
 import { NotesPage } from './features/NotesPage';
+import { CheckpointEditorPage } from './features/guided/CheckpointEditorPage';
+import { LessonPage } from './features/guided/LessonPage';
+import { SessionPage } from './features/guided/SessionPage';
+import { StudyPage } from './features/guided/StudyPage';
 import { RecordPage } from './features/RecordPage';
 import { SettingsPage } from './features/SettingsPage';
 import { TodayPage } from './features/TodayPage';
@@ -19,6 +23,7 @@ const MAIN_LINKS = [
   { to: '/', label: 'Today', end: true },
   { to: '/courses', label: 'Courses', end: false },
   { to: '/library', label: 'Library', end: false },
+  { to: '/study', label: 'Study', end: false },
   { to: '/notes', label: 'Notes', end: false },
   { to: '/record', label: 'Record', end: false },
 ];
@@ -74,6 +79,10 @@ export function App() {
                 <Route path="/courses/:id" element={<CourseDetailPage />} />
                 <Route path="/library" element={<LibraryPage />} />
                 <Route path="/files/:id" element={<ViewerPage />} />
+                <Route path="/study" element={<StudyPage />} />
+                <Route path="/study/lessons/:id" element={<LessonPage />} />
+                <Route path="/study/lessons/:lessonId/checkpoints/:id/edit" element={<CheckpointEditorPage />} />
+                <Route path="/study/checkpoints/:id" element={<SessionPage />} />
                 <Route path="/notes" element={<NotesPage />} />
                 <Route path="/notes/:id" element={<NoteEditorPage />} />
                 <Route path="/record" element={<RecordPage />} />

@@ -4,7 +4,11 @@ import { getDb, notifyChanged } from './db';
 import { noteLabel } from './notes';
 import { listUnfinished } from './recordings';
 import { findByHash, getStorageStatus, hashFile, storeMaterial } from './store';
-import { SPINE_COLORS, type Course, type Material, type Note, type Topic } from './types';
+import {
+  SPINE_COLORS,
+  type AnswerRecord, type Checkpoint, type CheckpointProgress, type Course, type ExplanationRecord, type GuidedQuestion,
+  type KeyPointRating, type Lesson, type Material, type MasteryStatus, type Note, type QuestionKind, type Reteach, type Topic,
+} from './types';
 import { NotAZip, readZipEntries, type ZipEntry } from './zipReader';
 
 /**
@@ -14,7 +18,7 @@ import { NotAZip, readZipEntries, type ZipEntry } from './zipReader';
  */
 const MANIFEST_PATH = 'study-forge-backup.json';
 const FORMAT = 'study-forge-backup';
-const VERSION = 1;
+const VERSION = 2;
 const LAST_BACKUP_KEY = 'lastBackupAt';
 
 export interface BackupManifest {
@@ -25,6 +29,9 @@ export interface BackupManifest {
   topics: Topic[];
   notes: Note[];
   materials: (Material & { path: string })[];
+  lessons: Lesson[];
+  checkpoints: Checkpoint[];
+  progress: CheckpointProgress[];
 }
 
 export class BackupError extends Error {}
@@ -36,12 +43,13 @@ export interface BackupSummary {
   files: number;
   bytes: number;
   interrupted: number;
+  lessons: number;
 }
 
 export async function getBackupSummary(): Promise<BackupSummary> {
   const db = await getDb();
-  const [courses, topics, notes, materials, unfinished] = await Promise.all([
-    db.count('courses'), db.count('topics'), db.count('notes'), db.getAll('materials'), listUnfinished(),
+  const [courses, topics, notes, materials, unfinished, lessons] = await Promise.all([
+    db.count('courses'), db.count('topics'), db.count('notes'), db.getAll('materials'), listUnfinished(), db.count('lessons'),
   ]);
   return {
     courses,
@@ -50,6 +58,7 @@ export async function getBackupSummary(): Promise<BackupSummary> {
     files: materials.length,
     bytes: materials.reduce((total, material) => total + material.size, 0),
     interrupted: unfinished.length,
+    lessons,
   };
 }
 
@@ -118,8 +127,9 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     : null;
 
   const db = await getDb();
-  const [courses, topics, notes, materials] = await Promise.all([
+  const [courses, topics, notes, materials, lessons, checkpoints, progress] = await Promise.all([
     db.getAll('courses'), db.getAll('topics'), db.getAll('notes'), db.getAll('materials'),
+    db.getAll('lessons'), db.getAll('checkpoints'), db.getAll('checkpointProgress'),
   ]);
   const courseFolder = (courseId: string | null, topicId: string | null) => {
     const course = courses.find((candidate) => candidate.id === courseId);
@@ -148,6 +158,9 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     topics,
     notes,
     materials: included.map(({ material }) => material),
+    lessons,
+    checkpoints,
+    progress,
   };
   const noteFiles = notes.map((note) => ({
     name: pathFor(`Notes/${courseFolder(note.courseId, note.topicId)}`, `${safeName(noteLabel(note), 'Note')}.txt`),
@@ -222,6 +235,86 @@ function cleanMaterial(raw: unknown): BackupManifest['materials'][number] | null
   return { id: raw.id, name: raw.name, path: raw.path, mimeType: raw.mimeType, hash: raw.hash, size: raw.size, courseId: raw.courseId, topicId: raw.topicId, createdAt: raw.createdAt };
 }
 
+const isTextList = (value: unknown): value is string[] => Array.isArray(value) && value.every(isText);
+const KINDS: QuestionKind[] = ['multiple', 'short', 'recall', 'worked', 'application'];
+const STATUSES: MasteryStatus[] = ['not-started', 'learning', 'practicing', 'needs-review', 'mastered'];
+const RATINGS: KeyPointRating[] = ['included', 'partly', 'missed'];
+
+function cleanLesson(raw: unknown): Lesson | null {
+  if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.title) || !isOptionalId(raw.courseId) || !isTime(raw.createdAt)) return null;
+  return { id: raw.id, title: raw.title, courseId: raw.courseId, label: isText(raw.label) ? raw.label : 'Lesson', order: isTime(raw.order) ? raw.order : raw.createdAt, createdAt: raw.createdAt };
+}
+
+function cleanQuestion(raw: unknown): GuidedQuestion | null {
+  if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.prompt) || !KINDS.includes(raw.kind as QuestionKind)) return null;
+  const options = isTextList(raw.options) ? raw.options : [];
+  const correct = typeof raw.correctOption === 'number' && raw.correctOption >= 0 && raw.correctOption < options.length ? raw.correctOption : null;
+  return {
+    id: raw.id, kind: raw.kind as QuestionKind, prompt: raw.prompt, options, correctOption: correct,
+    accepted: isTextList(raw.accepted) ? raw.accepted : [],
+    modelAnswer: isText(raw.modelAnswer) ? raw.modelAnswer : '',
+    explanation: isText(raw.explanation) ? raw.explanation : '',
+    idea: isText(raw.idea) ? raw.idea : '',
+  };
+}
+
+function cleanCheckpoint(raw: unknown): Checkpoint | null {
+  if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.lessonId) || !isText(raw.title) || !isTime(raw.createdAt) || !isObject(raw.teaching)) return null;
+  const t = raw.teaching;
+  const text = (value: unknown) => (isText(value) ? value : '');
+  const questions = Array.isArray(raw.questions) ? raw.questions.map(cleanQuestion) : [null];
+  if (questions.some((question) => !question)) return null;
+  const reteach: Reteach[] = Array.isArray(raw.reteach)
+    ? raw.reteach.filter(isObject).map((item) => ({ idea: text(item.idea), explanation: text(item.explanation), example: text(item.example) }))
+    : [];
+  return {
+    id: raw.id, lessonId: raw.lessonId, title: raw.title, order: isTime(raw.order) ? raw.order : raw.createdAt, createdAt: raw.createdAt,
+    teaching: {
+      intro: text(t.intro), meaning: text(t.meaning), why: text(t.why), example: text(t.example), keyIdea: text(t.keyIdea),
+      parts: isTextList(t.parts) ? t.parts : [], walkthrough: isTextList(t.walkthrough) ? t.walkthrough : [],
+    },
+    questions: questions as GuidedQuestion[],
+    explainPrompt: text(raw.explainPrompt),
+    keyPoints: isTextList(raw.keyPoints) ? raw.keyPoints : [],
+    reteach,
+    sourceNote: text(raw.sourceNote),
+    materialId: isText(raw.materialId) ? raw.materialId : null,
+  };
+}
+
+/** Progress returns to the start of its stage, since a saved position can't be trusted from outside. */
+function cleanProgress(raw: unknown): CheckpointProgress | null {
+  if (!isObject(raw) || !isText(raw.checkpointId) || !raw.checkpointId || !STATUSES.includes(raw.status as MasteryStatus)) return null;
+  const answers: AnswerRecord[] = Array.isArray(raw.answers) ? raw.answers.filter(isObject).flatMap((a) => (
+    isText(a.attemptId) && isText(a.questionId) && isText(a.answer) && typeof a.correct === 'boolean' && isTime(a.at)
+      ? [{ attemptId: a.attemptId, questionId: a.questionId, answer: a.answer, correct: a.correct, method: a.method === 'self-checked' ? 'self-checked' as const : 'automatic' as const, at: a.at }]
+      : []
+  )) : [];
+  const explanations: ExplanationRecord[] = Array.isArray(raw.explanations) ? raw.explanations.filter(isObject).flatMap((e) => (
+    isText(e.text) && typeof e.passed === 'boolean' && isTime(e.at) && Array.isArray(e.ratings) && e.ratings.every((r) => RATINGS.includes(r as KeyPointRating))
+      ? [{ text: e.text, ratings: e.ratings as KeyPointRating[], passed: e.passed, method: 'self-checked' as const, at: e.at }]
+      : []
+  )) : [];
+  const misses: Record<string, number> = {};
+  if (isObject(raw.misses)) for (const [key, value] of Object.entries(raw.misses)) if (isTime(value)) misses[key] = value;
+  const status = raw.status as MasteryStatus;
+  return {
+    checkpointId: raw.checkpointId,
+    // Mastery is recalculated by continuing to study, except for a record already marked mastered.
+    status,
+    teachingFinished: raw.teachingFinished === true,
+    teachingSkipped: raw.teachingSkipped === true,
+    stage: status === 'mastered' ? { kind: 'mastered' } : { kind: 'teach', step: 0 },
+    answers,
+    misses,
+    reteachCount: isTime(raw.reteachCount) ? raw.reteachCount : 0,
+    explanations,
+    draft: '',
+    lastStudiedAt: isTime(raw.lastStudiedAt) ? raw.lastStudiedAt : 0,
+    masteredAt: isTime(raw.masteredAt) ? raw.masteredAt : null,
+  };
+}
+
 function cleanList<T>(raw: unknown, clean: (item: unknown) => T | null): T[] {
   if (!Array.isArray(raw)) throw new BackupError('This backup is damaged, so it can\'t be restored.');
   return raw.map(clean).map((item) => {
@@ -270,6 +363,10 @@ export async function openBackup(file: File): Promise<OpenedBackup> {
     topics: cleanList(raw.topics, cleanTopic),
     notes: cleanList(raw.notes, cleanNote),
     materials: cleanList(raw.materials, cleanMaterial),
+    // Backups made before Guided Study don't have these.
+    lessons: raw.lessons === undefined ? [] : cleanList(raw.lessons, cleanLesson),
+    checkpoints: raw.checkpoints === undefined ? [] : cleanList(raw.checkpoints, cleanCheckpoint),
+    progress: raw.progress === undefined ? [] : cleanList(raw.progress, cleanProgress),
   };
 
   let neededBytes = 0;
@@ -295,6 +392,7 @@ export interface RestoreReport {
   notesCopied: number;
   damaged: string[];
   stoppedEarly: string;
+  lessonsAdded: number;
 }
 
 /**
@@ -308,7 +406,7 @@ export async function restoreBackup(
 ): Promise<RestoreReport> {
   const report: RestoreReport = {
     coursesAdded: 0, topicsAdded: 0, filesAdded: 0, filesAlreadyHere: 0,
-    notesAdded: 0, notesAlreadyHere: 0, notesCopied: 0, damaged: [], stoppedEarly: '',
+    notesAdded: 0, notesAlreadyHere: 0, notesCopied: 0, damaged: [], stoppedEarly: '', lessonsAdded: 0,
   };
   const db = await getDb();
 
@@ -405,6 +503,26 @@ export async function restoreBackup(
     } else {
       await db.put('notes', restored);
       report.notesAdded += 1;
+    }
+  }
+
+  // Lessons, like everything else, are only added. Progress only comes back with a checkpoint that's new here.
+  const added = new Set<string>();
+  for (const lesson of manifest.lessons) {
+    if (!(await db.getKey('lessons', lesson.id))) {
+      await db.put('lessons', { ...lesson, courseId: courseOrNull(lesson.courseId) });
+      report.lessonsAdded += 1;
+    }
+  }
+  for (const checkpoint of manifest.checkpoints) {
+    if ((await db.getKey('lessons', checkpoint.lessonId)) && !(await db.getKey('checkpoints', checkpoint.id))) {
+      await db.put('checkpoints', { ...checkpoint, materialId: checkpoint.materialId ? fileIds.get(checkpoint.materialId) ?? null : null });
+      added.add(checkpoint.id);
+    }
+  }
+  for (const progress of manifest.progress) {
+    if (added.has(progress.checkpointId) && !(await db.getKey('checkpointProgress', progress.checkpointId))) {
+      await db.put('checkpointProgress', progress);
     }
   }
   notifyChanged();
