@@ -378,7 +378,7 @@ test('it works on a phone, with every destination in reach', async () => {
   await page.getByTestId('practice-question').waitFor();
   assert.ok((await overflow()) <= 0);
   await page.screenshot({ path: path.join(shots, 'phone-practice.png') });
-  const links = await page.getByRole('navigation', { name: /main|sections/i }).or(page.locator('nav.nav')).first().getByRole('link').all();
+  const links = await page.locator('nav.nav .nav-links a:visible').all();
   for (const link of links) {
     const box = await link.boundingBox();
     assert.ok(box.x >= 0 && box.x + box.width <= 360, 'every section button is on screen');

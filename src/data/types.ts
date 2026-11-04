@@ -287,3 +287,31 @@ export interface PracticeAttempt {
   at: number;
   updatedAt: number;
 }
+
+/* Exam Hall */
+export interface ExamItem {
+  questionId: string;
+  setId: string;
+  kind: PracticeKind;
+  prompt: string;
+  answer: string;
+  correctText: string;
+  explanation: string;
+  source: string;
+  topic: string;
+  /** Null means a written answer the student hasn't checked yet. */
+  result: PracticeResult | null;
+}
+
+/** A finished mock exam. It keeps its own copy of the questions, so scores survive later edits. */
+export interface ExamResult {
+  id: string;
+  name: string;
+  courseId: string | null;
+  durationMinutes: number | null;
+  startedAt: number;
+  finishedAt: number;
+  timedOut: boolean;
+  items: ExamItem[];
+  updatedAt: number;
+}

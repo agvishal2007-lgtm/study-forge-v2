@@ -27,7 +27,9 @@ export function ReviewPage() {
     let active = true;
     Promise.all([listCards(), listCardProgress(), listDecks()]).then(([cards, saved, decks]) => {
       if (!active) return;
-      const inDeck = cards.filter((card) => !deckId || card.deckId === deckId);
+      const courseId = params.get('course');
+      const courseDecks = courseId ? new Set(decks.filter((deck) => deck.courseId === courseId).map((deck) => deck.id)) : null;
+      const inDeck = cards.filter((card) => (!deckId || card.deckId === deckId) && (!courseDecks || courseDecks.has(card.deckId)));
       setProgress(saved);
       setDeckNames(new Map(decks.map((deck) => [deck.id, deck.name])));
       if (mode === 'due') setQueue(dueQueue(inDeck, saved, localNow().date));

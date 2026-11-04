@@ -112,7 +112,7 @@ export function CourseDetailPage() {
           onCancel={() => setConfirmCourse(false)}
           onConfirm={() => void attempt(async () => { await deleteCourse(course.id); if (stillHere.current) navigate('/courses', { replace: true }); })}
         >
-          <p>The course and its topics will be removed. Its {materials.length === 1 ? '1 file stays' : `${materials.length} files stay`} in your Library, and its {notes.length === 1 ? '1 note stays' : `${notes.length} notes stay`} in Notes. Any lessons stay in Study, any assignments stay in Planner, any flashcards stay in Flashcards, and any practice sets stay in Practice.</p>
+          <p>The course and its topics will be removed. Its {materials.length === 1 ? '1 file stays' : `${materials.length} files stay`} in your Library, and its {notes.length === 1 ? '1 note stays' : `${notes.length} notes stay`} in Notes. Any lessons stay in Study, any assignments stay in Planner, any flashcards stay in Flashcards, any practice sets stay in Practice, and exam scores stay in Exam Hall.</p>
         </ConfirmDialog>
       )}
       {confirmTopic && (

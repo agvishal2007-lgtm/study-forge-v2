@@ -162,7 +162,7 @@ export function BackupSection() {
       )}
       {report && (
         <div className="notice" role="status" data-testid="restore-report">
-          <p>Restore finished. Added {plural(report.coursesAdded, 'course')}, {plural(report.topicsAdded, 'topic')}, {plural(report.filesAdded, 'file')}, {plural(report.notesAdded, 'note')}, {plural(report.lessonsAdded, 'lesson')}, {plural(report.plannerAdded, 'planner item')}, {plural(report.cardsAdded, 'flashcard')}, and {plural(report.practiceAdded, 'practice question')}.</p>
+          <p>Restore finished. Added {plural(report.coursesAdded, 'course')}, {plural(report.topicsAdded, 'topic')}, {plural(report.filesAdded, 'file')}, {plural(report.notesAdded, 'note')}, {plural(report.lessonsAdded, 'lesson')}, {plural(report.plannerAdded, 'planner item')}, {plural(report.cardsAdded, 'flashcard')}, {plural(report.practiceAdded, 'practice question')}, and {plural(report.examsAdded, 'mock exam')}.</p>
           {(report.filesAlreadyHere > 0 || report.notesAlreadyHere > 0) && <p>Already here, so left alone: {plural(report.filesAlreadyHere, 'file')} and {plural(report.notesAlreadyHere, 'note')}.</p>}
           {report.notesCopied > 0 && <p>{plural(report.notesCopied, 'note')} differed from this device's version, so the backup's version was added as a copy marked “from backup”.</p>}
           {report.damaged.length > 0 && <p className="error">{plural(report.damaged.length, 'file')} in the backup {report.damaged.length === 1 ? 'is' : 'are'} damaged and weren't restored: {report.damaged.join(', ')}.</p>}
@@ -173,7 +173,7 @@ export function BackupSection() {
       {opened && (
         <dialog ref={dialog} className="dialog" aria-labelledby="restore-title" onCancel={() => setOpened(null)}>
           <h2 id="restore-title">Restore this backup?</h2>
-          <p>Made on {formatDate(opened.manifest.createdAt)}, with {plural(opened.manifest.courses.length, 'course')}, {plural(opened.manifest.materials.length, 'file')}, {plural(opened.manifest.notes.length, 'note')}, {plural(opened.manifest.lessons.length, 'lesson')}, {plural(opened.manifest.plannerItems.length, 'planner item')}, {plural(opened.manifest.cards.length, 'flashcard')}, and {plural(opened.manifest.practiceQuestions.length, 'practice question')}.</p>
+          <p>Made on {formatDate(opened.manifest.createdAt)}, with {plural(opened.manifest.courses.length, 'course')}, {plural(opened.manifest.materials.length, 'file')}, {plural(opened.manifest.notes.length, 'note')}, {plural(opened.manifest.lessons.length, 'lesson')}, {plural(opened.manifest.plannerItems.length, 'planner item')}, {plural(opened.manifest.cards.length, 'flashcard')}, {plural(opened.manifest.practiceQuestions.length, 'practice question')}, and {plural(opened.manifest.examResults.length, 'mock exam')}.</p>
           <p>This only adds what's missing. Nothing on this device is replaced or deleted.</p>
           <p className="muted">{plural(opened.newFiles, 'new file')}, needing {formatBytes(opened.neededBytes)}{opened.freeBytes !== null ? ` of about ${formatBytes(opened.freeBytes)} available` : ''}.</p>
           {noSpace && <p className="error" role="alert">This device doesn't have enough space for all of it. Files are restored until space runs out, and you can restore again after freeing some.</p>}

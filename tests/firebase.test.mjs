@@ -131,6 +131,13 @@ test('email accounts work with the real sign-in code, and stay private', async (
   assert.equal(await alice.backend.needsEmailConfirmation(), false, 'a Google account has no password to confirm');
 });
 
+test('mock exam results can be saved', async () => {
+  const { conflicts } = await alice.backend.push(alice.uid, [item('exam-1', { collection: 'examResults' })]);
+  assert.deepEqual(conflicts, []);
+  const { items } = await alice.backend.pull(alice.uid, 0);
+  assert.ok(items.some((entry) => entry.id === 'exam-1' && entry.collection === 'examResults'));
+});
+
 test('badly shaped or oversized items are refused, so the free storage can\'t be abused', async () => {
   const ref = doc(alice.db, 'users', alice.uid, 'items', 'bad');
   await denied(() => setDoc(ref, validDoc({ collection: 'materials' })), 'a file record');

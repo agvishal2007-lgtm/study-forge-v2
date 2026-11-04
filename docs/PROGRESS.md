@@ -344,6 +344,19 @@ Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) files now open right in the 
 
 Tested in a real browser using small test files. Not tried yet with real, complicated Office files.
 
+## Exam Hall and Cram Mode
+
+Exam Hall gathers exam preparation in one place. It's in the sidebar on computers. On phones it's reached from Today or Practice, because the bottom bar is full.
+
+- Mock exams pull shuffled questions from practice sets, by course, with a question count and an optional time limit. The clock keeps running if the page closes, and time running out submits the exam.
+- Answers and feedback stay hidden until the end. Unanswered questions count as wrong. Written answers that don't match an accepted answer wait for the student to check them, and no score shows until they're checked.
+- Results feed Practice's mistakes and weak topics. Scores are saved, with first-to-latest improvement once there are two scored exams.
+- There's no readiness percentage, as the blueprint warns against arbitrary ones. Exam Hall shows counts from saved work, and says it can't predict a grade.
+- The final revision checklist updates from saved work.
+- Cram Mode has Exam Tomorrow, Last Hour, Quick Review, and Weak Topics Only. Each builds an ordered plan from saved work that fits the time, with rough time estimates of 2 minutes a question and 30 seconds a card.
+
+Tested in a real browser, including timing, reloads, and a clock that runs out. Not built yet: choosing exams by topic, or printing an exam.
+
 ## How the code is organized
 
 - `src/data/` holds saved data, and nothing else talks to storage directly.
@@ -361,6 +374,7 @@ Tested in a real browser using small test files. Not tried yet with real, compli
   - `authMessages.ts` and `knownAccounts.ts` support signing in and recovery.
   - `offline.ts` tracks offline status and updates, and `sw-template.js` is the service worker.
   - `pptxReader.ts` reads PowerPoint files.
+  - `exams.ts` saves mock exams, and `examRules.ts` holds their scoring and Cram Mode's plans.
   - `planner.ts` saves planner items, and `plannerRules.ts` holds the date rules.
   - `account.ts` keeps each account's storage separate, and `sync.ts` holds the saving-online rules.
 - `src/components/` holds pieces used on several screens, such as the saving panel and the recorder.

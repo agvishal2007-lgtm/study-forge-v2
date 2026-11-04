@@ -10,7 +10,7 @@ service cloud.firestore {
         let data = request.resource.data;
         return data.keys().hasOnly(['collection', 'id', 'json', 'deleted', 'rev', 'syncedAt'])
           && data.keys().hasAll(['collection', 'id', 'json', 'deleted', 'rev', 'syncedAt'])
-          && data.collection in ['courses', 'topics', 'notes', 'lessons', 'checkpoints', 'checkpointProgress', 'plannerItems', 'decks', 'cards', 'cardProgress', 'practiceSets', 'practiceQuestions', 'practiceAttempts']
+          && data.collection in ['courses', 'topics', 'notes', 'lessons', 'checkpoints', 'checkpointProgress', 'plannerItems', 'decks', 'cards', 'cardProgress', 'practiceSets', 'practiceQuestions', 'practiceAttempts', 'examResults']
           && data.id is string && data.id.size() <= 512
           && data.json is string && data.json.size() <= 900000
           && data.deleted is bool

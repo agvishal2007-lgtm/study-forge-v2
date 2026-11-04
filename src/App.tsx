@@ -17,6 +17,11 @@ import { SessionPage } from './features/guided/SessionPage';
 import { StudyPage } from './features/guided/StudyPage';
 import { RecordPage } from './features/RecordPage';
 import { AuthPage, ForgotEmailPage, ForgotPasswordPage, PrivacyPage } from './features/AuthPages';
+import { CramPage } from './features/CramPage';
+import { ExamHallPage } from './features/ExamHallPage';
+import { ExamResultPage } from './features/ExamResultPage';
+import { ExamRunPage } from './features/ExamRunPage';
+import { ExamStartPage } from './features/ExamStartPage';
 import { DeckPage } from './features/DeckPage';
 import { FlashcardsPage } from './features/FlashcardsPage';
 import { ReviewPage } from './features/ReviewPage';
@@ -38,6 +43,7 @@ const MAIN_LINKS = [
   { to: '/planner', label: 'Planner', end: false },
   { to: '/cards', label: 'Flashcards', end: false },
   { to: '/practice', label: 'Practice', end: false },
+  { to: '/exams', label: 'Exam Hall', end: false },
   { to: '/study', label: 'Study', end: false },
   { to: '/notes', label: 'Notes', end: false },
   { to: '/record', label: 'Record', end: false },
@@ -108,6 +114,11 @@ export function App() {
                 <Route path="/practice" element={<PracticePage />} />
                 <Route path="/practice/session" element={<PracticeSessionPage />} />
                 <Route path="/practice/:id" element={<PracticeSetPage />} />
+                <Route path="/exams" element={<ExamHallPage />} />
+                <Route path="/exams/start" element={<ExamStartPage />} />
+                <Route path="/exams/run" element={<ExamRunPage />} />
+                <Route path="/exams/result/:id" element={<ExamResultPage />} />
+                <Route path="/exams/cram" element={<CramPage />} />
                 <Route path="/study" element={<StudyPage />} />
                 <Route path="/study/lessons/:id" element={<LessonPage />} />
                 <Route path="/study/lessons/:lessonId/checkpoints/:id/edit" element={<CheckpointEditorPage />} />

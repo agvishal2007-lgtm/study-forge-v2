@@ -38,7 +38,8 @@ export function PracticeSessionPage() {
       if (saved && saved.url === url && saved.questionIds.every((id) => present.has(id))) {
         setSession(saved);
       } else {
-        const inScope = allQuestions.filter((question) => !setId || question.setId === setId);
+        const courseSets = params.get('course') ? new Set(sets.filter((set) => set.courseId === params.get('course')).map((set) => set.id)) : null;
+        const inScope = allQuestions.filter((question) => (!setId || question.setId === setId) && (!courseSets || courseSets.has(question.setId)));
         const labelOf = topicLabeler(sets, topics);
         let picked = inScope;
         if (mode === 'mistakes') picked = mistakesIn(inScope, allAttempts);

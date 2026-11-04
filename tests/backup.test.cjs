@@ -182,7 +182,7 @@ print(json.dumps({'names': z.namelist(), 'loose': z.read('Notes/No course/Loose 
 test('a fresh browser gets everything back, byte for byte', async () => {
   await open();
   const report = await restore(backupPath);
-  assert.match(report, /Added 1 course, 1 topic, 6 files, 2 notes, 0 lessons, 0 planner items, 0 flashcards, and 0 practice questions/);
+  assert.match(report, /Added 1 course, 1 topic, 6 files, 2 notes, 0 lessons, 0 planner items, 0 flashcards, 0 practice questions, and 0 mock exams/);
   await page.screenshot({ path: path.join(shots, 'restore-done.png'), fullPage: true });
   const restored = await savedFiles();
   assert.equal(restored.length, 6);
@@ -210,7 +210,7 @@ test('a fresh browser gets everything back, byte for byte', async () => {
 
 test('restoring again changes nothing', async () => {
   const report = await restore(backupPath);
-  assert.match(report, /Added 0 courses, 0 topics, 0 files, 0 notes, 0 lessons, 0 planner items, 0 flashcards, and 0 practice questions/);
+  assert.match(report, /Added 0 courses, 0 topics, 0 files, 0 notes, 0 lessons, 0 planner items, 0 flashcards, 0 practice questions, and 0 mock exams/);
   assert.match(report, /6 files and 2 notes/);
   assert.equal((await savedFiles()).length, 6);
 });
@@ -260,7 +260,7 @@ with open(dst, 'r+b') as f:
 `);
   await open();
   const report = await restore(damaged);
-  assert.match(report, /Added 1 course, 1 topic, 5 files, 2 notes, 0 lessons, 0 planner items, 0 flashcards, and 0 practice questions/);
+  assert.match(report, /Added 1 course, 1 topic, 5 files, 2 notes, 0 lessons, 0 planner items, 0 flashcards, 0 practice questions, and 0 mock exams/);
   assert.match(report, /1 file in the backup is damaged and weren't restored: large lecture\.bin|1 file in the backup is damaged/);
   assert.match(report, /large lecture\.bin/);
   const restored = await savedFiles();
@@ -317,7 +317,7 @@ with zipfile.ZipFile(dst, 'w') as b:
 `);
   await open();
   const report = await restore(crafted);
-  assert.match(report, /Added 1 course, 0 topics, 0 files, 1 note, 0 lessons, 0 planner items, 0 flashcards, and 0 practice questions/);
+  assert.match(report, /Added 1 course, 0 topics, 0 files, 1 note, 0 lessons, 0 planner items, 0 flashcards, 0 practice questions, and 0 mock exams/);
   await nav('Courses');
   const link = page.getByRole('link', { name: /<img src=x/ });
   await link.waitFor();

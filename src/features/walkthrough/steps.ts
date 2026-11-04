@@ -128,6 +128,13 @@ export const TOUR_STEPS: TourStep[] = [
     body: 'Write your own questions, answer them without your notes, and check your work. Study Forge tracks what you missed and shows your weak topics, so you know what to repeat.',
   },
   {
+    id: 'exams',
+    route: '/exams',
+    target: ['[data-tour="exam-start"]'],
+    title: 'Exam Hall',
+    body: 'Take timed mock exams from your practice questions, check your final revision list, and use Cram Mode when you are short on time. On a phone, you can reach it from Today or Practice.',
+  },
+  {
     id: 'notes',
     route: '/notes',
     target: ['[data-tour="new-note"]'],

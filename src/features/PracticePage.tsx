@@ -56,6 +56,7 @@ export function PracticePage() {
     <div className="page">
       <h1>Practice</h1>
       <p className="muted">Answer questions without your notes, see what you missed, and repeat your weak topics.</p>
+      <p className="session-actions"><Link className="button" to="/exams">Exam Hall</Link></p>
       {session && <p className="session-actions"><Link className="button primary" to={session.url} data-testid="resume-practice">Pick up where you left off</Link></p>}
       {latest.size > 0 && (
         <div className="dash-tiles practice-tiles">

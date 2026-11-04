@@ -5,7 +5,7 @@ import { noteLabel } from './notes';
 import { listUnfinished } from './recordings';
 import { findByHash, getStorageStatus, hashFile, storeMaterial } from './store';
 import {
-  OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem, type PracticeAttempt, type PracticeQuestion, type PracticeSet, CONFIDENCE_LEVELS, PRACTICE_KINDS, type CardProgress, type Deck, type Flashcard, CARD_RATINGS,
+  OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem, type ExamResult, type ExamItem, type PracticeAttempt, type PracticeQuestion, type PracticeSet, CONFIDENCE_LEVELS, PRACTICE_KINDS, type CardProgress, type Deck, type Flashcard, CARD_RATINGS,
   type AnswerRecord, type Checkpoint, type CheckpointProgress, type Course, type ExplanationRecord, type GuidedQuestion,
   type KeyPointRating, type Lesson, type Material, type MasteryStatus, type Note, type QuestionKind, type Reteach, type Topic,
 } from './types';
@@ -19,7 +19,7 @@ import { NotAZip, readZipEntries, type ZipEntry } from './zipReader';
  */
 const MANIFEST_PATH = 'study-forge-backup.json';
 const FORMAT = 'study-forge-backup';
-const VERSION = 5;
+const VERSION = 6;
 const LAST_BACKUP_KEY = 'lastBackupAt';
 
 export interface BackupManifest {
@@ -40,6 +40,7 @@ export interface BackupManifest {
   practiceSets: PracticeSet[];
   practiceQuestions: PracticeQuestion[];
   practiceAttempts: PracticeAttempt[];
+  examResults: ExamResult[];
 }
 
 export class BackupError extends Error {}
@@ -135,11 +136,11 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     : null;
 
   const db = await getDb();
-  const [courses, topics, notes, materials, lessons, checkpoints, progress, plannerItems, decks, cards, cardProgress, practiceSets, practiceQuestions, practiceAttempts] = await Promise.all([
+  const [courses, topics, notes, materials, lessons, checkpoints, progress, plannerItems, decks, cards, cardProgress, practiceSets, practiceQuestions, practiceAttempts, examResults] = await Promise.all([
     db.getAll('courses'), db.getAll('topics'), db.getAll('notes'), db.getAll('materials'),
     db.getAll('lessons'), db.getAll('checkpoints'), db.getAll('checkpointProgress'), db.getAll('plannerItems'),
     db.getAll('decks'), db.getAll('cards'), db.getAll('cardProgress'),
-    db.getAll('practiceSets'), db.getAll('practiceQuestions'), db.getAll('practiceAttempts'),
+    db.getAll('practiceSets'), db.getAll('practiceQuestions'), db.getAll('practiceAttempts'), db.getAll('examResults'),
   ]);
   const courseFolder = (courseId: string | null, topicId: string | null) => {
     const course = courses.find((candidate) => candidate.id === courseId);
@@ -178,6 +179,7 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     practiceSets,
     practiceQuestions,
     practiceAttempts,
+    examResults,
   };
   const noteFiles = notes.map((note) => ({
     name: pathFor(`Notes/${courseFolder(note.courseId, note.topicId)}`, `${safeName(noteLabel(note), 'Note')}.txt`),
@@ -408,6 +410,24 @@ function cleanPracticeAttempt(raw: unknown): PracticeAttempt | null {
   };
 }
 
+function cleanExamResult(raw: unknown): ExamResult | null {
+  if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.name) || !isOptionalId(raw.courseId) || !isTime(raw.startedAt) || !isTime(raw.finishedAt) || !Array.isArray(raw.items)) return null;
+  const text = (value: unknown) => (isText(value) ? value : '');
+  const items: ExamItem[] = [];
+  for (const entry of raw.items) {
+    if (!isObject(entry) || !isText(entry.questionId) || !isText(entry.prompt) || !PRACTICE_KINDS.includes(entry.kind as ExamItem['kind'])) return null;
+    items.push({
+      questionId: entry.questionId, setId: text(entry.setId), kind: entry.kind as ExamItem['kind'], prompt: entry.prompt, answer: text(entry.answer), correctText: text(entry.correctText),
+      explanation: text(entry.explanation), source: text(entry.source), topic: text(entry.topic),
+      result: ['correct', 'partial', 'wrong'].includes(entry.result as string) ? entry.result as ExamItem['result'] : null,
+    });
+  }
+  return {
+    id: raw.id, name: raw.name, courseId: raw.courseId, durationMinutes: typeof raw.durationMinutes === 'number' && raw.durationMinutes > 0 ? raw.durationMinutes : null,
+    startedAt: raw.startedAt, finishedAt: raw.finishedAt, timedOut: raw.timedOut === true, items, updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.finishedAt,
+  };
+}
+
 function cleanList<T>(raw: unknown, clean: (item: unknown) => T | null): T[] {
   if (!Array.isArray(raw)) throw new BackupError('This backup is damaged, so it can\'t be restored.');
   return raw.map(clean).map((item) => {
@@ -467,6 +487,7 @@ export async function openBackup(file: File): Promise<OpenedBackup> {
     practiceSets: raw.practiceSets === undefined ? [] : cleanList(raw.practiceSets, cleanPracticeSet),
     practiceQuestions: raw.practiceQuestions === undefined ? [] : cleanList(raw.practiceQuestions, cleanPracticeQuestion),
     practiceAttempts: raw.practiceAttempts === undefined ? [] : cleanList(raw.practiceAttempts, cleanPracticeAttempt),
+    examResults: raw.examResults === undefined ? [] : cleanList(raw.examResults, cleanExamResult),
   };
 
   let neededBytes = 0;
@@ -496,6 +517,7 @@ export interface RestoreReport {
   plannerAdded: number;
   cardsAdded: number;
   practiceAdded: number;
+  examsAdded: number;
 }
 
 /**
@@ -509,7 +531,7 @@ export async function restoreBackup(
 ): Promise<RestoreReport> {
   const report: RestoreReport = {
     coursesAdded: 0, topicsAdded: 0, filesAdded: 0, filesAlreadyHere: 0,
-    notesAdded: 0, notesAlreadyHere: 0, notesCopied: 0, damaged: [], stoppedEarly: '', lessonsAdded: 0, plannerAdded: 0, cardsAdded: 0, practiceAdded: 0,
+    notesAdded: 0, notesAlreadyHere: 0, notesCopied: 0, damaged: [], stoppedEarly: '', lessonsAdded: 0, plannerAdded: 0, cardsAdded: 0, practiceAdded: 0, examsAdded: 0,
   };
   const db = await getDb();
 
@@ -662,6 +684,12 @@ export async function restoreBackup(
     if ((await db.getKey('practiceSets', question.setId)) && !(await db.getKey('practiceQuestions', question.id))) {
       await db.put('practiceQuestions', question);
       report.practiceAdded += 1;
+    }
+  }
+  for (const result of manifest.examResults) {
+    if (!(await db.getKey('examResults', result.id))) {
+      await db.put('examResults', { ...result, courseId: courseOrNull(result.courseId) });
+      report.examsAdded += 1;
     }
   }
   // Answers are added, never replaced, and only for questions that are here.
