@@ -12,6 +12,8 @@ export class OcrError extends Error {}
 let workerPromise: Promise<any> | null = null;
 let pending = 0;
 let idleTimer: ReturnType<typeof setTimeout> | undefined;
+// The one reader reports progress for whichever picture is being read right now.
+let activeProgress: ((percent: number) => void) | undefined;
 
 async function build(): Promise<any> {
   const folder = new URL('./ocr/', window.location.href.split(/[?#]/)[0]).href;
@@ -21,6 +23,9 @@ async function build(): Promise<any> {
     corePath: folder,
     langPath: folder,
     workerBlobURL: false,
+    logger: (message: any) => {
+      if (message.status === 'recognizing text') activeProgress?.(Math.round(message.progress * 100));
+    },
   });
 }
 
@@ -42,15 +47,18 @@ export async function readPicture(source: CanvasImageSource | HTMLCanvasElement,
     let worker: any;
     try {
       worker = await workerPromise;
-    } catch (error) {
+    } catch {
       workerPromise = null;
       throw new OcrError(navigator.onLine ? "The reader couldn't start." : "The reader needs internet the first time it's used.");
     }
     await worker.setParameters({ tessedit_pageseg_mode: options.mode ?? OCR_AUTO, preserve_interword_spaces: '1' });
-    const { data } = await worker.recognize(source, {}, { text: true }, {
-      logger: options.onProgress ? (message: any) => { if (message.status === 'recognizing text') options.onProgress?.(Math.round(message.progress * 100)); } : undefined,
-    });
-    return data.text as string;
+    activeProgress = options.onProgress;
+    try {
+      const { data } = await worker.recognize(source);
+      return data.text as string;
+    } finally {
+      activeProgress = undefined;
+    }
   } finally {
     pending -= 1;
     if (pending === 0) releaseSoon();

@@ -198,7 +198,7 @@ test('search reads inside PDFs, Word, Excel, and PowerPoint, and opens the right
   const files = page.getByTestId('search-Files');
   await files.getByText('Page 2').waitFor({ timeout: 30000 });
   await files.locator('mark').first().waitFor();
-  await page.getByTestId('search-scanned').getByText('1 PDF has no readable words').waitFor();
+  await page.getByTestId('search-scanned').getByText('1 file has no readable words').waitFor();
   for (const [word, name] of [['accruals', 'notes.docx'], ['dana', 'grades.xlsx'], ['out loud', 'lecture.pptx']]) {
     await page.getByLabel('Search everything').fill(word);
     await page.getByTestId('search-Files').getByRole('link', { name }).first().waitFor();
