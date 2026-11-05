@@ -126,8 +126,6 @@ label input, label select { margin-top: .25rem; font-weight: 400; }
 /* The shelf: books stand on one line, and their width shows how many files they hold. */
 .shelf { display: flex; align-items: flex-end; gap: 6px; overflow-x: auto; padding: .5rem .25rem 0; border-bottom: 6px solid var(--accent); min-height: 196px; }
 .book { flex: 0 0 auto; width: calc(136px + var(--extra, 0px)); height: 180px; display: flex; flex-direction: column; padding: .75rem .75rem .6rem; background: var(--raised); border-left: 14px solid var(--spine); color: var(--paper); text-decoration: none; border-radius: 2px 3px 0 0; transition: transform .12s ease; }
-.book:nth-child(3n + 2) { height: 164px; }
-.book:nth-child(3n) { height: 172px; }
 .book:hover { transform: translateY(-6px); background: var(--raised-hover); }
 .book:focus-visible { outline-offset: -3px; }
 .book-title { font: 500 1.1rem/1.2 var(--display); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
