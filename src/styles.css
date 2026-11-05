@@ -1,57 +1,59 @@
 :root {
-  --ground: #f5f6f8;
+  --ground: #f4f6fb;
   --raised: #ffffff;
-  --raised-hover: #eef0f3;
+  --raised-hover: #eef1f8;
   --field: #ffffff;
-  --line: #dfe3e8;
-  --line-strong: #bcc3cc;
-  --paper: #1b2027;
-  --muted: #586271;
-  --accent: #1763cc;
-  --accent-hover: #114fa6;
-  --accent-soft: #e4eefb;
-  --accent-text: #1259ba;
+  --line: #e5e8f0;
+  --line-strong: #c6ccda;
+  --paper: #191d28;
+  --muted: #5b6475;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-soft: #ecebfc;
+  --accent-text: #4338ca;
   --on-accent: #ffffff;
   --success: #0f7a52;
-  --success-soft: #e0f4ec;
-  --danger: #b3261e;
-  --danger-hover: #93201a;
+  --success-soft: #e2f4ec;
+  --danger: #c62f27;
+  --danger-hover: #a3251f;
   --danger-soft: #fbeae8;
   --on-danger: #ffffff;
-  --scroll-track: #eef0f3;
-  --scroll-thumb: #bcc3cc;
+  --scroll-track: #eef1f8;
+  --scroll-thumb: #c6ccda;
   --scrim: #10151c8f;
   --tour-dim: #0a0e14c4;
-  --shadow: 0 8px 28px #1b202724;
+  --shadow-sm: 0 1px 2px #191d280d, 0 2px 8px #191d2812;
+  --shadow: 0 14px 34px #191d2824;
   --body: 'Figtree Variable', system-ui, sans-serif;
   --display: 'Figtree Variable', system-ui, sans-serif;
   color-scheme: light;
 }
 :root[data-theme='dark'] {
-  --ground: #15181d;
-  --raised: #1e2228;
-  --raised-hover: #292e36;
-  --field: #181b20;
-  --line: #313740;
-  --line-strong: #4b535f;
-  --paper: #ebeef2;
-  --muted: #a5aeba;
-  --accent: #7ab4ff;
-  --accent-hover: #a2cbff;
-  --accent-soft: #1d2f47;
-  --accent-text: #8fc0ff;
-  --on-accent: #0b1a2c;
+  --ground: #14161c;
+  --raised: #1c2028;
+  --raised-hover: #262b34;
+  --field: #171a21;
+  --line: #2c313c;
+  --line-strong: #464e5b;
+  --paper: #e9edf4;
+  --muted: #9aa4b3;
+  --accent: #8d8df7;
+  --accent-hover: #a7a8fa;
+  --accent-soft: #272654;
+  --accent-text: #adaffb;
+  --on-accent: #0a0b1a;
   --success: #7bd6b0;
-  --success-soft: #1a332a;
-  --danger: #f4a097;
-  --danger-hover: var(--danger-hover);
-  --danger-soft: #3a2424;
-  --on-danger: var(--on-danger);
+  --success-soft: #19332a;
+  --danger: #f2938a;
+  --danger-hover: #f6b4ad;
+  --danger-soft: #3a2422;
+  --on-danger: #2a0f0d;
   --scroll-track: #1b1f24;
   --scroll-thumb: #434a55;
   --scrim: #05080cb3;
   --tour-dim: #05080cd9;
-  --shadow: 0 10px 32px #0008;
+  --shadow-sm: 0 1px 2px #00000055, 0 2px 10px #0000004d;
+  --shadow: 0 16px 38px #0000008a;
   color-scheme: dark;
 }
 
@@ -885,3 +887,16 @@ label input, label select { margin-top: .35rem; }
 /* Transcripts */
 .transcript-panel .notice p { margin-top: 0; }
 .transcript-body { max-width: 72ch; margin: .5rem 0 1rem; padding: 1rem 1.25rem; background: var(--raised); border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 50vh; overflow-y: auto; }
+
+
+/* Elevation pass: soft shadows lift the larger surfaces, a gentle hover on tiles and books, keeping it clean. */
+.dash-card, .session-card, .studio, .stage, .flashcard, .notice, .next-up, .plan-table, .month-grid, .schedule-picture, .book, .transcript-body { box-shadow: inset 0 0 0 1px var(--line), var(--shadow-sm); }
+.button.primary { box-shadow: var(--shadow-sm); }
+.button.primary:hover:not(:disabled) { box-shadow: var(--shadow); }
+.dash-tile { transition: background .15s ease, box-shadow .15s ease, transform .15s ease; }
+.dash-tile:hover { background: var(--raised); box-shadow: inset 0 0 0 1px var(--line-strong), var(--shadow-sm); transform: translateY(-1px); }
+.book { transition: transform .12s ease, box-shadow .15s ease; }
+.book:hover { box-shadow: inset 0 0 0 1px var(--line-strong), var(--shadow); }
+.calendar-tab[aria-selected='true'] { box-shadow: var(--shadow-sm); }
+.segment[data-chosen='true'] { box-shadow: var(--shadow-sm); }
+@media (prefers-reduced-motion: reduce) { .dash-tile:hover, .book:hover { transform: none; } }
