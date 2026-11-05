@@ -61,13 +61,15 @@ export async function transcribe(blob: Blob, onProgress: (progress: TranscribePr
   if (!isActive()) throw new TranscribeError('Stopped.');
   if (audio.length < SAMPLE_RATE / 2) throw new TranscribeError('This recording is too short, or has no sound.');
 
-  let transformers;
+  // Loaded from a CDN at run time, so the heavy speech library never ships in the site or its build.
+  let transformers: any;
   try {
-    transformers = await import('@huggingface/transformers');
+    const url = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1';
+    transformers = await import(/* @vite-ignore */ url);
   } catch {
     throw new TranscribeError(navigator.onLine ? "The transcriber couldn't start." : 'Making a transcript the first time needs internet. Connect, then try again.');
   }
-  const { pipeline, env } = transformers as any;
+  const { pipeline, env } = transformers;
   // Only ever use the public model; never look for a local one.
   env.allowLocalModels = false;
   let recognizer: any;
