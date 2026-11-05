@@ -148,9 +148,9 @@ export function ExamHallPage() {
           <h2 id="review-heading">Review by type</h2>
           <p className="dash-note">Practice one kind of question, with feedback after each.</p>
           <div className="session-actions">
+            <Link className="button" to={`/practice/session?mode=mistakes${courseQuery}`}>Mistakes</Link>
             <Link className="button" to={`/practice/session?mode=all&kind=definition${courseQuery}`}>Definitions</Link>
             <Link className="button" to={`/practice/session?mode=all&kind=formula${courseQuery}`}>Formulas</Link>
-            <Link className="button" to={`/practice/session?mode=mistakes${courseQuery}`}>Mistakes</Link>
           </div>
           {weak.length > 0 && <p className="muted exam-weak">Weakest: {weak.slice(0, 3).map((topic) => `${topic.label} (${topic.percent}%)`).join(', ')}</p>}
         </section>

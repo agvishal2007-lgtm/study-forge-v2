@@ -416,3 +416,7 @@ Add class schedule also takes a picture: a file, a dragged picture, or a pasted 
 ## Look
 
 Clean and light by default, with a dark mode. The moon or sun button at the top switches modes, and Settings also has Match my device. On small phones the switch is only in Settings. Colors are tokens at the top of `src/styles.css`, so both modes stay matched. The font is Figtree. Buttons stay rounded bubbles and blue is the one accent, as the owner chose earlier. The bookshelf stays as the signature.
+
+## Action button order
+
+Action buttons are ordered by when a student reaches for them, not arbitrarily. On Calendar before connecting: Connect Google Calendar, Add class schedule, Add to calendar (setup first). After connecting: Add to calendar, Get the latest, Google Calendar, Add class schedule (day-to-day first, re-import last). The primary blue button is the state's main action. Exam Hall's Review by type leads with Mistakes, then Definitions, Formulas. Flashcards and Practice already lead with the daily action (Review due, Pick up where you left off).

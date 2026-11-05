@@ -239,10 +239,22 @@ export function CalendarPage() {
       <div className="section-head calendar-head">
         <h1>Calendar</h1>
         <div className="calendar-actions" data-tour="calendar-add">
-          <Link className="button primary" to={`/calendar/event/new?date=${selected}`}>Add to calendar</Link>
-          <Link className="button" to="/calendar/schedule">Add class schedule</Link>
-          {connection && <button className="button" onClick={getLatest} disabled={updating || !googleReady}>{updating ? 'Updating…' : 'Get the latest'}</button>}
-          <Link className="button" to="/calendar/google">{connection ? 'Google Calendar' : 'Connect Google Calendar'}</Link>
+          {connection ? (
+            <>
+              {/* Set up once; after that you mostly add the odd event and pull new Canvas work. */}
+              <Link className="button primary" to={`/calendar/event/new?date=${selected}`}>Add to calendar</Link>
+              <button className="button" onClick={getLatest} disabled={updating || !googleReady}>{updating ? 'Updating…' : 'Get the latest'}</button>
+              <Link className="button" to="/calendar/google">Google Calendar</Link>
+              <Link className="button" to="/calendar/schedule">Add class schedule</Link>
+            </>
+          ) : (
+            <>
+              {/* Nothing's set up yet, so the import options come first. */}
+              <Link className="button primary" to="/calendar/google">Connect Google Calendar</Link>
+              <Link className="button" to="/calendar/schedule">Add class schedule</Link>
+              <Link className="button" to={`/calendar/event/new?date=${selected}`}>Add to calendar</Link>
+            </>
+          )}
         </div>
       </div>
       {updateNote && <p className="notice" role="status" data-testid="calendar-update-note">{updateNote}</p>}
