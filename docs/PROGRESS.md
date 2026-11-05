@@ -434,3 +434,7 @@ NOTE: the speech model's host is blocked from the build environment, so the actu
 ## Design elevation
 
 A polish pass on the clean, light look the owner chose, keeping it simple. The accent moved from blue to indigo (the owner was open to a new accent). Neutrals were refined, and the larger surfaces (cards, tiles, the bookshelf, tables, the month grid) gained a soft shadow so they feel lifted rather than flat. Tiles and books lift gently on hover. Two broken dark-mode tokens (self-referential danger colors) were fixed. The bookshelf and rounded buttons stayed, as the owner asked. Colors are all tokens at the top of `src/styles.css`, so light and dark stay matched.
+
+## Typography and section icons
+
+The type scale was refined (still Figtree, the owner's choice): larger, tighter headings, bolder tile numbers, steadier spacing, for a clearer hierarchy. Each sidebar section now has a clean line icon, so the menu reads at a glance; on phones the bottom bar shows the icon above a small label like a normal app tab bar. Icons are decorative (aria-hidden); the labels still carry the meaning, so nothing changes for screen readers or the tests.

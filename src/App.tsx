@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { AccountMenu } from './components/AccountMenu';
+import { NAV_ICONS } from './components/NavIcons';
 import { WalkthroughProvider } from './features/walkthrough/Walkthrough';
 import { RecorderProvider, RecordingBar } from './components/Recorder';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -95,7 +96,7 @@ export function App() {
           </NavLink>
           <div className="nav-links">
             {MAIN_LINKS.map((link) => (
-              <NavLink key={link.to} to={link.to} end={link.end}>{link.label}</NavLink>
+              <NavLink key={link.to} to={link.to} end={link.end}>{NAV_ICONS[link.to]}<span>{link.label}</span></NavLink>
             ))}
           </div>
         </nav>
