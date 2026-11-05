@@ -585,7 +585,7 @@ input[type='radio']:checked { border-color: var(--accent); background: radial-gr
 .calendar-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 .calendar-tools { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: .75rem 1.5rem; margin: 1rem 0; }
 .calendar-tabs { display: flex; flex-wrap: wrap; gap: .25rem; background: var(--raised); border-radius: 999px; padding: .25rem; }
-.calendar-tab { font: inherit; color: var(--muted); background: none; border: 0; border-radius: 999px; padding: .5rem .9rem; min-height: 40px; cursor: pointer; }
+.calendar-tab { font: inherit; color: var(--muted); background: none; border: 0; border-radius: 999px; padding: .5rem .95rem; min-height: 40px; white-space: nowrap; cursor: pointer; }
 .calendar-tab:hover { color: var(--paper); }
 .calendar-tab[aria-selected='true'] { background: var(--accent); color: var(--on-accent); font-weight: 700; }
 .calendar-filter { display: flex; align-items: center; gap: .5rem; }
@@ -652,10 +652,14 @@ input[type='radio']:checked { border-color: var(--accent); background: radial-gr
   .plan-table, .plan-table tbody, .plan-table tr, .plan-table th, .plan-table td { display: block; }
   .calendar-page .plan-table tr { padding: .6rem .8rem; border-bottom: 1px solid var(--line); }
   .calendar-page .plan-table th, .calendar-page .plan-table td { border: 0; padding: .1rem 0; }
-  .calendar-actions .button { padding: .45rem .85rem; font-size: .9rem; min-height: 42px; }
-  .calendar-tools { display: grid; }
-  .calendar-tabs { flex-wrap: nowrap; border-radius: 16px; }
-  .calendar-tab { flex: 1 1 0; padding: .35rem .3rem; font-size: .82rem; line-height: 1.15; border-radius: 12px; }
+  /* Action buttons share rows evenly instead of leaving a ragged one on its own. */
+  .calendar-actions { gap: .6rem; }
+  .calendar-actions .button { flex: 1 1 9rem; padding: .6rem .85rem; font-size: .92rem; min-height: 44px; }
+  .calendar-tools { display: grid; gap: 1rem; }
+  /* One row of tabs that slides sideways if the labels don't all fit, so none wrap. */
+  /* Whole tabs wrap to a second row rather than one being cut off, so all three always show. */
+  .calendar-tabs { flex-wrap: wrap; border-radius: 14px; gap: .25rem; }
+  .calendar-tab { flex: 1 1 auto; padding: .6rem .9rem; font-size: .9rem; border-radius: 10px; }
 }
 
 /* Progress */
