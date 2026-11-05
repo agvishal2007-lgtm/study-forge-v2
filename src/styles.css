@@ -881,3 +881,7 @@ label input, label select { margin-top: .35rem; }
   .theme-button { display: none; }
 }
 .topbar, .site-notice, .recording-bar { flex: none; }
+
+/* Transcripts */
+.transcript-panel .notice p { margin-top: 0; }
+.transcript-body { max-width: 72ch; margin: .5rem 0 1rem; padding: 1rem 1.25rem; background: var(--raised); border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 50vh; overflow-y: auto; }

@@ -424,3 +424,9 @@ Action buttons are ordered by when a student reaches for them, not arbitrarily. 
 ## Search inside images and scanned PDFs
 
 File search now reads the words inside image files and scanned (image-only) PDFs with the same on-device reader the schedule uses, so they're found by their words, not just their file name. A PDF page with no text layer is drawn and read; a scanned book reads up to 50 pages so it can't run forever. Images up to 40 MB are read. It all happens on the device, nothing is uploaded, and the reader (shared with the schedule, in `src/data/ocr.ts`) downloads once then works offline. Files that still have no readable words (a blurry scan, a photo of a diagram) stay findable by name. Tested with a generated photo and a generated scanned PDF.
+
+## Lecture transcripts
+
+A recording (audio or video) can be turned into text from its viewer: Make a transcript runs a speech model (Whisper tiny, English) entirely on the device, so nothing is uploaded. The model downloads the first time and is cached, so later transcripts work offline. It reads in windows to show real progress and keep memory bounded on long recordings. The transcript is shown, can be copied or remade or deleted, and is wired into search like any other text. Transcripts are kept in a backup but, like recordings, are not saved online. It's slower and rougher than paid services, especially on long or noisy audio.
+
+NOTE: the speech model's host is blocked from the build environment, so the actual transcription couldn't be run here. The whole flow around it is tested with the model stubbed in the test build; the real speech recognition's quality and speed are unverified until the owner tries it on a device.

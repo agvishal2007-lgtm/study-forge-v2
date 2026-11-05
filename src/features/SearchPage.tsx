@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { listCards, listDecks } from '../data/flashcards';
 import { listFileText, readNewFiles } from '../data/fileText';
+import { listTranscripts } from '../data/transcripts';
 import { listCheckpoints, listLessons } from '../data/guided';
 import { listNotes } from '../data/notes';
 import { plainNote } from '../data/noteFormat';
@@ -15,8 +16,8 @@ import { useLive } from '../data/useLive';
 const MAX_SHOWN = 30;
 
 async function loadSearchable(): Promise<{ items: Searchable[]; scanned: number; materials: Awaited<ReturnType<typeof listMaterials>> }> {
-  const [notes, materials, fileText, decks, cards, sets, questions, planner, lessons, checkpoints, courses, calendar] = await Promise.all([
-    listNotes(), listMaterials(), listFileText(), listDecks(), listCards(), listPracticeSets(), listPracticeQuestions(), listPlannerItems(), listLessons(), listCheckpoints(), listCourses(), listCalendarEvents(),
+  const [notes, materials, fileText, decks, cards, sets, questions, planner, lessons, checkpoints, courses, calendar, transcripts] = await Promise.all([
+    listNotes(), listMaterials(), listFileText(), listDecks(), listCards(), listPracticeSets(), listPracticeQuestions(), listPlannerItems(), listLessons(), listCheckpoints(), listCourses(), listCalendarEvents(), listTranscripts(),
   ]);
   const items: Searchable[] = [];
   for (const note of notes) items.push({ group: 'Notes', title: note.title || 'Untitled note', body: plainNote(note.body), to: `/notes/${note.id}` });
@@ -26,6 +27,10 @@ async function loadSearchable(): Promise<{ items: Searchable[]; scanned: number;
     read.get(material.id)?.pages.forEach((page, index, pages) => {
       if (page.trim()) items.push({ group: 'Files', title: material.name, body: page, to: `/files/${material.id}${pages.length > 1 ? `?page=${index + 1}` : ''}`, detail: pages.length > 1 ? `Page ${index + 1}` : undefined });
     });
+  }
+  const materialNames = new Map(materials.map((material) => [material.id, material.name]));
+  for (const transcript of transcripts) {
+    if (transcript.text.trim()) items.push({ group: 'Files', title: materialNames.get(transcript.materialId) ?? 'Recording', body: transcript.text, to: `/files/${transcript.materialId}`, detail: 'Transcript' });
   }
   const deckNames = new Map(decks.map((deck) => [deck.id, deck.name]));
   for (const deck of decks) items.push({ group: 'Flashcards', title: deck.name, body: '', to: `/cards/${deck.id}`, detail: 'Deck' });

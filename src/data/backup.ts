@@ -5,7 +5,7 @@ import { noteLabel } from './notes';
 import { listUnfinished } from './recordings';
 import { findByHash, getStorageStatus, hashFile, storeMaterial } from './store';
 import {
-  CALENDAR_KINDS, PLAN_PRIORITIES, type CalendarEvent, type StudyDay, OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem, type ExamResult, type ExamItem, type PracticeAttempt, type PracticeQuestion, type PracticeSet, CONFIDENCE_LEVELS, PRACTICE_KINDS, type CardProgress, type Deck, type Flashcard, CARD_RATINGS,
+  CALENDAR_KINDS, PLAN_PRIORITIES, type CalendarEvent, type StudyDay, type Transcript, OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem, type ExamResult, type ExamItem, type PracticeAttempt, type PracticeQuestion, type PracticeSet, CONFIDENCE_LEVELS, PRACTICE_KINDS, type CardProgress, type Deck, type Flashcard, CARD_RATINGS,
   type AnswerRecord, type Checkpoint, type CheckpointProgress, type Course, type ExplanationRecord, type GuidedQuestion,
   type KeyPointRating, type Lesson, type Material, type MasteryStatus, type Note, type QuestionKind, type Reteach, type Topic,
 } from './types';
@@ -19,7 +19,7 @@ import { NotAZip, readZipEntries, type ZipEntry } from './zipReader';
  */
 const MANIFEST_PATH = 'study-forge-backup.json';
 const FORMAT = 'study-forge-backup';
-const VERSION = 7;
+const VERSION = 8;
 const LAST_BACKUP_KEY = 'lastBackupAt';
 
 export interface BackupManifest {
@@ -43,6 +43,7 @@ export interface BackupManifest {
   examResults: ExamResult[];
   calendarEvents: CalendarEvent[];
   studyDays: StudyDay[];
+  transcripts: Transcript[];
 }
 
 export class BackupError extends Error {}
@@ -138,11 +139,11 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     : null;
 
   const db = await getDb();
-  const [courses, topics, notes, materials, lessons, checkpoints, progress, plannerItems, decks, cards, cardProgress, practiceSets, practiceQuestions, practiceAttempts, examResults, calendarEvents, studyDays] = await Promise.all([
+  const [courses, topics, notes, materials, lessons, checkpoints, progress, plannerItems, decks, cards, cardProgress, practiceSets, practiceQuestions, practiceAttempts, examResults, calendarEvents, studyDays, transcripts] = await Promise.all([
     db.getAll('courses'), db.getAll('topics'), db.getAll('notes'), db.getAll('materials'),
     db.getAll('lessons'), db.getAll('checkpoints'), db.getAll('checkpointProgress'), db.getAll('plannerItems'),
     db.getAll('decks'), db.getAll('cards'), db.getAll('cardProgress'),
-    db.getAll('practiceSets'), db.getAll('practiceQuestions'), db.getAll('practiceAttempts'), db.getAll('examResults'), db.getAll('calendarEvents'), db.getAll('studyDays'),
+    db.getAll('practiceSets'), db.getAll('practiceQuestions'), db.getAll('practiceAttempts'), db.getAll('examResults'), db.getAll('calendarEvents'), db.getAll('studyDays'), db.getAll('transcripts'),
   ]);
   const courseFolder = (courseId: string | null, topicId: string | null) => {
     const course = courses.find((candidate) => candidate.id === courseId);
@@ -184,6 +185,7 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     examResults,
     calendarEvents,
     studyDays,
+    transcripts,
   };
   const noteFiles = notes.map((note) => ({
     name: pathFor(`Notes/${courseFolder(note.courseId, note.topicId)}`, `${safeName(noteLabel(note), 'Note')}.txt`),
@@ -385,6 +387,11 @@ function cleanCalendarEvent(raw: unknown): CalendarEvent | null {
   };
 }
 
+function cleanTranscript(raw: unknown): Transcript | null {
+  if (!isObject(raw) || !isText(raw.materialId) || !raw.materialId || !isText(raw.text)) return null;
+  return { materialId: raw.materialId, text: raw.text, model: isText(raw.model) ? raw.model : '', createdAt: isTime(raw.createdAt) ? raw.createdAt : Date.now(), updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : 0 };
+}
+
 function cleanStudyDay(raw: unknown): StudyDay | null {
   if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.date) || !isValidDate(raw.date)) return null;
   const amount = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0);
@@ -528,6 +535,7 @@ export async function openBackup(file: File): Promise<OpenedBackup> {
     examResults: raw.examResults === undefined ? [] : cleanList(raw.examResults, cleanExamResult),
     calendarEvents: raw.calendarEvents === undefined ? [] : cleanList(raw.calendarEvents, cleanCalendarEvent),
     studyDays: raw.studyDays === undefined ? [] : cleanList(raw.studyDays, cleanStudyDay),
+    transcripts: raw.transcripts === undefined ? [] : cleanList(raw.transcripts, cleanTranscript),
   };
 
   let neededBytes = 0;
@@ -741,6 +749,9 @@ export async function restoreBackup(
   }
   for (const day of manifest.studyDays) {
     if (!(await db.getKey('studyDays', day.id))) await db.put('studyDays', day);
+  }
+  for (const transcript of manifest.transcripts) {
+    if (!(await db.getKey('transcripts', transcript.materialId))) await db.put('transcripts', transcript);
   }
   // Answers are added, never replaced, and only for questions that are here.
   for (const attempt of manifest.practiceAttempts) {

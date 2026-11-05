@@ -4,7 +4,14 @@ import img2pdf
 
 out = sys.argv[1]
 os.makedirs(out, exist_ok=True)
-FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+CANDIDATES = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+]
+FONT = next((p for p in CANDIDATES if os.path.exists(p)), None)
+if FONT is None:
+    raise SystemExit("No DejaVu font found for test fixtures")
 
 def text_image(lines, size=48, pad=60, w=1400):
     font = ImageFont.truetype(FONT, size)

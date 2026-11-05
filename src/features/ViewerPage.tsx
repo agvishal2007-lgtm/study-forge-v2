@@ -8,6 +8,7 @@ import { readBlob } from '../data/blobs';
 import { formatBytes, KIND_LABEL, kindOf, olderOfficeAdvice } from '../data/format';
 import { deleteMaterial, fileMaterial, getMaterial, listCourses, listTopics } from '../data/store';
 import type { Material } from '../data/types';
+import { TranscriptPanel } from './TranscriptPanel';
 import { useLive } from '../data/useLive';
 
 const PdfViewer = lazy(() => import('./PdfViewer').then((module) => ({ default: module.PdfViewer })));
@@ -170,6 +171,7 @@ export default function ViewerPage() {
         {body}
       </div>
       {failure && <p className="error" role="alert">{failure}</p>}
+      {(kind === 'audio' || kind === 'video') && blob && <TranscriptPanel material={material} blob={blob} />}
       <section className="file-notes" aria-labelledby="file-notes-heading">
         <h2 id="file-notes-heading">Notes on this file</h2>
         <NewNoteButton courseId={material.courseId} topicId={material.topicId} materialId={material.id} />

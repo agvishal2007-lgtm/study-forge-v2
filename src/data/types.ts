@@ -362,6 +362,16 @@ export interface ExamResult {
   updatedAt: number;
 }
 
+/** A recording turned into text on the device. Kept with its recording, which lives on this device. */
+export interface Transcript {
+  materialId: string;
+  text: string;
+  /** Which speech model made it. */
+  model: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 /** The words read from a file so it can be searched. Kept on this device only, and can be rebuilt. */
 export interface FileText {
   materialId: string;

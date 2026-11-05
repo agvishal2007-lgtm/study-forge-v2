@@ -113,8 +113,9 @@ export async function fileMaterial(id: string, courseId: string | null, topicId:
 /** Only ever called after the student confirms. The file goes first, then its record. */
 export async function deleteMaterial(id: string): Promise<void> {
   await deleteBlob(id);
-  const tx = (await getDb()).transaction(['materials', 'notes', 'checkpoints', 'fileText'], 'readwrite');
+  const tx = (await getDb()).transaction(['materials', 'notes', 'checkpoints', 'fileText', 'transcripts'], 'readwrite');
   await tx.objectStore('fileText').delete(id);
+  await tx.objectStore('transcripts').delete(id);
   for (const checkpoint of await tx.objectStore('checkpoints').getAll()) {
     if (checkpoint.materialId === id) await tx.objectStore('checkpoints').put({ ...checkpoint, materialId: null });
   }
