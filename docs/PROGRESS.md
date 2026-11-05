@@ -420,3 +420,7 @@ Clean and light by default, with a dark mode. The moon or sun button at the top 
 ## Action button order
 
 Action buttons are ordered by when a student reaches for them, not arbitrarily. On Calendar before connecting: Connect Google Calendar, Add class schedule, Add to calendar (setup first). After connecting: Add to calendar, Get the latest, Google Calendar, Add class schedule (day-to-day first, re-import last). The primary blue button is the state's main action. Exam Hall's Review by type leads with Mistakes, then Definitions, Formulas. Flashcards and Practice already lead with the daily action (Review due, Pick up where you left off).
+
+## Search inside images and scanned PDFs
+
+File search now reads the words inside image files and scanned (image-only) PDFs with the same on-device reader the schedule uses, so they're found by their words, not just their file name. A PDF page with no text layer is drawn and read; a scanned book reads up to 50 pages so it can't run forever. Images up to 40 MB are read. It all happens on the device, nothing is uploaded, and the reader (shared with the schedule, in `src/data/ocr.ts`) downloads once then works offline. Files that still have no readable words (a blurry scan, a photo of a diagram) stay findable by name. Tested with a generated photo and a generated scanned PDF.

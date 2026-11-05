@@ -96,8 +96,8 @@ export function SearchPage() {
         <input type="search" autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Accruals, chapter 3, midterm…" />
       </label>
       {progress && progress.done < progress.total && <p className="muted file-meta" role="status" data-testid="search-reading">Reading your files so they can be searched: {progress.done} of {progress.total}. You can search while this finishes.</p>}
-      {(data?.scanned ?? 0) > 0 && <p className="muted file-meta" data-testid="search-scanned">{data?.scanned} {data?.scanned === 1 ? 'PDF has' : 'PDFs have'} no readable words, such as scanned pages, so only {data?.scanned === 1 ? 'its name' : 'their names'} can be searched.</p>}
-      {terms.length === 0 && <p className="muted">Search your notes, files, flashcards, practice questions, planner, lessons, and courses, including words inside PDFs and Office files. It all happens on this device.</p>}
+      {(data?.scanned ?? 0) > 0 && <p className="muted file-meta" data-testid="search-scanned">{data?.scanned} {data?.scanned === 1 ? 'file has' : 'files have'} no readable words, such as a blurry scan or a photo of a diagram, so only {data?.scanned === 1 ? 'its name' : 'their names'} can be searched.</p>}
+      {terms.length === 0 && <p className="muted">Search your notes, files, flashcards, practice questions, planner, lessons, and courses, including words inside PDFs, Office files, scanned pages, and images. It all happens on this device.</p>}
       {terms.length > 0 && data && total === 0 && <p data-testid="search-empty">Nothing found for "{query.trim()}". Try fewer or different words.</p>}
       {terms.length > 0 && total > 0 && <p className="muted" data-testid="search-count" role="status">{total} {total === 1 ? 'result' : 'results'}</p>}
       {groups.map(({ group, hits }) => (

@@ -5,6 +5,8 @@
 const MAX_SIDE = 3200;
 const SMALL_SIDE = 1600;
 
+import { OCR_BLOCK, readPicture } from './ocr';
+
 export class ScheduleImageError extends Error {}
 
 /** Screenshots are often small, so they're enlarged. Huge phone photos are reduced so they don't run out of memory. */
@@ -75,29 +77,13 @@ function cleanForReading(context: CanvasRenderingContext2D, width: number, heigh
 export async function readScheduleImage(file: Blob, onProgress: (percent: number) => void): Promise<string> {
   if (file.type && !file.type.startsWith('image/')) throw new ScheduleImageError('Choose a picture, such as a screenshot or a photo.');
   const canvas = await prepare(file);
-  const folder = new URL('./ocr/', window.location.href.split(/[?#]/)[0]).href;
-  const { createWorker, OEM, PSM } = await import('tesseract.js');
-  let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
   try {
-    worker = await createWorker('eng', OEM.LSTM_ONLY, {
-      workerPath: `${folder}worker.min.js`,
-      corePath: folder,
-      langPath: folder,
-      workerBlobURL: false,
-      logger: (message) => {
-        if (message.status === 'recognizing text') onProgress(Math.round(message.progress * 100));
-      },
-    });
-    // Treating the picture as one block keeps each row of a schedule together on one line.
-    await worker.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_BLOCK, preserve_interword_spaces: '1' });
-    const { data } = await worker.recognize(canvas);
-    return data.text;
+    // One block keeps each row of a schedule together on one line.
+    return await readPicture(canvas, { mode: OCR_BLOCK, onProgress });
   } catch (error) {
     if (error instanceof ScheduleImageError) throw error;
     throw new ScheduleImageError(navigator.onLine
       ? "The picture couldn't be read. Try a clearer one, or type your classes in."
       : "The picture reader needs internet the first time it's used. Connect, then try again.");
-  } finally {
-    await worker?.terminate().catch(() => undefined);
   }
 }

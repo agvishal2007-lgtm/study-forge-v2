@@ -194,7 +194,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/search',
     target: ['[data-tour="search-box"]'],
     title: 'Search everything',
-    body: 'The magnifying glass at the top searches your notes, files, flashcards, practice, planner, and lessons, including the words inside PDFs and Office files.',
+    body: 'The magnifying glass at the top searches your notes, files, flashcards, practice, planner, and lessons, including the words inside PDFs, Office files, scanned pages, and images.',
   },
   {
     id: 'finish',
