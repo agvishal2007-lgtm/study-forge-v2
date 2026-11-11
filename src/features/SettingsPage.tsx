@@ -7,6 +7,7 @@ import { formatBytes } from '../data/format';
 import { getActiveAccount } from '../data/account';
 import { getStorageStatus, requestKeepFiles } from '../data/store';
 import { useLive } from '../data/useLive';
+import { PermissionsSection } from './PermissionsSection';
 
 export function SettingsPage() {
   const [asked, setAsked] = useState(false);
@@ -18,6 +19,8 @@ export function SettingsPage() {
       <AppearanceSection />
       <BackupSection />
       <OfflineSection />
+      <PermissionsSection />
+
       <section aria-labelledby="storage-heading">
         <h2 id="storage-heading">Storage on this device</h2>
         <p>{getActiveAccount()

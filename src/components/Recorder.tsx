@@ -4,6 +4,7 @@ import { formatBytes, formatDuration } from '../data/format';
 import { appendPiece, createSession, finishSession, holdRecordingLock } from '../data/recordings';
 import { getStorageStatus, requestKeepFiles } from '../data/store';
 import type { Material } from '../data/types';
+import { readAccess } from '../data/permissions';
 
 const PIECE_MS = 5000;
 const VOICE_BITRATE = 64000; // Clear for speech, and about 90 MB for 3 hours.
@@ -142,6 +143,15 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
     }
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       setError("This browser can't record audio. Use a recorder app on your device, then add the file here.");
+      return;
+    }
+    // If the browser has already blocked the microphone, say so instead of firing a request that
+    // cannot succeed and surfacing it as a failure. Screen sharing is asked for every time by design.
+    const needsMicrophone = chosen === 'microphone' || withMicrophone;
+    if (needsMicrophone && (await readAccess('microphone')) === 'denied') {
+      setError(chosen === 'microphone'
+        ? "Your browser is blocking the microphone for this site, so Study Forge can't ask again. Turn it back on in your browser's site settings for this page, then start again."
+        : "Your browser is blocking the microphone for this site, so your own voice can't be recorded. Turn it back on in your browser's site settings, or start again without the microphone option.");
       return;
     }
     setPhase('starting');

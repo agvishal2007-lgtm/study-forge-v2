@@ -136,6 +136,7 @@ export function App() {
                 <Route path="/sign-up" element={<AuthTabsPage mode="sign-up" />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/forgot-email" element={<ForgotEmailPage />} />
+                <Route path="/account-recovery" element={<ForgotEmailPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/practice" element={<PracticePage />} />
                 <Route path="/practice/session" element={<PracticeSessionPage />} />

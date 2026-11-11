@@ -1038,3 +1038,7 @@ h1 + .muted, h1 + .dash-lead { margin-top: .5rem; }
 .what-if label { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; font-weight: 600; }
 .what-if input { width: 5rem; min-width: 0; }
 .what-if p { margin: .4rem 0 0; }
+
+/* What the browser has decided about device permissions. */
+.permission-list li { display: grid; gap: .2rem; padding: .6rem 0; border-top: 1px solid var(--line); }
+.permission-head { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }

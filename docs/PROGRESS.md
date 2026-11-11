@@ -558,3 +558,16 @@ What it will not do matters as much as what it will:
 This also makes the **grade impact** priority mode real. Impact is a share of a category's weight, not of raw points: a 100-point midterm in a 60% exam category is worth 30% of the final grade, while a 400-point homework pile in a 10% category is worth 10%. Ranking by points puts the homework first; ranking by impact puts the midterm first — which is exactly why the guide insists the two are never conflated. Until a course has categories, the mode says so and ranks nothing rather than inventing an order.
 
 Planner items gained **marks you got** and a **grading category**; both stay blank until entered.
+
+## Device permissions, and who actually owns them
+
+A permission belongs to the browser, not to Study Forge, and the site now says so plainly instead of sending students hunting through the wrong menu.
+
+- **Settings has one place** showing what the browser has decided about the microphone, camera and notifications: Allowed, Blocked, Will ask when needed, or an honest "your browser won't say" for the browsers that refuse to tell a site. It follows changes while the page is open, and it states that Study Forge cannot grant or revoke anything from there.
+- **It's honest about what is actually used.** The camera and notifications say "Nothing yet" rather than implying Study Forge wants them.
+- **Screen sharing is explained**, not treated as a bug: browsers make you pick the window every time, on purpose, so it can't be remembered.
+- **Study Forge never pre-prompts.** It asks the browser once, when you start something that needs it, and lives with the answer. There were never site-level "we're about to ask" screens, and none were added.
+
+**A real bug this surfaced:** when a browser blocks the microphone it also hides device presence, so `getUserMedia` fails with "not found" rather than "not allowed" — a blocked student was being told their microphone was missing hardware. The recorder now checks the permission state first and says the microphone is blocked and how to unblock it, without firing a request that cannot succeed.
+
+Account recovery also moved to its own address, `/account-recovery`, with `/forgot-email` still working. It still never lists who has an account.

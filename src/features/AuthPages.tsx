@@ -124,7 +124,7 @@ export function AuthPage({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           ? <li>Already have an account? <Link to="/login">Log in</Link></li>
           : <li>New here? <Link to="/signup">Create an account</Link></li>}
         <li><Link to="/forgot-password">Forgot your password?</Link></li>
-        <li><Link to="/forgot-email">Forgot which email you used?</Link></li>
+        <li><Link to="/account-recovery">Forgot which email you used?</Link></li>
         <li><Link to="/privacy">Privacy</Link></li>
       </ul>
     </div>
@@ -178,7 +178,7 @@ export function ForgotPasswordPage() {
       </form>
       <ul className="auth-links">
         <li><Link to="/login">Back to log in</Link></li>
-        <li><Link to="/forgot-email">Forgot which email you used?</Link></li>
+        <li><Link to="/account-recovery">Forgot which email you used?</Link></li>
       </ul>
     </div>
   );
