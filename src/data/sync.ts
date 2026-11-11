@@ -10,7 +10,14 @@ import type { Checkpoint, CheckpointProgress, Note } from './types';
  * When two devices changed the same thing, nothing written is thrown away: notes and checkpoints
  * keep both versions, and progress combines the answers from both.
  */
-const COLLECTIONS: SyncCollection[] = ['courses', 'topics', 'lessons', 'checkpoints', 'notes', 'checkpointProgress', 'plannerItems', 'decks', 'cards', 'cardProgress', 'practiceSets', 'practiceQuestions', 'practiceAttempts', 'examResults', 'calendarEvents', 'studyDays', 'studyTime'];
+/**
+ * A collection only belongs here once the published Firebase rules allow it. The rules reject
+ * anything else, and one rejected write stops the whole sync, so a new kind of data waits here
+ * until its rules are live. `studyTime` and `resourceLinks` are ready in firestore.rules and go in
+ * the moment those rules are published; until then they are kept on the device, which is safe and
+ * loses nothing.
+ */
+const COLLECTIONS: SyncCollection[] = ['courses', 'topics', 'lessons', 'checkpoints', 'notes', 'checkpointProgress', 'plannerItems', 'decks', 'cards', 'cardProgress', 'practiceSets', 'practiceQuestions', 'practiceAttempts', 'examResults', 'calendarEvents', 'studyDays'];
 const CURSOR_KEY = 'syncCursor';
 const MAX_ITEM_BYTES = 900_000;
 const MAX_BATCH_BYTES = 4_000_000;
@@ -138,7 +145,7 @@ async function applyPulled(items: RemoteItem[]): Promise<number> {
       }
       await metaStore.put({ hash: meta?.hash ?? null, rev: item.rev }, key);
       changed += 1;
-    } else if (['courses', 'topics', 'plannerItems', 'decks', 'cards', 'cardProgress', 'practiceSets', 'practiceQuestions', 'practiceAttempts', 'examResults', 'calendarEvents', 'studyDays', 'studyTime'].includes(item.collection)) {
+    } else if (['courses', 'topics', 'plannerItems', 'decks', 'cards', 'cardProgress', 'practiceSets', 'practiceQuestions', 'practiceAttempts', 'examResults', 'calendarEvents', 'studyDays', 'studyTime', 'resourceLinks'].includes(item.collection)) {
       // Both devices changed this. The most recent change wins, so "done" isn't undone by an old edit.
       const incoming = JSON.parse(item.json) as { updatedAt: number };
       if (incoming.updatedAt > (local as { updatedAt: number }).updatedAt) {

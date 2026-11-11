@@ -484,3 +484,17 @@ Study Forge could only hold files you uploaded. Now a web address is a resource 
 - **Everywhere a file is.** Links are searchable by name *and* address, can be filed to a course or topic, can have notes, and go through the same bin as anything else. They're kept in backups too, with no bytes in the zip since there are none.
 
 The address rules are pure functions in `src/data/linkRules.ts` with unit tests, and `tests/links.test.cjs` drives the whole thing in a real browser.
+
+## One resource, many places
+
+A file or link used to live in exactly one course and one topic. Now it can belong to as many as it needs to, without a second copy being stored.
+
+On a file or link, **Also in** lists the extra courses and topics it has been added to, with a control to add another and a Take it out button for each. The resource keeps the one place it is filed under (shown above it, and used for its folder in a backup); everything else is an extra association.
+
+The rules that matter: nothing is copied — there is one record and one set of bytes however many places it appears; taking it out of one place never removes it from the others and never deletes the resource; and removing a resource for good takes its associations with it, since they would point at nothing. Associations are kept in backups, and are dropped on restore only if their course didn't come back.
+
+`tests/resources.test.cjs` proves the whole journey in a real browser: a reading saved in one course, added to a second, visible in both, counted once in the Library, then taken out of one and still present in the other.
+
+## Still on the device until the Firebase rules are published
+
+Study time and resource associations are new kinds of data saved online. The published rules reject anything they don't list, and one rejected write stops the whole sync, so these two are deliberately left out of syncing until the updated `firestore.rules` in this repository is published. They work fully on the device meanwhile and nothing is lost; they start syncing the moment the rules go live and the two names are added back to `COLLECTIONS` in `src/data/sync.ts`.

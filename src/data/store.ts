@@ -3,7 +3,7 @@ import { deleteBlob, removeLeftovers, saveBlob, whileSaving } from './blobs';
 import { getDb, notifyChanged } from './db';
 import { byPlace, reordered } from './courseRules';
 import { categorize, nameFromUrl, tidyUrl, type LinkCategory } from './linkRules';
-import { SPINE_COLORS, type Course, type Lifecycle, type Material, type Topic } from './types';
+import { SPINE_COLORS, type Course, type Lifecycle, type Material, type ResourceLink, type Topic } from './types';
 
 /** Courses in use. Archived and binned courses are kept, but asked for separately. */
 export async function listCourses(status: Lifecycle = 'active'): Promise<Course[]> {
@@ -137,6 +137,8 @@ export async function fileMaterial(id: string, courseId: string | null, topicId:
 
 /** Only ever called after the student confirms. The file goes first, then its record. */
 export async function deleteMaterial(id: string): Promise<void> {
+  // Its extra associations go too; they point at nothing once the resource is gone.
+  for (const link of await listResourceLinks(id)) await (await getDb()).delete('resourceLinks', link.id);
   // A saved link has no bytes on the device; removing it never touches the page it points at.
   const existing = await (await getDb()).get('materials', id);
   if (existing?.kind !== 'link') await deleteBlob(id);
@@ -403,4 +405,52 @@ export async function updateLink(id: string, changes: { name?: string; url?: str
   const name = (changes.name === undefined ? link.name : changes.name).trim();
   await db.put('materials', { ...link, name: name || nameFromUrl(url), url, category: changes.category ?? link.category });
   notifyChanged();
+}
+
+/* ---- Extra places a resource appears. One record, one copy of the bytes, many associations. ---- */
+
+/** Every extra association for a resource. */
+export const listResourceLinks = async (resourceId: string): Promise<ResourceLink[]> =>
+  (await (await getDb()).getAllFromIndex('resourceLinks', 'resourceId', resourceId));
+
+export const listAllResourceLinks = async (): Promise<ResourceLink[]> => (await getDb()).getAll('resourceLinks');
+
+/**
+ * Also puts a resource in another course, or another topic, without copying it. Doing this twice
+ * for the same place changes nothing, and the resource keeps the place it was first filed under.
+ */
+export async function addResourceLink(resourceId: string, courseId: string, topicId: string | null = null): Promise<void> {
+  const db = await getDb();
+  const resource = await db.get('materials', resourceId);
+  if (!resource) return;
+  // Where it is already filed is not an "extra" place.
+  if (resource.courseId === courseId && resource.topicId === topicId) return;
+  const existing = await db.getAllFromIndex('resourceLinks', 'resourceId', resourceId);
+  if (existing.some((link) => link.courseId === courseId && link.topicId === topicId)) return;
+  const now = Date.now();
+  await db.put('resourceLinks', { id: crypto.randomUUID(), resourceId, courseId, topicId, createdAt: now, updatedAt: now });
+  notifyChanged();
+}
+
+/** Takes a resource out of one extra place. The resource itself, and every other place, are untouched. */
+export async function removeResourceLink(id: string): Promise<void> {
+  await (await getDb()).delete('resourceLinks', id);
+  notifyChanged();
+}
+
+/**
+ * Everything that belongs to a course: the resources filed under it, plus any that were also put
+ * there. One resource never appears twice.
+ */
+export async function materialsForCourse(courseId: string): Promise<Material[]> {
+  const db = await getDb();
+  const [all, links] = await Promise.all([db.getAll('materials'), db.getAllFromIndex('resourceLinks', 'courseId', courseId)]);
+  const wanted = new Set(links.map((link) => link.resourceId));
+  return all.filter((material) => material.status === 'active' && (material.courseId === courseId || wanted.has(material.id)));
+}
+
+/** The topic a resource sits in for a given course: its own filing, or an extra association. */
+export function topicWithin(material: Material, links: ResourceLink[], courseId: string): string | null {
+  if (material.courseId === courseId) return material.topicId;
+  return links.find((link) => link.resourceId === material.id && link.courseId === courseId)?.topicId ?? null;
 }

@@ -8,7 +8,7 @@ import { NewNoteButton, NoteList } from '../components/NoteList';
 import { listNotes } from '../data/notes';
 import { useStillHere } from '../components/useStillHere';
 import { groupTopics } from '../data/courseRules';
-import { createTopic, getCourse, listMaterials, listTopics, moveTopic, setCourseStatus, setTopicStatus, updateCourse, updateTopic } from '../data/store';
+import { createTopic, getCourse, listAllResourceLinks, listTopics, materialsForCourse, moveTopic, setCourseStatus, setTopicStatus, topicWithin, updateCourse, updateTopic } from '../data/store';
 import type { Material, Note, Topic } from '../data/types';
 import { useLive } from '../data/useLive';
 
@@ -21,21 +21,23 @@ export function CourseDetailPage() {
   const [editingCourse, setEditingCourse] = useState(false);
   const [failure, setFailure] = useState('');
   const { data, error } = useLive(async () => {
-    const [course, topics, archivedTopics, materials, notes] = await Promise.all([
-      getCourse(id), listTopics(id), listTopics(id, 'archived'), listMaterials(), listNotes(),
+    const [course, topics, archivedTopics, materials, links, notes] = await Promise.all([
+      getCourse(id), listTopics(id), listTopics(id, 'archived'), materialsForCourse(id), listAllResourceLinks(), listNotes(),
     ]);
     return {
       course,
       topics,
       archivedTopics,
-      materials: materials.filter((material) => material.courseId === id),
+      // Everything filed here, plus anything also added here from elsewhere.
+      materials,
+      links,
       notes: notes.filter((note) => note.courseId === id),
     };
   }, [id]);
 
   if (error) return <div className="page"><p className="error" role="alert">This course couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { course, topics, archivedTopics, materials, notes } = data;
+  const { course, topics, archivedTopics, materials, links, notes } = data;
   if (!course) return <div className="page"><h1>This course doesn't exist</h1><Link to="/courses">Go to Courses</Link></div>;
 
   const attempt = async (action: () => Promise<void>) => {
@@ -50,7 +52,8 @@ export function CourseDetailPage() {
     await action();
     if (stillHere.current) navigate('/courses', { replace: true });
   });
-  const loose = materials.filter((material) => !material.topicId);
+  const placeOf = (material: Material) => topicWithin(material, links, course.id);
+  const loose = materials.filter((material) => !placeOf(material));
   const groups = groupTopics(topics);
 
   return (
@@ -156,6 +159,7 @@ export function CourseDetailPage() {
                 last={index === group.topics.length - 1}
                 course={course.id}
                 materials={materials}
+                placeOf={placeOf}
                 notes={notes}
                 attempt={attempt}
               />
@@ -182,17 +186,18 @@ export function CourseDetailPage() {
   );
 }
 
-function TopicCard({ topic, index, last, course, materials, notes, attempt }: {
+function TopicCard({ topic, index, last, course, materials, placeOf, notes, attempt }: {
   topic: Topic;
   index: number;
   last: boolean;
   course: string;
   materials: Material[];
+  placeOf: (material: Material) => string | null;
   notes: Note[];
   attempt: (action: () => Promise<void>) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
-  const files = materials.filter((material) => material.topicId === topic.id);
+  const files = materials.filter((material) => placeOf(material) === topic.id);
   return (
     <article className="topic">
       <header>

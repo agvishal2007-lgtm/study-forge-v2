@@ -7,7 +7,7 @@ import { readBlob } from '../data/blobs';
 import { formatBytes, KIND_LABEL, kindOf, olderOfficeAdvice } from '../data/format';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { LINK_CATEGORY_LABEL, siteOf } from '../data/linkRules';
-import { fileMaterial, getCourse, getMaterial, listAllCourses, listTopics, setMaterialStatus } from '../data/store';
+import { addResourceLink, fileMaterial, getCourse, getMaterial, listAllCourses, listResourceLinks, listTopics, removeResourceLink, setMaterialStatus } from '../data/store';
 import type { Material } from '../data/types';
 import { TranscriptPanel } from './TranscriptPanel';
 import { useLive } from '../data/useLive';
@@ -58,13 +58,17 @@ function Filing({ material }: { material: Material }) {
   const { data } = useLive(async () => ({
     courses: await listAllCourses(),
     topics: material.courseId ? await listTopics(material.courseId) : [],
-  }), [material.courseId]);
+    links: await listResourceLinks(material.id),
+  }), [material.courseId, material.id]);
   const [failure, setFailure] = useState('');
+  const [alsoCourse, setAlsoCourse] = useState('');
+  const { data: alsoTopics } = useLive(() => (alsoCourse ? listTopics(alsoCourse) : Promise.resolve([])), [alsoCourse]);
   const move = (courseId: string | null, topicId: string | null) => {
     setFailure('');
     fileMaterial(material.id, courseId, topicId).catch((error: Error) => setFailure(`The file wasn't moved. ${error.message}`));
   };
   if (!data) return null;
+  const nameOf = (courseId: string) => data.courses.find((course) => course.id === courseId)?.name ?? 'a course';
   return (
     <div className="filing">
       <label>Course
@@ -81,9 +85,68 @@ function Filing({ material }: { material: Material }) {
           </select>
         </label>
       )}
+
+      <div className="also-in" data-testid="also-in">
+        <h2>Also in</h2>
+        <p className="muted small">
+          The same file or link can belong to more than one course or topic. Nothing is copied, and taking it out of
+          one place never removes it from the others or deletes it.
+        </p>
+        {data.links.length > 0
+          ? (
+            <ul className="plain-list">
+              {data.links.map((link) => (
+                <li key={link.id}>
+                  <span>{nameOf(link.courseId)}<TopicName courseId={link.courseId} topicId={link.topicId} /></span>
+                  <button
+                    className="text-button danger-text"
+                    onClick={() => void removeResourceLink(link.id)}
+                    aria-label={`Take it out of ${nameOf(link.courseId)}`}
+                  >
+                    Take it out
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )
+          : <p className="muted">Only where it is filed above.</p>}
+        <div className="also-add">
+          <label>Add it to
+            <select value={alsoCourse} onChange={(event) => setAlsoCourse(event.target.value)}>
+              <option value="">Choose a course</option>
+              {data.courses.map((course) => <option key={course.id} value={course.id}>{course.name}</option>)}
+            </select>
+          </label>
+          {alsoCourse && (
+            <label>Topic (optional)
+              <select
+                onChange={(event) => {
+                  const chosen = event.target.value;
+                  if (!chosen) return;
+                  void addResourceLink(material.id, alsoCourse, chosen === '__course__' ? null : chosen);
+                  setAlsoCourse('');
+                }}
+                defaultValue=""
+              >
+                <option value="" disabled>Choose, or add to the whole course</option>
+                <option value="__course__">The whole course</option>
+                {(alsoTopics ?? []).map((topic) => <option key={topic.id} value={topic.id}>{topic.name}</option>)}
+              </select>
+            </label>
+          )}
+        </div>
+      </div>
       {failure && <p className="error" role="alert">{failure}</p>}
     </div>
   );
+}
+
+/** The name of a topic inside another course, looked up on its own so the list stays simple. */
+function TopicName({ courseId, topicId }: { courseId: string; topicId: string | null }) {
+  const { data } = useLive(() => (topicId ? listTopics(courseId) : Promise.resolve([])), [courseId, topicId]);
+  if (!topicId) return null;
+  const topic = data?.find((candidate) => candidate.id === topicId);
+  return <span className="muted"> · {topic?.name ?? 'a topic'}</span>;
 }
 
 export default function ViewerPage() {

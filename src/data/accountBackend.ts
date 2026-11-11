@@ -7,7 +7,7 @@ export interface AccountUser {
 
 export type LoginProvider = 'google' | 'microsoft';
 
-export type SyncCollection = 'courses' | 'topics' | 'notes' | 'lessons' | 'checkpoints' | 'checkpointProgress' | 'plannerItems' | 'decks' | 'cards' | 'cardProgress' | 'practiceSets' | 'practiceQuestions' | 'practiceAttempts' | 'examResults' | 'calendarEvents' | 'studyDays' | 'studyTime';
+export type SyncCollection = 'courses' | 'topics' | 'notes' | 'lessons' | 'checkpoints' | 'checkpointProgress' | 'plannerItems' | 'decks' | 'cards' | 'cardProgress' | 'practiceSets' | 'practiceQuestions' | 'practiceAttempts' | 'examResults' | 'calendarEvents' | 'studyDays' | 'studyTime' | 'resourceLinks';
 
 export interface RemoteItem {
   collection: SyncCollection;

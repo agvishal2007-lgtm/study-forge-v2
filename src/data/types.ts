@@ -39,6 +39,21 @@ export interface Topic {
 
 /** A saved file. A record exists only after the original was stored completely. */
 /**
+ * An extra place a resource appears, beyond the one course and topic it is filed under.
+ * One file or link can belong to several courses and topics without a second copy being stored,
+ * and removing one of these never touches the resource itself.
+ */
+export interface ResourceLink {
+  id: string;
+  resourceId: string;
+  /** The course this extra association points at. A topic always carries its course too. */
+  courseId: string;
+  topicId: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/**
  * What a resource actually is. An upload has real bytes saved on the device. A link is only an
  * address: Study Forge has not downloaded, imported or copied whatever sits behind it.
  */

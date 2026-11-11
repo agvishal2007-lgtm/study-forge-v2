@@ -1,6 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { CURRENT_DB } from './account';
-import { OLD_YELLOW, SPINE_COLORS, type Checkpoint, type PlannerItem, type CalendarEvent, type StudyDay, type StudyTime, type Transcript, type FileText, type ExamResult, type PracticeAttempt, type PracticeQuestion, type PracticeSet, type CardProgress, type Deck, type Flashcard, CheckpointProgress, Course, Lesson, Material, Note, RecordingSession, Topic } from './types';
+import { OLD_YELLOW, SPINE_COLORS, type ResourceLink, type Checkpoint, type PlannerItem, type CalendarEvent, type StudyDay, type StudyTime, type Transcript, type FileText, type ExamResult, type PracticeAttempt, type PracticeQuestion, type PracticeSet, type CardProgress, type Deck, type Flashcard, CheckpointProgress, Course, Lesson, Material, Note, RecordingSession, Topic } from './types';
 
 /**
  * IndexedDB is the single source of truth for courses, topics, and file records.
@@ -32,12 +32,13 @@ interface StudyForgeDB extends DBSchema {
   studyDays: { key: string; value: StudyDay };
   transcripts: { key: string; value: Transcript };
   studyTime: { key: string; value: StudyTime };
+  resourceLinks: { key: string; value: ResourceLink; indexes: { resourceId: string; courseId: string } };
 }
 
 let dbPromise: Promise<IDBPDatabase<StudyForgeDB>> | null = null;
 
 export function getDb() {
-  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 16, {
+  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 17, {
     async upgrade(db, oldVersion, _newVersion, transaction) {
       // Each step only adds to what's there, so existing students keep their data.
       if (oldVersion < 1) {
@@ -94,6 +95,11 @@ export function getDb() {
       }
       if (oldVersion < 14) {
         db.createObjectStore('studyTime', { keyPath: 'id' });
+      }
+      if (oldVersion < 17) {
+        const links = db.createObjectStore('resourceLinks', { keyPath: 'id' });
+        links.createIndex('resourceId', 'resourceId');
+        links.createIndex('courseId', 'courseId');
       }
       if (oldVersion < 16) {
         // Everything saved before now is an uploaded file with real bytes, not a saved link.
