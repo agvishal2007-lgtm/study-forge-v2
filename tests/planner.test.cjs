@@ -88,7 +88,7 @@ async function open(profile, viewport = { width: 1280, height: 800 }) {
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto(URL_BASE);
 }
-const nav = (name) => page.getByRole('navigation').getByRole('link', { name, exact: true }).click();
+const nav = (name) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
 async function addItem({ name, type, course, date, time, priority, hours, details }) {
   await nav('Planner');
   await page.getByRole('button', { name: 'Add item' }).click();

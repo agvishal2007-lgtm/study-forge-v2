@@ -154,7 +154,7 @@ test('files and courses survive closing the browser completely', async () => {
   await open();
   await page.getByRole('link', { name: /Financial Accounting/ }).first().waitFor();
   await page.screenshot({ path: path.join(shots, 'today.png') });
-  await page.getByRole('navigation').getByRole('link', { name: 'Library' }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Library' }).click();
   await page.getByRole('link', { name: 'accounting-notes.pdf' }).click();
   await page.getByText('Page 1 of 3').waitFor();
   await page.waitForSelector('[data-rendered-page="1"]');
@@ -185,7 +185,7 @@ test('download returns the identical original file', async () => {
 });
 
 async function openFile(name) {
-  await page.getByRole('navigation').getByRole('link', { name: 'Library' }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Library' }).click();
   await page.getByRole('link', { name, exact: true }).click();
 }
 
@@ -215,7 +215,7 @@ test('files that cannot display offer a download, not a crash', async () => {
 });
 
 test('a duplicate is caught, and can be moved instead of saved twice', async () => {
-  await page.getByRole('navigation').getByRole('link', { name: 'Courses' }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Courses' }).click();
   await page.getByRole('link', { name: /Financial Accounting/ }).click();
   await page.getByRole('heading', { name: 'Financial Accounting' }).waitFor();
   const topic = page.locator('.topic', { hasText: 'Chapter 1' });
@@ -225,7 +225,7 @@ test('a duplicate is caught, and can be moved instead of saved twice', async () 
   await page.getByRole('button', { name: 'Move it here' }).click();
   await topic.getByRole('link', { name: 'reading-list.txt' }).waitFor();
   await page.screenshot({ path: path.join(shots, 'course.png') });
-  await page.getByRole('navigation').getByRole('link', { name: 'Library' }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Library' }).click();
   await page.getByRole('heading', { name: 'Library' }).waitFor();
   await page.locator('.files li', { hasText: 'accounting-notes.pdf' }).waitFor();
   assert.equal(await page.locator('.files li', { hasText: 'reading-list.txt' }).count(), 1);
@@ -316,13 +316,13 @@ test('moving to another screen during a delete does not get overridden', async (
   await page.getByRole('heading', { name: 'Settings' }).waitFor();
   await page.waitForTimeout(500);
   assert.match(page.url(), /#\/settings$/);
-  await page.getByRole('navigation').getByRole('link', { name: 'Library' }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Library' }).click();
   await page.getByRole('link', { name: 'accounting-notes.pdf' }).waitFor();
   assert.equal(await page.getByRole('link', { name: 'extra-note.txt' }).count(), 0);
 });
 
 test('deleting a course keeps its files in the Library', async () => {
-  await page.getByRole('navigation').getByRole('link', { name: 'Courses' }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Courses' }).click();
   await page.getByRole('link', { name: /Financial Accounting/ }).click();
   await page.getByRole('button', { name: 'Move to bin' }).click();
   await page.getByRole('heading', { name: 'Courses', exact: true }).waitFor();
@@ -332,7 +332,7 @@ test('deleting a course keeps its files in the Library', async () => {
   await page.getByRole('dialog').getByText('Its files stay in your Library').waitFor();
   await page.getByRole('dialog').getByRole('button', { name: 'Remove for good' }).click();
   await page.getByRole('heading', { name: 'Courses' }).waitFor();
-  await page.getByRole('navigation').getByRole('link', { name: 'Library' }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Library' }).click();
   await page.getByRole('link', { name: 'accounting-notes.pdf' }).waitFor();
   assert.equal(await page.locator('.files li').count(), 7);
   // The files themselves must still open, not just their names.
@@ -343,7 +343,7 @@ test('deleting a course keeps its files in the Library', async () => {
 test('phone layout has no sideways scrolling and keeps every destination', async () => {
   await page.setViewportSize({ width: 375, height: 700 });
   for (const [label, heading] of [['Today', 'Today'], ['Courses', 'Courses'], ['Library', 'Library'], ['Settings', 'Settings']]) {
-    await page.getByRole('navigation').getByRole('link', { name: label, exact: true }).click();
+    await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: label, exact: true }).click();
     await page.getByRole('heading', { name: heading === 'Today' ? /^Today:/ : heading, exact: heading === 'Today' ? undefined : true }).first().waitFor();
     const overflow = await page.evaluate(() => {
       const main = document.querySelector('main');

@@ -18,7 +18,7 @@ let context;
 let page;
 const pageErrors = [];
 
-const nav = (name) => page.getByRole('navigation').getByRole('link', { name, exact: true }).click();
+const nav = (name) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
 const status = () => page.getByTestId('save-status');
 const newNote = async () => {
   await page.getByRole('button', { name: /New note/ }).first().click();

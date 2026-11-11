@@ -214,7 +214,7 @@ test('the X cleans up completely, and it does not come back by itself', async ()
   await card().waitFor({ state: 'detached' });
   assert.equal(await page.getByTestId('tour-blocker').count(), 0);
   assert.equal(await page.evaluate(() => document.getElementById('root').hasAttribute('inert')), false);
-  await page.getByRole('navigation').getByRole('link', { name: 'Notes', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Notes', exact: true }).click();
   await page.getByRole('heading', { name: 'Notes', exact: true }).waitFor();
   await page.reload();
   await page.getByRole('heading', { name: 'Notes', exact: true }).waitFor();
@@ -256,7 +256,7 @@ test('finishing reaches the last step, cleans up, and does not repeat', async ()
   await press('Finish');
   await card().waitFor({ state: 'detached' });
   assert.equal(await page.evaluate(() => document.getElementById('root').hasAttribute('inert')), false);
-  await page.getByRole('navigation').getByRole('link', { name: 'Courses', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Courses', exact: true }).click();
   await page.getByRole('heading', { name: 'Courses', exact: true }).waitFor();
   await page.reload();
   await page.getByRole('heading', { name: 'Courses', exact: true }).waitFor();
@@ -296,10 +296,10 @@ test('a hands-on step whose part is missing never traps anyone', async () => {
 
 test('a student with real content gets accurate boxes too, and their work is untouched', async () => {
   await open('with-content', { auto: false });
-  await page.getByRole('navigation').getByRole('link', { name: 'Study', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Study', exact: true }).click();
   await page.getByRole('button', { name: 'Add sample lesson' }).click();
   await page.getByRole('heading', { name: /Lesson 1/ }).waitFor();
-  await page.getByRole('navigation').getByRole('link', { name: 'Today', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Today', exact: true }).click();
   await page.getByRole('link', { name: /Sample: Accounting Basics/ }).waitFor();
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
   await atStep(1);
@@ -312,7 +312,7 @@ test('a student with real content gets accurate boxes too, and their work is unt
 });
 
 test('starting from an unsaved lesson editor asks first', async () => {
-  await page.getByRole('navigation').getByRole('link', { name: 'Study', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Study', exact: true }).click();
   await page.getByRole('link', { name: /Lesson 1/ }).click();
   await page.getByRole('button', { name: 'Add checkpoint' }).click();
   await page.getByLabel('Checkpoint title').fill('Half written');
@@ -388,7 +388,7 @@ test('during a hands-on step, only the highlighted part works', async () => {
   await next();
   // Their work is real and stays.
   await closeTour();
-  await page.getByRole('navigation').getByRole('link', { name: 'Courses', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Courses', exact: true }).click();
   await page.getByRole('link', { name: /Biology/ }).waitFor();
 });
 

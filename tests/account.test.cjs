@@ -50,7 +50,7 @@ async function nav(page, name) {
     await page.getByTestId('account-dropdown').getByRole('link', { name: 'Settings' }).click();
     return;
   }
-  await page.getByRole('navigation').getByRole('link', { name, exact: true }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
 }
 const signInButton = (page) => page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name: 'Sign in', exact: true });
 const googleButton = (page) => page.getByRole('button', { name: 'Continue with Google' });

@@ -15,7 +15,7 @@ let server;
 let context;
 let page;
 const pageErrors = [];
-const nav = (name) => page.getByRole('navigation').getByRole('link', { name, exact: true }).click();
+const nav = (name) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
 async function open(name, content) {
   await nav('Library');
   await page.getByTestId('file-input').setInputFiles(content ? { name, mimeType: 'application/octet-stream', buffer: Buffer.from(content) } : path.join(work, name));
@@ -108,7 +108,7 @@ test('a damaged file and older formats explain themselves and keep the download'
 });
 
 test('all three open with no internet', async () => {
-  await page.getByRole('navigation').first().waitFor();
+  await page.getByRole('navigation', { name: 'Main' }).first().waitFor();
   await page.waitForFunction(() => navigator.serviceWorker.ready.then((ready) => !!ready.active));
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
   await context.setOffline(true);

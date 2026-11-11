@@ -84,7 +84,7 @@ async function open(profile, viewport = { width: 1280, height: 800 }, when = '20
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto(URL_BASE);
 }
-const nav = (name) => page.getByRole('navigation').getByRole('link', { name, exact: true }).click();
+const nav = (name) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
 const front = () => page.getByLabel('Front', { exact: true });
 const back = () => page.getByLabel('Back', { exact: true });
 let tick = 0;
@@ -371,7 +371,7 @@ test('it works on a phone, with every destination in reach', async () => {
     const box = await rating(name).boundingBox();
     assert.ok(box.height >= 44, `${name} is big enough to tap`);
   }
-  const links = await page.getByRole('navigation').getByRole('link').all();
+  const links = await page.getByRole('navigation', { name: 'Main' }).getByRole('link').all();
   for (const link of links) {
     await link.scrollIntoViewIfNeeded();
     const box = await link.boundingBox();

@@ -76,7 +76,7 @@ async function open(profile, viewport = { width: 1280, height: 800 }) {
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto(URL_BASE);
 }
-const nav = (name) => page.getByRole('navigation').getByRole('link', { name, exact: true }).click();
+const nav = (name) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
 async function addChoice(prompt, topic = '') {
   await page.getByLabel('Question', { exact: true }).fill(prompt);
   await page.getByLabel('Answer choices').fill('Assets\nEquity\nRevenue');

@@ -246,7 +246,7 @@ test('closing the browser during a virtual lecture keeps it', async () => {
   await page.goto(`${URL_BASE}#/record`);
   await page.getByRole('button', { name: 'Save recording' }).click();
   await page.getByRole('heading', { name: 'Interrupted recordings' }).waitFor({ state: 'detached' });
-  await page.getByRole('navigation').getByRole('link', { name: 'Library' }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Library' }).click();
   await page.getByRole('link', { name: /Lecture/ }).click();
   assert.ok((await inspectSaved()).width > 0);
 });

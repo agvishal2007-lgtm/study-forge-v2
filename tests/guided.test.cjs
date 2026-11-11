@@ -26,7 +26,7 @@ async function open(profile = 'main') {
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto(URL_BASE);
 }
-const nav = (name) => page.getByRole('navigation').getByRole('link', { name, exact: true }).click();
+const nav = (name) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
 const submit = () => page.getByRole('button', { name: 'Submit answer' });
 const proceed = (name = 'Continue') => page.getByRole('button', { name, exact: true }).click();
 const question = () => page.getByTestId('question');

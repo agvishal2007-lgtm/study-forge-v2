@@ -78,7 +78,7 @@ let page;
 let backupFile;
 const pageErrors = [];
 
-const nav = (name) => page.getByRole('navigation').getByRole('link', { name, exact: true }).click();
+const nav = (name) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
 const form = () => page.getByTestId('question-form');
 async function addChoice(prompt, topic) {
   await page.getByLabel('Question', { exact: true }).fill(prompt);
