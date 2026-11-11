@@ -439,6 +439,8 @@ test('a new student can sign up with an email and password, and sign in again la
   const page = await device('emailer', null);
   await page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name: 'Log In / Sign Up', exact: true }).click();
   await page.getByRole('link', { name: 'Sign Up', exact: true }).click();
+  // Both tabs have an Email box, so wait for the sign-up form before typing into it.
+  await page.getByLabel('Type the password again').waitFor();
   await page.getByRole('heading', { name: 'Create your account' }).waitFor();
   await page.screenshot({ path: path.join(shots, 'sign-up.png') });
   for (const name of ['Continue with Google', 'Continue with Microsoft']) await page.getByRole('button', { name }).waitFor();
@@ -501,6 +503,8 @@ test('a new student can sign up with an email and password, and sign in again la
   // Signing up again with the same email points to signing in.
   await page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name: 'Log In / Sign Up', exact: true }).click();
   await page.getByRole('link', { name: 'Sign Up', exact: true }).click();
+  // Both tabs have an Email box, so wait for the sign-up form before typing into it.
+  await page.getByLabel('Type the password again').waitFor();
   await page.getByLabel('Email').fill('dana@school.edu');
   await page.getByLabel('Password', { exact: true }).fill('another password');
   await page.getByLabel('Type the password again').fill('another password');
