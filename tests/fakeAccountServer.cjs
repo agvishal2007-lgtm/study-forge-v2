@@ -1,6 +1,17 @@
 // A small stand-in for the online service, with the same rules as the real push: a write
 // based on an old version is refused. Real privacy rules are tested separately in rules.test.mjs.
 const http = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
+
+/**
+ * The collections the real published rules accept, read from firestore.rules itself. The real
+ * service refuses any other collection, and one refusal stops a student's whole sync, so the
+ * stand-in refuses them too. A collection added to sync before its rule fails the tests here
+ * instead of failing every student online.
+ */
+const RULES = fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8');
+const ALLOWED = new Set([...RULES.match(/data\.collection in \[([^\]]+)\]/)[1].matchAll(/'([^']+)'/g)].map((found) => found[1]));
 
 function createServer() {
   const users = new Map();
@@ -51,6 +62,7 @@ function createServer() {
       if (req.url === '/push') {
         state.pushes += 1;
         const conflicts = [];
+        if (body.items.some((item) => !ALLOWED.has(item.collection))) return send(403, {});
         for (const item of body.items) {
           const key = `${item.collection}/${item.id}`;
           if ((store.get(key)?.rev ?? 0) !== item.baseRev) { conflicts.push(key); continue; }
