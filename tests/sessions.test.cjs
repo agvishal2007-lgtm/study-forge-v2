@@ -38,6 +38,15 @@ after(async () => {
 });
 
 const left = async () => Number((await page.getByTestId('practice-left').innerText()).match(/^(\d+) left/)[1]);
+/** Moving on saves first, so the next question appears a moment after the click. */
+const nextQuestion = async () => {
+  const before = await left();
+  await page.getByRole('button', { name: 'Next question' }).click();
+  await page.waitForFunction((count) => {
+    const text = document.querySelector('[data-testid=practice-left]')?.textContent ?? '';
+    return Number((text.match(/^(\d+) left/) || [])[1]) === count - 1;
+  }, before);
+};
 const answer = async (option = 'Equity') => {
   await page.getByTestId('practice-question').getByLabel(option).check();
   await page.getByRole('button', { name: 'Submit answer' }).click();
@@ -76,9 +85,9 @@ test('answers, a saved question and how hard it felt are kept apart from the sco
   await page.getByTestId('difficulty').getByLabel('Hard').check();
   // Feeling hard changes nothing about being right.
   assert.equal(await page.getByTestId('practice-feedback').getAttribute('data-result'), 'correct');
-  await page.getByRole('button', { name: 'Next question' }).click();
+  await nextQuestion();
   await answer('Assets');
-  await page.getByRole('button', { name: 'Next question' }).click();
+  await nextQuestion();
   assert.equal(await left(), 3);
 });
 
@@ -162,6 +171,8 @@ test('a flashcard review left part-way picks up where it stopped', async () => {
   const first = await page.getByTestId('card-front').innerText();
   await page.getByRole('button', { name: 'Reveal answer' }).click();
   await page.getByRole('button', { name: /^Good/ }).click();
+  // The next card shows once the step is saved.
+  await page.waitForFunction((was) => document.querySelector('[data-testid=card-front]')?.textContent !== was, first);
   const second = await page.getByTestId('card-front').innerText();
   assert.notEqual(first, second);
   await page.reload();

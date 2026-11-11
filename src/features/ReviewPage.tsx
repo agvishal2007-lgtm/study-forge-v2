@@ -82,11 +82,11 @@ export function ReviewPage() {
       const nextQueue = rating === 'Again' ? [...rest, card] : rest;
       queueNow.current = nextQueue;
       tallyNow.current = nextTally;
+      // Kept on the device before the next card shows, so closing the tab right after loses nothing.
+      if (nextQueue.length > 0) await saveReviewSession({ url, cardIds: nextQueue.map((entry) => entry.id), tally: nextTally, savedAt: Date.now() }).catch(() => undefined);
+      else await clearReviewSession().catch(() => undefined);
       setTally(nextTally);
       setQueue(nextQueue);
-      // Kept on the device, so closing the tab mid-review loses nothing.
-      if (nextQueue.length > 0) void saveReviewSession({ url, cardIds: nextQueue.map((entry) => entry.id), tally: nextTally, savedAt: Date.now() }).catch(() => undefined);
-      else void clearReviewSession().catch(() => undefined);
       setRevealed(false);
     } catch (error) {
       setFailure(`That answer wasn't saved. Try again. ${(error as Error).message}`);
