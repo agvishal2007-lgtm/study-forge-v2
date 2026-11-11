@@ -127,6 +127,7 @@ test('nothing outside the walkthrough can be clicked or tabbed to', async () => 
 
 const EXPECTED = [
   ['sections', '#/', '.nav-links'],
+  ['add', '#/', '[data-tour=smart-add]'],
   ['account', '#/', '.topbar'],
   ['today', '#/', '#content .page'],
   ['courses', '#/courses', '[data-tour=add-course]'],

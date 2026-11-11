@@ -1042,3 +1042,109 @@ h1 + .muted, h1 + .dash-lead { margin-top: .5rem; }
 /* What the browser has decided about device permissions. */
 .permission-list li { display: grid; gap: .2rem; padding: .6rem 0; border-top: 1px solid var(--line); }
 .permission-head { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
+
+/* The standalone way in. This page never renders the dashboard shell, so it carries its own
+   full-page layout: branding, one card, and a way back out without an account. */
+.auth-shell {
+  min-height: 100dvh;
+  display: grid;
+  background: var(--ground);
+  padding: clamp(1rem, 4vw, 3rem) clamp(1rem, 4vw, 2rem);
+  padding-bottom: max(clamp(1rem, 4vw, 3rem), env(safe-area-inset-bottom));
+  overflow-x: hidden;
+}
+/* margin:auto centres the card but never clips its top when it is taller than the window. */
+.auth-box { width: 100%; max-width: 30rem; margin: auto; }
+.auth-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .6rem;
+  margin-bottom: 1.5rem;
+  font-family: var(--display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--paper);
+  text-decoration: none;
+}
+.auth-brand:hover { color: var(--accent-text); }
+.auth-card {
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  padding: clamp(1.25rem, 4vw, 2.25rem);
+}
+/* The forms were written for a dashboard screen, so the card supplies the padding instead. */
+.auth-card .page { padding: 0; max-width: none; }
+.auth-card .auth-tabs { max-width: none; margin: 0 0 1.5rem; }
+.auth-card h1 { margin-top: 0; }
+.auth-back { text-align: center; margin: 1.25rem 0 0; }
+
+@media (max-width: 560px) {
+  /* A phone gets the whole viewport: the branding sits near the top rather than centred. */
+  .auth-shell { padding-left: 1rem; padding-right: 1rem; }
+  .auth-box { margin-top: 0; }
+  .auth-brand { margin-bottom: 1.25rem; }
+  .auth-card {
+    border-radius: 18px;
+    box-shadow: none;
+    padding: 1.25rem 1.1rem;
+  }
+  /* Every control stays comfortably tappable. */
+  .auth-card .button, .auth-card input:not([type='checkbox']) { min-height: 48px; }
+  /* The main action spans the card, so it is hard to miss with a thumb. */
+  .auth-card .card-form .button.primary { width: 100%; }
+}
+
+/* Smart Add: one button that starts anything, filed where the student already was. */
+.add-dialog { max-width: 32rem; width: calc(100vw - 2rem); }
+.add-place { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: end; margin-bottom: 1rem; }
+.add-place label { display: grid; gap: .25rem; min-width: 11rem; flex: 1; }
+.add-place p { flex-basis: 100%; margin: 0; font-size: .9rem; }
+.add-kinds { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
+.add-kind {
+  display: grid;
+  gap: .15rem;
+  width: 100%;
+  min-height: 48px;
+  padding: .7rem .85rem;
+  text-align: left;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.add-kind:hover:not(:disabled) { background: var(--raised-hover); border-color: var(--line-strong); }
+.add-kind:disabled { cursor: not-allowed; opacity: .75; }
+.add-kind span { font-size: .88rem; }
+.add-note { margin: 0; }
+@media (max-width: 560px) {
+  .add-kinds { grid-template-columns: 1fr; }
+}
+
+/* Undo. Present only when there is something to put back, and never over the phone's own bar. */
+.undo-bar {
+  position: fixed;
+  left: clamp(.75rem, 2vw, 1.25rem);
+  bottom: clamp(.75rem, 2vw, 1.25rem);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  max-width: min(26rem, calc(100vw - 2rem));
+  margin: 0;
+  padding: .6rem .7rem .6rem 1rem;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+.undo-bar span { overflow-wrap: anywhere; }
+.undo-bar .icon-button { font-size: 1.2rem; line-height: 1; }
+@media (max-width: 760px) {
+  /* The sections bar sits along the bottom on a phone, so Undo sits above it. */
+  .undo-bar { bottom: calc(4.5rem + env(safe-area-inset-bottom)); left: .75rem; right: .75rem; max-width: none; }
+}

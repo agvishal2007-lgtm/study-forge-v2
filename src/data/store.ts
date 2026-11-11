@@ -1,6 +1,7 @@
 import { createSHA256 } from 'hash-wasm';
 import { deleteBlob, removeLeftovers, saveBlob, whileSaving } from './blobs';
 import { getDb, notifyChanged } from './db';
+import { recordUndo, snapshotOf, type UndoStore } from './undo';
 import { byPlace, reordered } from './courseRules';
 import { categorize, nameFromUrl, tidyUrl, type LinkCategory } from './linkRules';
 import { SPINE_COLORS, type Course, type Lifecycle, type Material, type ResourceLink, type Topic } from './types';
@@ -131,8 +132,10 @@ export async function fileMaterial(id: string, courseId: string | null, topicId:
   const db = await getDb();
   const material = await db.get('materials', id);
   if (!material) throw new Error('This file record no longer exists.');
-  await db.put('materials', { ...material, courseId, topicId });
-  notifyChanged();
+  await undoable(`Moved ${material.name}`, 'materials', [id], async () => {
+    await db.put('materials', { ...material, courseId, topicId });
+    notifyChanged();
+  });
 }
 
 /** Only ever called after the student confirms. The file goes first, then its record. */
@@ -252,8 +255,10 @@ export async function setCourseStatus(id: string, status: Lifecycle): Promise<vo
   const course = await db.get('courses', id);
   if (!course) return;
   const now = Date.now();
-  await db.put('courses', { ...course, status, statusAt: now, updatedAt: Math.max(now, course.updatedAt + 1) });
-  notifyChanged();
+  await undoable(statusLabel(status, course.name), 'courses', [id], async () => {
+    await db.put('courses', { ...course, status, statusAt: now, updatedAt: Math.max(now, course.updatedAt + 1) });
+    notifyChanged();
+  });
 }
 
 /** Moves a topic between in use, put away, and the bin. Its files and notes stay where they are. */
@@ -262,8 +267,10 @@ export async function setTopicStatus(id: string, status: Lifecycle): Promise<voi
   const topic = await db.get('topics', id);
   if (!topic) return;
   const now = Date.now();
-  await db.put('topics', { ...topic, status, statusAt: now, updatedAt: Math.max(now, topic.updatedAt + 1) });
-  notifyChanged();
+  await undoable(statusLabel(status, topic.name), 'topics', [id], async () => {
+    await db.put('topics', { ...topic, status, statusAt: now, updatedAt: Math.max(now, topic.updatedAt + 1) });
+    notifyChanged();
+  });
 }
 
 /** Moves a file between in use, put away, and the bin. The file itself is kept until it is removed for good. */
@@ -271,8 +278,10 @@ export async function setMaterialStatus(id: string, status: Lifecycle): Promise<
   const db = await getDb();
   const material = await db.get('materials', id);
   if (!material) return;
-  await db.put('materials', { ...material, status, statusAt: Date.now() });
-  notifyChanged();
+  await undoable(statusLabel(status, material.name), 'materials', [id], async () => {
+    await db.put('materials', { ...material, status, statusAt: Date.now() });
+    notifyChanged();
+  });
 }
 
 /** Everything sitting in the bin, newest first, so it can be restored or removed for good. */
@@ -282,6 +291,26 @@ export async function listTrash(): Promise<{ courses: Course[]; topics: Topic[];
   const binned = <T extends { status: Lifecycle; statusAt: number }>(list: T[]) =>
     list.filter((item) => item.status === 'trashed').sort((a, b) => b.statusAt - a.statusAt);
   return { courses: binned(courses), topics: binned(topics), materials: binned(materials) };
+}
+
+/**
+ * Runs a change and remembers exactly how to put it back. Every undoable action goes through here,
+ * so Undo never has to guess an opposite: it restores the versions these snapshots captured.
+ */
+async function undoable(label: string, store: UndoStore, ids: string[], change: () => Promise<void>): Promise<void> {
+  const before = await Promise.all(ids.map((id) => snapshotOf(store, id)));
+  await change();
+  const after = await Promise.all(ids.map((id) => snapshotOf(store, id)));
+  recordUndo(label, ids.map((id, at) => ({ store, id, before: before[at], after: after[at] }))
+    // A record the change did not actually touch has nothing to undo.
+    .filter((snapshot) => JSON.stringify(snapshot.before) !== JSON.stringify(snapshot.after)));
+}
+
+/** What a student would call putting something in the bin, archiving it, or taking it back out. */
+function statusLabel(status: Lifecycle, name: string): string {
+  if (status === 'trashed') return `Moved ${name} to the bin`;
+  if (status === 'archived') return `Archived ${name}`;
+  return `Restored ${name}`;
 }
 
 /* ---- Editing and ordering, so a student can organize courses however they need. ---- */
@@ -294,14 +323,17 @@ export async function updateCourse(id: string, changes: { name?: string; code?: 
   const now = Date.now();
   const name = changes.name === undefined ? course.name : changes.name.trim();
   if (!name) return;
-  await db.put('courses', {
-    ...course,
-    name,
-    code: changes.code === undefined ? course.code : changes.code.trim(),
-    term: changes.term === undefined ? course.term : changes.term.trim(),
-    updatedAt: Math.max(now, course.updatedAt + 1),
+  const label = name === course.name ? `Edited ${course.name}` : `Renamed ${course.name} to ${name}`;
+  await undoable(label, 'courses', [id], async () => {
+    await db.put('courses', {
+      ...course,
+      name,
+      code: changes.code === undefined ? course.code : changes.code.trim(),
+      term: changes.term === undefined ? course.term : changes.term.trim(),
+      updatedAt: Math.max(now, course.updatedAt + 1),
+    });
+    notifyChanged();
   });
-  notifyChanged();
 }
 
 /** Renames a topic, or moves it under a different heading. Empty heading means ungrouped. */
@@ -312,13 +344,16 @@ export async function updateTopic(id: string, changes: { name?: string; heading?
   const now = Date.now();
   const name = changes.name === undefined ? topic.name : changes.name.trim();
   if (!name) return;
-  await db.put('topics', {
-    ...topic,
-    name,
-    heading: changes.heading === undefined ? topic.heading : changes.heading.trim(),
-    updatedAt: Math.max(now, topic.updatedAt + 1),
+  const label = name === topic.name ? `Edited ${topic.name}` : `Renamed ${topic.name} to ${name}`;
+  await undoable(label, 'topics', [id], async () => {
+    await db.put('topics', {
+      ...topic,
+      name,
+      heading: changes.heading === undefined ? topic.heading : changes.heading.trim(),
+      updatedAt: Math.max(now, topic.updatedAt + 1),
+    });
+    notifyChanged();
   });
-  notifyChanged();
 }
 
 /** Writes a new order to the database after the pure rules work it out. */
@@ -344,7 +379,9 @@ export async function moveCourse(id: string, direction: 'up' | 'down'): Promise<
   const course = await db.get('courses', id);
   if (!course) return;
   const siblings = (await db.getAll('courses')).filter((other) => other.status === 'active' && other.term === course.term);
-  await applyOrder(async (next) => { await db.put('courses', next); }, siblings, id, direction);
+  await undoable(`Moved ${course.name} ${direction}`, 'courses', siblings.map((other) => other.id), async () => {
+    await applyOrder(async (next) => { await db.put('courses', next); }, siblings, id, direction);
+  });
 }
 
 /** Moves a topic one place earlier or later within its heading's group. */
@@ -354,7 +391,9 @@ export async function moveTopic(id: string, direction: 'up' | 'down'): Promise<v
   if (!topic) return;
   const siblings = (await db.getAllFromIndex('topics', 'courseId', topic.courseId))
     .filter((other) => other.status === 'active' && other.heading === topic.heading);
-  await applyOrder(async (next) => { await db.put('topics', next); }, siblings, id, direction);
+  await undoable(`Moved ${topic.name} ${direction}`, 'topics', siblings.map((other) => other.id), async () => {
+    await applyOrder(async (next) => { await db.put('topics', next); }, siblings, id, direction);
+  });
 }
 
 
@@ -403,8 +442,11 @@ export async function updateLink(id: string, changes: { name?: string; url?: str
   const url = changes.url === undefined ? link.url : tidyUrl(changes.url);
   if (!url) throw new Error('That is not a web address Study Forge can save.');
   const name = (changes.name === undefined ? link.name : changes.name).trim();
-  await db.put('materials', { ...link, name: name || nameFromUrl(url), url, category: changes.category ?? link.category });
-  notifyChanged();
+  const finalName = name || nameFromUrl(url);
+  await undoable(finalName === link.name ? `Edited ${link.name}` : `Renamed ${link.name} to ${finalName}`, 'materials', [id], async () => {
+    await db.put('materials', { ...link, name: finalName, url, category: changes.category ?? link.category });
+    notifyChanged();
+  });
 }
 
 /* ---- Extra places a resource appears. One record, one copy of the bytes, many associations. ---- */
@@ -428,14 +470,25 @@ export async function addResourceLink(resourceId: string, courseId: string, topi
   const existing = await db.getAllFromIndex('resourceLinks', 'resourceId', resourceId);
   if (existing.some((link) => link.courseId === courseId && link.topicId === topicId)) return;
   const now = Date.now();
-  await db.put('resourceLinks', { id: crypto.randomUUID(), resourceId, courseId, topicId, createdAt: now, updatedAt: now });
-  notifyChanged();
+  const linkId = crypto.randomUUID();
+  const course = await db.get('courses', courseId);
+  await undoable(`Added ${resource.name} to ${course?.name ?? 'another course'}`, 'resourceLinks', [linkId], async () => {
+    await db.put('resourceLinks', { id: linkId, resourceId, courseId, topicId, createdAt: now, updatedAt: now });
+    notifyChanged();
+  });
 }
 
 /** Takes a resource out of one extra place. The resource itself, and every other place, are untouched. */
 export async function removeResourceLink(id: string): Promise<void> {
-  await (await getDb()).delete('resourceLinks', id);
-  notifyChanged();
+  const db = await getDb();
+  const link = await db.get('resourceLinks', id);
+  const resource = link ? await db.get('materials', link.resourceId) : undefined;
+  const course = link ? await db.get('courses', link.courseId) : undefined;
+  // Removing one association never touches the resource itself, which may be in other courses too.
+  await undoable(`Removed ${resource?.name ?? 'a resource'} from ${course?.name ?? 'a course'}`, 'resourceLinks', [id], async () => {
+    await db.delete('resourceLinks', id);
+    notifyChanged();
+  });
 }
 
 /**

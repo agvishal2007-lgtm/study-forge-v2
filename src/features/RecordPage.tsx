@@ -119,7 +119,8 @@ export function RecordPage() {
   const [params] = useSearchParams();
   const [title, setTitle] = useState(defaultName);
   const [courseId, setCourseId] = useState(params.get('course') ?? '');
-  const [topicId, setTopicId] = useState('');
+  // Smart Add can arrive here already knowing where the recording belongs.
+  const [topicId, setTopicId] = useState(params.get('topic') ?? '');
   const [source, setSource] = useState<RecordingSource>('microphone');
   const [withMicrophone, setWithMicrophone] = useState(false);
   const screenAvailable = canRecordScreen();

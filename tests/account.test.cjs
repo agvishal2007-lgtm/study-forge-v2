@@ -198,6 +198,8 @@ test('closing the sign-in window is quiet, and a school block explains what to d
   await signInButton(blocked).click();
   await googleButton(blocked).click();
   await blocked.getByRole('alert').getByText('Your school blocked this sign-in').waitFor();
+  // Signing in is its own page, so the way back to the student's own work is the link it offers.
+  await blocked.getByRole('link', { name: 'Back to Study Forge' }).click();
   await nav(blocked, 'Notes');
   await blocked.getByRole('link', { name: 'Guest note' }).waitFor();
   await close('laptop');

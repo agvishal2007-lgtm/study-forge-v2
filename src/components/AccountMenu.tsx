@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
+import { SmartAdd } from './SmartAdd';
 import { WalkthroughButton } from '../features/walkthrough/Walkthrough';
 import { getActiveAccount, switchAccount } from '../data/account';
 import { setThemeChoice, useIsDark } from '../data/theme';
@@ -129,6 +130,7 @@ function SignedIn() {
 export function AccountMenu() {
   return (
     <nav className="topbar" aria-label="Account">
+      <SmartAdd />
       <Link className="icon-button" to="/search" aria-label="Search" title="Search">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
       </Link>

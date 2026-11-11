@@ -8,6 +8,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { CalendarOffer } from './components/CalendarOffer';
 import { OfflineNotices } from './components/OfflineNotices';
 import { SaveProvider, SavePanel } from './components/SaveQueue';
+import { UndoBar } from './components/UndoBar';
 import { CourseDetailPage } from './features/CourseDetailPage';
 import { CoursesPage } from './features/CoursesPage';
 import { LibraryPage } from './features/LibraryPage';
@@ -18,7 +19,10 @@ import { LessonPage } from './features/guided/LessonPage';
 import { SessionPage } from './features/guided/SessionPage';
 import { StudyPage } from './features/guided/StudyPage';
 import { RecordPage } from './features/RecordPage';
-import { AuthTabsPage, ForgotEmailPage, ForgotPasswordPage, PrivacyPage } from './features/AuthPages';
+import { AuthShell, AuthTabsPage, ForgotEmailPage, ForgotPasswordPage, PrivacyPage } from './features/AuthPages';
+
+/** Every way into an account. These render on their own page, outside the dashboard. */
+const AUTH_ROUTES = ['/auth', '/login', '/signup', '/sign-in', '/sign-up', '/forgot-password', '/forgot-email', '/account-recovery'];
 import { SearchPage } from './features/SearchPage';
 import { CramPage } from './features/CramPage';
 import { ExamHallPage } from './features/ExamHallPage';
@@ -81,6 +85,30 @@ export function App() {
     window.addEventListener('study-forge-update-blocked', show);
     return () => window.removeEventListener('study-forge-update-blocked', show);
   }, []);
+  // The way in is its own page. It never borrows the student dashboard's shell: no main navigation,
+  // no account bar, no recording bar, no floating controls.
+  if (AUTH_ROUTES.includes(pathname)) {
+    return (
+      <AuthShell>
+        <ErrorBoundary key={pathname}>
+          <Suspense fallback={<p className="muted">Loading…</p>}>
+            <Routes>
+              <Route path="/auth" element={<AuthTabsPage mode="sign-in" />} />
+              <Route path="/login" element={<AuthTabsPage mode="sign-in" />} />
+              <Route path="/signup" element={<AuthTabsPage mode="sign-up" />} />
+              {/* The older addresses still work, so saved links and bookmarks don't break. */}
+              <Route path="/sign-in" element={<AuthTabsPage mode="sign-in" />} />
+              <Route path="/sign-up" element={<AuthTabsPage mode="sign-up" />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/forgot-email" element={<ForgotEmailPage />} />
+              <Route path="/account-recovery" element={<ForgotEmailPage />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
+      </AuthShell>
+    );
+  }
+
   return (
     <SaveProvider>
     <RecorderProvider>
@@ -128,15 +156,6 @@ export function App() {
                 <Route path="/cards" element={<FlashcardsPage />} />
                 <Route path="/cards/review" element={<ReviewPage />} />
                 <Route path="/cards/:id" element={<DeckPage />} />
-                <Route path="/auth" element={<AuthTabsPage mode="sign-in" />} />
-                <Route path="/login" element={<AuthTabsPage mode="sign-in" />} />
-                <Route path="/signup" element={<AuthTabsPage mode="sign-up" />} />
-                {/* The older addresses still work, so saved links and bookmarks don't break. */}
-                <Route path="/sign-in" element={<AuthTabsPage mode="sign-in" />} />
-                <Route path="/sign-up" element={<AuthTabsPage mode="sign-up" />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/forgot-email" element={<ForgotEmailPage />} />
-                <Route path="/account-recovery" element={<ForgotEmailPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/practice" element={<PracticePage />} />
                 <Route path="/practice/session" element={<PracticeSessionPage />} />
@@ -161,6 +180,7 @@ export function App() {
           </ErrorBoundary>
         </main>
         </div>
+        <UndoBar />
         <SavePanel />
       </div>
     </WalkthroughProvider>

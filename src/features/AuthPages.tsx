@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { getActiveAccount, switchAccount } from '../data/account';
 import type { AccountBackend, AccountUser, LoginProvider } from '../data/accountBackend';
@@ -7,6 +7,26 @@ import { forgetKnownAccounts, listKnownAccounts, rememberAccount } from '../data
 import { loadBackend } from '../data/sync';
 
 const PROVIDER_LABEL: Record<LoginProvider, string> = { google: 'Google', microsoft: 'Microsoft' };
+
+/**
+ * The entrance to Study Forge. Signing in is its own page, so none of the student dashboard is
+ * here: no section navigation, no account bar, no recording or save controls. A student who
+ * landed here by accident can leave again without an account, because accounts stay optional.
+ */
+export function AuthShell({ children }: { children: ReactNode }) {
+  return (
+    <div className="auth-shell">
+      <main className="auth-box" id="content">
+        <Link to="/" className="auth-brand">
+          <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>
+          Study Forge
+        </Link>
+        <div className="auth-card">{children}</div>
+        <p className="auth-back"><Link to="/">Back to Study Forge</Link></p>
+      </main>
+    </div>
+  );
+}
 
 /** Phones block a sign-in window that opens late, so this code is ready before any tap. */
 function useBackend() {

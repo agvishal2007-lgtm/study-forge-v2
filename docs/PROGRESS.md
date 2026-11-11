@@ -571,3 +571,29 @@ A permission belongs to the browser, not to Study Forge, and the site now says s
 **A real bug this surfaced:** when a browser blocks the microphone it also hides device presence, so `getUserMedia` fails with "not found" rather than "not allowed" — a blocked student was being told their microphone was missing hardware. The recorder now checks the permission state first and says the microphone is blocked and how to unblock it, without firing a request that cannot succeed.
 
 Account recovery also moved to its own address, `/account-recovery`, with `/forgot-email` still working. It still never lists who has an account.
+
+## Signing in became its own page
+
+Logging in was a tab of the dashboard: the account bar, the whole sections bar, and the floating controls all stayed on screen around the form. On a phone the bottom sections bar sat over the Sign in button. It read as another part of the app rather than the way into it.
+
+The authentication routes now render outside the dashboard entirely, in a layout of their own — `/auth`, `/login`, `/signup`, the older `/sign-in` and `/sign-up`, `/forgot-password`, `/forgot-email` and `/account-recovery`. Every one of them was checked, not just the one in the screenshot.
+
+- **Nothing of the dashboard follows a student there.** No main navigation, no account bar, no recording bar, no save panel. A test asserts this for all eight addresses and fails if any dashboard chrome reappears.
+- **Study Forge branding, one card, and a way out.** The page carries the name and mark, the Log In / Sign Up tabs, Continue with Google, Continue with Microsoft, email sign-in and registration, password reset and account recovery, and a plain "Back to Study Forge" link — because an account is optional and nobody should be trapped at a sign-in screen.
+- **Desktop and phone.** Centred card on a wide screen; on a phone the branding sits near the top, the options stack, every control is at least 48px tall, the main action spans the card, and there is no sideways scroll. The layout never clips the top of the card on a short screen.
+- **Light and dark**, with contrast measured from the real stylesheet rather than asserted.
+- **Yahoo stays out.** A test fails if a Yahoo button ever appears while it is deferred.
+
+The dashboard keeps everything that was moved off the entrance; that is tested too.
+
+## Smart Add, and Undo
+
+**Smart Add** is one button in the top bar that starts anything: a file, a link, a note, flashcards, a question set, a recording, a topic, or a course. It suggests where the new thing belongs by reading the screen the student is on, falling back to the last place they filed something — and it shows that suggestion as a pair of pickers they can correct before anything is saved. A course that has been binned, archived or deleted is never suggested, and a topic is only carried over while it still belongs to the suggested course.
+
+It reuses the existing importer and forms rather than growing a second set: files go through the same uploader as the Library, links through the same link saver, notes through the same editor. The kinds that are made on their own screen carry the course and topic there in the address instead of asking twice.
+
+**Undo** reverses the last rename, move, reorder, association or recoverable delete. It works on snapshots, not on replayed opposites: each action records what a record looked like before and after it ran, so undoing is putting the earlier version back.
+
+- **Later changes win.** If a record no longer matches the version the action left behind, undoing would quietly throw away whatever happened since. It is refused, with a sentence saying why, and **nothing is altered** — tested by removing a binned course for good and then pressing Undo on the binning.
+- **The bar says what it would put back** ("Moved Biology to the bin"), can be dismissed, and confirms what it did.
+- **Honest limit:** the undo history lasts for the visit. Reloading ends it, because an Undo offered hours later, over work the student has since forgotten about, is a trap rather than a safety net.

@@ -41,11 +41,18 @@ export const TOUR_STEPS: TourStep[] = [
     body: 'These buttons take you to each part of Study Forge. This is how you get around.',
   },
   {
+    id: 'add',
+    route: '/',
+    target: ['[data-tour=smart-add]'],
+    title: 'Adding anything',
+    body: 'This button starts anything: a file, a link, a note, flashcards, a question set, a recording, a topic or a course. It suggests the course and topic you are looking at, and you can change that before it saves.',
+  },
+  {
     id: 'account',
     route: '/',
     target: ['.topbar'],
     title: 'Your account',
-    body: 'Sign up or sign in here with an email and password or with Google, including a college account if your school allows it. Your courses, notes, lessons, and progress then follow you between devices. Signing in is optional.',
+    body: 'Log In / Sign Up opens a page of its own, away from your work. There you can use an email and password, Google, or Microsoft, including a college account if your school allows it. Your courses, notes, lessons, and progress then follow you between devices. Signing in is optional, and every page has a link back here.',
   },
   {
     id: 'today',
