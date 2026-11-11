@@ -19,9 +19,8 @@ jobs:
   # Nothing is published unless every browser test passes.
   test:
     runs-on: ubuntu-latest
-    # The suite keeps growing and CI is slower than a laptop; at 30 minutes a full run was being
-    # cancelled partway through, which cancels the publish with it.
-    timeout-minutes: 75
+    # A full run takes a few minutes. This is a backstop, not an estimate.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,7 +28,21 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      # The package servers sometimes stop answering and apt waits forever, which once held a
+      # publish for over 40 minutes before a single test ran. Each try is capped, and a few
+      # tries are made before giving up.
+      - name: Install ffmpeg
+        timeout-minutes: 12
+        run: |
+          for attempt in 1 2 3; do
+            if timeout 180 sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update \
+              && timeout 180 sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y --no-install-recommends ffmpeg; then
+              exit 0
+            fi
+            echo "ffmpeg install attempt $attempt didn't finish; trying again"
+            sleep 10
+          done
+          exit 1
       - run: npm install --no-save playwright@1.63.0
       - run: npx playwright install --with-deps chromium
       # The search tests build small image and scanned-PDF fixtures with these.
