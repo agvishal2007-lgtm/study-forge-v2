@@ -1,4 +1,5 @@
 import { getDb, notifyChanged } from './db';
+import { logActivity } from './activity';
 
 /**
  * Undo works on snapshots, not on replayed opposites. Each undoable action records exactly what a
@@ -64,6 +65,8 @@ export function recordUndo(label: string, snapshots: Snapshot[]) {
     return;
   }
   stack = [...stack, { id: crypto.randomUUID(), at: Date.now(), label, snapshots }].slice(-LIMIT);
+  // The same record feeds Recent Activity, so the two can never tell different stories.
+  logActivity(label, label.startsWith('Restored') || label.startsWith('Put back'));
   announce();
 }
 
@@ -121,5 +124,7 @@ export async function undoLast(): Promise<{ ok: boolean; message: string }> {
   stack = stack.filter((entry) => entry.id !== action.id);
   announce();
   notifyChanged();
-  return { ok: true, message: `Undone: ${action.label.charAt(0).toLowerCase()}${action.label.slice(1)}.` };
+  const message = `Undone: ${action.label.charAt(0).toLowerCase()}${action.label.slice(1)}`;
+  logActivity(message, true);
+  return { ok: true, message: `${message}.` };
 }

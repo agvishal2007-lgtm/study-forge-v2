@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { RecentActivity } from '../components/RecentActivity';
 import { useWalkthrough } from './walkthrough/Walkthrough';
 import { Link } from 'react-router-dom';
 import { MaterialList } from '../components/MaterialList';
@@ -300,6 +301,8 @@ export function TodayPage() {
             <NoteList notes={notes.slice(0, 4)} courses={courses} />
           </section>
         )}
+
+        <RecentActivity />
 
         {courses.length > 0 && (
           <section className="dash-card dash-wide" aria-labelledby="shelf-heading">
