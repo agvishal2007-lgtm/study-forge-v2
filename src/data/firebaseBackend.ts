@@ -35,7 +35,7 @@ function providerFor(provider: LoginProvider) {
   return google;
 }
 
-export function createFirebaseBackend(_app: FirebaseApp, auth: Auth, db: Firestore, providers: LoginProvider[] = ['google']): AccountBackend {
+export function createFirebaseBackend(app: FirebaseApp, auth: Auth, db: Firestore, providers: LoginProvider[] = ['google']): AccountBackend {
   const toUser = (user: { uid: string; email: string | null; displayName: string | null; photoURL: string | null; providerData?: { providerId: string }[] }): AccountUser => ({
     uid: user.uid,
     email: user.email ?? user.displayName ?? 'Your account',
@@ -96,6 +96,32 @@ export function createFirebaseBackend(_app: FirebaseApp, auth: Auth, db: Firesto
       } catch (error) {
         throw translate(error);
       }
+    },
+    watchChanges(uid, since, onChange) {
+      // The lighter database library used everywhere else can't listen, so the full one loads
+      // here, only for a signed-in student. A listener is told only about changed records, so
+      // an idle account costs almost nothing, unlike checking on a timer.
+      let stop = () => {};
+      let cancelled = false;
+      void (async () => {
+        try {
+          const live = await import('firebase/firestore');
+          if (cancelled) return;
+          const watched = live.query(
+            live.collection(live.getFirestore(app), 'users', uid, 'items'),
+            live.where('syncedAt', '>', live.Timestamp.fromMillis(since)),
+          );
+          stop = live.onSnapshot(watched, (snapshot) => {
+            if (snapshot.docChanges().length > 0 && !snapshot.metadata.hasPendingWrites) onChange();
+          }, () => {
+            // Offline or refused: the regular checks on focus and reconnection still run.
+          });
+          if (cancelled) stop();
+        } catch {
+          // Couldn't start listening; syncing still happens on changes, focus and reconnection.
+        }
+      })();
+      return () => { cancelled = true; stop(); };
     },
     async push(uid, items: PushItem[]) {
       try {

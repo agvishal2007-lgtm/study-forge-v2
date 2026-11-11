@@ -2,10 +2,13 @@ import { BackendError, itemKey, type AccountBackend, type PushItem, type RemoteI
 import { getActiveAccount, switchAccount, updateAccountDetails } from './account';
 import { getDb, notifyChanged, subscribe } from './db';
 import type { Checkpoint, CheckpointProgress, Note } from './types';
+import { applySyncedSettings, recordCurrentSettings, watchSettings } from './settingsSync';
 
 /**
- * Keeps this device's text in step with the student's online copy. Only courses, topics, notes,
- * lessons, and progress are sent. Files and recordings stay on the device.
+ * Keeps this device in step with the student's online copy: courses and topics, notes, lessons,
+ * the planner and calendar, flashcards, practice, grades, the records of files and links (names,
+ * places, pins, the bin), transcripts, settings, and study in progress. A file's contents travel
+ * separately; this carries everything that describes it.
  *
  * When two devices changed the same thing, nothing written is thrown away: notes and checkpoints
  * keep both versions, and progress combines the answers from both.
@@ -15,7 +18,7 @@ import type { Checkpoint, CheckpointProgress, Note } from './types';
  * anything else, and one rejected write stops the whole sync, so a new kind of data must wait
  * until its rules are live. Publish firestore.rules first, then add the collection here.
  */
-const COLLECTIONS: SyncCollection[] = ['courses', 'topics', 'lessons', 'checkpoints', 'notes', 'checkpointProgress', 'plannerItems', 'decks', 'cards', 'cardProgress', 'practiceSets', 'practiceQuestions', 'practiceAttempts', 'examResults', 'calendarEvents', 'studyDays', 'studyTime', 'resourceLinks', 'gradeCategories'];
+const COLLECTIONS: SyncCollection[] = ['courses', 'topics', 'lessons', 'checkpoints', 'notes', 'checkpointProgress', 'plannerItems', 'decks', 'cards', 'cardProgress', 'practiceSets', 'practiceQuestions', 'practiceAttempts', 'examResults', 'calendarEvents', 'studyDays', 'studyTime', 'resourceLinks', 'gradeCategories', 'materials', 'transcripts', 'settings', 'studyState'];
 const CURSOR_KEY = 'syncCursor';
 const MAX_ITEM_BYTES = 900_000;
 const MAX_BATCH_BYTES = 4_000_000;
@@ -58,7 +61,7 @@ function fingerprint(text: string): string {
   return `${text.length}-${(b >>> 0).toString(36)}${(a >>> 0).toString(36)}`;
 }
 
-const idField = (collection: SyncCollection) => (collection === 'checkpointProgress' ? 'checkpointId' : collection === 'cardProgress' ? 'cardId' : 'id');
+const idField = (collection: SyncCollection) => (collection === 'checkpointProgress' ? 'checkpointId' : collection === 'cardProgress' ? 'cardId' : collection === 'transcripts' ? 'materialId' : 'id');
 
 /** A half-typed answer belongs to this device, so it isn't part of what's compared or sent. */
 function serialize(collection: SyncCollection, record: unknown): string {
@@ -143,10 +146,12 @@ async function applyPulled(items: RemoteItem[]): Promise<number> {
       }
       await metaStore.put({ hash: meta?.hash ?? null, rev: item.rev }, key);
       changed += 1;
-    } else if (['courses', 'topics', 'plannerItems', 'decks', 'cards', 'cardProgress', 'practiceSets', 'practiceQuestions', 'practiceAttempts', 'examResults', 'calendarEvents', 'studyDays', 'studyTime', 'resourceLinks', 'gradeCategories'].includes(item.collection)) {
+    } else if (['courses', 'topics', 'plannerItems', 'decks', 'cards', 'cardProgress', 'practiceSets', 'practiceQuestions', 'practiceAttempts', 'examResults', 'calendarEvents', 'studyDays', 'studyTime', 'resourceLinks', 'gradeCategories', 'materials', 'transcripts', 'settings', 'studyState'].includes(item.collection)) {
       // Both devices changed this. The most recent change wins, so "done" isn't undone by an old edit.
-      const incoming = JSON.parse(item.json) as { updatedAt: number };
-      if (incoming.updatedAt > (local as { updatedAt: number }).updatedAt) {
+      // Older file records have no change time, so their last status change or creation stands in.
+      const when = (record: { updatedAt?: number; statusAt?: number; createdAt?: number }) => record.updatedAt ?? record.statusAt ?? record.createdAt ?? 0;
+      const incoming = JSON.parse(item.json) as { updatedAt?: number; statusAt?: number; createdAt?: number };
+      if (when(incoming) > when(local as typeof incoming)) {
         await store.put(incoming as never);
         await metaStore.put({ hash: remotePrint, rev: item.rev }, key);
         changed += 1;
@@ -226,6 +231,15 @@ async function pushChanges(backend: AccountBackend, uid: string, items: PushItem
 let backendInstance: AccountBackend | null = null;
 let running = false;
 let again = false;
+let retryTimer: ReturnType<typeof setTimeout> | undefined;
+let retryDelay = 0;
+
+/** After a failed sync, tries again on its own, waiting a little longer each time (up to five minutes). */
+function retryLater() {
+  clearTimeout(retryTimer);
+  retryDelay = Math.min(retryDelay ? retryDelay * 2 : 15_000, 5 * 60_000);
+  retryTimer = setTimeout(() => void syncNow(), retryDelay);
+}
 
 /** Runs one sync. Failures never affect saved work, and only change the status the student sees. */
 export async function syncNow(): Promise<void> {
@@ -246,16 +260,23 @@ export async function syncNow(): Promise<void> {
       const { items, cursor } = await backendInstance.pull(account.uid, since);
       const changed = await applyPulled(items);
       await db.put('meta', cursor, CURSOR_KEY);
+      watchFrom(cursor);
+      // A setting chosen on another device takes effect here straight away.
+      if (items.some((item) => item.collection === 'settings')) await applySyncedSettings();
       if (changed > 0) notifyChanged();
       const changes = await collectChanges();
       tooLarge = changes.tooLarge;
       if (!(await pushChanges(backendInstance, account.uid, changes.items))) break;
     }
     setState({ phase: 'synced', lastSyncedAt: Date.now(), tooLarge, message: '' });
+    retryDelay = 0;
+    clearTimeout(retryTimer);
   } catch (error) {
     const kind = error instanceof BackendError ? error.kind : 'other';
     const phase: SyncPhase = kind === 'offline' ? 'offline' : kind === 'quota' ? 'quota' : kind === 'denied' ? 'denied' : 'error';
     setState({ phase, message: (error as Error).message });
+    // Offline waits for the connection to return; a refusal needs the student; anything else retries.
+    if (phase === 'error') retryLater();
   } finally {
     running = false;
     if (again) {
@@ -267,6 +288,23 @@ export async function syncNow(): Promise<void> {
 
 let timer: ReturnType<typeof setTimeout> | undefined;
 let lastFocusCheck = 0;
+let stopWatching: (() => void) | null = null;
+let watchingSince = 0;
+/** A listener that has run a long while is restarted from the latest point, so reconnecting re-reads little. */
+const WATCH_REFRESH_MS = 30 * 60_000;
+let watchStarted = 0;
+
+/** Listens for changes saved on the student's other devices, and syncs within seconds of one. */
+function watchFrom(cursor: number) {
+  const account = getActiveAccount();
+  if (!account || !backendInstance) return;
+  if (stopWatching && cursor <= watchingSince) return;
+  if (stopWatching && Date.now() - watchStarted < WATCH_REFRESH_MS) return;
+  stopWatching?.();
+  watchingSince = cursor;
+  watchStarted = Date.now();
+  stopWatching = backendInstance.watchChanges(account.uid, cursor, () => void syncNow());
+}
 
 /** Starts syncing for the signed-in account. */
 export async function startSync(): Promise<void> {
@@ -285,6 +323,9 @@ export async function startSync(): Promise<void> {
     clearTimeout(timer);
     timer = setTimeout(() => void syncNow(), AFTER_CHANGE_MS);
   });
+  // Settings live in this browser; these keep the synced copy in step with them.
+  watchSettings();
+  await recordCurrentSettings().catch(() => undefined);
   const check = () => {
     if (Date.now() - lastFocusCheck < FOCUS_CHECK_MS) return;
     lastFocusCheck = Date.now();

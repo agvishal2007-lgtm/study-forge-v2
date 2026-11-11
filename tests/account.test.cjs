@@ -616,7 +616,7 @@ test('a half-typed answer stays on its own device', async () => {
   assert.equal(JSON.parse(items[0].json).draft, '');
 });
 
-test('files stay on the device and only their text-side records travel', async () => {
+test('a file\'s record follows the student, but its contents stay on the device for now', async () => {
   const laptop = await device('laptop');
   await nav(laptop, 'Library');
   await laptop.getByTestId('file-input').first().setInputFiles(textFile);
@@ -625,13 +625,47 @@ test('files stay on the device and only their text-side records travel', async (
   await laptop.getByText('Chapter one text').waitFor();
   await saved(laptop);
   const collections = new Set(fake.state.items('alice-uid').map((item) => item.collection));
-  assert.ok(!collections.has('materials'));
+  assert.ok(collections.has('materials'), 'the file\'s name and place travel');
   assert.ok(!collections.has('blobs'));
   assert.ok(!JSON.stringify(fake.state.items('alice-uid')).includes('Chapter one text'), 'file contents never leave');
   const phone = await device('phone');
   await saved(phone);
   await nav(phone, 'Library');
-  await phone.getByText('Nothing here yet').waitFor();
+  await phone.getByRole('link', { name: 'chapter.txt' }).click();
+  // Honest about where the file is, rather than claiming it was lost.
+  await phone.getByTestId('file-elsewhere').waitFor();
+  assert.equal(await phone.getByText('no longer on this device').count(), 0);
+});
+
+test('a change on one device appears on another that is already open, without pressing anything', async () => {
+  const laptop = await device('laptop');
+  const phone = await device('phone');
+  await nav(phone, 'Notes');
+  await addNote(laptop, 'Live arrival', 'Typed on the laptop');
+  await saved(laptop);
+  const started = Date.now();
+  await phone.getByRole('link', { name: 'Live arrival', exact: true }).waitFor({ timeout: 15000 });
+  assert.ok(Date.now() - started < 15000);
+});
+
+test('a pin made on the phone and the look chosen on the laptop reach the other device', async () => {
+  const laptop = await device('laptop');
+  const phone = await device('phone');
+  // Appearance: the light/dark choice made on the laptop reaches the phone by itself.
+  const wasDark = await laptop.evaluate(() => document.documentElement.dataset.theme === 'dark');
+  await laptop.getByRole('button', { name: wasDark ? 'Switch to light mode' : 'Switch to dark mode' }).click();
+  await saved(laptop);
+  assert.ok(fake.state.items('alice-uid').some((item) => item.collection === 'settings'), 'appearance was saved online');
+  await phone.waitForFunction((dark) => (document.documentElement.dataset.theme === 'dark') === dark, !wasDark, { timeout: 15000 });
+  // A pin made on the phone reaches the laptop.
+  await nav(phone, 'Library');
+  await phone.getByRole('link', { name: 'chapter.txt' }).click();
+  await phone.getByRole('button', { name: 'Pin', exact: true }).click();
+  await phone.getByRole('button', { name: 'Unpin', exact: true }).waitFor();
+  await saved(phone);
+  await nav(laptop, 'Library');
+  await laptop.getByRole('link', { name: 'chapter.txt' }).click();
+  await laptop.getByRole('button', { name: 'Unpin', exact: true }).waitFor({ timeout: 15000 });
 });
 
 test('a second student on the same computer cannot open the first student\'s work', async () => {
@@ -744,7 +778,8 @@ test('removing from a shared computer asks first, needs a good sync, and clears 
   });
   assert.ok(!left.dbs.some((name) => name.includes('alice')), left.dbs.join());
   assert.ok(!left.folders.some((name) => name.includes('alice')), left.folders.join());
-  // The text is still in the account, on signing back in. The file is gone, as the warning said.
+  // The text and the file's record are still in the account, on signing back in. The file's
+  // contents are gone from this device, as the warning said, and the viewer says so honestly.
   await close('laptop');
   const back = await device('laptop', ALICE);
   await signIn(back);
@@ -752,7 +787,8 @@ test('removing from a shared computer asks first, needs a good sync, and clears 
   await nav(back, 'Notes');
   await back.getByRole('link', { name: 'Shared note', exact: true }).waitFor();
   await nav(back, 'Library');
-  await back.getByText('Nothing here yet').waitFor();
+  await back.getByRole('link', { name: 'chapter.txt' }).click();
+  await back.getByTestId('file-elsewhere').waitFor();
 });
 
 test('deleting the online copy asks first, signs out, and keeps this device\'s copy', async () => {

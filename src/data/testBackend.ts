@@ -74,7 +74,7 @@ export const backend: AccountBackend = {
     let latest = since;
     const timer = setInterval(async () => {
       try {
-        const { cursor } = await call('/pull', { uid, since: latest });
+        const { cursor } = await call('/pull', { uid, since: latest }) as { cursor: number };
         if (cursor > latest) { latest = cursor; onChange(); }
       } catch {
         // Offline: the next tick tries again.

@@ -1332,3 +1332,15 @@ html[data-density='compact'] .files li, html[data-density='compact'] .checkpoint
 .export-more { margin-top: .75rem; }
 .export-list { list-style: none; margin: .5rem 0; padding: 0; display: grid; gap: .5rem; }
 .export-list li { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .75rem; }
+
+/* Sync status, always visible beside the account picture. */
+.account-menu { display: flex; align-items: center; gap: .5rem; }
+.sync-badge { display: inline-flex; align-items: center; gap: .4rem; padding: .25rem .6rem; border: 1px solid var(--line); border-radius: 999px; font-size: .85rem; color: var(--ink); text-decoration: none; white-space: nowrap; min-height: 32px; }
+.sync-dot { width: .6rem; height: .6rem; border-radius: 50%; background: #2f8f5b; flex: none; }
+.sync-badge[data-phase="syncing"] .sync-dot { background: #3a6fd8; animation: sync-pulse 1.2s ease-in-out infinite; }
+.sync-badge[data-phase="offline"] .sync-dot { background: #8a8a8a; }
+.sync-badge[data-phase="error"] .sync-dot, .sync-badge[data-phase="quota"] .sync-dot, .sync-badge[data-phase="denied"] .sync-dot { background: #c2410c; }
+@keyframes sync-pulse { 50% { opacity: .35; } }
+html[data-motion="reduce"] .sync-badge .sync-dot { animation: none; }
+@media (prefers-reduced-motion: reduce) { .sync-badge .sync-dot { animation: none; } }
+@media (max-width: 720px) { .sync-badge-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .sync-badge { padding: .25rem; min-width: 32px; justify-content: center; } }

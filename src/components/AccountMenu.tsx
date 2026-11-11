@@ -100,9 +100,16 @@ function SignedIn() {
   };
 
   if (!account) return null;
-  const syncLine = sync.phase === 'synced' ? 'Saved online' : sync.phase === 'syncing' ? 'Saving online…' : sync.phase === 'off' ? '' : 'Not saved online right now';
+  const syncLine = sync.phase === 'synced' ? 'Synced across devices' : sync.phase === 'syncing' ? 'Syncing…' : sync.phase === 'off' ? ''
+    : sync.phase === 'offline' ? 'Offline, waiting to sync' : sync.phase === 'error' ? 'Sync failed, retrying' : 'Not syncing right now';
   return (
     <div className="account-menu" ref={menu}>
+      {syncLine && (
+        <Link className="sync-badge" to="/settings" data-testid="sync-badge" data-phase={sync.phase} title={syncLine} aria-label={`${syncLine}. Open sync settings`}>
+          <span className="sync-dot" aria-hidden="true" />
+          <span className="sync-badge-text">{syncLine}</span>
+        </Link>
+      )}
       <button
         className="avatar-button"
         aria-haspopup="true"

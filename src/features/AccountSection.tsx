@@ -11,12 +11,12 @@ const plural = (count: number, word: string) => `${count} ${word}${count === 1 ?
 
 const PHASE_TEXT: Record<SyncPhase, string> = {
   off: 'Connecting…',
-  syncing: 'Saving online…',
-  synced: 'Saved online',
-  offline: "You're offline. Your work is safe on this device and will save online when you reconnect.",
+  syncing: 'Syncing…',
+  synced: 'Synced across devices',
+  offline: "Offline, waiting to sync. Your work is safe on this device and syncs when you reconnect.",
   quota: "Study Forge reached its free daily limit for saving online. Your work is safe on this device and will save online after the limit resets, usually overnight.",
   denied: "Saving online was refused, so your work is only on this device for now. Sign out and back in, and if that doesn't help, tell whoever runs this site.",
-  error: "Saving online didn't work this time. Your work is safe on this device, and it will try again.",
+  error: "Sync failed, retrying. Your work is safe on this device, and Study Forge will try again on its own.",
 };
 
 export function AccountSection() {
