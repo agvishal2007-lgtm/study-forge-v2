@@ -231,6 +231,8 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
         bytes: 0,
       });
       const releaseLock = holdRecordingLock(id);
+      // A file going up to Drive steps aside, so it never competes with the recording.
+      void import('../data/driveFiles').then(({ pauseForRecording }) => pauseForRecording());
 
       // Show the student that sound is really being captured, and warn if it stops.
       const samples = new Uint8Array(1024);

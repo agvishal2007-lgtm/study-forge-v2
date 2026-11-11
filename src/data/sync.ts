@@ -1,5 +1,5 @@
 import { BackendError, itemKey, type AccountBackend, type PushItem, type RemoteItem, type SyncCollection } from './accountBackend';
-import { getActiveAccount, switchAccount, updateAccountDetails } from './account';
+import { CURRENT_DB, getActiveAccount, switchAccount, updateAccountDetails } from './account';
 import { getDb, notifyChanged, subscribe } from './db';
 import type { Checkpoint, CheckpointProgress, Note } from './types';
 import { applySyncedSettings, recordCurrentSettings, watchSettings } from './settingsSync';
@@ -151,9 +151,15 @@ async function applyPulled(items: RemoteItem[]): Promise<number> {
       // Older file records have no change time, so their last status change or creation stands in.
       const when = (record: { updatedAt?: number; statusAt?: number; createdAt?: number }) => record.updatedAt ?? record.statusAt ?? record.createdAt ?? 0;
       const incoming = JSON.parse(item.json) as { updatedAt?: number; statusAt?: number; createdAt?: number };
+      // Where a file's verified Drive copy is never gets lost to a rename made elsewhere.
+      const driveFileId = item.collection === 'materials' ? (incoming as { driveFileId?: string }).driveFileId ?? (local as { driveFileId?: string }).driveFileId : undefined;
       if (when(incoming) > when(local as typeof incoming)) {
-        await store.put(incoming as never);
+        await store.put((driveFileId ? { ...incoming, driveFileId } : incoming) as never);
         await metaStore.put({ hash: remotePrint, rev: item.rev }, key);
+        changed += 1;
+      } else if (driveFileId && !(local as { driveFileId?: string }).driveFileId) {
+        await store.put({ ...(local as object), driveFileId } as never);
+        await metaStore.put({ hash: meta?.hash ?? null, rev: item.rev }, key);
         changed += 1;
       } else {
         await metaStore.put({ hash: meta?.hash ?? null, rev: item.rev }, key);
@@ -269,6 +275,8 @@ export async function syncNow(): Promise<void> {
       if (!(await pushChanges(backendInstance, account.uid, changes.items))) break;
     }
     setState({ phase: 'synced', lastSyncedAt: Date.now(), tooLarge, message: '' });
+    // Files go up after the records, so another device learns where they are on the next sync.
+    void import('./driveFiles').then(({ backUpFiles }) => backUpFiles());
     retryDelay = 0;
     clearTimeout(retryTimer);
   } catch (error) {
@@ -356,5 +364,7 @@ export async function deleteOnlineCopy(): Promise<void> {
 }
 
 export async function signOutOfAccount(): Promise<void> {
+  // Google Drive's permission is forgotten too, so the next person on this computer can't use it.
+  try { localStorage.removeItem(`${CURRENT_DB}-drive-access`); } catch { /* nothing kept */ }
   await backendInstance?.signOut();
 }

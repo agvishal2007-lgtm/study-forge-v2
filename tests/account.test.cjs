@@ -885,6 +885,59 @@ test('after signing in with Google, that calendar connects in one tap, and other
   await close('calendar-microsoft');
 });
 
+test('files and recordings sync through the student\'s own Google Drive, checked on both ends', async () => {
+  const laptop = await device('laptop');
+  // Large enough to go up in several resumable pieces.
+  const big = path.join(work, 'lecture-notes.txt');
+  fs.writeFileSync(big, `DRIVE-START\n${'Drive line for the lecture\n'.repeat(400_000)}`);
+  await nav(laptop, 'Library');
+  await laptop.getByTestId('file-input').first().setInputFiles(big);
+  await laptop.locator('.save-panel li[data-phase=saved]').waitFor({ timeout: 60000 });
+  await nav(laptop, 'Settings');
+  const section = laptop.getByTestId('drive-backup');
+  await section.getByRole('button', { name: 'Sync files with my Google Drive' }).click();
+  await section.locator('[data-testid=drive-status][data-phase=idle]').getByText(/^1 of 1 file is in your Google Drive/).waitFor({ timeout: 60000 });
+  assert.ok(fake.state.drive.pieces >= 2, `sent in ${fake.state.drive.pieces} piece(s)`);
+  assert.deepEqual(fake.state.drive.contents('lecture-notes.txt'), fs.readFileSync(big), 'Drive has the exact file');
+  // The record saying where the copy is reaches the account, so other devices can find it.
+  await saved(laptop);
+  const record = fake.state.items('alice-uid').map((item) => JSON.parse(item.json)).find((item) => item.name === 'lecture-notes.txt');
+  assert.ok(record?.driveFileId, 'the file record knows where the Drive copy is');
+
+  // A device that has never had the file signs in and brings it over.
+  const phone = await device('tablet', ALICE);
+  await signIn(phone);
+  await phone.locator('[data-testid=sync-status][data-phase=synced]').waitFor();
+  await nav(phone, 'Library');
+  await phone.getByRole('link', { name: 'lecture-notes.txt' }).click();
+  await phone.getByTestId('file-in-drive').getByRole('button', { name: /Get it from Google Drive/ }).click();
+  await phone.getByText('DRIVE-START').first().waitFor({ timeout: 60000 });
+  assert.equal(await phone.getByTestId('file-in-drive').count(), 0);
+});
+
+test('a copy that arrives damaged in Drive is never marked as synced, and a good retry is', async () => {
+  const laptop = await device('laptop');
+  const small = path.join(work, 'handout.txt');
+  fs.writeFileSync(small, 'Handout text\n');
+  fake.state.drive.mode = 'corrupt';
+  await nav(laptop, 'Library');
+  await laptop.getByTestId('file-input').first().setInputFiles(small);
+  await laptop.locator('.save-panel li[data-phase=saved]').waitFor();
+  await nav(laptop, 'Settings');
+  const status = laptop.getByTestId('drive-status');
+  await laptop.locator('[data-testid=drive-status][data-phase=error]').waitFor({ timeout: 30000 });
+  await laptop.getByText(/handout\.txt didn't arrive in Google Drive intact/).waitFor();
+  await status.getByText(/^1 of 2 files/).waitFor();
+  await saved(laptop);
+  const record = () => fake.state.items('alice-uid').map((item) => JSON.parse(item.json)).find((item) => item.name === 'handout.txt');
+  assert.equal(record()?.driveFileId, undefined, 'not marked as synced');
+  fake.state.drive.mode = 'ok';
+  await saved(laptop); // A successful sync tries the files again.
+  await status.getByText(/^2 of 2 files are in your Google Drive/).waitFor({ timeout: 30000 });
+  await saved(laptop);
+  assert.ok(record()?.driveFileId);
+});
+
 test('no uncaught errors happened on any device', () => {
   for (const [name, entry] of open) assert.deepEqual(entry.errors, [], name);
 });

@@ -5,6 +5,7 @@ import { getActiveAccount, switchAccount } from '../data/account';
 import { getGuestSummary, openGuestAsBackup, removeAccountFromDevice, removeGuestData, type GuestSummary } from '../data/accountData';
 import { restoreBackup, type RestoreReport } from '../data/backup';
 import { formatDate } from '../data/format';
+import { DriveBackup } from '../components/DriveBackup';
 import { deleteOnlineCopy, getSyncState, loadBackend, signOutOfAccount, subscribeSync, syncNow, type SyncPhase } from '../data/sync';
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
@@ -64,7 +65,7 @@ export function AccountSection() {
         <h2 id="account-heading">Account</h2>
         <p>Sign in to keep your courses, notes, lessons, and study progress across your devices. It's optional, and everything else works without it.</p>
         <ul className="plain-list">
-          <li>Files and recordings stay on each device, so keep making backups of those.</li>
+          <li>Files and recordings can sync through your own Google Drive, if you choose. Without that, they stay on each device, so keep making backups of those.</li>
           <li>School Google accounts work if your school allows it. If yours blocks it, you'll see a message and can keep using Study Forge without signing in.</li>
           <li>Other students can't read your work. It's stored in Google's Firebase service, and whoever runs this site could technically view it, so don't save anything highly sensitive.</li>
         </ul>
@@ -91,13 +92,14 @@ export function AccountSection() {
         </p>
       )}
       {sync.tooLarge.length > 0 && <p className="error" role="alert">Too large to save online, so only on this device: {sync.tooLarge.join(', ')}.</p>}
-      <p className="muted">Courses, notes, lessons, and progress follow you. Files and recordings stay on this device, so keep making backups of those.</p>
+      <p className="muted">Courses, notes, lessons, progress, file names and settings follow you automatically. Files and recordings themselves sync through your Google Drive, below.</p>
       <div className="row-actions">
         <button className="button" disabled={busy} onClick={() => void syncNow()}>Save online now</button>
         <button className="text-button danger-text" disabled={busy} onClick={() => setConfirm('remove-device')}>Remove my work from this device</button>
         <button className="text-button danger-text" disabled={busy} onClick={() => setConfirm('delete-online')}>Delete my online copy</button>
       </div>
       {failure && <p className="error" role="alert">{failure}</p>}
+      <DriveBackup email={account.email} />
       {notice && <p className="notice" role="status">{notice}</p>}
 
       {guest && !report && (

@@ -14,6 +14,7 @@ import type { Material } from '../data/types';
 import { TranscriptPanel } from './TranscriptPanel';
 import { useLive } from '../data/useLive';
 import { getActiveAccount } from '../data/account';
+import { FromDrive } from '../components/FromDrive';
 
 const PdfViewer = lazy(() => import('./PdfViewer').then((module) => ({ default: module.PdfViewer })));
 const OfficeViewer = lazy(() => import('./OfficeViewer').then((module) => ({ default: module.OfficeViewer })));
@@ -270,7 +271,7 @@ export default function ViewerPage() {
   let body;
   if (blobLoading && !blob) body = <p className="muted">Opening file…</p>;
   else if (blobError) body = <p className="error" role="alert">This file couldn't be read. {blobError.message}</p>;
-  else if (!blob && getActiveAccount()) body = <p className="notice" role="status" data-testid="file-elsewhere">The file itself isn't on this device yet. Its name, place and notes sync across your devices, but the file's contents don't sync yet, so open it on the device where you added it for now.</p>;
+  else if (!blob && getActiveAccount() && material) body = <FromDrive material={material} email={getActiveAccount()?.email} />;
   else if (!blob) body = <p className="error" role="alert">This file is no longer on this device. The browser may have cleared it, or it was deleted in another tab.</p>;
   else if (viewFailure) body = fallback(`Study Forge couldn't display this ${KIND_LABEL[kind].toLowerCase()} file, but the original is safe. You can download it and open it in another app.`);
   else if (kind === 'pdf') body = <Suspense fallback={<p className="muted">Opening PDF…</p>}><PdfViewer key={startPage} initialPage={startPage} blob={blob} onFail={fail} /></Suspense>;

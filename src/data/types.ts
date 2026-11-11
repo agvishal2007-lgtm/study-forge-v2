@@ -81,6 +81,8 @@ export interface Material {
   createdAt: number;
   /** When it was last renamed, moved, pinned or binned, so two devices' changes can be ordered. */
   updatedAt?: number;
+  /** Where the verified copy is in the student's own Google Drive. Missing until Drive confirms it. */
+  driveFileId?: string;
 }
 
 /** A student's own writing. Plain text, filed under a course or topic, and optionally about one file. */
