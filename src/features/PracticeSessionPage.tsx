@@ -97,16 +97,22 @@ export function PracticeSessionPage() {
     return { id: newId(), url, questionIds: ids, position: 0, attemptId: newId(), draft: '', selected: null, confidence: null, checking: false, answer: '', activeMs: 0, skipped: 0 };
   }
 
-  const change = (patch: Partial<PracticeSession>) => {
+  /**
+   * Keeps the session in step with the screen. Typing shows at once and saves behind it; moving on
+   * (a new question, finishing) waits for the save first, so closing the tab right after can't lose
+   * the step.
+   */
+  const change = async (patch: Partial<PracticeSession>, settle = false) => {
     if (!session) return;
     // Study time counts only while working: a long gap means the student stepped away.
     const now = Date.now();
     const gap = now - lastTick.current;
     lastTick.current = now;
     const next = { ...session, ...patch, activeMs: (session.activeMs ?? 0) + (gap < IDLE_MS ? gap : 0) };
-    setSession(next);
     // A failed draft save only risks a little typing, so the student isn't interrupted.
-    void savePracticeSession(next).catch(() => undefined);
+    const saving = savePracticeSession(next).catch(() => undefined);
+    if (settle) await saving;
+    setSession(next);
   };
 
   const back = setId ? `/practice/${setId}` : '/practice';
@@ -216,7 +222,7 @@ export function PracticeSessionPage() {
     }
   };
 
-  const next = () => change({ position: session.position + 1, attemptId: newId(), draft: '', selected: null, confidence: null, checking: false, answer: '' });
+  const next = () => void change({ position: session.position + 1, attemptId: newId(), draft: '', selected: null, confidence: null, checking: false, answer: '' }, true);
   const feedback = attempt ? feedbackFor(attempt.result, attempt.confidence) : null;
   const ready = isChoice ? session.selected !== null : session.draft.trim() !== '';
 
@@ -229,7 +235,7 @@ export function PracticeSessionPage() {
         </div>
         <div className="row-actions">
           <Link to={back}>Stop for now</Link>
-          <button className="text-button" onClick={() => change({ endedEarly: true })}>Finish now</button>
+          <button className="text-button" onClick={() => void change({ endedEarly: true }, true)}>Finish now</button>
         </div>
       </header>
       {justSkipped > 0 && <p className="notice">Picked up where you left off. {justSkipped} {justSkipped === 1 ? 'question in this session was' : 'questions in this session were'} removed since, so {justSkipped === 1 ? 'it is' : 'they are'} skipped. Your earlier answers still count.</p>}
