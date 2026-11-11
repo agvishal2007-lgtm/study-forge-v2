@@ -5,7 +5,8 @@ import { listNotes } from '../data/notes';
 import { useStillHere } from '../components/useStillHere';
 import { readBlob } from '../data/blobs';
 import { formatBytes, KIND_LABEL, kindOf, olderOfficeAdvice } from '../data/format';
-import { fileMaterial, getMaterial, listAllCourses, listTopics, setMaterialStatus } from '../data/store';
+import { Breadcrumbs } from '../components/Breadcrumbs';
+import { fileMaterial, getCourse, getMaterial, listAllCourses, listTopics, setMaterialStatus } from '../data/store';
 import type { Material } from '../data/types';
 import { TranscriptPanel } from './TranscriptPanel';
 import { useLive } from '../data/useLive';
@@ -114,6 +115,12 @@ export default function ViewerPage() {
     return () => document.removeEventListener('fullscreenchange', sync);
   }, []);
 
+  // The trail back up: through its course when it has one, otherwise through the Library.
+  const { data: owner } = useLive(
+    async () => (material?.courseId ? (await getCourse(material.courseId)) ?? null : null),
+    [material?.courseId],
+  );
+
   if (loading && !material) return <p className="page muted">Loading…</p>;
   if (!material) return <div className="page"><h1>This file isn't here</h1><p>It may have been deleted.</p><Link to="/library">Go to Library</Link></div>;
 
@@ -153,6 +160,11 @@ export default function ViewerPage() {
 
   return (
     <div className="page viewer">
+      <Breadcrumbs
+        trail={owner
+          ? [{ label: 'Courses', to: '/courses' }, { label: owner.name, to: `/courses/${owner.id}` }, { label: material.name }]
+          : [{ label: 'Library', to: '/library' }, { label: material.name }]}
+      />
       <header className="viewer-head">
         <div>
           <h1>{material.name}</h1>

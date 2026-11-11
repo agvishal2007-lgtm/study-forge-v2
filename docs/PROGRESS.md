@@ -460,3 +460,15 @@ Courses also gained a term, and courses and topics a position and a heading, so 
 ## Study Forge Calendar
 
 The calendar page is now titled Study Forge Calendar rather than the generic "Calendar".
+
+## Organizing courses however you need
+
+Courses and topics used to be a flat list in the order they were created, with no way to rename them.
+
+- **Semesters.** A course can have a term ("Fall 2026"), and the Courses page groups courses under it. Leaving it empty means an independent study, and those are kept in their own group at the end. A student who never sets a term never sees a heading for one.
+- **Your own headings.** A topic can sit under any heading the student writes — Chapter 1, Week 3, Unit 2, Module A — and the course page groups topics under them, ungrouped ones first. Headings already used in the course are offered as suggestions.
+- **Renaming.** A course's name, code and semester can be edited; a topic's name and heading can be edited.
+- **Reordering.** Courses have an Arrange mode on the Courses page, and topics have Up and Down on the course page. Both use buttons rather than dragging, so they work with a keyboard and on a phone, and both move things only within their own group (a course within its semester, a topic within its heading). Order is saved per student and syncs.
+- **Breadcrumbs.** The course page and the file viewer show the trail back up — Courses → the course → the file, or Library → the file.
+
+The ordering and grouping rules are pure functions in `src/data/courseRules.ts` with their own unit tests, and `tests/organize.test.cjs` drives the whole thing in a real browser.

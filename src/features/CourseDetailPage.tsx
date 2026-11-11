@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AddFiles } from '../components/AddFiles';
+import { Breadcrumbs } from '../components/Breadcrumbs';
 import { MaterialList } from '../components/MaterialList';
 import { NewNoteButton, NoteList } from '../components/NoteList';
 import { listNotes } from '../data/notes';
 import { useStillHere } from '../components/useStillHere';
-import { createTopic, getCourse, listMaterials, listTopics, setCourseStatus, setTopicStatus } from '../data/store';
+import { groupTopics } from '../data/courseRules';
+import { createTopic, getCourse, listMaterials, listTopics, moveTopic, setCourseStatus, setTopicStatus, updateCourse, updateTopic } from '../data/store';
+import type { Material, Note, Topic } from '../data/types';
 import { useLive } from '../data/useLive';
 
 export function CourseDetailPage() {
@@ -13,6 +16,8 @@ export function CourseDetailPage() {
   const navigate = useNavigate();
   const stillHere = useStillHere();
   const [topicName, setTopicName] = useState('');
+  const [topicHeading, setTopicHeading] = useState('');
+  const [editingCourse, setEditingCourse] = useState(false);
   const [failure, setFailure] = useState('');
   const { data, error } = useLive(async () => {
     const [course, topics, archivedTopics, materials, notes] = await Promise.all([
@@ -45,24 +50,55 @@ export function CourseDetailPage() {
     if (stillHere.current) navigate('/courses', { replace: true });
   });
   const loose = materials.filter((material) => !material.topicId);
+  const groups = groupTopics(topics);
 
   return (
     <div className="page" style={{ '--spine': course.color } as React.CSSProperties}>
+      <Breadcrumbs trail={[{ label: 'Courses', to: '/courses' }, { label: course.name }]} />
       <header className="course-head">
         <div>
           <h1>{course.name}</h1>
           {course.code && <p className="muted">{course.code}</p>}
+          {course.term && <p className="muted">{course.term}</p>}
           {course.status === 'archived' && <p className="muted">Archived. Everything in it is kept, and it stays searchable.</p>}
         </div>
         <div className="head-actions">
+          <button className="text-button" onClick={() => setEditingCourse(!editingCourse)}>{editingCourse ? 'Close' : 'Edit course'}</button>
           {course.status === 'archived'
             ? <button className="button" onClick={() => void attempt(() => setCourseStatus(course.id, 'active'))}>Put back in use</button>
             : <button className="text-button" onClick={() => leave(() => setCourseStatus(course.id, 'archived'))}>Archive course</button>}
           <button className="text-button danger-text" onClick={() => leave(() => setCourseStatus(course.id, 'trashed'))}>Move to bin</button>
         </div>
       </header>
-      <p className="muted small">Archiving keeps a finished course whole and searchable. The bin holds it until you restore it or remove it for good. Neither one deletes your files.</p>
       {failure && <p className="error" role="alert">{failure}</p>}
+
+      {editingCourse && (
+        <form
+          className="stack-form"
+          data-testid="edit-course"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const form = new FormData(event.currentTarget);
+            void attempt(async () => {
+              await updateCourse(course.id, {
+                name: String(form.get('name') ?? ''),
+                code: String(form.get('code') ?? ''),
+                term: String(form.get('term') ?? ''),
+              });
+              setEditingCourse(false);
+            });
+          }}
+        >
+          <label>Course name<input name="name" defaultValue={course.name} required /></label>
+          <label>Course code<input name="code" defaultValue={course.code} placeholder="ACC 211" /></label>
+          <label>
+            Semester
+            <input name="term" defaultValue={course.term} placeholder="Fall 2026" />
+          </label>
+          <p className="muted small">Leave the semester empty for an independent study. Courses are grouped by semester on the Courses page.</p>
+          <button className="button" type="submit">Save course</button>
+        </form>
+      )}
 
       <section aria-labelledby="course-files">
         <h2 id="course-files">Files</h2>
@@ -92,30 +128,35 @@ export function CourseDetailPage() {
           onSubmit={(event) => {
             event.preventDefault();
             if (!topicName.trim()) return;
-            void attempt(async () => { await createTopic(course.id, topicName); setTopicName(''); });
+            void attempt(async () => { await createTopic(course.id, topicName, topicHeading); setTopicName(''); });
           }}
         >
-          <label>New topic<input value={topicName} onChange={(event) => setTopicName(event.target.value)} placeholder="Chapter 1: The accounting equation" /></label>
+          <label>New topic<input value={topicName} onChange={(event) => setTopicName(event.target.value)} placeholder="The accounting equation" /></label>
+          <label>Under heading<input value={topicHeading} onChange={(event) => setTopicHeading(event.target.value)} placeholder="Chapter 1" list="course-headings" /></label>
           <button className="button" type="submit">Add topic</button>
         </form>
-        {topics.map((topic) => {
-          const files = materials.filter((material) => material.topicId === topic.id);
-          return (
-            <article className="topic" key={topic.id}>
-              <header>
-                <h3>{topic.name}</h3>
-                <span className="head-actions">
-                  <button className="text-button" onClick={() => void attempt(() => setTopicStatus(topic.id, 'archived'))} aria-label={`Archive topic ${topic.name}`}>Archive</button>
-                  <button className="text-button danger-text" onClick={() => void attempt(() => setTopicStatus(topic.id, 'trashed'))} aria-label={`Move topic ${topic.name} to the bin`}>Move to bin</button>
-                </span>
-              </header>
-              <AddFiles courseId={course.id} topicId={topic.id} />
-              {files.length > 0 && <MaterialList materials={files} />}
-              <div className="topic-note"><NewNoteButton courseId={course.id} topicId={topic.id} label="New note for this topic" /></div>
-              {notes.some((note) => note.topicId === topic.id) && <NoteList notes={notes.filter((note) => note.topicId === topic.id)} />}
-            </article>
-          );
-        })}
+        <datalist id="course-headings">
+          {[...new Set(topics.map((topic) => topic.heading).filter(Boolean))].map((heading) => <option key={heading} value={heading} />)}
+        </datalist>
+        <p className="muted small">A heading is yours to name: Chapter 1, Week 3, Unit 2, Module A — whatever your course uses. Leave it empty to keep a topic ungrouped.</p>
+
+        {groups.map((group) => (
+          <div key={group.heading || 'ungrouped'} className="topic-group" data-testid={`group-${group.heading || 'ungrouped'}`}>
+            {group.heading && <h3 className="topic-heading">{group.heading}</h3>}
+            {group.topics.map((topic, index) => (
+              <TopicCard
+                key={topic.id}
+                topic={topic}
+                index={index}
+                last={index === group.topics.length - 1}
+                course={course.id}
+                materials={materials}
+                notes={notes}
+                attempt={attempt}
+              />
+            ))}
+          </div>
+        ))}
       </section>
 
       {archivedTopics.length > 0 && (
@@ -133,5 +174,53 @@ export function CourseDetailPage() {
         </section>
       )}
     </div>
+  );
+}
+
+function TopicCard({ topic, index, last, course, materials, notes, attempt }: {
+  topic: Topic;
+  index: number;
+  last: boolean;
+  course: string;
+  materials: Material[];
+  notes: Note[];
+  attempt: (action: () => Promise<void>) => Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const files = materials.filter((material) => material.topicId === topic.id);
+  return (
+    <article className="topic">
+      <header>
+        <h4>{topic.name}</h4>
+        <span className="head-actions">
+          <button className="text-button" disabled={index === 0} onClick={() => void attempt(() => moveTopic(topic.id, 'up'))} aria-label={`Move topic ${topic.name} up`}>Up</button>
+          <button className="text-button" disabled={last} onClick={() => void attempt(() => moveTopic(topic.id, 'down'))} aria-label={`Move topic ${topic.name} down`}>Down</button>
+          <button className="text-button" onClick={() => setEditing(!editing)} aria-label={`Rename topic ${topic.name}`}>{editing ? 'Close' : 'Rename'}</button>
+          <button className="text-button" onClick={() => void attempt(() => setTopicStatus(topic.id, 'archived'))} aria-label={`Archive topic ${topic.name}`}>Archive</button>
+          <button className="text-button danger-text" onClick={() => void attempt(() => setTopicStatus(topic.id, 'trashed'))} aria-label={`Move topic ${topic.name} to the bin`}>Move to bin</button>
+        </span>
+      </header>
+      {editing && (
+        <form
+          className="inline-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const form = new FormData(event.currentTarget);
+            void attempt(async () => {
+              await updateTopic(topic.id, { name: String(form.get('name') ?? ''), heading: String(form.get('heading') ?? '') });
+              setEditing(false);
+            });
+          }}
+        >
+          <label>Topic name<input name="name" defaultValue={topic.name} required /></label>
+          <label>Under heading<input name="heading" defaultValue={topic.heading} placeholder="Chapter 1" list="course-headings" /></label>
+          <button className="button" type="submit">Save topic</button>
+        </form>
+      )}
+      <AddFiles courseId={course} topicId={topic.id} />
+      {files.length > 0 && <MaterialList materials={files} />}
+      <div className="topic-note"><NewNoteButton courseId={course} topicId={topic.id} label="New note for this topic" /></div>
+      {notes.some((note) => note.topicId === topic.id) && <NoteList notes={notes.filter((note) => note.topicId === topic.id)} />}
+    </article>
   );
 }

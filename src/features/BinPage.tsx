@@ -87,9 +87,15 @@ export function BinPage() {
           onCancel={() => setDoomed(null)}
           onConfirm={() => void attempt(() => removeForGood(doomed))}
         >
-          <p>{doomed.kind === 'file'
-            ? 'This deletes the file itself. It cannot be undone, and it is not in your backups unless you made one.'
-            : 'This cannot be undone. Your files and notes are kept — they just stop belonging to it.'}</p>
+          {doomed.kind === 'file' && <p>This deletes the file itself. It cannot be undone, and it is not in your backups unless you made one.</p>}
+          {doomed.kind === 'topic' && <p>This cannot be undone. Its files and notes stay in the course.</p>}
+          {doomed.kind === 'course' && (
+            <p>
+              This cannot be undone, but nothing you made is lost. Its files stay in your Library, its notes stay in Notes,
+              any lessons stay in Study, any assignments stay in Planner, any flashcards stay in Flashcards,
+              any practice sets stay in Practice, and exam scores stay in Exam Hall.
+            </p>
+          )}
         </ConfirmDialog>
       )}
     </div>

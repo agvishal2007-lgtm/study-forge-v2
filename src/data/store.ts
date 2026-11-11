@@ -1,6 +1,7 @@
 import { createSHA256 } from 'hash-wasm';
 import { deleteBlob, removeLeftovers, saveBlob, whileSaving } from './blobs';
 import { getDb, notifyChanged } from './db';
+import { byPlace, reordered } from './courseRules';
 import { SPINE_COLORS, type Course, type Lifecycle, type Material, type Topic } from './types';
 
 /** Courses in use. Archived and binned courses are kept, but asked for separately. */
@@ -12,9 +13,6 @@ export async function listCourses(status: Lifecycle = 'active'): Promise<Course[
 /** Every course whatever its status, for the places that need the whole picture (backup, search, the bin). */
 export const listAllCourses = async (): Promise<Course[]> => (await (await getDb()).getAll('courses')).sort(byPlace);
 
-/** Where the student put it, falling back to when it was made. */
-const byPlace = (a: { position: number; createdAt: number }, b: { position: number; createdAt: number }) =>
-  a.position - b.position || a.createdAt - b.createdAt;
 
 export async function createCourse(name: string, code: string): Promise<Course> {
   const db = await getDb();
@@ -276,4 +274,77 @@ export async function listTrash(): Promise<{ courses: Course[]; topics: Topic[];
   const binned = <T extends { status: Lifecycle; statusAt: number }>(list: T[]) =>
     list.filter((item) => item.status === 'trashed').sort((a, b) => b.statusAt - a.statusAt);
   return { courses: binned(courses), topics: binned(topics), materials: binned(materials) };
+}
+
+/* ---- Editing and ordering, so a student can organize courses however they need. ---- */
+
+/** Renames a course, or changes its code or term. Empty term means no semester: an independent study. */
+export async function updateCourse(id: string, changes: { name?: string; code?: string; term?: string }): Promise<void> {
+  const db = await getDb();
+  const course = await db.get('courses', id);
+  if (!course) return;
+  const now = Date.now();
+  const name = changes.name === undefined ? course.name : changes.name.trim();
+  if (!name) return;
+  await db.put('courses', {
+    ...course,
+    name,
+    code: changes.code === undefined ? course.code : changes.code.trim(),
+    term: changes.term === undefined ? course.term : changes.term.trim(),
+    updatedAt: Math.max(now, course.updatedAt + 1),
+  });
+  notifyChanged();
+}
+
+/** Renames a topic, or moves it under a different heading. Empty heading means ungrouped. */
+export async function updateTopic(id: string, changes: { name?: string; heading?: string }): Promise<void> {
+  const db = await getDb();
+  const topic = await db.get('topics', id);
+  if (!topic) return;
+  const now = Date.now();
+  const name = changes.name === undefined ? topic.name : changes.name.trim();
+  if (!name) return;
+  await db.put('topics', {
+    ...topic,
+    name,
+    heading: changes.heading === undefined ? topic.heading : changes.heading.trim(),
+    updatedAt: Math.max(now, topic.updatedAt + 1),
+  });
+  notifyChanged();
+}
+
+/** Writes a new order to the database after the pure rules work it out. */
+async function applyOrder<T extends { id: string; position: number; createdAt: number; updatedAt: number }>(
+  write: (item: T) => Promise<void>,
+  siblings: T[],
+  id: string,
+  direction: 'up' | 'down',
+): Promise<void> {
+  const ordered = reordered(siblings, id, direction);
+  if (!ordered) return;
+  const now = Date.now();
+  for (const [place, item] of ordered.entries()) {
+    if (item.position === place) continue;
+    await write({ ...item, position: place, updatedAt: Math.max(now, item.updatedAt + 1) });
+  }
+  notifyChanged();
+}
+
+/** Moves a course one place earlier or later among the courses in the same term. */
+export async function moveCourse(id: string, direction: 'up' | 'down'): Promise<void> {
+  const db = await getDb();
+  const course = await db.get('courses', id);
+  if (!course) return;
+  const siblings = (await db.getAll('courses')).filter((other) => other.status === 'active' && other.term === course.term);
+  await applyOrder(async (next) => { await db.put('courses', next); }, siblings, id, direction);
+}
+
+/** Moves a topic one place earlier or later within its heading's group. */
+export async function moveTopic(id: string, direction: 'up' | 'down'): Promise<void> {
+  const db = await getDb();
+  const topic = await db.get('topics', id);
+  if (!topic) return;
+  const siblings = (await db.getAllFromIndex('topics', 'courseId', topic.courseId))
+    .filter((other) => other.status === 'active' && other.heading === topic.heading);
+  await applyOrder(async (next) => { await db.put('topics', next); }, siblings, id, direction);
 }

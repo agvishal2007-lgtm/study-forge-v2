@@ -307,9 +307,10 @@ test('moving to another screen during a delete does not get overridden', async (
   await saved('extra-note.txt').waitFor();
   await clearPanel();
   await page.getByRole('link', { name: 'extra-note.txt' }).click();
+  await page.getByRole('button', { name: 'Move to bin' }).waitFor();
   await page.evaluate(() => {
     // Leave at the same moment the file is moved to the bin.
-    [...document.querySelectorAll('button')].find((b) => b.textContent === 'Move to bin').click();
+    [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Move to bin').click();
     location.hash = '#/settings';
   });
   await page.getByRole('heading', { name: 'Settings' }).waitFor();
@@ -328,7 +329,7 @@ test('deleting a course keeps its files in the Library', async () => {
   await page.goto(`${URL_BASE}#/bin`);
   await page.getByTestId('bin-courses').waitFor();
   await page.getByRole('button', { name: /^Remove Financial Accounting for good$/ }).click();
-  await page.getByRole('dialog').getByText('Your files and notes are kept').waitFor();
+  await page.getByRole('dialog').getByText('Its files stay in your Library').waitFor();
   await page.getByRole('dialog').getByRole('button', { name: 'Remove for good' }).click();
   await page.getByRole('heading', { name: 'Courses' }).waitFor();
   await page.getByRole('navigation').getByRole('link', { name: 'Library' }).click();

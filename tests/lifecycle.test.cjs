@@ -42,15 +42,15 @@ test('a course and a topic can be made', async () => {
   await page.getByRole('heading', { name: 'Biology', level: 1 }).waitFor();
   await page.getByLabel('New topic').fill('Cells');
   await page.getByRole('button', { name: 'Add topic' }).click();
-  await page.getByRole('heading', { name: 'Cells', level: 3 }).waitFor();
+  await page.getByRole('heading', { name: 'Cells', level: 4 }).waitFor();
 });
 
 test('archiving a topic puts it away and keeps it, and it comes back', async () => {
   await page.getByRole('button', { name: 'Archive topic Cells' }).click();
   await page.getByTestId('archived-topics').waitFor();
-  assert.equal(await page.getByRole('heading', { name: 'Cells', level: 3 }).count(), 0, 'it left the working list');
+  assert.equal(await page.getByRole('heading', { name: 'Cells', level: 4 }).count(), 0, 'it left the working list');
   await page.getByRole('button', { name: 'Put topic Cells back in use' }).click();
-  await page.getByRole('heading', { name: 'Cells', level: 3 }).waitFor();
+  await page.getByRole('heading', { name: 'Cells', level: 4 }).waitFor();
   assert.equal(await page.getByTestId('archived-topics').count(), 0);
 });
 
@@ -62,7 +62,7 @@ test('a topic in the bin can be restored', async () => {
   await page.getByRole('button', { name: 'Restore Cells' }).click();
   await page.goto(`${URL_BASE}#/courses`);
   await page.getByRole('link', { name: /Biology/ }).first().click();
-  await page.getByRole('heading', { name: 'Cells', level: 3 }).waitFor();
+  await page.getByRole('heading', { name: 'Cells', level: 4 }).waitFor();
 });
 
 test('archiving a course keeps it whole and reachable, and it comes back', async () => {
@@ -72,7 +72,7 @@ test('archiving a course keeps it whole and reachable, and it comes back', async
   assert.match(await archived.innerText(), /Biology/);
   // It is still reachable and its topic is still inside.
   await archived.getByRole('link', { name: 'Biology' }).click();
-  await page.getByRole('heading', { name: 'Cells', level: 3 }).waitFor();
+  await page.getByRole('heading', { name: 'Cells', level: 4 }).waitFor();
   await page.getByRole('button', { name: 'Put back in use' }).click();
   await page.goto(`${URL_BASE}#/courses`);
   assert.equal(await page.getByTestId('archived-courses').count(), 0, 'it is back in use');

@@ -277,10 +277,14 @@ test('cards come back on the right day, and a backup restores them with their sc
 test('deleting a course keeps its deck, and deleting a deck removes its cards', async () => {
   await nav('Courses');
   await page.getByRole('link', { name: /Accounting/ }).click();
-  await page.getByRole('button', { name: 'Delete course' }).click();
-  await page.getByRole('dialog').getByText('any flashcards stay').waitFor();
-  await page.getByRole('dialog').getByRole('button', { name: 'Delete course' }).click();
+  await page.getByRole('button', { name: 'Move to bin' }).click();
   await page.getByRole('heading', { name: 'Courses', exact: true }).waitFor();
+  await page.goto(`${URL_BASE}#/bin`);
+  await page.getByTestId('bin-courses').waitFor();
+  await page.getByRole('button', { name: /for good$/ }).first().click();
+  await page.getByRole('dialog').getByText('any flashcards stay').waitFor();
+  await page.getByRole('dialog').getByRole('button', { name: 'Remove for good' }).click();
+  await page.waitForFunction(() => document.body.innerText.includes('The bin is empty'));
   await nav('Flashcards');
   await page.getByRole('link', { name: 'Chapter 1', exact: true }).click();
   await page.getByRole('button', { name: 'Delete deck' }).click();

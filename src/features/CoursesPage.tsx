@@ -1,23 +1,75 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { NewCourseForm } from '../components/NewCourseForm';
 import { Shelf } from '../components/Shelf';
-import { listCourses, listMaterials, setCourseStatus } from '../data/store';
+import { groupCourses } from '../data/courseRules';
+import { listCourses, listMaterials, moveCourse, setCourseStatus } from '../data/store';
 import { useLive } from '../data/useLive';
 
 export function CoursesPage() {
+  const [arranging, setArranging] = useState(false);
   const { data, error } = useLive(async () => {
     const [courses, archived, materials] = await Promise.all([listCourses(), listCourses('archived'), listMaterials()]);
     return { courses, archived, materials };
   });
+
+  const groups = data ? groupCourses(data.courses) : [];
+  // A student who never sets a term shouldn't see a heading for one.
+  const showTerms = groups.length > 1 || Boolean(groups[0]?.term);
+
   return (
     <div className="page">
       <h1>Courses</h1>
       {error && <p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p>}
-      {data && data.courses.length > 0 && <Shelf courses={data.courses} materials={data.materials} />}
+      {data && data.courses.length > 1 && (
+        <p>
+          <button className="text-button" onClick={() => setArranging(!arranging)} data-testid="arrange-toggle">
+            {arranging ? 'Done arranging' : 'Arrange courses'}
+          </button>
+          {arranging && <span className="muted small"> Courses move within their own semester.</span>}
+        </p>
+      )}
+
+      {groups.map((group) => (
+        <section key={group.term || 'no-term'} aria-label={group.term || 'Courses with no semester'}>
+          {showTerms && <h2>{group.term || 'No semester'}</h2>}
+          {arranging
+            ? (
+              <ol className="arrange-list" data-testid={`arrange-${group.term || 'no-term'}`}>
+                {group.courses.map((course, index) => (
+                  <li key={course.id}>
+                    <span className="arrange-name">{course.name}</span>
+                    <span className="head-actions">
+                      <button
+                        className="text-button"
+                        disabled={index === 0}
+                        onClick={() => void moveCourse(course.id, 'up')}
+                        aria-label={`Move ${course.name} earlier`}
+                      >
+                        Move earlier
+                      </button>
+                      <button
+                        className="text-button"
+                        disabled={index === group.courses.length - 1}
+                        onClick={() => void moveCourse(course.id, 'down')}
+                        aria-label={`Move ${course.name} later`}
+                      >
+                        Move later
+                      </button>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )
+            : <Shelf courses={group.courses} materials={data?.materials ?? []} />}
+        </section>
+      ))}
+
       <section aria-labelledby="add-course" data-tour="add-course">
         <h2 id="add-course">Add a course</h2>
         <NewCourseForm />
       </section>
+
       {data && data.archived.length > 0 && (
         <section aria-labelledby="archived-courses" data-testid="archived-courses">
           <h2 id="archived-courses">Archived courses</h2>
@@ -26,7 +78,7 @@ export function CoursesPage() {
             {data.archived.map((course) => (
               <li key={course.id}>
                 <Link to={`/courses/${course.id}`}>{course.name}</Link>
-                {course.code && <span className="muted"> {course.code}</span>}
+                {course.term && <span className="muted"> {course.term}</span>}
                 <button className="text-button" onClick={() => void setCourseStatus(course.id, 'active')} aria-label={`Put ${course.name} back in use`}>Put back in use</button>
               </li>
             ))}
