@@ -505,7 +505,8 @@ test('a new student can sign up with an email and password, and sign in again la
   await page.getByLabel('Password', { exact: true }).fill('another password');
   await page.getByLabel('Type the password again').fill('another password');
   await create();
-  await problems.getByText('already exists').waitFor();
+  await problems.waitFor();
+  assert.match(await problems.innerText(), /already exists/);
 });
 
 test('forgot password never reveals who has an account', async () => {
