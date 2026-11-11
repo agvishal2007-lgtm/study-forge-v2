@@ -504,3 +504,18 @@ Study time and resource associations are new kinds of data saved online. The pub
 The top bar had two buttons, Sign in and Sign up, going to two separate pages. There is now a single **Log In / Sign Up** button leading to `/auth`, which has two tabs.
 
 Each tab has its own address, so a direct link opens the right one: `/login` and `/signup`. The older `/sign-in` and `/sign-up` addresses still work and land on the matching tab, so saved links and bookmarks don't break. The sign-in and sign-up forms themselves, and the Google and Microsoft buttons, are unchanged — only the way in changed.
+
+## Study Forge Calendar: events you can actually see
+
+A day's events were white chips on a near-white cell, told apart only by a thin course-coloured stripe. As shapes they sat at about 1.1:1 against the cell — technically present, practically invisible — and carried no sense of whether work was late, done or untouched.
+
+Work now carries five shared meanings, used the same way everywhere: **Overdue** (red), **Due soon** (amber), **In progress** (blue), **Not started** (grey) and **Completed** (green).
+
+- Each chip has a solid 4px marker in its status colour, a tinted fill, and text chosen to stay readable on that fill.
+- Colour is never the only signal. Each status has its own mark (`!`, `*`, `>`, `o`, `v`), the full words appear in the day's detail list as a labelled tag, and the chip's tooltip names the status.
+- Finished work is never called overdue just because its date passed, and a deadline that has arrived outranks how far along the work is, so nothing urgent hides behind "in progress".
+- Calendar entries (classes, exams, personal events) stay on course colour: a category is not a work status, and the two are kept apart.
+
+**Measured, not assumed.** `tests/contrast.test.cjs` builds each chip and tag from the real stylesheet and computes WCAG ratios in both themes. Text is 7.7–8.7:1 in light and 10.5–11.4:1 in dark against a 4.5:1 requirement; status markers are 3.5–4.1:1 in light and 8.3–12.1:1 in dark against a 3:1 requirement. Grey "Not started" measures 3.52:1 on a light day cell, so it never disappears. The test fails the build if any pair drops below AA.
+
+Still to come in this area: the seven assignment priority modes and the grade tracker.

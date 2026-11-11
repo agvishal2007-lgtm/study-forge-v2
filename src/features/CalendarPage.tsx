@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { listCalendarEvents, getGoogleConnection, setEventCompleted } from '../data/calendar';
+import { STATUS_LABEL, STATUS_MARK, workStatus, type WorkStatus } from '../data/statusRules';
 import { compareEvents, describeTime, minutesOf, monthGrid, monthOf, noClassesOn, shiftMonth, todaysPlan, visibleEvents } from '../data/calendarRules';
 import { getActiveAccount } from '../data/account';
 import { CalendarError, hasGoogleAccess, prepareGoogle } from '../data/googleCalendar';
@@ -104,6 +105,8 @@ interface CellItem {
   color: string;
   done: boolean;
   noClasses: boolean;
+  /** One of the five shared meanings, for a piece of work. Calendar entries are categories, not work. */
+  status?: WorkStatus;
 }
 
 function MonthView({ month, items, today, selected, onSelect, onMonth, label, addTo }: { month: string; items: Map<string, CellItem[]>; today: string; selected: string; onSelect: (date: string) => void; onMonth: (month: string) => void; label: string; addTo: (date: string) => string }) {
@@ -140,7 +143,19 @@ function MonthView({ month, items, today, selected, onSelect, onMonth, label, ad
                 >
                   <b>{Number(date.slice(8))}</b>
                   <span className="month-chips">
-                    {dayItems.slice(0, SHOWN_IN_CELL).map((item) => <span key={item.id} className="month-chip" data-done={item.done ? 'true' : undefined} style={{ '--spine': item.color } as React.CSSProperties}>{item.title}</span>)}
+                    {dayItems.slice(0, SHOWN_IN_CELL).map((item) => (
+                      <span
+                        key={item.id}
+                        className="month-chip"
+                        data-status={item.status}
+                        data-done={item.done ? 'true' : undefined}
+                        style={item.status ? undefined : ({ '--spine': item.color } as React.CSSProperties)}
+                        title={item.status ? `${STATUS_LABEL[item.status]} — ${item.title}` : item.title}
+                      >
+                        {item.status && <span className="chip-mark" aria-hidden="true">{STATUS_MARK[item.status]}</span>}
+                        <span className="chip-title">{item.title}</span>
+                      </span>
+                    ))}
                     {dayItems.length > SHOWN_IN_CELL && <span className="month-more">{dayItems.length - SHOWN_IN_CELL} more</span>}
                   </span>
                 </button>
@@ -159,7 +174,15 @@ function MonthView({ month, items, today, selected, onSelect, onMonth, label, ad
             <ul className="planner-list">
               {chosen.map((item) => (
                 <li key={item.id} className="planner-row" style={{ '--spine': item.color } as React.CSSProperties} data-done={item.done ? 'true' : undefined}>
-                  <span className="planner-main"><Link to={item.to}>{item.title}</Link><span className="muted">{item.when}</span></span>
+                  <span className="planner-main">
+                    <Link to={item.to}>{item.title}</Link>
+                    {item.status && (
+                      <span className="status-tag" data-status={item.status} data-testid={`status-${item.status}`}>
+                        <span aria-hidden="true">{STATUS_MARK[item.status]}</span>{STATUS_LABEL[item.status]}
+                      </span>
+                    )}
+                    <span className="muted">{item.when}</span>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -230,7 +253,7 @@ export function CalendarPage() {
   const deadlineItems = new Map<string, CellItem[]>();
   for (const item of planner.filter((entry) => entry.dueDate).sort((a, b) => a.dueTime.localeCompare(b.dueTime))) {
     const list = deadlineItems.get(item.dueDate) ?? [];
-    list.push({ id: item.id, to: `/planner/${item.id}`, title: item.title, when: `${item.type}. ${describeDue(item, now)}`, color: colorOf(item.courseId), done: isDone(item), noClasses: false });
+    list.push({ id: item.id, to: `/planner/${item.id}`, title: item.title, when: `${item.type}. ${describeDue(item, now)}`, color: colorOf(item.courseId), done: isDone(item), noClasses: false, status: workStatus(item, now.date) });
     deadlineItems.set(item.dueDate, list);
   }
 

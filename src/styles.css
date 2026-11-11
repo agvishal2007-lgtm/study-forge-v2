@@ -26,6 +26,21 @@
   --shadow: 0 14px 34px #191d2824;
   --body: 'Figtree Variable', system-ui, sans-serif;
   --display: 'Figtree Variable', system-ui, sans-serif;
+  --status-overdue: #c62f27;
+  --status-overdue-fill: #fdeceb;
+  --status-overdue-text: #8c1d18;
+  --status-soon: #9a5a0b;
+  --status-soon-fill: #fdf3e0;
+  --status-soon-text: #70420a;
+  --status-doing: #2563eb;
+  --status-doing-fill: #e8eefc;
+  --status-doing-text: #1b3f8f;
+  --status-todo: #5b6475;
+  --status-todo-fill: #eceef4;
+  --status-todo-text: #3a4254;
+  --status-done: #0f7a52;
+  --status-done-fill: #e3f4ec;
+  --status-done-text: #0f5137;
   color-scheme: light;
 }
 :root[data-theme='dark'] {
@@ -48,6 +63,21 @@
   --danger-hover: #f6b4ad;
   --danger-soft: #3a2422;
   --on-danger: #2a0f0d;
+  --status-overdue: #f2938a;
+  --status-overdue-fill: #3a2422;
+  --status-overdue-text: #ffd9d4;
+  --status-soon: #e0a955;
+  --status-soon-fill: #3a2e1a;
+  --status-soon-text: #f8e2bd;
+  --status-doing: #8fb0f8;
+  --status-doing-fill: #1e2740;
+  --status-doing-text: #d6e2ff;
+  --status-todo: #9aa4b3;
+  --status-todo-fill: #252a33;
+  --status-todo-text: #dde3ec;
+  --status-done: #7bd6b0;
+  --status-done-fill: #19332a;
+  --status-done-text: #cdf0e0;
   --scroll-track: #1b1f24;
   --scroll-thumb: #434a55;
   --scrim: #05080cb3;
@@ -617,8 +647,24 @@ input[type='radio']:checked { border-color: var(--accent); background: radial-gr
 .month-cell[data-selected='true'] { box-shadow: inset 0 0 0 2px var(--accent); }
 .month-cell[data-off='true'] { background: var(--danger-soft); }
 .month-chips { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.month-chip { font-size: .78rem; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 3px solid var(--spine, var(--line)); background: var(--raised); border-radius: 3px; padding: 0 .25rem; }
-.month-chip[data-done='true'] { text-decoration: line-through; opacity: .65; }
+.month-chip { display: flex; align-items: baseline; gap: .2rem; font-size: .78rem; line-height: 1.35; min-width: 0; border-left: 4px solid var(--spine, var(--line-strong)); background: var(--raised); color: var(--paper); border-radius: 3px; padding: .05rem .25rem; }
+.month-chip .chip-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The mark differs per status, so the five are told apart without seeing colour. */
+.month-chip .chip-mark { flex: none; font-weight: 700; font-size: .7rem; }
+.month-chip[data-status='overdue'] { background: var(--status-overdue-fill); color: var(--status-overdue-text); border-left-color: var(--status-overdue); }
+.month-chip[data-status='soon'] { background: var(--status-soon-fill); color: var(--status-soon-text); border-left-color: var(--status-soon); }
+.month-chip[data-status='doing'] { background: var(--status-doing-fill); color: var(--status-doing-text); border-left-color: var(--status-doing); }
+.month-chip[data-status='todo'] { background: var(--status-todo-fill); color: var(--status-todo-text); border-left-color: var(--status-todo); }
+.month-chip[data-status='done'] { background: var(--status-done-fill); color: var(--status-done-text); border-left-color: var(--status-done); }
+.month-chip[data-done='true'] .chip-title { text-decoration: line-through; }
+
+/* The same five meanings, spelled out, wherever work is listed. */
+.status-tag { display: inline-flex; align-items: baseline; gap: .25rem; font-size: .8rem; font-weight: 600; border-radius: 999px; padding: .05rem .5rem; border: 1px solid transparent; }
+.status-tag[data-status='overdue'] { background: var(--status-overdue-fill); color: var(--status-overdue-text); border-color: var(--status-overdue); }
+.status-tag[data-status='soon'] { background: var(--status-soon-fill); color: var(--status-soon-text); border-color: var(--status-soon); }
+.status-tag[data-status='doing'] { background: var(--status-doing-fill); color: var(--status-doing-text); border-color: var(--status-doing); }
+.status-tag[data-status='todo'] { background: var(--status-todo-fill); color: var(--status-todo-text); border-color: var(--status-todo); }
+.status-tag[data-status='done'] { background: var(--status-done-fill); color: var(--status-done-text); border-color: var(--status-done); }
 .month-more { font-size: .75rem; color: var(--muted); }
 .month-day { margin-top: 1rem; }
 .month-day h3 { margin: 0; font-size: 1.15rem; }
