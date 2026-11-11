@@ -55,7 +55,7 @@ export function AppearanceSection() {
       <Choices
         name="motion"
         label="Motion"
-        options={[{ value: 'device', label: 'Match my device' }, { value: 'reduce', label: 'Reduce motion' }]}
+        options={[{ value: 'device', label: 'Follow my device' }, { value: 'reduce', label: 'Reduce motion' }]}
         hint="Reduce motion stops sliding, lifting and animated effects, even if your device allows them."
       />
       <Choices

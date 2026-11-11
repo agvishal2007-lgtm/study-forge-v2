@@ -202,7 +202,7 @@ test('text size, motion and spacing are remembered without being asked twice', a
   assert.equal(root.size, '20px');
   assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.button')).transitionDuration), '0s');
   await page.getByRole('radio', { name: 'Standard' }).check({ force: true });
-  await page.getByRole('radio', { name: 'Match my device' }).nth(1).check({ force: true });
+  await page.getByRole('radio', { name: 'Follow my device' }).check({ force: true });
   await page.getByRole('radio', { name: 'Comfortable' }).check({ force: true });
 });
 

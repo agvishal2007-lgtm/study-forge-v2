@@ -1077,7 +1077,7 @@ h1 + .muted, h1 + .dash-lead { margin-top: .5rem; }
 }
 /* The forms were written for a dashboard screen, so the card supplies the padding instead. */
 .auth-card .page { padding: 0; max-width: none; }
-.auth-card .auth-tabs { max-width: none; margin: 0 0 1.5rem; }
+.auth-card .auth-tabs { max-width: none; margin: 0 0 1.5rem; justify-content: center; }
 .auth-card h1 { margin-top: 0; }
 .auth-back { text-align: center; margin: 1.25rem 0 0; }
 

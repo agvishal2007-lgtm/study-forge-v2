@@ -85,7 +85,7 @@ export function LibraryPage() {
               ? `All ${shown.length} ${needle ? 'matching your search' : 'in the Library'} selected`
               : `Select all ${shown.length}${needle ? ' matching your search' : ''}`}
           </label>
-          <span className="bulk-count" role="status">{picked.length ? `${picked.length} selected` : 'None selected'}</span>
+          <span className="bulk-count" aria-live="polite">{picked.length ? `${picked.length} selected` : 'None selected'}</span>
           {picked.length > 0 && (
             <div className="bulk-actions">
               <button className="button" disabled={busy} onClick={() => void run({ kind: 'pin' }, picked)}>Pin</button>
