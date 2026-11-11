@@ -542,3 +542,19 @@ Still missing from this area: the grade tracker itself (grading categories and w
 The guide is firm that Today's Plan must rank work with the *same* engine as the Planner, not a second formula. It now does: the week's deadlines on Today are ordered by whichever mode the student picked in the Planner, with their weighting and pins, and a line under the list says which order is in use with a link to change it. Pick "Highest raw points" in the Planner and Today reorders to match.
 
 One markup bug this caught: the Order by `<select>` sat inside its `<label>`, so the label's computed text swallowed every option ("Order by Earliest due date Highest raw points…"). Anything looking for a control labelled "Due date" matched the sort control instead. The select now carries its own label.
+
+## The grade tracker, and grade impact becoming real
+
+A course can now hold the grading categories from its syllabus — "Exams, 40%" — entered by the student, never guessed. From those and the marks they were given, the course page works out where they stand.
+
+What it will not do matters as much as what it will:
+
+- **An unmarked piece of work is never a zero.** A blank and a nought are different things. The grade counts only what has actually been marked, and says how much of the course that covers — "So far: 90%, based on the 60% of the course that has been graded" — rather than reading as a 54% because the final hasn't happened yet.
+- **Weights that don't add to 100% are reported, not silently corrected.** The student is told to check their syllabus, and the graded part is still scaled properly.
+- **Graded work in no category is counted and flagged**, because it would otherwise silently count towards nothing.
+- **A projection is labelled a projection.** "If everything left scores 70%, you would finish around 80% — a projection, not a grade you have."
+- **Removing a category never deletes the work in it.** That work just stops counting towards a category.
+
+This also makes the **grade impact** priority mode real. Impact is a share of a category's weight, not of raw points: a 100-point midterm in a 60% exam category is worth 30% of the final grade, while a 400-point homework pile in a 10% category is worth 10%. Ranking by points puts the homework first; ranking by impact puts the midterm first — which is exactly why the guide insists the two are never conflated. Until a course has categories, the mode says so and ranks nothing rather than inventing an order.
+
+Planner items gained **marks you got** and a **grading category**; both stay blank until entered.

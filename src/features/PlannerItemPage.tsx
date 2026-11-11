@@ -7,6 +7,7 @@ import { isValidDate } from '../data/plannerRules';
 import { listCourses } from '../data/store';
 import { PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, type PlannerPriority, type PlannerStatus, type PlannerType } from '../data/types';
 import { useLive } from '../data/useLive';
+import { listGradeCategories } from '../data/grades';
 
 export function PlannerItemPage() {
   const { id = '' } = useParams();
@@ -28,11 +29,19 @@ export function PlannerItemPage() {
   const [priority, setPriority] = useState<PlannerPriority>('Normal');
   const [estimate, setEstimate] = useState('');
   const [points, setPoints] = useState('');
+  const [earned, setEarned] = useState('');
+  const [categoryId, setCategoryId] = useState('');
   const [details, setDetails] = useState('');
   const [problems, setProblems] = useState<string[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saving, setSaving] = useState(false);
   const { data: courses } = useLive(listCourses);
+  // The grading categories of whichever course this belongs to.
+  const { data: categoryList } = useLive(
+    () => (courseId ? listGradeCategories(courseId) : Promise.resolve([])),
+    [courseId],
+  );
+  const categories = categoryList ?? [];
 
   useEffect(() => {
     if (isNew) return;
@@ -51,6 +60,8 @@ export function PlannerItemPage() {
         setPriority(item.priority);
         setEstimate(item.estimateHours === null ? '' : String(item.estimateHours));
         setPoints(item.points === null ? '' : String(item.points));
+        setEarned(item.earnedPoints === null ? '' : String(item.earnedPoints));
+        setCategoryId(item.categoryId ?? '');
         setDetails(item.details);
         setCreatedAt(item.createdAt);
       }
@@ -82,6 +93,8 @@ export function PlannerItemPage() {
     if (hours !== null && (!Number.isFinite(hours) || hours <= 0)) found.push('Enter estimated hours as a number above 0, or leave it empty.');
     const worth = points.trim() === '' ? null : Number(points);
     if (worth !== null && (!Number.isFinite(worth) || worth < 0)) found.push('Enter points as a number of 0 or more, or leave it empty.');
+    const scored = earned.trim() === '' ? null : Number(earned);
+    if (scored !== null && (!Number.isFinite(scored) || scored < 0)) found.push('Enter the marks you got as a number of 0 or more, or leave it empty.');
     setProblems(found);
     if (found.length > 0) return;
     setSaving(true);
@@ -97,6 +110,8 @@ export function PlannerItemPage() {
         priority,
         estimateHours: hours,
         points: worth,
+        earnedPoints: scored,
+        categoryId: categoryId || null,
         details: details.trim(),
         createdAt,
       });
@@ -147,6 +162,15 @@ export function PlannerItemPage() {
           </label>
           <label>Estimated hours (optional)<input inputMode="decimal" value={estimate} onChange={(event) => touch(setEstimate)(event.target.value)} /></label>
           <label>Points it is worth (optional)<input inputMode="decimal" value={points} onChange={(event) => touch(setPoints)(event.target.value)} /></label>
+          <label>Marks you got (optional)<input inputMode="decimal" value={earned} onChange={(event) => touch(setEarned)(event.target.value)} /></label>
+          {categories.length > 0 && (
+            <label>Grading category
+              <select value={categoryId} onChange={(event) => touch(setCategoryId)(event.target.value)}>
+                <option value="">Not in a category</option>
+                {categories.map((category) => <option key={category.id} value={category.id}>{category.name} ({category.weight}%)</option>)}
+              </select>
+            </label>
+          )}
         </div>
         <label>Details (optional)<textarea value={details} onChange={(event) => touch(setDetails)(event.target.value)} placeholder="Pages 40 to 52, odd problems only" /></label>
         {problems.length > 0 && (

@@ -61,7 +61,31 @@ test('grade impact is never faked from raw points', async () => {
   const { rankWork } = await rules();
   const { ranked } = rankWork([work('Worth a lot', { points: 500, dueDate: '2026-12-01' })], { mode: 'impact', today: TODAY });
   assert.ok(ranked[0].missing.includes('grade impact'), 'it says the data is missing');
-  assert.equal(ranked[0].factors.some((factor) => factor.name === 'Grade impact'), false, 'and invents no number');
+  const impact = ranked[0].factors.find((factor) => factor.name === 'Grade impact');
+  assert.match(impact.detail, /Needs grading categories/, 'it explains why rather than inventing a number');
+  assert.equal(impact.value, 0, 'and contributes nothing');
+});
+
+test('grade impact is real once the syllabus weights exist', async () => {
+  const { rankWork } = await rules();
+  const categories = [
+    { id: 'exams', courseId: 'c', name: 'Exams', weight: 60, position: 0, createdAt: 0, updatedAt: 0 },
+    { id: 'hw', courseId: 'c', name: 'Homework', weight: 10, position: 1, createdAt: 0, updatedAt: 0 },
+  ];
+  const items = [
+    work('Midterm', { points: 100, categoryId: 'exams', dueDate: '2026-12-01' }),
+    // Worth far more points, but in a category that barely counts.
+    work('Homework pile', { points: 400, categoryId: 'hw', dueDate: '2026-12-01' }),
+  ];
+  const { ranked } = rankWork(items, { mode: 'impact', today: TODAY, categories });
+  assert.deepEqual(order(ranked), ['Midterm', 'Homework pile'], 'weight beats raw points');
+  const midterm = ranked[0].factors.find((factor) => factor.name === 'Grade impact');
+  assert.match(midterm.detail, /60% of the final grade/);
+  assert.equal(ranked[0].missing.includes('grade impact'), false);
+
+  // By raw points alone the order flips, which is exactly why the two are kept apart.
+  const byPoints = rankWork(items, { mode: 'points', today: TODAY, categories });
+  assert.deepEqual(order(byPoints.ranked), ['Homework pile', 'Midterm']);
 });
 
 test('quickest to finish prefers short work', async () => {

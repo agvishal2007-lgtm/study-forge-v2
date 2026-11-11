@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AddFiles } from '../components/AddFiles';
 import { Breadcrumbs } from '../components/Breadcrumbs';
+import { GradesSection } from './GradesSection';
 import { MaterialList } from '../components/MaterialList';
 import { SaveLinkForm } from '../components/SaveLinkForm';
 import { NewNoteButton, NoteList } from '../components/NoteList';
@@ -128,6 +129,8 @@ export function CourseDetailPage() {
           ? <NoteList notes={notes.filter((note) => !note.topicId)} />
           : notes.length === 0 && <p className="muted">No notes in this course yet.</p>}
       </section>
+
+      <GradesSection courseId={course.id} />
 
       <section aria-labelledby="course-topics">
         <h2 id="course-topics">Topics</h2>

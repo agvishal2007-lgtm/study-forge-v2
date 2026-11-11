@@ -13,7 +13,7 @@ import type { Checkpoint, CheckpointProgress, Note } from './types';
 /**
  * A collection only belongs here once the published Firebase rules allow it. The rules reject
  * anything else, and one rejected write stops the whole sync, so a new kind of data waits here
- * until its rules are live. `studyTime` and `resourceLinks` are ready in firestore.rules and go in
+ * until its rules are live. `studyTime`, `resourceLinks` and `gradeCategories` are ready in firestore.rules and go in
  * the moment those rules are published; until then they are kept on the device, which is safe and
  * loses nothing.
  */
@@ -145,7 +145,7 @@ async function applyPulled(items: RemoteItem[]): Promise<number> {
       }
       await metaStore.put({ hash: meta?.hash ?? null, rev: item.rev }, key);
       changed += 1;
-    } else if (['courses', 'topics', 'plannerItems', 'decks', 'cards', 'cardProgress', 'practiceSets', 'practiceQuestions', 'practiceAttempts', 'examResults', 'calendarEvents', 'studyDays', 'studyTime', 'resourceLinks'].includes(item.collection)) {
+    } else if (['courses', 'topics', 'plannerItems', 'decks', 'cards', 'cardProgress', 'practiceSets', 'practiceQuestions', 'practiceAttempts', 'examResults', 'calendarEvents', 'studyDays', 'studyTime', 'resourceLinks', 'gradeCategories'].includes(item.collection)) {
       // Both devices changed this. The most recent change wins, so "done" isn't undone by an old edit.
       const incoming = JSON.parse(item.json) as { updatedAt: number };
       if (incoming.updatedAt > (local as { updatedAt: number }).updatedAt) {

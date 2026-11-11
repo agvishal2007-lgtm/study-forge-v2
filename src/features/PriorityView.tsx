@@ -1,15 +1,16 @@
 import { Link } from 'react-router-dom';
 import { STATUS_LABEL, STATUS_MARK, workStatus } from '../data/statusRules';
 import { DEFAULT_WEIGHTS, PRIORITY_MODE_LABEL, rankWork, type PriorityMode, type Weights } from '../data/priorityRules';
-import type { Course, PlannerItem } from '../data/types';
+import type { Course, GradeCategory, PlannerItem } from '../data/types';
 
 /**
  * Work in the order a student chose, with the reasons on show. Every mode keeps overdue and
  * due-soon work at the top of the page, so no way of sorting can hide a deadline.
  */
-export function PriorityView({ items, courses, today, mode, weights, pinned, onPin, onWeights }: {
+export function PriorityView({ items, courses, categories, today, mode, weights, pinned, onPin, onWeights }: {
   items: PlannerItem[];
   courses: Course[];
+  categories: GradeCategory[];
   today: string;
   mode: PriorityMode;
   weights: Weights;
@@ -17,7 +18,7 @@ export function PriorityView({ items, courses, today, mode, weights, pinned, onP
   onPin: (id: string) => void;
   onWeights: (weights: Weights) => void;
 }) {
-  const { ranked, urgent } = rankWork(items, { mode, today, weights, pinned });
+  const { ranked, urgent } = rankWork(items, { mode, today, weights, pinned, categories });
   const nameOf = (id: string | null) => courses.find((course) => course.id === id)?.name;
 
   return (
@@ -65,11 +66,11 @@ export function PriorityView({ items, courses, today, mode, weights, pinned, onP
 
       <section className="planner-group" aria-labelledby="ranked" data-testid="ranked">
         <h2 id="ranked">{PRIORITY_MODE_LABEL[mode]} <span className="muted planner-count">({ranked.length})</span></h2>
-        {mode === 'impact' && (
+        {mode === 'impact' && categories.length === 0 && (
           <p className="notice" data-testid="impact-notice">
-            Grade impact needs each course's grading categories and their weights, which Study Forge can't record yet.
-            Nothing here is guessed from points, because points and grade impact are not the same thing. This list falls
-            back to what is due soonest until grading categories exist.
+            Grade impact needs each course's grading categories and their weights. None are set up yet, so there is
+            nothing to rank by. Add them under Grades on a course page. Nothing here is guessed from points, because
+            points and grade impact are not the same thing.
           </p>
         )}
         {ranked.length === 0

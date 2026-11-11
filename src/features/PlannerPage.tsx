@@ -4,6 +4,7 @@ import { PlannerList } from '../components/PlannerList';
 import { listPlannerItems } from '../data/planner';
 import { GROUP_LABEL, groupItems, localNow } from '../data/plannerRules';
 import { listAllCourses } from '../data/store';
+import { listAllGradeCategories } from '../data/grades';
 import { useLive } from '../data/useLive';
 import { PriorityView } from './PriorityView';
 import { PRIORITY_MODES, PRIORITY_MODE_LABEL, type PriorityMode } from '../data/priorityRules';
@@ -17,8 +18,8 @@ export function PlannerPage() {
   const [weights, setWeights] = useState(savedWeights);
   const [pinned, setPinned] = useState(savedPinned);
   const { data, error } = useLive(async () => {
-    const [items, courses] = await Promise.all([listPlannerItems(), listAllCourses()]);
-    return { items, courses };
+    const [items, courses, categories] = await Promise.all([listPlannerItems(), listAllCourses(), listAllGradeCategories()]);
+    return { items, courses, categories };
   });
   if (error) return <div className="page"><h1>Planner</h1><p className="error" role="alert">Your planner couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
@@ -69,6 +70,7 @@ export function PlannerPage() {
           <PriorityView
             items={shown}
             courses={data.courses}
+            categories={data.categories}
             today={localNow().date}
             mode={mode}
             weights={weights}

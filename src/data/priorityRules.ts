@@ -1,6 +1,7 @@
 import { isDone } from './plannerRules.ts';
 import { workStatus } from './statusRules.ts';
-import type { PlannerItem } from './types';
+import { gradeImpact } from './gradeRules.ts';
+import type { GradeCategory, PlannerItem } from './types';
 
 /**
  * How work is ranked. This is the single ranking engine: Today's Plan uses the same one with the
@@ -68,15 +69,17 @@ const share = (value: number, largest: number) => (largest > 0 ? value / largest
  */
 export function rankWork(
   items: PlannerItem[],
-  options: { mode: PriorityMode; today: string; weights?: Weights; pinned?: string[] },
+  options: { mode: PriorityMode; today: string; weights?: Weights; pinned?: string[]; categories?: GradeCategory[] },
 ): { ranked: Ranked[]; urgent: PlannerItem[] } {
-  const { mode, today, weights = DEFAULT_WEIGHTS, pinned = [] } = options;
+  const { mode, today, weights = DEFAULT_WEIGHTS, pinned = [], categories = [] } = options;
   const waiting = items.filter((item) => !isDone(item));
 
   const daysLeft = (item: PlannerItem) => (item.dueDate ? dayNumber(item.dueDate) - dayNumber(today) : null);
   const horizon = Math.max(1, ...waiting.map((item) => Math.abs(daysLeft(item) ?? 0)));
   const mostPoints = Math.max(0, ...waiting.map((item) => item.points ?? 0));
   const longest = Math.max(0, ...waiting.map((item) => item.estimateHours ?? 0));
+  const impacts = new Map(waiting.map((item) => [item.id, gradeImpact(item, categories, items)]));
+  const biggestImpact = Math.max(0, ...[...impacts.values()].map((value) => value ?? 0));
 
   const scored = waiting.map((item): Ranked => {
     const missing: string[] = [];
@@ -89,8 +92,9 @@ export function rankWork(
     const points = item.points ?? null;
     if (points === null) missing.push('points');
 
-    // Grade impact needs the grading categories a course has not got yet; it is never faked from points.
-    missing.push('grade impact');
+    // Grade impact is only real once the course's categories and weights exist. It is never faked from points.
+    const impact = impacts.get(item.id) ?? null;
+    if (impact === null) missing.push('grade impact');
 
     const hours = item.estimateHours ?? null;
     if (hours === null) missing.push('time estimate');
@@ -103,6 +107,7 @@ export function rankWork(
       { name: 'Urgency', value: urgency, detail: days === null ? 'No due date' : days < 0 ? `${-days} day${days === -1 ? '' : 's'} overdue` : days === 0 ? 'Due today' : `Due in ${days} day${days === 1 ? '' : 's'}` },
       { name: 'Points', value: share(points ?? 0, mostPoints), detail: points === null ? 'Not entered' : `${points} points` },
       { name: 'Time needed', value: effort, detail: hours === null ? 'Not estimated' : `${hours} hour${hours === 1 ? '' : 's'}` },
+      { name: 'Grade impact', value: share(impact ?? 0, biggestImpact), detail: impact === null ? 'Needs grading categories' : `${impact}% of the final grade` },
       { name: 'Importance to you', value: importance, detail: item.priority },
     ];
 
@@ -112,16 +117,18 @@ export function rankWork(
     else if (mode === 'points') score = by('Points');
     else if (mode === 'quickest') score = by('Time needed');
     else if (mode === 'personal') score = by('Importance to you');
-    else if (mode === 'impact') score = 0; // Nothing to rank by yet; the order falls back to urgency.
+    else if (mode === 'impact') score = by('Grade impact');
     else {
       const used = mode === 'balanced' ? DEFAULT_WEIGHTS : weights;
       const total = used.urgency + used.points + used.effort + used.importance;
-      score = total === 0 ? 0 : (
+      const total2 = total + used.impact;
+      score = total2 === 0 ? 0 : (
         by('Urgency') * used.urgency
         + by('Points') * used.points
+        + by('Grade impact') * used.impact
         + by('Time needed') * used.effort
         + by('Importance to you') * used.importance
-      ) / total;
+      ) / total2;
     }
 
     return { item, score, factors, missing };

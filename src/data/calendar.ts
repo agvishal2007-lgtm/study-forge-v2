@@ -201,6 +201,8 @@ export async function applyGoogleItems(items: GoogleItem[], choices: Record<stri
         const added: PlannerItem = {
           id: plannerId,
           points: null,
+          earnedPoints: null,
+          categoryId: null,
           title,
           courseId: choice.courseId,
           type: guessPlannerType(title),

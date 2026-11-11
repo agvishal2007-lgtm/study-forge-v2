@@ -21,6 +21,7 @@ import { dayOf, streaksFrom } from '../data/progressRules';
 import { listStudyDays } from '../data/studyLog';
 import { PRIORITY_MODE_LABEL, rankWork } from '../data/priorityRules';
 import { savedMode, savedPinned, savedWeights } from '../data/priorityChoice';
+import { listAllGradeCategories } from '../data/grades';
 import { formatDuration, listStudyTime, secondsByDate } from '../data/studyTime';
 import { listExamResults } from '../data/exams';
 import { listPlannerItems, setPlannerStatus } from '../data/planner';
@@ -72,16 +73,16 @@ export function TodayPage() {
   const [askedToKeep, setAskedToKeep] = useState(false);
   const { data, error } = useLive(async () => {
     const [courses, materials, storage, unfinished, notes, lastBackup] = await Promise.all([listCourses(), listMaterials(), getStorageStatus(), listUnfinished(), listNotes(), getLastBackupAt()]);
-    const [lessons, checkpoints, progress, plannerItems] = await Promise.all([listLessons(), listCheckpoints(), listProgress(), listPlannerItems()]);
+    const [lessons, checkpoints, progress, plannerItems, gradeCategories] = await Promise.all([listLessons(), listCheckpoints(), listProgress(), listPlannerItems(), listAllGradeCategories()]);
     const [decks, cards, cardProgress] = await Promise.all([listDecks(), listCards(), listCardProgress()]);
     const [practiceSets, practiceQuestions, practiceAttempts, topics] = await Promise.all([listPracticeSets(), listPracticeQuestions(), listPracticeAttempts(), listAllTopics()]);
     const [calendarEvents, studyDays, examResults, studyTime] = await Promise.all([listCalendarEvents(), listStudyDays(), listExamResults(), listStudyTime()]);
-    return { calendarEvents, studyDays, examResults, studyTime, practiceSets, practiceQuestions, practiceAttempts, topics, courses, materials, storage, unfinished, notes, lastBackup, plannerItems, decks, cards, cardProgress, progress, next: recommendNext(lessons, checkpoints, progress) };
+    return { gradeCategories, calendarEvents, studyDays, examResults, studyTime, practiceSets, practiceQuestions, practiceAttempts, topics, courses, materials, storage, unfinished, notes, lastBackup, plannerItems, decks, cards, cardProgress, progress, next: recommendNext(lessons, checkpoints, progress) };
   }, [askedToKeep]);
 
   if (error) return <div className="page"><h1>Today</h1><p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress, practiceSets, practiceQuestions, practiceAttempts, topics, calendarEvents, studyDays, examResults, studyTime } = data;
+  const { gradeCategories, courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress, practiceSets, practiceQuestions, practiceAttempts, topics, calendarEvents, studyDays, examResults, studyTime } = data;
   const backupDue = (materials.length > 0 || notes.length > 0) && (lastBackup === null || Date.now() - lastBackup > BACKUP_REMINDER_MS);
 
   if (courses.length === 0 && materials.length === 0 && unfinished.length === 0 && notes.length === 0 && plannerItems.length === 0 && cards.length === 0 && decks.length === 0 && practiceSets.length === 0 && calendarEvents.length === 0) {
@@ -104,7 +105,7 @@ export function TodayPage() {
   const order = savedMode();
   const dueSoon = order === 'due'
     ? dueThisWeek
-    : rankWork(dueThisWeek, { mode: order, today: now.date, weights: savedWeights(), pinned: savedPinned() }).ranked.map((entry) => entry.item);
+    : rankWork(dueThisWeek, { mode: order, today: now.date, weights: savedWeights(), pinned: savedPinned(), categories: gradeCategories }).ranked.map((entry) => entry.item);
   const dueCards = cards.filter((card) => isDue(cardProgress.get(card.id), now.date));
   const weakCards = cards.filter((card) => isWeak(cardProgress.get(card.id)));
   const decksDue = decks

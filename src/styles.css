@@ -1030,3 +1030,11 @@ h1 + .muted, h1 + .dash-lead { margin-top: .5rem; }
 .weight-rows label { display: grid; grid-template-columns: minmax(0, 12rem) 1fr 2rem; gap: .6rem; align-items: center; font-size: .9rem; }
 .weight-rows input[type='range'] { min-width: 0; width: 100%; accent-color: var(--accent); }
 @media (max-width: 560px) { .weight-rows label { grid-template-columns: 1fr 2rem; } .weight-rows label input[type='range'] { grid-column: 1 / -1; } }
+
+/* Grades: where a course stands. */
+.grade-now { font-size: 1.05rem; margin: .5rem 0; }
+.grade-now b { font-size: 1.3rem; }
+.what-if { margin: .75rem 0; padding: .7rem .9rem; background: var(--raised); border-radius: 12px; box-shadow: var(--shadow-sm); }
+.what-if label { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; font-weight: 600; }
+.what-if input { width: 5rem; min-width: 0; }
+.what-if p { margin: .4rem 0 0; }

@@ -227,6 +227,21 @@ export type PlannerStatus = (typeof PLANNER_STATUSES)[number];
 export const PLANNER_PRIORITIES = ['Low', 'Normal', 'High'] as const;
 export type PlannerPriority = (typeof PLANNER_PRIORITIES)[number];
 
+/**
+ * A grading category in a course, with the share of the final grade it carries — "Exams, 40%".
+ * The student enters these from their own syllabus; Study Forge never invents them.
+ */
+export interface GradeCategory {
+  id: string;
+  courseId: string;
+  name: string;
+  /** Share of the final grade, as a percentage. */
+  weight: number;
+  position: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface PlannerItem {
   id: string;
   title: string;
@@ -242,6 +257,10 @@ export interface PlannerItem {
   estimateHours: number | null;
   /** What the work is worth, in the course's own points. Null means not entered, never assumed. */
   points: number | null;
+  /** What was actually scored. Null means not graded yet, which is not the same as zero. */
+  earnedPoints: number | null;
+  /** Which grading category this counts towards. Null means not sorted into one. */
+  categoryId: string | null;
   details: string;
   createdAt: number;
   updatedAt: number;

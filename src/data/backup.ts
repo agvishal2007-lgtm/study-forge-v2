@@ -6,7 +6,7 @@ import { listUnfinished } from './recordings';
 import { findByHash, getStorageStatus, hashFile, storeMaterial } from './store';
 import { LINK_CATEGORIES, type LinkCategory } from './linkRules';
 import {
-  CALENDAR_KINDS, PLAN_PRIORITIES, type CalendarEvent, type StudyDay, type StudyTime, type ResourceLink, type Transcript, OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem, type ExamResult, type ExamItem, type PracticeAttempt, type PracticeQuestion, type PracticeSet, CONFIDENCE_LEVELS, PRACTICE_KINDS, type CardProgress, type Deck, type Flashcard, CARD_RATINGS,
+  CALENDAR_KINDS, PLAN_PRIORITIES, type CalendarEvent, type StudyDay, type StudyTime, type ResourceLink, type GradeCategory, type Transcript, OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem, type ExamResult, type ExamItem, type PracticeAttempt, type PracticeQuestion, type PracticeSet, CONFIDENCE_LEVELS, PRACTICE_KINDS, type CardProgress, type Deck, type Flashcard, CARD_RATINGS,
   type AnswerRecord, type Checkpoint, type CheckpointProgress, type Course, type ExplanationRecord, type GuidedQuestion,
   type KeyPointRating, type Lesson, type Material, type MasteryStatus, type Note, type QuestionKind, type Reteach, type Topic,
 } from './types';
@@ -20,7 +20,7 @@ import { NotAZip, readZipEntries, type ZipEntry } from './zipReader';
  */
 const MANIFEST_PATH = 'study-forge-backup.json';
 const FORMAT = 'study-forge-backup';
-const VERSION = 10;
+const VERSION = 11;
 const LAST_BACKUP_KEY = 'lastBackupAt';
 
 export interface BackupManifest {
@@ -46,6 +46,7 @@ export interface BackupManifest {
   studyDays: StudyDay[];
   studyTime: StudyTime[];
   resourceLinks: ResourceLink[];
+  gradeCategories: GradeCategory[];
   transcripts: Transcript[];
 }
 
@@ -142,11 +143,11 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     : null;
 
   const db = await getDb();
-  const [courses, topics, notes, materials, lessons, checkpoints, progress, plannerItems, decks, cards, cardProgress, practiceSets, practiceQuestions, practiceAttempts, examResults, calendarEvents, studyDays, studyTime, resourceLinks, transcripts] = await Promise.all([
+  const [courses, topics, notes, materials, lessons, checkpoints, progress, plannerItems, decks, cards, cardProgress, practiceSets, practiceQuestions, practiceAttempts, examResults, calendarEvents, studyDays, studyTime, resourceLinks, gradeCategories, transcripts] = await Promise.all([
     db.getAll('courses'), db.getAll('topics'), db.getAll('notes'), db.getAll('materials'),
     db.getAll('lessons'), db.getAll('checkpoints'), db.getAll('checkpointProgress'), db.getAll('plannerItems'),
     db.getAll('decks'), db.getAll('cards'), db.getAll('cardProgress'),
-    db.getAll('practiceSets'), db.getAll('practiceQuestions'), db.getAll('practiceAttempts'), db.getAll('examResults'), db.getAll('calendarEvents'), db.getAll('studyDays'), db.getAll('studyTime'), db.getAll('resourceLinks'), db.getAll('transcripts'),
+    db.getAll('practiceSets'), db.getAll('practiceQuestions'), db.getAll('practiceAttempts'), db.getAll('examResults'), db.getAll('calendarEvents'), db.getAll('studyDays'), db.getAll('studyTime'), db.getAll('resourceLinks'), db.getAll('gradeCategories'), db.getAll('transcripts'),
   ]);
   const courseFolder = (courseId: string | null, topicId: string | null) => {
     const course = courses.find((candidate) => candidate.id === courseId);
@@ -196,6 +197,7 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     studyDays,
     studyTime,
     resourceLinks,
+    gradeCategories,
     transcripts,
   };
   const noteFiles = notes.map((note) => ({
@@ -392,6 +394,8 @@ function cleanPlannerItem(raw: unknown): PlannerItem | null {
     priority: pick(PLANNER_PRIORITIES, raw.priority, 'Normal'),
     estimateHours: typeof raw.estimateHours === 'number' && Number.isFinite(raw.estimateHours) && raw.estimateHours > 0 ? raw.estimateHours : null,
     points: typeof raw.points === 'number' && Number.isFinite(raw.points) && raw.points >= 0 ? raw.points : null,
+    earnedPoints: typeof raw.earnedPoints === 'number' && Number.isFinite(raw.earnedPoints) && raw.earnedPoints >= 0 ? raw.earnedPoints : null,
+    categoryId: isOptionalId(raw.categoryId) ? (raw.categoryId as string | null) : null,
     details: isText(raw.details) ? raw.details : '',
     createdAt: raw.createdAt,
     updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.createdAt,
@@ -435,6 +439,17 @@ function cleanStudyDay(raw: unknown): StudyDay | null {
   if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.date) || !isValidDate(raw.date)) return null;
   const amount = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0);
   return { id: raw.id, date: raw.date, cards: amount(raw.cards), lessons: amount(raw.lessons), updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : 0 };
+}
+
+function cleanGradeCategory(raw: unknown): GradeCategory | null {
+  if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.courseId) || !isText(raw.name) || !raw.name) return null;
+  if (!isTime(raw.createdAt)) return null;
+  const number = (value: unknown, fallback: number) => (typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : fallback);
+  return {
+    id: raw.id, courseId: raw.courseId, name: raw.name,
+    weight: number(raw.weight, 0), position: number(raw.position, 0),
+    createdAt: raw.createdAt, updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.createdAt,
+  };
 }
 
 function cleanResourceLink(raw: unknown): ResourceLink | null {
@@ -594,6 +609,7 @@ export async function openBackup(file: File): Promise<OpenedBackup> {
     studyDays: raw.studyDays === undefined ? [] : cleanList(raw.studyDays, cleanStudyDay),
     studyTime: raw.studyTime === undefined ? [] : cleanList(raw.studyTime, cleanStudyTime),
     resourceLinks: raw.resourceLinks === undefined ? [] : cleanList(raw.resourceLinks, cleanResourceLink),
+    gradeCategories: raw.gradeCategories === undefined ? [] : cleanList(raw.gradeCategories, cleanGradeCategory),
     transcripts: raw.transcripts === undefined ? [] : cleanList(raw.transcripts, cleanTranscript),
   };
 
@@ -826,6 +842,11 @@ export async function restoreBackup(
   }
   for (const day of manifest.studyDays) {
     if (!(await db.getKey('studyDays', day.id))) await db.put('studyDays', day);
+  }
+  for (const category of manifest.gradeCategories) {
+    const courseId = courseOrNull(category.courseId);
+    if (!courseId) continue; // A category without its course counts towards nothing.
+    if (!(await db.getKey('gradeCategories', category.id))) await db.put('gradeCategories', { ...category, courseId });
   }
   for (const link of manifest.resourceLinks) {
     // Only keep an extra association whose course and resource both came back.
