@@ -56,7 +56,8 @@ test('archiving a topic puts it away and keeps it, and it comes back', async () 
 
 test('a topic in the bin can be restored', async () => {
   await page.getByRole('button', { name: 'Move topic Cells to the bin' }).click();
-  await page.waitForFunction(() => !document.body.innerText.includes('Cells'));
+  // The offer to undo names what was binned, so the check is against the page itself.
+  await page.waitForFunction(() => !document.getElementById('content').innerText.includes('Cells'));
   await page.goto(`${URL_BASE}#/bin`);
   await page.getByTestId('bin-topics').waitFor();
   await page.getByRole('button', { name: 'Restore Cells' }).click();
@@ -75,6 +76,8 @@ test('archiving a course keeps it whole and reachable, and it comes back', async
   await page.getByRole('heading', { name: 'Cells', level: 4 }).waitFor();
   await page.getByRole('button', { name: 'Put back in use' }).click();
   await page.goto(`${URL_BASE}#/courses`);
+  // Wait for the screen to catch up rather than sampling it mid-render.
+  await page.waitForFunction(() => !document.querySelector('[data-testid=archived-courses]'));
   assert.equal(await page.getByTestId('archived-courses').count(), 0, 'it is back in use');
 });
 

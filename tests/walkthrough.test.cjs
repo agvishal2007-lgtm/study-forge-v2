@@ -11,7 +11,7 @@ const URL_BASE = 'http://localhost:4180/';
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'sf-tour-'));
 const shots = path.join(__dirname, '..', 'test-output');
 fs.mkdirSync(shots, { recursive: true });
-const TOTAL = 23;
+const TOTAL = 24;
 let server;
 let context;
 let page;
@@ -100,7 +100,7 @@ test('it never opens by itself, and a new student can find it', async () => {
 test('the button starts it at 0%', async () => {
   await open('main');
   await card().waitFor();
-  assert.match(await count(), /Step 1 of 23, 0% complete/);
+  assert.match(await count(), /Step 1 of 24, 0% complete/);
   await page.getByRole('heading', { name: 'Welcome to Study Forge' }).waitFor();
   await settle();
   await page.screenshot({ path: path.join(shots, 'tour-welcome.png') });
