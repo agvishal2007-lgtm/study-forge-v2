@@ -15,7 +15,10 @@ export function Shelf({ courses, materials }: { courses: Course[]; materials: Ma
             style={{ '--spine': course.color, '--extra': `${Math.min(count, 12) * 7}px` } as React.CSSProperties}
           >
             <span className="book-title">{course.name}</span>
-            {course.code && <span className="book-code">{course.code}</span>}
+            {/* A course made from a calendar often only has its code; show it once, and say how to add the name. */}
+            {course.code && course.code.trim().toLowerCase() !== course.name.trim().toLowerCase()
+              ? <span className="book-code">{course.code}</span>
+              : course.code && <span className="book-code book-hint">Add the course name</span>}
             <span className="book-count">{count === 1 ? '1 file' : `${count} files`}</span>
           </Link>
         );

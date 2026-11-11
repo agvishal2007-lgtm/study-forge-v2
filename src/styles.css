@@ -1310,3 +1310,8 @@ html[data-density='compact'] .files li, html[data-density='compact'] .checkpoint
 }
 .join-chip { display: inline-flex; align-items: center; min-height: 28px; padding: 0 .65rem; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: .85rem; font-weight: 700; text-decoration: none; margin-left: .25rem; }
 .join-chip:hover { background: var(--accent-hover); }
+
+/* The shelf follows its heading or the Arrange line closely; the big gap is for new sections. */
+.page > section.course-group { margin-top: .75rem; }
+.page > section.course-group > h2 { margin-top: 1.5rem; }
+.book-hint { font-style: italic; }

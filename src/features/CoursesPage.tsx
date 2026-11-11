@@ -31,7 +31,7 @@ export function CoursesPage() {
       )}
 
       {groups.map((group) => (
-        <section key={group.term || 'no-term'} aria-label={group.term || 'Courses with no semester'}>
+        <section key={group.term || 'no-term'} className="course-group" aria-label={group.term || 'Courses with no semester'}>
           {showTerms && <h2>{group.term || 'No semester'}</h2>}
           {arranging
             ? (
