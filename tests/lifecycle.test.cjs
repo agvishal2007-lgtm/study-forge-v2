@@ -77,6 +77,8 @@ test('archiving a course keeps it whole and reachable, and it comes back', async
   await archived.getByRole('link', { name: 'Biology' }).click();
   await page.getByRole('heading', { name: 'Cells', level: 4 }).waitFor();
   await page.getByRole('button', { name: 'Put back in use' }).click();
+  // Leaving before the change is saved would test nothing, so wait until the page shows it.
+  await page.getByRole('button', { name: 'Put back in use' }).waitFor({ state: 'detached' });
   await page.goto(`${URL_BASE}#/courses`);
   // Wait for the list itself to be on screen first: checking for an absent section while the page
   // is still loading passes for the wrong reason.
