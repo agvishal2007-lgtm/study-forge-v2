@@ -6,7 +6,7 @@ import { listUnfinished } from './recordings';
 import { findByHash, getStorageStatus, hashFile, storeMaterial } from './store';
 import { LINK_CATEGORIES, type LinkCategory } from './linkRules';
 import {
-  CALENDAR_KINDS, PLAN_PRIORITIES, type CalendarEvent, type StudyDay, type StudyTime, type ResourceLink, type GradeCategory, type Transcript, OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem, type ExamResult, type ExamItem, type PracticeAttempt, type PracticeQuestion, type PracticeSet, CONFIDENCE_LEVELS, PRACTICE_KINDS, type CardProgress, type Deck, type Flashcard, CARD_RATINGS,
+  CALENDAR_KINDS, PLAN_PRIORITIES, type CalendarEvent, type StudyDay, type StudyTime, type ResourceLink, type GradeCategory, type Transcript, OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem, type ExamResult, type ExamItem, type PracticeAttempt, type PracticeQuestion, type PracticeSet, CONFIDENCE_LEVELS, DIFFICULTY_LEVELS, PRACTICE_KINDS, type CardProgress, type Deck, type Flashcard, CARD_RATINGS,
   type AnswerRecord, type Checkpoint, type CheckpointProgress, type Course, type ExplanationRecord, type GuidedQuestion,
   type KeyPointRating, type Lesson, type Material, type MasteryStatus, type Note, type QuestionKind, type Reteach, type Topic,
 } from './types';
@@ -523,6 +523,7 @@ function cleanPracticeAttempt(raw: unknown): PracticeAttempt | null {
     id: raw.id, questionId: raw.questionId, setId: raw.setId, sessionId: isText(raw.sessionId) ? raw.sessionId : '', answer: isText(raw.answer) ? raw.answer : '',
     result: raw.result as PracticeAttempt['result'], selfChecked: raw.selfChecked === true,
     confidence: CONFIDENCE_LEVELS.includes(raw.confidence as never) ? raw.confidence as PracticeAttempt['confidence'] : null,
+    difficulty: DIFFICULTY_LEVELS.includes(raw.difficulty as never) ? raw.difficulty as PracticeAttempt['difficulty'] : null,
     at: raw.at, updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.at,
   };
 }

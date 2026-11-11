@@ -2,14 +2,25 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { gradeAutomatically } from '../data/mastery';
 import {
-  clearPracticeSession, listAllTopics, listPracticeAttempts, listPracticeQuestions, listPracticeSets, loadPracticeSession, recordAttempt, savePracticeSession, type PracticeSession,
+  clearPracticeSession, listAllTopics, listPracticeAttempts, listPracticeQuestions, listPracticeSets, loadPracticeSession, recordAttempt, savedQuestionIds, savePracticeSession,
+  setAttemptDifficulty, toggleSavedQuestion, type PracticeSession,
 } from '../data/practice';
 import { feedbackFor, mistakesIn } from '../data/practiceRules';
 import { useStudyClock } from '../data/studyClock';
-import { CONFIDENCE_LEVELS, PRACTICE_KIND_LABEL, type Confidence, type PracticeAttempt, type PracticeKind, type PracticeQuestion, type PracticeResult } from '../data/types';
+import { CONFIDENCE_LEVELS, DIFFICULTY_LEVELS, PRACTICE_KIND_LABEL, type Confidence, type PracticeAttempt, type PracticeKind, type PracticeQuestion, type PracticeResult } from '../data/types';
 import { topicLabeler } from './PracticePage';
 
 const newId = () => crypto.randomUUID();
+/** Practical session lengths. A longer list is offered as these, or all of it. */
+const LENGTHS = [5, 10, 20];
+/** A gap longer than this means the student stepped away, so it isn't counted as study time. */
+const IDLE_MS = 5 * 60_000;
+
+/** "12 min", "1 hr 5 min". */
+const minutes = (ms: number) => {
+  const total = Math.max(1, Math.round(ms / 60_000));
+  return total >= 60 ? `${Math.floor(total / 60)} hr${total % 60 ? ` ${total % 60} min` : ''}` : `${total} min`;
+};
 
 export function PracticeSessionPage() {
   const [params] = useSearchParams();
@@ -22,6 +33,10 @@ export function PracticeSessionPage() {
   const [questions, setQuestions] = useState<Map<string, PracticeQuestion>>(new Map());
   const [attempts, setAttempts] = useState<Map<string, PracticeAttempt>>(new Map());
   const [loaded, setLoaded] = useState(false);
+  // A long list waits here until the student chooses how many to do.
+  const [pool, setPool] = useState<string[] | null>(null);
+  const [saved, setSaved] = useState<Set<string>>(new Set());
+  const lastTick = useRef(Date.now());
   const [failure, setFailure] = useState('');
   const busy = useRef(false);
 
@@ -30,28 +45,39 @@ export function PracticeSessionPage() {
     setLoaded(false);
     setSession(null);
     (async () => {
-      const [saved, allQuestions, allAttempts, sets, topics] = await Promise.all([
-        loadPracticeSession(), listPracticeQuestions(), listPracticeAttempts(), listPracticeSets(), listAllTopics(),
+      const [resumed, allQuestions, allAttempts, sets, topics, bookmarked] = await Promise.all([
+        loadPracticeSession(), listPracticeQuestions(), listPracticeAttempts(), listPracticeSets(), listAllTopics(), savedQuestionIds(),
       ]);
       if (!active) return;
       setQuestions(new Map(allQuestions.map((question) => [question.id, question])));
       setAttempts(new Map(allAttempts.map((attempt) => [attempt.id, attempt])));
+      setSaved(new Set(bookmarked));
       const present = new Set(allQuestions.map((question) => question.id));
-      if (saved && saved.url === url && saved.questionIds.every((id) => present.has(id))) {
-        setSession(saved);
+      // Coming back to the same session picks up where it stopped. A question removed since is
+      // skipped and said so, rather than throwing the whole session and its answers away.
+      const remaining = resumed && resumed.url === url ? resumed.questionIds.filter((id, index) => index < resumed.position || present.has(id)) : [];
+      if (resumed && resumed.url === url && remaining.slice(resumed.position).length > 0) {
+        const gone = resumed.questionIds.length - remaining.length;
+        const kept = { ...resumed, questionIds: remaining, skipped: (resumed.skipped ?? 0) + gone };
+        if (gone) await savePracticeSession(kept);
+        lastTick.current = Date.now();
+        setSession(kept);
       } else {
         const courseSets = params.get('course') ? new Set(sets.filter((set) => set.courseId === params.get('course')).map((set) => set.id)) : null;
         const inScope = allQuestions.filter((question) => (!setId || question.setId === setId) && (!courseSets || courseSets.has(question.setId)));
         const labelOf = topicLabeler(sets, topics);
         let picked = inScope;
         if (mode === 'mistakes') picked = mistakesIn(inScope, allAttempts);
+        if (mode === 'saved') picked = inScope.filter((question) => bookmarked.includes(question.id));
         if (mode === 'topic') picked = inScope.filter((question) => labelOf(question) === params.get('topic'));
         const kind = params.get('kind') as PracticeKind | null;
         if (kind) picked = picked.filter((question) => question.kind === kind);
-        if (picked.length > 0) {
-          const fresh: PracticeSession = {
-            id: newId(), url, questionIds: picked.map((question) => question.id), position: 0, attemptId: newId(), draft: '', selected: null, confidence: null, checking: false, answer: '',
-          };
+        const ids = picked.map((question) => question.id);
+        const asked = Number(params.get('count'));
+        if (ids.length > LENGTHS[0] && !asked) {
+          if (active) setPool(ids);
+        } else if (ids.length > 0) {
+          const fresh = startSession(asked ? ids.slice(0, asked) : ids);
           await savePracticeSession(fresh);
           if (active) setSession(fresh);
         }
@@ -63,18 +89,46 @@ export function PracticeSessionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visit]);
 
+  function startSession(ids: string[]): PracticeSession {
+    lastTick.current = Date.now();
+    return { id: newId(), url, questionIds: ids, position: 0, attemptId: newId(), draft: '', selected: null, confidence: null, checking: false, answer: '', activeMs: 0, skipped: 0 };
+  }
+
   const change = (patch: Partial<PracticeSession>) => {
     if (!session) return;
-    const next = { ...session, ...patch };
+    // Study time counts only while working: a long gap means the student stepped away.
+    const now = Date.now();
+    const gap = now - lastTick.current;
+    lastTick.current = now;
+    const next = { ...session, ...patch, activeMs: (session.activeMs ?? 0) + (gap < IDLE_MS ? gap : 0) };
     setSession(next);
     // A failed draft save only risks a little typing, so the student isn't interrupted.
-    if (next.position >= next.questionIds.length) void clearPracticeSession().catch(() => undefined);
-    else void savePracticeSession(next).catch(() => undefined);
+    void savePracticeSession(next).catch(() => undefined);
   };
 
   const back = setId ? `/practice/${setId}` : '/practice';
   if (!loaded) return <p className="page muted">Loading…</p>;
   if (failure && !session) return <div className="page"><h1>Practice</h1><p className="error" role="alert">Your questions couldn't be loaded. {failure}</p></div>;
+  if (!session && pool) {
+    const choose = async (count: number) => {
+      const fresh = startSession(pool.slice(0, count));
+      await savePracticeSession(fresh);
+      setPool(null);
+      setSession(fresh);
+    };
+    return (
+      <div className="page review-page">
+        <h1>How many questions?</h1>
+        <p className="muted">There are {pool.length} to practise. You can stop at any point and pick up where you left off.</p>
+        <div className="session-actions" data-testid="practice-length">
+          {LENGTHS.filter((length) => length < pool.length).map((length) => (
+            <button key={length} className="button" onClick={() => void choose(length)}>{length} questions</button>
+          ))}
+          <button className="button primary" onClick={() => void choose(pool.length)}>All {pool.length}</button>
+        </div>
+      </div>
+    );
+  }
   if (!session) {
     return (
       <div className="page">
@@ -85,18 +139,32 @@ export function PracticeSessionPage() {
     );
   }
 
-  const finished = session.position >= session.questionIds.length;
+  const finished = session.position >= session.questionIds.length || session.endedEarly;
   if (finished) {
     const results = [...attempts.values()].filter((attempt) => attempt.sessionId === session.id);
     const count = (result: PracticeResult) => results.filter((attempt) => attempt.result === result).length;
     const missed = count('wrong') + count('partial');
+    const topicsDone = [...new Set(results.map((attempt) => questions.get(attempt.questionId)?.topic).filter(Boolean))];
+    const savedHere = session.questionIds.filter((id) => saved.has(id)).length;
+    const felt = (level: string) => results.filter((attempt) => attempt.difficulty === level).length;
+    const notReached = session.questionIds.length - session.position;
     return (
       <div className="page review-page">
-        <h1>Practice finished</h1>
-        <p data-testid="practice-summary">{count('correct')} correct, {count('partial')} partly right, {count('wrong')} wrong.</p>
+        <h1>{session.endedEarly ? 'Practice stopped' : 'Practice finished'}</h1>
+        <dl className="session-summary" data-testid="practice-summary">
+          <div><dt>Answered</dt><dd>{results.length}{notReached > 0 ? ` (${notReached} not reached)` : ''}</dd></div>
+          <div><dt>Results</dt><dd>{count('correct')} correct, {count('partial')} partly right, {count('wrong')} wrong</dd></div>
+          {results.some((attempt) => attempt.difficulty) && <div><dt>How it felt</dt><dd>{DIFFICULTY_LEVELS.map((level) => `${felt(level)} ${level.toLowerCase()}`).join(', ')}</dd></div>}
+          {topicsDone.length > 0 && <div><dt>Topics</dt><dd>{topicsDone.join(', ')}</dd></div>}
+          {savedHere > 0 && <div><dt>Saved for later</dt><dd>{savedHere}</dd></div>}
+          {(session.activeMs ?? 0) >= 60_000 && <div><dt>Time spent</dt><dd>{minutes(session.activeMs ?? 0)}</dd></div>}
+        </dl>
+        {(session.skipped ?? 0) > 0 && <p className="notice">{session.skipped} {session.skipped === 1 ? 'question was' : 'questions were'} removed after this session began, so {session.skipped === 1 ? 'it was' : 'they were'} skipped.</p>}
+        <p className="muted">This counts answers, not mastery. Getting a question right once doesn't mean it's learned.</p>
         <div className="session-actions">
-          {missed > 0 && <Link className="button primary" to={`/practice/session?mode=mistakes${setId ? `&set=${setId}` : ''}`}>Practice what you missed</Link>}
-          <Link className="button" to={back}>Done</Link>
+          {missed > 0 && <Link className="button primary" onClick={() => void clearPracticeSession()} to={`/practice/session?mode=mistakes${setId ? `&set=${setId}` : ''}`}>Practice what you missed</Link>}
+          {savedHere > 0 && <Link className="button" onClick={() => void clearPracticeSession()} to="/practice/session?mode=saved">Practise saved questions</Link>}
+          <Link className="button" onClick={() => void clearPracticeSession()} to={back}>Done</Link>
         </div>
       </div>
     );
@@ -154,8 +222,24 @@ export function PracticeSessionPage() {
           <h1>Practice</h1>
           <p className="muted" data-testid="practice-left">{left} left. {PRACTICE_KIND_LABEL[question.kind]}{question.topic ? `, ${question.topic}` : ''}.</p>
         </div>
-        <Link to={back}>Stop for now</Link>
+        <div className="row-actions">
+          <Link to={back}>Stop for now</Link>
+          <button className="text-button" onClick={() => change({ endedEarly: true })}>Finish now</button>
+        </div>
       </header>
+      {(session.skipped ?? 0) > 0 && session.position === 0 && <p className="notice">{session.skipped} {session.skipped === 1 ? 'question in this session was' : 'questions in this session were'} removed since, so {session.skipped === 1 ? 'it is' : 'they are'} skipped.</p>}
+      <p className="save-later">
+        <button
+          className="text-button"
+          aria-pressed={saved.has(question.id)}
+          onClick={async () => {
+            const keep = await toggleSavedQuestion(question.id);
+            setSaved((current) => { const next = new Set(current); if (keep) next.add(question.id); else next.delete(question.id); return next; });
+          }}
+        >
+          {saved.has(question.id) ? 'Saved for later ✓' : 'Save for later'}
+        </button>
+      </p>
       {failure && <p className="error" role="alert">{failure}</p>}
       {!attempt && !session.checking && (
         <form className="session-card" data-testid="practice-question" onSubmit={submit}>
@@ -213,6 +297,23 @@ export function PracticeSessionPage() {
           <p className="card-text" data-testid="correct-answer">{correctText}</p>
           {question.explanation && <><p className="flashcard-label">Why</p><p className="card-text">{question.explanation}</p></>}
           {question.source && <p className="muted file-meta">Source: {question.source}</p>}
+          <fieldset className="confidence" data-testid="difficulty">
+            <legend>How hard did this feel? (optional, doesn't change your score)</legend>
+            {DIFFICULTY_LEVELS.map((level) => (
+              <label key={level}>
+                <input
+                  type="radio"
+                  name={`${attempt.id}-difficulty`}
+                  checked={attempt.difficulty === level}
+                  onChange={async () => {
+                    await setAttemptDifficulty(attempt.id, level);
+                    setAttempts((current) => new Map(current).set(attempt.id, { ...attempt, difficulty: level }));
+                  }}
+                />
+                <span>{level}</span>
+              </label>
+            ))}
+          </fieldset>
           <div className="session-actions">
             <button className="button primary" onClick={next}>{left > 1 ? 'Next question' : 'See results'}</button>
           </div>

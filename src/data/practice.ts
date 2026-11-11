@@ -78,6 +78,39 @@ export interface PracticeSession {
   /** The typed answer was submitted, and the student is checking it against the model answer. */
   checking: boolean;
   answer: string;
+  /** Time actually spent with the session open and in view, so a session left overnight doesn't claim hours. */
+  activeMs?: number;
+  /** Questions that were removed after the session began, and were skipped rather than shown. */
+  skipped?: number;
+  /** Set when the student chose to stop early; what was answered still counts. */
+  endedEarly?: boolean;
+}
+
+/** Records how hard a question felt. It changes nothing about whether the answer was right. */
+export async function setAttemptDifficulty(id: string, difficulty: PracticeAttempt['difficulty']): Promise<void> {
+  const db = await getDb();
+  const attempt = await db.get('practiceAttempts', id);
+  if (!attempt) return;
+  await db.put('practiceAttempts', { ...attempt, difficulty, updatedAt: Math.max(Date.now(), attempt.updatedAt + 1) });
+  notifyChanged();
+}
+
+/*
+ * Questions saved for later. Only the question's own id is kept, so the original question, its set
+ * and its history stay exactly where they are; a removed question simply drops off the list.
+ */
+const SAVED_KEY = 'practiceSaved';
+export async function savedQuestionIds(): Promise<string[]> {
+  const saved = await (await getDb()).get('meta', SAVED_KEY);
+  return Array.isArray(saved) ? saved.filter((id): id is string => typeof id === 'string') : [];
+}
+export async function toggleSavedQuestion(id: string): Promise<boolean> {
+  const db = await getDb();
+  const saved = await savedQuestionIds();
+  const keep = !saved.includes(id);
+  await db.put('meta', keep ? [...saved, id] : saved.filter((other) => other !== id), SAVED_KEY);
+  notifyChanged();
+  return keep;
 }
 
 export const loadPracticeSession = async () => (await (await getDb()).get('meta', SESSION_KEY)) as PracticeSession | undefined;

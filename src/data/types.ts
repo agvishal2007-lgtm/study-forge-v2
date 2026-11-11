@@ -380,6 +380,9 @@ export const PRACTICE_KIND_LABEL: Record<PracticeKind, string> = {
 };
 export type PracticeResult = 'correct' | 'partial' | 'wrong';
 export const CONFIDENCE_LEVELS = ['Guessing', 'Somewhat sure', 'Sure'] as const;
+/** How hard a question felt. The student's own sense of it, kept apart from whether the answer was right. */
+export const DIFFICULTY_LEVELS = ['Easy', 'Medium', 'Hard'] as const;
+export type Difficulty = typeof DIFFICULTY_LEVELS[number];
 export type Confidence = (typeof CONFIDENCE_LEVELS)[number];
 
 export interface PracticeSet {
@@ -422,6 +425,8 @@ export interface PracticeAttempt {
   /** The student judged a typed answer against the model answer. */
   selfChecked: boolean;
   confidence: Confidence | null;
+  /** How hard it felt, chosen after answering. Never part of the score. */
+  difficulty?: Difficulty | null;
   at: number;
   updatedAt: number;
 }
