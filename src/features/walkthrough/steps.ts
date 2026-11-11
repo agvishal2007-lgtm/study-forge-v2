@@ -180,7 +180,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/record',
     target: ['[data-tour="record-start"]', '#content .page'],
     title: 'Recordings stay safe',
-    body: 'Audio saves every 5 seconds, so if something crashes, you lose only a few seconds. On a phone, keep the screen on while recording.',
+    body: 'Audio saves every 5 seconds, so if something crashes, you lose only a few seconds. On a phone, keep the screen on while recording. When it\'s finished, open the recording to download it as an MP3 (or an MP4 for video), or in another format your browser can make.',
   },
   {
     id: 'backup',
