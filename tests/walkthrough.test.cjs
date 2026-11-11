@@ -11,9 +11,19 @@ const URL_BASE = 'http://localhost:4180/';
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'sf-tour-'));
 const shots = path.join(__dirname, '..', 'test-output');
 fs.mkdirSync(shots, { recursive: true });
-const TOTAL = 24;
-/** Where a step sits in the walkthrough, by name, so adding one never moves these tests. */
-const numberOf = (id) => EXPECTED.findIndex(([stepId]) => stepId === id) + 1;
+/**
+ * The walkthrough's own steps, in order, read from the source rather than copied here. The list
+ * below only names the steps worth checking a screen for, so it cannot be used to count positions.
+ */
+const STEP_IDS = [...fs.readFileSync(path.join(__dirname, '..', 'src', 'features', 'walkthrough', 'steps.ts'), 'utf8')
+  .matchAll(/^\s{4}id: '([^']+)'/gm)].map((found) => found[1]);
+const TOTAL = STEP_IDS.length;
+/** Where a step sits, by name, so adding a step never moves these tests. */
+const numberOf = (id) => {
+  const at = STEP_IDS.indexOf(id);
+  if (at < 0) throw new Error(`no walkthrough step called ${id}`);
+  return at + 1;
+};
 let server;
 let context;
 let page;
@@ -274,7 +284,7 @@ test('a section that is missing never crashes it', async () => {
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
   await atStep(1);
   await page.addStyleTag({ content: '[data-tour="add-files"] { display: none !important; }' });
-  for (let i = 1; i < 6; i++) await next();
+  for (let i = 1; i < numberOf('library'); i++) await next();
   assert.equal(await card().getAttribute('data-step'), 'library');
   await page.getByTestId('tour-missing').waitFor();
   assert.equal(await page.getByTestId('tour-box').count(), 0);
@@ -402,7 +412,7 @@ test('work already done is not asked for again', async () => {
   await page.getByRole('heading', { name: 'Existing' }).waitFor();
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
   await atStep(1);
-  for (let i = 1; i < 5; i++) await next();
+  for (let i = 1; i < numberOf('courses'); i++) await next();
   assert.equal(await card().getAttribute('data-step'), 'courses');
   await page.getByTestId('tour-done').waitFor();
   assert.equal(await page.getByTestId('tour-try').count(), 0);
