@@ -1344,3 +1344,20 @@ html[data-density='compact'] .files li, html[data-density='compact'] .checkpoint
 html[data-motion="reduce"] .sync-badge .sync-dot { animation: none; }
 @media (prefers-reduced-motion: reduce) { .sync-badge .sync-dot { animation: none; } }
 @media (max-width: 720px) { .sync-badge-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .sync-badge { padding: .25rem; min-width: 32px; justify-content: center; } }
+
+/* While the saving card shows, the page can scroll its last buttons up above it. */
+html.save-panel-open main > :last-child { padding-bottom: min(50vh, 18rem); }
+
+/* Prompt 8: Today's Plan. */
+.start-studying { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: 1rem 0; }
+.start-button { font-size: 1.05rem; min-height: 48px; }
+.week-days { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; }
+.week-day { border: 1px solid var(--line); border-radius: 12px; padding: .6rem .75rem; min-width: 0; }
+.week-day h3 { margin: 0 0 .35rem; font-size: 1rem; }
+.week-items li { padding: .3rem 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.week-items li:first-child { border-top: 0; }
+.week-reserved { display: block; }
+.event-kind { display: inline-block; font-size: .75rem; font-weight: 600; border: 1px solid var(--line-strong, var(--line)); border-radius: 999px; padding: 0 .45rem; color: var(--paper); }
+.progress-line { margin: .6rem 0; }
+.progress-words { display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap; font-size: .95rem; }
+.week-facts { margin: .5rem 0 0; }
