@@ -107,7 +107,7 @@ async function readSlides(blob: Blob): Promise<string[]> {
 async function readWords(material: Material): Promise<FileText> {
   const base = { materialId: material.id, pages: [] as string[] };
   const kind = kindOf(material);
-  if (!['pdf', 'text', 'word', 'sheet', 'slides', 'image'].includes(kind)) return { ...base, status: 'unsupported' };
+  if (!['pdf', 'text', 'code', 'word', 'sheet', 'slides', 'opendoc', 'ebook', 'image'].includes(kind)) return { ...base, status: 'unsupported' };
   if (material.size > (kind === 'image' ? MAX_IMAGE_BYTES : MAX_FILE_BYTES)) return { ...base, status: 'too-large' };
   const blob = await readBlob(material.id);
   if (!blob) return { ...base, status: 'failed' };
@@ -118,6 +118,10 @@ async function readWords(material: Material): Promise<FileText> {
     else if (kind === 'sheet') pages = await readSheet(blob);
     else if (kind === 'slides') pages = await readSlides(blob);
     else if (kind === 'image') pages = await readImage(blob);
+    else if (kind === 'opendoc' || kind === 'ebook') {
+      const { readOpenDoc, searchablePages } = await import('./openDocReader');
+      pages = searchablePages(await readOpenDoc(blob, material.name));
+    }
     else pages = [await blob.slice(0, MAX_TEXT_BYTES).text()];
     // Still nothing after reading any pictures means there were no words to find.
     return pages.some((page) => page.trim()) ? { ...base, status: 'ok', pages } : { ...base, status: 'no-text' };

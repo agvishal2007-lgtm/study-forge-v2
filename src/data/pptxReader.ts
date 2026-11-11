@@ -15,7 +15,7 @@ const MAX_PART_BYTES = 64 * 1024 * 1024;
 const IMAGE_TYPES: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp' };
 
 /** Reads one part of the file, stopping if a tiny part unpacks into something enormous. */
-async function readPart(entry: ZipEntry): Promise<Blob> {
+export async function readPart(entry: ZipEntry): Promise<Blob> {
   const raw = await entry.blob();
   if (entry.method === 0) return raw;
   if (entry.method !== 8) throw new Error('This file uses a format that can\'t be read here.');

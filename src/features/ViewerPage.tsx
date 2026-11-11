@@ -15,6 +15,7 @@ import { useLive } from '../data/useLive';
 
 const PdfViewer = lazy(() => import('./PdfViewer').then((module) => ({ default: module.PdfViewer })));
 const OfficeViewer = lazy(() => import('./OfficeViewer').then((module) => ({ default: module.OfficeViewer })));
+const OpenDocViewer = lazy(() => import('./OpenDocViewer').then((module) => ({ default: module.OpenDocViewer })));
 const TEXT_LIMIT = 2 * 1024 * 1024;
 
 function TextView({ blob }: { blob: Blob }) {
@@ -271,6 +272,8 @@ export default function ViewerPage() {
   else if (viewFailure) body = fallback(`Study Forge couldn't display this ${KIND_LABEL[kind].toLowerCase()} file, but the original is safe. You can download it and open it in another app.`);
   else if (kind === 'pdf') body = <Suspense fallback={<p className="muted">Opening PDF…</p>}><PdfViewer key={startPage} initialPage={startPage} blob={blob} onFail={fail} /></Suspense>;
   else if (kind === 'word' || kind === 'sheet' || kind === 'slides') body = <Suspense fallback={<p className="muted">Opening file…</p>}><OfficeViewer kind={kind} blob={blob} onFail={fail} /></Suspense>;
+  else if (kind === 'opendoc' || kind === 'ebook') body = <Suspense fallback={<p className="muted">Opening file…</p>}><OpenDocViewer blob={blob} name={material.name} materialId={material.id} onFail={fail} /></Suspense>;
+  else if (kind === 'code') body = <TextView blob={blob} />;
   else if (!url) body = kind === 'text' ? <TextView blob={blob} /> : <p className="muted">Opening file…</p>;
   else if (kind === 'image') body = <ImageView url={url} name={material.name} />;
   else if (kind === 'audio') body = <audio controls src={url} data-testid="audio-player" onLoadedMetadata={measureLength} onError={() => fail('audio')} />;

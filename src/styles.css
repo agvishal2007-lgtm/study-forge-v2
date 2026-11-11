@@ -1272,3 +1272,15 @@ html[data-density='compact'] .files li, html[data-density='compact'] .checkpoint
 .activity li:first-child { border-top: 0; }
 .activity li time { flex: none; font-size: .88rem; }
 .activity li.recovery { box-shadow: inset 3px 0 0 var(--success); padding-left: .65rem; }
+
+/* Reading views for OpenDocument and EPUB. */
+.doc-view { max-width: 72ch; }
+.doc-view p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.chapter-bar { display: flex; flex-wrap: wrap; align-items: end; gap: .5rem .75rem; margin: .5rem 0 1rem; }
+.chapter-bar label { display: grid; gap: .25rem; flex: 1; min-width: 12rem; }
+.slide-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; counter-reset: slide; }
+.slide-card { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.15rem; }
+.slide-card h2 { font-size: 1.1rem; margin: 0 0 .5rem; }
+.sheet-scroll { overflow: auto; max-height: 70vh; border: 1px solid var(--line); border-radius: 10px; }
+.doc-view .sheet { border-collapse: collapse; font-size: .92rem; }
+.doc-view .sheet td { border: 1px solid var(--line); padding: .3rem .5rem; white-space: pre-wrap; vertical-align: top; }

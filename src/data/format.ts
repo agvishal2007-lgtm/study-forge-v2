@@ -2,6 +2,10 @@ import type { Material, MaterialKind } from './types';
 
 const extension = (name: string) => name.split('.').pop()?.toLowerCase() ?? '';
 const TEXT = ['txt', 'md', 'markdown', 'csv', 'json', 'html', 'htm', 'rtf'];
+/** Program and data files are shown as text to read. Nothing in them is ever run. */
+const CODE = ['py', 'js', 'mjs', 'ts', 'tsx', 'jsx', 'java', 'c', 'h', 'cpp', 'hpp', 'cs', 'go', 'rs', 'rb', 'php', 'swift', 'kt',
+  'r', 'm', 'sql', 'sh', 'ps1', 'css', 'scss', 'xml', 'yaml', 'yml', 'toml', 'ini', 'tex', 'bib', 'log', 'tsv', 'ipynb'];
+export const OPENDOC = ['odt', 'ods', 'odp'];
 const AUDIO = ['mp3', 'wav', 'm4a', 'ogg', 'oga', 'weba'];
 const VIDEO = ['mp4', 'mov', 'webm', 'm4v'];
 const IMAGE = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
@@ -14,9 +18,12 @@ export function kindOf(material: Pick<Material, 'name' | 'mimeType'>): MaterialK
   if (AUDIO.includes(ext)) return 'audio';
   if (VIDEO.includes(ext)) return 'video';
   if (TEXT.includes(ext)) return 'text';
+  if (CODE.includes(ext)) return 'code';
   if (ext === 'docx') return 'word';
   if (ext === 'xlsx') return 'sheet';
   if (ext === 'pptx') return 'slides';
+  if (OPENDOC.includes(ext)) return 'opendoc';
+  if (ext === 'epub') return 'ebook';
   return 'other';
 }
 
@@ -26,9 +33,12 @@ export const KIND_LABEL: Record<MaterialKind, string> = {
   audio: 'Audio',
   video: 'Video',
   text: 'Text',
+  code: 'Code or data',
   word: 'Word document',
   sheet: 'Excel spreadsheet',
   slides: 'PowerPoint',
+  opendoc: 'OpenDocument',
+  ebook: 'EPUB book',
   other: 'File',
 };
 
