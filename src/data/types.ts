@@ -240,6 +240,8 @@ export interface PlannerItem {
   priority: PlannerPriority;
   /** Estimated hours of work. Null means not estimated. */
   estimateHours: number | null;
+  /** What the work is worth, in the course's own points. Null means not entered, never assumed. */
+  points: number | null;
   details: string;
   createdAt: number;
   updatedAt: number;

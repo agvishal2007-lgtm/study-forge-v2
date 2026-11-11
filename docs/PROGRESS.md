@@ -519,3 +519,20 @@ Work now carries five shared meanings, used the same way everywhere: **Overdue**
 **Measured, not assumed.** `tests/contrast.test.cjs` builds each chip and tag from the real stylesheet and computes WCAG ratios in both themes. Text is 7.7–8.7:1 in light and 10.5–11.4:1 in dark against a 4.5:1 requirement; status markers are 3.5–4.1:1 in light and 8.3–12.1:1 in dark against a 3:1 requirement. Grey "Not started" measures 3.52:1 on a light day cell, so it never disappears. The test fails the build if any pair drops below AA.
 
 Still to come in this area: the seven assignment priority modes and the grade tracker.
+
+## Ranking work seven ways
+
+The Planner listed work grouped by when it was due, and that was the only order. Now there's an **Order by** choice with seven ways to rank it: earliest due date, highest raw points, greatest grade impact, quickest to finish, most important to you, balanced, and your own weighting.
+
+This is deliberately **one engine** (`src/data/priorityRules.ts`), because Today's Plan has to rank work the same way later; two formulas would eventually disagree with each other in front of a student.
+
+Two rules run through all of it:
+
+- **Nothing is invented.** A factor the student hasn't filled in is reported as missing rather than guessed — "Not counted, because you haven't entered it: points, time estimate." Grade impact is the sharpest case: it needs each course's grading categories and weights, which Study Forge can't record yet, so that mode says so plainly and falls back to what's due soonest. It is never computed from raw points, because points and grade impact are not the same thing.
+- **Nothing urgent is hidden.** Overdue and due-soon work appears in a "Needs attention now" section above the list in *every* mode, so no way of sorting can bury a deadline.
+
+Every ranking shows its reasoning on the row — urgency, points, time needed and importance, each with what the student actually entered. Work can be pinned to the top to override the order, the custom weighting has sliders, and the chosen mode, weights and pins are remembered on the device.
+
+Planner items gained a **points** field; a blank stays blank rather than becoming a zero.
+
+Still missing from this area: the grade tracker itself (grading categories and weights), which is what would make grade impact real.

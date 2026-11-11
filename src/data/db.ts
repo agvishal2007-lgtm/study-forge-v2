@@ -38,7 +38,7 @@ interface StudyForgeDB extends DBSchema {
 let dbPromise: Promise<IDBPDatabase<StudyForgeDB>> | null = null;
 
 export function getDb() {
-  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 17, {
+  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 18, {
     async upgrade(db, oldVersion, _newVersion, transaction) {
       // Each step only adds to what's there, so existing students keep their data.
       if (oldVersion < 1) {
@@ -95,6 +95,13 @@ export function getDb() {
       }
       if (oldVersion < 14) {
         db.createObjectStore('studyTime', { keyPath: 'id' });
+      }
+      if (oldVersion < 18) {
+        // Nobody has entered points yet, and a blank is not a zero.
+        const planner = transaction.objectStore('plannerItems');
+        for (const item of await planner.getAll()) {
+          if (item.points === undefined) await planner.put({ ...item, points: null });
+        }
       }
       if (oldVersion < 17) {
         const links = db.createObjectStore('resourceLinks', { keyPath: 'id' });

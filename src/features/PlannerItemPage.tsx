@@ -27,6 +27,7 @@ export function PlannerItemPage() {
   const [status, setStatus] = useState<PlannerStatus>('Not Started');
   const [priority, setPriority] = useState<PlannerPriority>('Normal');
   const [estimate, setEstimate] = useState('');
+  const [points, setPoints] = useState('');
   const [details, setDetails] = useState('');
   const [problems, setProblems] = useState<string[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -49,6 +50,7 @@ export function PlannerItemPage() {
         setStatus(item.status);
         setPriority(item.priority);
         setEstimate(item.estimateHours === null ? '' : String(item.estimateHours));
+        setPoints(item.points === null ? '' : String(item.points));
         setDetails(item.details);
         setCreatedAt(item.createdAt);
       }
@@ -78,6 +80,8 @@ export function PlannerItemPage() {
     if (dueTime && !dueDate) found.push('Add a due date to go with the time.');
     const hours = estimate.trim() === '' ? null : Number(estimate);
     if (hours !== null && (!Number.isFinite(hours) || hours <= 0)) found.push('Enter estimated hours as a number above 0, or leave it empty.');
+    const worth = points.trim() === '' ? null : Number(points);
+    if (worth !== null && (!Number.isFinite(worth) || worth < 0)) found.push('Enter points as a number of 0 or more, or leave it empty.');
     setProblems(found);
     if (found.length > 0) return;
     setSaving(true);
@@ -92,6 +96,7 @@ export function PlannerItemPage() {
         status,
         priority,
         estimateHours: hours,
+        points: worth,
         details: details.trim(),
         createdAt,
       });
@@ -141,6 +146,7 @@ export function PlannerItemPage() {
             </select>
           </label>
           <label>Estimated hours (optional)<input inputMode="decimal" value={estimate} onChange={(event) => touch(setEstimate)(event.target.value)} /></label>
+          <label>Points it is worth (optional)<input inputMode="decimal" value={points} onChange={(event) => touch(setPoints)(event.target.value)} /></label>
         </div>
         <label>Details (optional)<textarea value={details} onChange={(event) => touch(setDetails)(event.target.value)} placeholder="Pages 40 to 52, odd problems only" /></label>
         {problems.length > 0 && (

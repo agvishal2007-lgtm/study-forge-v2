@@ -391,6 +391,7 @@ function cleanPlannerItem(raw: unknown): PlannerItem | null {
     status: pick(PLANNER_STATUSES, raw.status, 'Not Started'),
     priority: pick(PLANNER_PRIORITIES, raw.priority, 'Normal'),
     estimateHours: typeof raw.estimateHours === 'number' && Number.isFinite(raw.estimateHours) && raw.estimateHours > 0 ? raw.estimateHours : null,
+    points: typeof raw.points === 'number' && Number.isFinite(raw.points) && raw.points >= 0 ? raw.points : null,
     details: isText(raw.details) ? raw.details : '',
     createdAt: raw.createdAt,
     updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.createdAt,

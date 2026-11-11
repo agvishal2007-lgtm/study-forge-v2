@@ -1018,3 +1018,15 @@ h1 + .muted, h1 + .dash-lead { margin-top: .5rem; }
 .auth-tabs { display: flex; gap: .25rem; margin: 0 auto 1rem; max-width: 26rem; border-bottom: 1px solid var(--line); }
 .auth-tab { padding: .6rem 1rem; border-radius: 10px 10px 0 0; text-decoration: none; color: var(--muted); font-weight: 600; }
 .auth-tab[aria-current='page'] { color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }
+
+/* Work in the order the student chose, with the reasons on show. */
+.ranked-list { list-style: decimal; margin: .5rem 0 0; padding-left: 1.6rem; display: grid; gap: .7rem; }
+.ranked-list li { min-width: 0; }
+.ranked-head { display: flex; flex-wrap: wrap; gap: .4rem .7rem; align-items: baseline; min-width: 0; }
+.ranked-why { margin: .15rem 0 0; }
+.weights { margin: 1rem 0; padding: .8rem 1rem; background: var(--raised); border-radius: 12px; box-shadow: var(--shadow-sm); }
+.weights h2 { font-size: 1rem; margin: 0 0 .25rem; }
+.weight-rows { display: grid; gap: .5rem; margin: .6rem 0; }
+.weight-rows label { display: grid; grid-template-columns: minmax(0, 12rem) 1fr 2rem; gap: .6rem; align-items: center; font-size: .9rem; }
+.weight-rows input[type='range'] { min-width: 0; width: 100%; accent-color: var(--accent); }
+@media (max-width: 560px) { .weight-rows label { grid-template-columns: 1fr 2rem; } .weight-rows label input[type='range'] { grid-column: 1 / -1; } }
