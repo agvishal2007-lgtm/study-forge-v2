@@ -620,7 +620,7 @@ test('files stay on the device and only their text-side records travel', async (
   const phone = await device('phone');
   await saved(phone);
   await nav(phone, 'Library');
-  await phone.getByText('No files yet').waitFor();
+  await phone.getByText('Nothing here yet').waitFor();
 });
 
 test('a second student on the same computer cannot open the first student\'s work', async () => {
@@ -632,7 +632,7 @@ test('a second student on the same computer cannot open the first student\'s wor
   await laptop.getByRole('link', { name: 'Guest note' }).waitFor();
   assert.equal(await laptop.getByRole('link', { name: 'Shared note', exact: true }).count(), 0, 'signed out shows only no-account work');
   await nav(laptop, 'Library');
-  await laptop.getByText('No files yet').waitFor();
+  await laptop.getByText('Nothing here yet').waitFor();
 
   await close('laptop');
   const asBob = await device('laptop', BOB);
@@ -642,7 +642,7 @@ test('a second student on the same computer cannot open the first student\'s wor
   await nav(asBob, 'Notes');
   await asBob.getByText('No notes yet').waitFor();
   await nav(asBob, 'Library');
-  await asBob.getByText('No files yet').waitFor();
+  await asBob.getByText('Nothing here yet').waitFor();
   await addNote(asBob, 'Bob private', 'Only for Bob');
   await saved(asBob);
   assert.ok(!fake.state.items('alice-uid').some((item) => item.json.includes('Only for Bob')));
@@ -741,7 +741,7 @@ test('removing from a shared computer asks first, needs a good sync, and clears 
   await nav(back, 'Notes');
   await back.getByRole('link', { name: 'Shared note', exact: true }).waitFor();
   await nav(back, 'Library');
-  await back.getByText('No files yet').waitFor();
+  await back.getByText('Nothing here yet').waitFor();
 });
 
 test('deleting the online copy asks first, signs out, and keeps this device\'s copy', async () => {
