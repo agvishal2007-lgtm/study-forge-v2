@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 
 const PORT = 4198;
 const URL_BASE = `http://localhost:${PORT}/`;
@@ -38,6 +39,7 @@ before(async () => {
   server = spawn('npx', ['vite', 'preview', '--outDir', 'dist-account', '--port', String(PORT), '--strictPort'], { cwd: path.join(__dirname, '..'), stdio: 'ignore', detached: true });
   for (let i = 0; i < 60; i++) { try { if ((await fetch(URL_BASE)).ok) break; } catch { /* starting */ } await new Promise((r) => setTimeout(r, 250)); }
   context = await chromium.launchPersistentContext(path.join(work, 'profile'), { viewport: { width: 1280, height: 800 }, serviceWorkers: 'block', acceptDownloads: true });
+  await returningStudent(context);
   await context.addInitScript('delete window.showSaveFilePicker;');
   page = context.pages()[0] ?? (await context.newPage());
   page.setDefaultTimeout(15000);
@@ -95,6 +97,7 @@ test('a transcript is kept in a backup and comes back on restore', async () => {
   const backup = path.join(work, 'backup.zip');
   await download.saveAs(backup);
   const second = await chromium.launchPersistentContext(path.join(work, 'fresh'), { viewport: { width: 1280, height: 800 }, serviceWorkers: 'block', acceptDownloads: true });
+  await returningStudent(second);
   await second.addInitScript('delete window.showSaveFilePicker;');
   const fresh = second.pages()[0] ?? (await second.newPage());
   await fresh.goto(`${URL_BASE}#/settings`);

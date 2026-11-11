@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 
 const rules = () => import('../src/data/smartAddRules.ts');
 const course = (id, extra = {}) => ({ id, name: id, code: '', color: '', term: '', position: 0, status: 'active', statusAt: 0, createdAt: 0, updatedAt: 0, ...extra });
@@ -76,6 +77,7 @@ before(async () => {
   }
   browser = await chromium.launch();
   page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  await returningStudent(page);
   page.setDefaultTimeout(15000);
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto(URL_BASE);

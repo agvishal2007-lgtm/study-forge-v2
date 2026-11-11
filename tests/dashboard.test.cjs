@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 
 const rules = () => import('../src/data/dashboard.ts');
 
@@ -44,6 +45,7 @@ const pageErrors = [];
 async function open(profile, viewport = { width: 1280, height: 800 }) {
   await context?.close().catch(() => undefined);
   context = await chromium.launchPersistentContext(path.join(work, profile), { viewport, timezoneId: 'America/New_York' });
+  await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   await page.clock.setFixedTime(new Date('2026-11-04T14:30:00-05:00'));
   page.on('pageerror', (error) => pageErrors.push(error.message));
@@ -168,6 +170,7 @@ test('a lesson that needs review is counted, and study next still shows', async 
 test('it fits a phone, with the numbers side by side', async () => {
   await context.close();
   context = await chromium.launchPersistentContext(path.join(work, 'main'), { viewport: { width: 360, height: 700 }, timezoneId: 'America/New_York' });
+  await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   await page.clock.setFixedTime(new Date('2026-11-04T14:30:00-05:00'));
   page.on('pageerror', (error) => pageErrors.push(error.message));

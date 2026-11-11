@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 
 const rules = () => import('../src/data/practiceRules.ts');
 const attempt = (id, questionId, result, at) => ({ id, questionId, result, at });
@@ -71,6 +72,7 @@ const pageErrors = [];
 async function open(profile, viewport = { width: 1280, height: 800 }) {
   await context?.close().catch(() => undefined);
   context = await chromium.launchPersistentContext(path.join(work, profile), { acceptDownloads: true, viewport });
+  await returningStudent(context);
   await context.addInitScript('delete window.showSaveFilePicker;');
   page = context.pages()[0] ?? (await context.newPage());
   page.on('pageerror', (error) => pageErrors.push(error.message));
@@ -321,6 +323,7 @@ test('deleting a course keeps its sets, and deleting a set removes its questions
 test('someone already using the site keeps everything when Practice arrives', async () => {
   await context.close();
   context = await chromium.launchPersistentContext(path.join(work, 'older-student'), { viewport: { width: 1280, height: 800 } });
+  await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.route(`${URL_BASE}blank.html`, (route) => route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>blank</title>' }));

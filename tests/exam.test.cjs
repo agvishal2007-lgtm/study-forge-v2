@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 
 const rules = () => import('../src/data/examRules.ts');
 
@@ -116,6 +117,7 @@ before(async () => {
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
   context = await chromium.launchPersistentContext(path.join(work, 'main'), { acceptDownloads: true, viewport: { width: 1280, height: 800 }, serviceWorkers: 'block' });
+  await returningStudent(context);
   await context.addInitScript('delete window.showSaveFilePicker;');
   page = context.pages()[0] ?? (await context.newPage());
   page.on('pageerror', (error) => pageErrors.push(error.message));
@@ -247,6 +249,7 @@ test('when time runs out the exam submits itself, even if the page was closed', 
 test('no time limit shows no clock, and improvement appears once there are two scores', async () => {
   await context.close();
   context = await chromium.launchPersistentContext(path.join(work, 'main'), { acceptDownloads: true, viewport: { width: 1280, height: 800 }, serviceWorkers: 'block' });
+  await returningStudent(context);
   await context.addInitScript('delete window.showSaveFilePicker;');
   page = context.pages()[0] ?? (await context.newPage());
   page.on('pageerror', (error) => pageErrors.push(error.message));

@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 
 const rules = () => import('../src/data/permissions.ts');
 
@@ -32,6 +33,7 @@ const open = async (granted) => {
   workDir = workDir ?? fs.mkdtempSync(path.join(os.tmpdir(), 'study-forge-perm-'));
   const profile = fs.mkdtempSync(path.join(workDir, 'p-'));
   context = await chromium.launchPersistentContext(profile, { viewport: { width: 1280, height: 900 }, serviceWorkers: 'block' });
+  await returningStudent(context);
   if (granted) await context.grantPermissions(['microphone'], { origin: URL_BASE.replace(/\/$/, '') });
   page = context.pages()[0] ?? (await context.newPage());
   page.setDefaultTimeout(15000);

@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 
 const rules = () => import('../src/data/plannerRules.ts');
 const NOW = { date: '2026-11-04', time: '14:30' };
@@ -82,6 +83,7 @@ let backupFile;
 async function open(profile, viewport = { width: 1280, height: 800 }) {
   await context?.close().catch(() => undefined);
   context = await chromium.launchPersistentContext(path.join(work, profile), { acceptDownloads: true, viewport, timezoneId: 'America/New_York' });
+  await returningStudent(context);
   await context.addInitScript('delete window.showSaveFilePicker;');
   page = context.pages()[0] ?? (await context.newPage());
   await page.clock.setFixedTime(new Date('2026-11-04T14:30:00-05:00'));
@@ -261,6 +263,7 @@ test('a backup restores the planner into a fresh browser, with the same dates', 
 test('someone already using the site keeps everything when the Planner arrives', async () => {
   await context.close();
   context = await chromium.launchPersistentContext(path.join(work, 'older-student'), { viewport: { width: 1280, height: 800 } });
+  await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.route(`${URL_BASE}blank.html`, (route) => route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>blank</title>' }));

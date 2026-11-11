@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 
 const rules = () => import('../src/data/calendarRules.ts');
 const schedule = () => import('../src/data/scheduleRules.ts');
@@ -193,6 +194,7 @@ before(async () => {
     try { await fetch(URL_BASE); break; } catch { await new Promise((resolve) => setTimeout(resolve, 150)); }
   }
   context = await chromium.launchPersistentContext(path.join(work, 'main'), { viewport: { width: 1280, height: 900 }, timezoneId: 'America/New_York', serviceWorkers: 'block', acceptDownloads: true });
+  await returningStudent(context);
   await context.addInitScript('delete window.showSaveFilePicker;');
   page = context.pages()[0] ?? (await context.newPage());
   page.setDefaultTimeout(15000);
@@ -548,6 +550,7 @@ test('calendar items survive a backup and restore, and restoring twice adds noth
   const backup = path.join(work, 'calendar-backup.zip');
   await file.saveAs(backup);
   const second = await chromium.launchPersistentContext(path.join(work, 'fresh'), { viewport: { width: 1280, height: 900 }, timezoneId: 'America/New_York', serviceWorkers: 'block' });
+  await returningStudent(second);
   const fresh = second.pages()[0] ?? (await second.newPage());
   await fresh.clock.setFixedTime(new Date('2026-11-04T09:00:00-05:00'));
   await fresh.goto(`${URL_BASE}#/settings`);

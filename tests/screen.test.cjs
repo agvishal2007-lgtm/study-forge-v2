@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 
 const URL_BASE = 'http://localhost:4175/';
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'sf-screen-'));
@@ -47,6 +48,7 @@ async function open(init) {
   await context?.close().catch(() => undefined);
   profiles += 1;
   context = await chromium.launchPersistentContext(path.join(work, `p${profiles}`), { args: ARGS, viewport: { width: 1280, height: 800 } });
+  await returningStudent(context);
   if (init) await context.addInitScript(init);
   page = context.pages()[0] ?? (await context.newPage());
   page.on('pageerror', (error) => pageErrors.push(error.message));
@@ -242,6 +244,7 @@ test('closing the browser during a virtual lecture keeps it', async () => {
   const profile = path.join(work, `p${profiles}`);
   await context.close();
   context = await chromium.launchPersistentContext(profile, { args: ARGS, viewport: { width: 1280, height: 800 } });
+  await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   await page.goto(`${URL_BASE}#/record`);
   await page.getByRole('button', { name: 'Save recording' }).click();

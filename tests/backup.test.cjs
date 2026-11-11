@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 
 const URL_BASE = 'http://localhost:4177/';
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'sf-backup-'));
@@ -45,6 +46,7 @@ async function open(init = NO_PICKER, keepProfile) {
   await context?.close().catch(() => undefined);
   if (!keepProfile) profiles += 1;
   context = await chromium.launchPersistentContext(path.join(work, `p${profiles}`), { args: ARGS, acceptDownloads: true, viewport: { width: 1280, height: 800 }, env: { ...process.env, LC_ALL: 'C.UTF-8', LANG: 'C.UTF-8' } });
+  await returningStudent(context);
   await context.addInitScript(init);
   page = context.pages()[0] ?? (await context.newPage());
   page.on('pageerror', (error) => pageErrors.push(error.message));

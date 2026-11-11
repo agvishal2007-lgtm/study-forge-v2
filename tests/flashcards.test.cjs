@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 
 const rules = () => import('../src/data/flashcardRules.ts');
 const TODAY = '2026-11-04';
@@ -78,6 +79,7 @@ const BACK_ONE = 'Assets = Liabilities + Equity';
 async function open(profile, viewport = { width: 1280, height: 800 }, when = '2026-11-04T10:00:00-05:00') {
   await context?.close().catch(() => undefined);
   context = await chromium.launchPersistentContext(path.join(work, profile), { acceptDownloads: true, viewport, timezoneId: 'America/New_York' });
+  await returningStudent(context);
   await context.addInitScript('delete window.showSaveFilePicker;');
   page = context.pages()[0] ?? (await context.newPage());
   await page.clock.setFixedTime(new Date(when));
@@ -306,6 +308,7 @@ test('deleting a course keeps its deck, and deleting a deck removes its cards', 
 test('someone already using the site keeps everything when Flashcards arrive', async () => {
   await context.close();
   context = await chromium.launchPersistentContext(path.join(work, 'older-student'), { viewport: { width: 1280, height: 800 } });
+  await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.route(`${URL_BASE}blank.html`, (route) => route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>blank</title>' }));

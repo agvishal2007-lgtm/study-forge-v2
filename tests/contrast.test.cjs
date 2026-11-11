@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 
 const rules = () => import('../src/data/statusRules.ts');
 
@@ -46,6 +47,7 @@ before(async () => {
     try { await fetch(URL_BASE); break; } catch { await new Promise((resolve) => setTimeout(resolve, 150)); }
   }
   context = await chromium.launchPersistentContext(path.join(work, 'main'), { viewport: { width: 1280, height: 900 }, timezoneId: 'America/New_York', serviceWorkers: 'block' });
+  await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   page.setDefaultTimeout(15000);
   page.on('pageerror', (error) => pageErrors.push(error.message));

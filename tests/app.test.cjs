@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 
 const URL_BASE = 'http://localhost:4173/';
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'sf-'));
@@ -58,6 +59,7 @@ execFileSync('ffmpeg', ['-loglevel', 'error', '-f', 'lavfi', '-i', 'testsrc=size
 
 async function open() {
   context = await chromium.launchPersistentContext(profile, { acceptDownloads: true, viewport: { width: 1280, height: 800 } });
+  await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto(URL_BASE);

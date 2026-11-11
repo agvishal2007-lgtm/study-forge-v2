@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 
 const PORT = 4197;
 const URL_BASE = `http://localhost:${PORT}/`;
@@ -25,6 +26,7 @@ before(async () => {
   server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { cwd: path.join(__dirname, '..'), stdio: 'ignore', detached: true });
   for (let i = 0; i < 60; i++) { try { if ((await fetch(URL_BASE)).ok) break; } catch { /* starting */ } await new Promise((r) => setTimeout(r, 250)); }
   context = await chromium.launchPersistentContext(path.join(work, 'profile'), { viewport: { width: 1280, height: 800 }, serviceWorkers: 'block' });
+  await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   page.setDefaultTimeout(20000);
   page.on('pageerror', (error) => pageErrors.push(error.message));

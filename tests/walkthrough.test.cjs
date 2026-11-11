@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 
 const URL_BASE = 'http://localhost:4180/';
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'sf-tour-'));
@@ -32,6 +33,7 @@ const pageErrors = [];
 async function open(profile, { auto = true, viewport = { width: 1280, height: 800 }, mobile = false } = {}) {
   await context?.close().catch(() => undefined);
   context = await chromium.launchPersistentContext(path.join(work, profile), { viewport, isMobile: mobile, hasTouch: mobile });
+  await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto(URL_BASE);

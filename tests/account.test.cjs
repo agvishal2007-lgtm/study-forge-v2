@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 const { createServer } = require('./fakeAccountServer.cjs');
 
 const URL_BASE = 'http://localhost:4179/';
@@ -27,6 +28,7 @@ async function device(name, user) {
   let entry = open.get(name);
   if (!entry) {
     const context = await chromium.launchPersistentContext(path.join(work, name), { viewport: { width: 1280, height: 800 } });
+    await returningStudent(context);
     const page = context.pages()[0] ?? (await context.newPage());
     entry = { context, page, errors: [] };
     page.on('pageerror', (error) => entry.errors.push(error.message));
@@ -124,6 +126,7 @@ test('the sign-in button waits until sign-in can open immediately', async () => 
   await device('laptop');
   await close('laptop');
   const entry = await chromium.launchPersistentContext(path.join(work, 'laptop'), { viewport: { width: 1280, height: 800 } });
+  await returningStudent(entry);
   const slow = entry.pages()[0] ?? (await entry.newPage());
   await slow.route('**/testBackend-*.js', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 1200));
@@ -138,6 +141,7 @@ test('the sign-in button waits until sign-in can open immediately', async () => 
 
 test('two panels scroll separately, each with its own scrollbar', async () => {
   const entry = await chromium.launchPersistentContext(path.join(work, 'layout'), { viewport: { width: 1000, height: 220 }, ignoreDefaultArgs: ['--hide-scrollbars'] });
+  await returningStudent(entry);
   const page = entry.pages()[0] ?? (await entry.newPage());
   await page.goto(`${URL_BASE}#/settings`);
   await page.getByRole('heading', { name: 'Settings', exact: true }).waitFor();

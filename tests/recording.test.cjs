@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const returningStudent = require('./returningStudent.cjs');
 
 const URL_BASE = 'http://localhost:4174/';
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'sf-rec-'));
@@ -19,6 +20,7 @@ const pageErrors = [];
 
 async function open(profile = 'main', init) {
   context = await chromium.launchPersistentContext(path.join(work, profile), { args: ARGS, viewport: { width: 1280, height: 800 } });
+  await returningStudent(context);
   if (init) await context.addInitScript(init);
   page = context.pages()[0] ?? (await context.newPage());
   page.on('pageerror', (error) => pageErrors.push(error.message));
@@ -76,6 +78,7 @@ after(async () => {
 test('existing students keep their courses when the site updates', async () => {
   const profile = 'upgrade';
   context = await chromium.launchPersistentContext(path.join(work, profile), { args: ARGS });
+  await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   await page.route('**/blank.html', (route) => route.fulfill({ contentType: 'text/html', body: '<title>blank</title>' }));
   await page.goto(`${URL_BASE}blank.html`);
