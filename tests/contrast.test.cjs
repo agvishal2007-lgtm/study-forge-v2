@@ -130,23 +130,28 @@ test('a real overdue deadline is shown as overdue, in words as well as colour', 
   await page.goto(`${URL_BASE}#/planner`);
   await page.getByRole('button', { name: 'Add item' }).click();
   await page.getByLabel('Name', { exact: true }).fill('Late essay');
-  await page.getByLabel('Due date', { exact: true }).fill('2020-01-06');
+  // Due yesterday, worked out in the browser's own time, so the deadline has really passed and
+  // sits in a month the calendar can show. (It used to be January 2020, which never appears in
+  // the current month, so the test leaned on whichever chip happened to be first.)
+  const yesterday = await page.evaluate(() => {
+    const day = new Date();
+    day.setDate(day.getDate() - 1);
+    const pad = (value) => String(value).padStart(2, '0');
+    return { iso: `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`, otherMonth: day.getMonth() !== new Date().getMonth() };
+  });
+  await page.getByLabel('Due date', { exact: true }).fill(yesterday.iso);
   await page.getByRole('button', { name: 'Save item' }).click();
   await page.getByRole('heading', { name: 'Planner', exact: true }).waitFor();
 
   await page.goto(`${URL_BASE}#/calendar`);
   await page.getByRole('tab', { name: 'Deadline Calendar' }).click();
-  await page.getByRole('button', { name: /January 2020|Previous month/ }).first().waitFor();
-  // Walk the month view to January 2020 would be slow; the day list is reached by the date itself.
-  const chip = page.locator('.month-chip[data-status]').first();
-  if (await chip.count() === 0) {
-    // The deadline is in the past, so open its month directly through the planner link instead.
-    await page.goto(`${URL_BASE}#/planner`);
-    await page.getByRole('link', { name: 'Late essay' }).click();
-    assert.match(await page.getByRole('main').innerText(), /overdue/i);
-  } else {
-    assert.equal(await chip.getAttribute('data-status'), 'overdue');
-  }
+  // On the first of a month, yesterday is in the month before.
+  if (yesterday.otherMonth) await page.getByRole('button', { name: /Previous month/ }).first().click();
+  const chip = page.locator('.month-chip', { hasText: 'Late essay' });
+  await chip.waitFor();
+  // In colour, and with its mark, so colour is never the only signal.
+  assert.equal(await chip.getAttribute('data-status'), 'overdue');
+  assert.match(await chip.innerText(), /^!/);
 });
 
 test('no uncaught errors happened during the whole run', () => {
