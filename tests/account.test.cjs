@@ -50,7 +50,8 @@ async function nav(page, name) {
     await page.getByTestId('account-dropdown').getByRole('link', { name: 'Settings' }).click();
     return;
   }
-  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
+  // Signed out, Settings is the gear in the account bar, not a main-nav destination.
+  await page.getByRole('navigation', { name: name === 'Settings' ? 'Account' : 'Main' }).getByRole('link', { name, exact: true }).click();
 }
 const signInButton = (page) => page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name: 'Log In / Sign Up', exact: true });
 const googleButton = (page) => page.getByRole('button', { name: 'Continue with Google' });
