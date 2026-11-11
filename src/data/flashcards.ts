@@ -82,3 +82,22 @@ export async function rateCard(cardId: string, rating: CardRating): Promise<void
   await logStudy('cards');
   notifyChanged();
 }
+
+/*
+ * A review in progress: which cards are left, in order, and the running tally. Kept so leaving
+ * and coming back picks up the same review instead of starting it over.
+ */
+export interface ReviewSession {
+  /** The review it belongs to (deck, course and mode), so another review never picks it up. */
+  url: string;
+  cardIds: string[];
+  tally: Record<CardRating, number>;
+}
+const REVIEW_KEY = 'reviewSession';
+export const loadReviewSession = async () => (await (await getDb()).get('meta', REVIEW_KEY)) as ReviewSession | undefined;
+export async function saveReviewSession(session: ReviewSession): Promise<void> {
+  await (await getDb()).put('meta', session, REVIEW_KEY);
+}
+export async function clearReviewSession(): Promise<void> {
+  await (await getDb()).delete('meta', REVIEW_KEY);
+}

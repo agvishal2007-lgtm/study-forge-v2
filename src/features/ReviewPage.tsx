@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { listCardProgress, listCards, listDecks, rateCard } from '../data/flashcards';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { clearReviewSession, listCardProgress, listCards, listDecks, loadReviewSession, rateCard, saveReviewSession } from '../data/flashcards';
 import { describeInterval, dueQueue, isWeak, outcome } from '../data/flashcardRules';
 import { localNow } from '../data/plannerRules';
 import { useStudyClock } from '../data/studyClock';
@@ -10,6 +10,9 @@ type Mode = 'due' | 'practice' | 'weak';
 
 export function ReviewPage() {
   const [params] = useSearchParams();
+  const { pathname, search } = useLocation();
+  const url = `${pathname}${search}`;
+  const [removed, setRemoved] = useState(0);
   const deckId = params.get('deck');
   const mode: Mode = params.get('mode') === 'practice' ? 'practice' : params.get('mode') === 'weak' ? 'weak' : 'due';
   const saves = mode === 'due';
@@ -27,8 +30,21 @@ export function ReviewPage() {
   // The list is set once at the start, so a card can't jump away mid-session.
   useEffect(() => {
     let active = true;
-    Promise.all([listCards(), listCardProgress(), listDecks()]).then(([cards, saved, decks]) => {
+    Promise.all([listCards(), listCardProgress(), listDecks(), loadReviewSession()]).then(([cards, saved, decks, resumed]) => {
       if (!active) return;
+      // The same review left part-way picks up where it stopped. A card deleted since is skipped, and said so.
+      if (resumed && resumed.url === url && resumed.cardIds.length > 0) {
+        const byId = new Map(cards.map((entry) => [entry.id, entry]));
+        const left = resumed.cardIds.flatMap((id) => (byId.has(id) ? [byId.get(id) as Flashcard] : []));
+        if (left.length > 0) {
+          setProgress(saved);
+          setDeckNames(new Map(decks.map((deck) => [deck.id, deck.name])));
+          setTally(resumed.tally);
+          setRemoved(resumed.cardIds.length - left.length);
+          setQueue(left);
+          return;
+        }
+      }
       const courseId = params.get('course');
       const courseDecks = courseId ? new Set(decks.filter((deck) => deck.courseId === courseId).map((deck) => deck.id)) : null;
       const inDeck = cards.filter((card) => (!deckId || card.deckId === deckId) && (!courseDecks || courseDecks.has(card.deckId)));
@@ -54,18 +70,21 @@ export function ReviewPage() {
         cardId: card.id,
         stage: outcome(current.get(card.id), rating).stage,
       }) : current));
-      setTally((current) => ({ ...current, [rating]: current[rating] + 1 }));
-      setQueue((current) => {
-        const rest = (current ?? []).slice(1);
-        return rating === 'Again' ? [...rest, card] : rest;
-      });
+      const nextTally = { ...tally, [rating]: tally[rating] + 1 };
+      const rest = (queue ?? []).slice(1);
+      const nextQueue = rating === 'Again' ? [...rest, card] : rest;
+      setTally(nextTally);
+      setQueue(nextQueue);
+      // Kept on the device, so closing the tab mid-review loses nothing.
+      if (nextQueue.length > 0) void saveReviewSession({ url, cardIds: nextQueue.map((entry) => entry.id), tally: nextTally }).catch(() => undefined);
+      else void clearReviewSession().catch(() => undefined);
       setRevealed(false);
     } catch (error) {
       setFailure(`That answer wasn't saved. Try again. ${(error as Error).message}`);
     } finally {
       busy.current = false;
     }
-  }, [card, saves]);
+  }, [card, saves, queue, tally, url]);
 
   useEffect(() => {
     if (!revealed) reveal.current?.focus({ preventScroll: true });
@@ -115,6 +134,7 @@ export function ReviewPage() {
         </div>
         <Link to={back}>Stop for now</Link>
       </header>
+      {removed > 0 && <p className="notice">Picked up where you left off. {removed} {removed === 1 ? 'card was' : 'cards were'} deleted since, so {removed === 1 ? 'it is' : 'they are'} skipped.</p>}
       <article className="flashcard" data-testid="flashcard" aria-live="polite">
         <p className="flashcard-label">Front</p>
         <p className="card-text flashcard-text" data-testid="card-front">{card.front}</p>

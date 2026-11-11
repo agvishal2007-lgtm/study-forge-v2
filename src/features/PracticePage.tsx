@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { createPracticeSet, listAllTopics, listPracticeAttempts, listPracticeQuestions, listPracticeSets, loadPracticeSession } from '../data/practice';
+import { createPracticeSet, listAllTopics, listPracticeAttempts, listPracticeQuestions, listPracticeSets, loadPracticeSession, savedQuestionIds } from '../data/practice';
 import { accuracyOf, latestAnswers, mistakesIn, weakTopics, WEAK_BELOW_PERCENT } from '../data/practiceRules';
 import { listAllCourses } from '../data/store';
 import type { PracticeQuestion, PracticeSet, Topic } from '../data/types';
@@ -24,14 +24,18 @@ export function PracticePage() {
   const [name, setName] = useState('');
   const [failure, setFailure] = useState('');
   const { data, error } = useLive(async () => {
-    const [sets, questions, attempts, courses, topics, session] = await Promise.all([
-      listPracticeSets(), listPracticeQuestions(), listPracticeAttempts(), listAllCourses(), listAllTopics(), loadPracticeSession(),
+    const [sets, questions, attempts, courses, topics, session, saved] = await Promise.all([
+      listPracticeSets(), listPracticeQuestions(), listPracticeAttempts(), listAllCourses(), listAllTopics(), loadPracticeSession(), savedQuestionIds(),
     ]);
-    return { sets, questions, attempts, courses, topics, session };
+    return { sets, questions, attempts, courses, topics, session, saved };
   });
   if (error) return <div className="page"><h1>Practice</h1><p className="error" role="alert">Your practice sets couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
   const { sets, questions, attempts, courses, topics, session } = data;
+  // A finished session is kept only so its results survive a reload; there is nothing to pick up.
+  const unfinished = session && !session.endedEarly && session.position < session.questionIds.length ? session : null;
+  // Saved questions that still exist; one removed since simply drops off.
+  const savedCount = data.saved.filter((id) => questions.some((question) => question.id === id)).length;
   const shownSets = sets.filter((set) => !courseId || (courseId === 'none' ? !set.courseId : set.courseId === courseId));
   const latest = latestAnswers(attempts);
   const mistakes = mistakesIn(questions, attempts);
@@ -56,7 +60,13 @@ export function PracticePage() {
     <div className="page">
       <h1>Practice</h1>
       <p className="muted">Answer questions without your notes, see what you missed, and repeat your weak topics.</p>
-      {session && <p className="session-actions"><Link className="button primary" to={session.url} data-testid="resume-practice">Pick up where you left off</Link></p>}
+      {unfinished && (
+        <p className="session-actions">
+          <Link className="button primary" to={unfinished.url} data-testid="resume-practice">Pick up where you left off</Link>
+          <span className="muted"> Question {unfinished.position + 1} of {unfinished.questionIds.length}</span>
+        </p>
+      )}
+      {savedCount > 0 && <p className="session-actions"><Link className="button" to="/practice/session?mode=saved" data-testid="saved-questions">Saved for later ({savedCount})</Link></p>}
       {latest.size > 0 && (
         <div className="dash-tiles practice-tiles">
           <div className="dash-tile" data-testid="practice-accuracy"><b>{accuracy}%</b><span>Accuracy</span></div>

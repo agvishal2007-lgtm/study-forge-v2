@@ -1315,3 +1315,11 @@ html[data-density='compact'] .files li, html[data-density='compact'] .checkpoint
 .page > section.course-group { margin-top: .75rem; }
 .page > section.course-group > h2 { margin-top: 1.5rem; }
 .book-hint { font-style: italic; }
+
+/* Practice session extras. */
+.save-later { margin: 0 0 .5rem; }
+.session-summary { display: grid; gap: .35rem; margin: 1rem 0; }
+.session-summary div { display: grid; grid-template-columns: 9rem 1fr; gap: .75rem; }
+.session-summary dt { font-weight: 700; color: var(--muted); }
+.session-summary dd { margin: 0; }
+@media (max-width: 560px) { .session-summary div { grid-template-columns: 1fr; gap: 0; } }
