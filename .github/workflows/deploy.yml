@@ -19,7 +19,9 @@ jobs:
   # Nothing is published unless every browser test passes.
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The suite keeps growing and CI is slower than a laptop; at 30 minutes a full run was being
+    # cancelled partway through, which cancels the publish with it.
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
