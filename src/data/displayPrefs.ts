@@ -55,6 +55,7 @@ export function setDisplayPref<K extends keyof DisplayPrefs>(key: K, value: Disp
   current = { ...current, [key]: value };
   applyDisplayPrefs();
   listeners.forEach((listener) => listener());
+  window.dispatchEvent(new CustomEvent('study-forge-setting-changed', { detail: 'appearance' }));
 }
 
 const subscribe = (listener: () => void) => {
@@ -63,3 +64,5 @@ const subscribe = (listener: () => void) => {
 };
 
 export const useDisplayPrefs = () => useSyncExternalStore(subscribe, () => current);
+
+export const getDisplayPrefs = (): DisplayPrefs => current;

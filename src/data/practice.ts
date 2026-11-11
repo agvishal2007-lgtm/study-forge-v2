@@ -1,7 +1,7 @@
 import { getDb, notifyChanged } from './db';
+import { clearStudyState, readStudyState, writeStudyState } from './studyState';
 import type { PracticeAttempt, PracticeQuestion, PracticeSet, Topic } from './types';
 
-const SESSION_KEY = 'practiceSession';
 
 export const listPracticeSets = async (): Promise<PracticeSet[]> => {
   const sets = await (await getDb()).getAll('practiceSets');
@@ -99,25 +99,22 @@ export async function setAttemptDifficulty(id: string, difficulty: PracticeAttem
  * Questions saved for later. Only the question's own id is kept, so the original question, its set
  * and its history stay exactly where they are; a removed question simply drops off the list.
  */
-const SAVED_KEY = 'practiceSaved';
 export async function savedQuestionIds(): Promise<string[]> {
-  const saved = await (await getDb()).get('meta', SAVED_KEY);
+  const saved = await readStudyState<string[]>('practiceSaved');
   return Array.isArray(saved) ? saved.filter((id): id is string => typeof id === 'string') : [];
 }
 export async function toggleSavedQuestion(id: string): Promise<boolean> {
-  const db = await getDb();
   const saved = await savedQuestionIds();
   const keep = !saved.includes(id);
-  await db.put('meta', keep ? [...saved, id] : saved.filter((other) => other !== id), SAVED_KEY);
-  notifyChanged();
+  await writeStudyState('practiceSaved', keep ? [...saved, id] : saved.filter((other) => other !== id));
   return keep;
 }
 
-export const loadPracticeSession = async () => (await (await getDb()).get('meta', SESSION_KEY)) as PracticeSession | undefined;
+export const loadPracticeSession = () => readStudyState<PracticeSession>('practiceSession');
 export async function savePracticeSession(session: PracticeSession): Promise<void> {
-  await (await getDb()).put('meta', session, SESSION_KEY);
+  await writeStudyState('practiceSession', session);
 }
 export async function clearPracticeSession(): Promise<void> {
-  await (await getDb()).delete('meta', SESSION_KEY);
+  await clearStudyState('practiceSession');
   notifyChanged();
 }

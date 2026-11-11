@@ -7,7 +7,7 @@ export interface AccountUser {
 
 export type LoginProvider = 'google' | 'microsoft';
 
-export type SyncCollection = 'courses' | 'topics' | 'notes' | 'lessons' | 'checkpoints' | 'checkpointProgress' | 'plannerItems' | 'decks' | 'cards' | 'cardProgress' | 'practiceSets' | 'practiceQuestions' | 'practiceAttempts' | 'examResults' | 'calendarEvents' | 'studyDays' | 'studyTime' | 'resourceLinks' | 'gradeCategories';
+export type SyncCollection = 'courses' | 'topics' | 'notes' | 'lessons' | 'checkpoints' | 'checkpointProgress' | 'plannerItems' | 'decks' | 'cards' | 'cardProgress' | 'practiceSets' | 'practiceQuestions' | 'practiceAttempts' | 'examResults' | 'calendarEvents' | 'studyDays' | 'studyTime' | 'resourceLinks' | 'gradeCategories' | 'materials' | 'transcripts' | 'settings' | 'studyState';
 
 export interface RemoteItem {
   collection: SyncCollection;
@@ -54,6 +54,11 @@ export interface AccountBackend {
   pull(uid: string, since: number): Promise<PullResult>;
   /** Writes what it can and returns the items refused because another device got there first. */
   push(uid: string, items: PushItem[]): Promise<{ conflicts: string[] }>;
+  /**
+   * Calls back soon after another device saves something newer than `since`. Returns a stop
+   * function. Only changes are delivered, so an idle account costs almost nothing.
+   */
+  watchChanges(uid: string, since: number, onChange: () => void): () => void;
   deleteAll(uid: string): Promise<void>;
 }
 

@@ -1,4 +1,5 @@
 import { logStudy } from './studyLog';
+import { clearStudyState, readStudyState, writeStudyState } from './studyState';
 import { getDb, notifyChanged } from './db';
 import { nextProgress } from './flashcardRules';
 import { localNow } from './plannerRules';
@@ -97,11 +98,6 @@ export interface ReviewSession {
 }
 /** How long a review left part-way waits to be picked up; after that, today's due cards come first. */
 export const REVIEW_RESUME_MS = 12 * 60 * 60 * 1000;
-const REVIEW_KEY = 'reviewSession';
-export const loadReviewSession = async () => (await (await getDb()).get('meta', REVIEW_KEY)) as ReviewSession | undefined;
-export async function saveReviewSession(session: ReviewSession): Promise<void> {
-  await (await getDb()).put('meta', session, REVIEW_KEY);
-}
-export async function clearReviewSession(): Promise<void> {
-  await (await getDb()).delete('meta', REVIEW_KEY);
-}
+export const loadReviewSession = () => readStudyState<ReviewSession>('reviewSession');
+export const saveReviewSession = (session: ReviewSession) => writeStudyState('reviewSession', session);
+export const clearReviewSession = () => clearStudyState('reviewSession');

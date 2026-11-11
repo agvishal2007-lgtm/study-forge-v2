@@ -70,6 +70,18 @@ export const backend: AccountBackend = {
   },
   pull: (uid, since) => call('/pull', { uid, since }),
   push: (uid, items) => call('/push', { uid, items }),
+  watchChanges(uid, since, onChange) {
+    let latest = since;
+    const timer = setInterval(async () => {
+      try {
+        const { cursor } = await call('/pull', { uid, since: latest });
+        if (cursor > latest) { latest = cursor; onChange(); }
+      } catch {
+        // Offline: the next tick tries again.
+      }
+    }, 2000);
+    return () => clearInterval(timer);
+  },
   async deleteAll(uid) {
     await call('/deleteAll', { uid });
   },

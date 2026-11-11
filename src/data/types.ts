@@ -79,6 +79,8 @@ export interface Material {
   /** When the student pinned it, so pinned things lead their lists. Missing means not pinned. */
   pinnedAt?: number | null;
   createdAt: number;
+  /** When it was last renamed, moved, pinned or binned, so two devices' changes can be ordered. */
+  updatedAt?: number;
 }
 
 /** A student's own writing. Plain text, filed under a course or topic, and optionally about one file. */
@@ -475,4 +477,14 @@ export interface FileText {
   status: 'ok' | 'no-text' | 'unsupported' | 'too-large' | 'failed';
   /** One entry for each page or slide. */
   pages: string[];
+}
+
+/**
+ * A small record that follows the student between devices: a setting (appearance, priorities) or
+ * study in progress (a practice session, a flashcard review, questions saved for later).
+ */
+export interface SyncedValue<T = unknown> {
+  id: string;
+  value: T;
+  updatedAt: number;
 }

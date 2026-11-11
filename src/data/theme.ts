@@ -32,6 +32,8 @@ export function setThemeChoice(choice: ThemeChoice) {
   current = choice;
   apply(choice);
   listeners.forEach((listener) => listener());
+  // Lets the student's other devices follow, when they're signed in.
+  window.dispatchEvent(new CustomEvent('study-forge-setting-changed', { detail: 'appearance' }));
 }
 
 let current = typeof window === 'undefined' ? 'light' as ThemeChoice : getThemeChoice();

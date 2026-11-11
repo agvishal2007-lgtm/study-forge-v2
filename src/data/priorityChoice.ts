@@ -23,6 +23,8 @@ const write = (key: string, value: string) => {
   } catch {
     // Remembering the choice is a convenience, never a requirement.
   }
+  // Lets the student's other devices follow, when they're signed in.
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('study-forge-setting-changed', { detail: 'priorities' }));
 };
 
 export function savedMode(): PriorityMode {

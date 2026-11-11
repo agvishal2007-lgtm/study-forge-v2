@@ -133,7 +133,7 @@ export async function fileMaterial(id: string, courseId: string | null, topicId:
   const material = await db.get('materials', id);
   if (!material) throw new Error('This file record no longer exists.');
   await undoable(`Moved ${material.name}`, 'materials', [id], async () => {
-    await db.put('materials', { ...material, courseId, topicId });
+    await db.put('materials', { ...material, courseId, topicId, updatedAt: Date.now() });
     notifyChanged();
   });
 }
@@ -279,7 +279,7 @@ export async function setMaterialStatus(id: string, status: Lifecycle): Promise<
   const material = await db.get('materials', id);
   if (!material) return;
   await undoable(statusLabel(status, material.name), 'materials', [id], async () => {
-    await db.put('materials', { ...material, status, statusAt: Date.now() });
+    await db.put('materials', { ...material, status, statusAt: Date.now(), updatedAt: Date.now() });
     notifyChanged();
   });
 }
@@ -293,7 +293,7 @@ export async function setPinned(id: string, pinned: boolean): Promise<void> {
   const material = await db.get('materials', id);
   if (!material || Boolean(material.pinnedAt) === pinned) return;
   await undoable(`${pinned ? 'Pinned' : 'Unpinned'} ${material.name}`, 'materials', [id], async () => {
-    await db.put('materials', { ...material, pinnedAt: pinned ? Date.now() : null });
+    await db.put('materials', { ...material, pinnedAt: pinned ? Date.now() : null, updatedAt: Date.now() });
     notifyChanged();
   });
 }
@@ -458,7 +458,7 @@ export async function updateLink(id: string, changes: { name?: string; url?: str
   const name = (changes.name === undefined ? link.name : changes.name).trim();
   const finalName = name || nameFromUrl(url);
   await undoable(finalName === link.name ? `Edited ${link.name}` : `Renamed ${link.name} to ${finalName}`, 'materials', [id], async () => {
-    await db.put('materials', { ...link, name: finalName, url, category: changes.category ?? link.category });
+    await db.put('materials', { ...link, name: finalName, url, category: changes.category ?? link.category, updatedAt: Date.now() });
     notifyChanged();
   });
 }

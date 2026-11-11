@@ -108,8 +108,8 @@ test('a question deleted mid-session is skipped and said so, and the answers so 
     const request = indexedDB.open('study-forge');
     const db = await new Promise((resolve) => { request.onsuccess = () => resolve(request.result); });
     const session = await new Promise((resolve) => {
-      const get = db.transaction('meta').objectStore('meta').get('practiceSession');
-      get.onsuccess = () => resolve(get.result);
+      const get = db.transaction('studyState').objectStore('studyState').get('practiceSession');
+      get.onsuccess = () => resolve(get.result.value);
     });
     const id = session.questionIds[session.questionIds.length - 1];
     const question = await new Promise((resolve) => {
