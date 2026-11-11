@@ -8,7 +8,7 @@ import { readBlob } from '../data/blobs';
 import { formatBytes, KIND_LABEL, kindOf, olderOfficeAdvice } from '../data/format';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { LINK_CATEGORY_LABEL, siteOf } from '../data/linkRules';
-import { addResourceLink, fileMaterial, getCourse, getMaterial, listAllCourses, listResourceLinks, listTopics, removeResourceLink, setMaterialStatus } from '../data/store';
+import { addResourceLink, fileMaterial, getCourse, getMaterial, listAllCourses, listResourceLinks, listTopics, removeResourceLink, setMaterialStatus, setPinned } from '../data/store';
 import type { Material } from '../data/types';
 import { TranscriptPanel } from './TranscriptPanel';
 import { useLive } from '../data/useLive';
@@ -289,6 +289,9 @@ export default function ViewerPage() {
         </div>
         <div className="row-actions">
           {url && <a className="button" href={url} download={material.name}>Download</a>}
+          <button className="button" aria-pressed={Boolean(material.pinnedAt)} onClick={() => void setPinned(material.id, !material.pinnedAt)}>
+            {material.pinnedAt ? 'Unpin' : 'Pin'}
+          </button>
           <button
             className="text-button danger-text"
             onClick={async () => {

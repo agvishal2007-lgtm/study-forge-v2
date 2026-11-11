@@ -48,10 +48,42 @@ export function clearUndo() {
   announce();
 }
 
+/** While a group runs, every change it makes is gathered here instead of becoming its own Undo. */
+let gathering: Snapshot[] | null = null;
+
 export function recordUndo(label: string, snapshots: Snapshot[]) {
   if (snapshots.length === 0) return;
+  if (gathering) {
+    // The first snapshot of a record holds what it was before the group began; keep that one, and
+    // move its "after" forward to what the group finally left.
+    for (const snapshot of snapshots) {
+      const earlier = gathering.find((entry) => entry.store === snapshot.store && entry.id === snapshot.id);
+      if (earlier) earlier.after = snapshot.after;
+      else gathering.push({ ...snapshot });
+    }
+    return;
+  }
   stack = [...stack, { id: crypto.randomUUID(), at: Date.now(), label, snapshots }].slice(-LIMIT);
   announce();
+}
+
+/**
+ * Runs several changes as one Undo: "Moved 12 files to the bin" undoes all twelve at once, not just
+ * the last. Whatever the group managed is kept even if part of it failed, and undoing puts back
+ * exactly the records it changed.
+ */
+export async function asOneUndo<T>(label: string | (() => string), run: () => Promise<T>): Promise<T> {
+  const outer = gathering;
+  if (outer) return run(); // Already inside a group: belong to that one.
+  gathering = [];
+  try {
+    return await run();
+  } finally {
+    const gathered = gathering;
+    gathering = null;
+    // Named after it ran, so it counts what actually changed rather than what was asked for.
+    if (gathered.length) recordUndo(typeof label === 'function' ? label() : label, gathered);
+  }
 }
 
 /** Reads a record so an action can snapshot it before and after itself. */

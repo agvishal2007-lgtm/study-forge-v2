@@ -75,6 +75,8 @@ export interface Material {
   category: LinkCategory;
   status: Lifecycle;
   statusAt: number;
+  /** When the student pinned it, so pinned things lead their lists. Missing means not pinned. */
+  pinnedAt?: number | null;
   createdAt: number;
 }
 

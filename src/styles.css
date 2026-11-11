@@ -1238,3 +1238,30 @@ html[data-density='compact'] h1 { margin: .25em 0 .4em; }
 html[data-density='compact'] .files li, html[data-density='compact'] .checkpoints li { padding-top: .4rem; padding-bottom: .4rem; }
 .pref-row { margin-top: 1.5rem; }
 .pref-row h3 { font-size: 1.05rem; margin: 0 0 .5rem; }
+
+/* Acting on several files at once. */
+.bulk-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem 1rem;
+  margin: 1rem 0 .5rem;
+  padding: .6rem .85rem;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.bulk-all { display: flex; align-items: center; gap: .5rem; font-weight: 600; }
+.bulk-all input, .row-check { width: 1.15rem; height: 1.15rem; min-height: 0; margin: 0; accent-color: var(--accent); flex: none; }
+.bulk-count { color: var(--muted); }
+.bulk-actions, .bulk-move { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.files li.selectable { flex-direction: row; align-items: flex-start; gap: .75rem; }
+.files li.selectable .row-check { margin-top: .3rem; }
+.row-main { display: flex; flex-direction: column; min-width: 0; }
+.pin-mark { color: var(--accent-text); font-weight: 700; }
+.put-away { margin-top: 2rem; }
+.put-away .files li { flex-direction: row; justify-content: space-between; align-items: center; }
+.confirm-list { margin: .5rem 0 0; padding-left: 1.2rem; max-height: 12rem; overflow: auto; }

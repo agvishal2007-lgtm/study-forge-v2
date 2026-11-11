@@ -284,6 +284,20 @@ export async function setMaterialStatus(id: string, status: Lifecycle): Promise<
   });
 }
 
+/**
+ * Pins or unpins a file or link. It is a mark on the one record, so nothing is copied, and a
+ * pinned resource still lives in every course and topic it already belonged to.
+ */
+export async function setPinned(id: string, pinned: boolean): Promise<void> {
+  const db = await getDb();
+  const material = await db.get('materials', id);
+  if (!material || Boolean(material.pinnedAt) === pinned) return;
+  await undoable(`${pinned ? 'Pinned' : 'Unpinned'} ${material.name}`, 'materials', [id], async () => {
+    await db.put('materials', { ...material, pinnedAt: pinned ? Date.now() : null });
+    notifyChanged();
+  });
+}
+
 /** Everything sitting in the bin, newest first, so it can be restored or removed for good. */
 export async function listTrash(): Promise<{ courses: Course[]; topics: Topic[]; materials: Material[] }> {
   const db = await getDb();
