@@ -1218,3 +1218,23 @@ h1 + .muted, h1 + .dash-lead { margin-top: .5rem; }
   .beside { position: static; max-height: none; }
 }
 .pane-switch > .button[aria-pressed='true'] { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent); box-shadow: none; }
+
+/* Reading preferences from Settings. Text scales everything sized in rem; motion and spacing
+   are switched on the root so every screen follows without knowing about them. */
+html[data-text='large'] { font-size: 112.5%; }
+html[data-text='larger'] { font-size: 125%; }
+html[data-motion='reduce'] *, html[data-motion='reduce'] *::before, html[data-motion='reduce'] *::after {
+  transition: none !important;
+  animation: none !important;
+  scroll-behavior: auto !important;
+}
+html[data-motion='reduce'] .button:active:not(:disabled),
+html[data-motion='reduce'] .dash-tile:hover,
+html[data-motion='reduce'] .book:hover { transform: none !important; }
+html[data-density='compact'] body { line-height: 1.4; }
+html[data-density='compact'] .page { padding: clamp(.85rem, 2vw, 1.75rem); }
+html[data-density='compact'] .page > section { margin-top: 1.5rem; }
+html[data-density='compact'] h1 { margin: .25em 0 .4em; }
+html[data-density='compact'] .files li, html[data-density='compact'] .checkpoints li { padding-top: .4rem; padding-bottom: .4rem; }
+.pref-row { margin-top: 1.5rem; }
+.pref-row h3 { font-size: 1.05rem; margin: 0 0 .5rem; }

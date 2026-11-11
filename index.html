@@ -12,6 +12,16 @@
         var dark = saved === 'dark' || (saved === 'system' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.dataset.theme = dark ? 'dark' : 'light';
         if (dark) document.querySelector('meta[name="theme-color"]').setAttribute('content', '#15181d');
+        // Text size, motion and spacing, so a larger text size never jumps in after loading.
+        var pick = function (key, allowed, fallback) {
+          var value = null;
+          try { value = localStorage.getItem(key); } catch (e) {}
+          return allowed.indexOf(value) >= 0 ? value : fallback;
+        };
+        var root = document.documentElement.dataset;
+        root.text = pick('study-forge-text', ['standard', 'large', 'larger'], 'standard');
+        root.motion = pick('study-forge-motion', ['device', 'reduce'], 'device');
+        root.density = pick('study-forge-density', ['comfortable', 'compact'], 'comfortable');
       })();
     </script>
     <meta name="description" content="Keep your courses and study files in one place." />
