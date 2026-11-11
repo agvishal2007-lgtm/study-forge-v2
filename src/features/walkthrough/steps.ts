@@ -85,7 +85,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/library',
     target: ['#content .page'],
     title: 'Open your files',
-    body: 'The Library holds every file you\'ve saved. Open one to read it right here, including PDFs, Word, Excel, PowerPoint, images, audio, and video. You can download the original anytime.',
+    body: 'The Library holds every file you\'ve saved. Open one to read it right here, including PDFs, Word, Excel, PowerPoint, LibreOffice files, EPUB books, code, images, audio, and video, and write notes beside it while you read. Tick several to pin, move, put away, or bin them at once. You can download the original anytime.',
   },
   {
     id: 'planner',
