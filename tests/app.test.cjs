@@ -343,7 +343,9 @@ test('deleting a course keeps its files in the Library', async () => {
 test('phone layout has no sideways scrolling and keeps every destination', async () => {
   await page.setViewportSize({ width: 375, height: 700 });
   for (const [label, heading] of [['Today', 'Today'], ['Courses', 'Courses'], ['Library', 'Library'], ['Settings', 'Settings']]) {
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: label, exact: true }).click();
+    // Settings lives in the account bar, not the main nav.
+    const bar = page.getByRole('navigation', { name: label === 'Settings' ? 'Account' : 'Main' });
+    await bar.getByRole('link', { name: label, exact: true }).click();
     await page.getByRole('heading', { name: heading === 'Today' ? /^Today:/ : heading, exact: heading === 'Today' ? undefined : true }).first().waitFor();
     const overflow = await page.evaluate(() => {
       const main = document.querySelector('main');

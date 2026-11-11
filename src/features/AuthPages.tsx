@@ -30,6 +30,22 @@ function finish(user: AccountUser, method: string) {
   switchAccount({ uid: user.uid, email: user.email, photoURL: user.photoURL, usesGoogle: user.usesGoogle });
 }
 
+/**
+ * One way in. The homepage has a single Log In / Sign Up button that lands here, and the two tabs
+ * each have their own address (/login and /signup) so a direct link opens the right one.
+ */
+export function AuthTabsPage({ mode }: { mode: 'sign-in' | 'sign-up' }) {
+  return (
+    <>
+      <nav className="auth-tabs" aria-label="Log in or sign up">
+        <Link to="/login" className="auth-tab" aria-current={mode === 'sign-in' ? 'page' : undefined}>Log In</Link>
+        <Link to="/signup" className="auth-tab" aria-current={mode === 'sign-up' ? 'page' : undefined}>Sign Up</Link>
+      </nav>
+      <AuthPage mode={mode} />
+    </>
+  );
+}
+
 export function AuthPage({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const signingUp = mode === 'sign-up';
   const { backend, loadFailed } = useBackend();
@@ -105,8 +121,8 @@ export function AuthPage({ mode }: { mode: 'sign-in' | 'sign-up' }) {
       </form>
       <ul className="auth-links">
         {signingUp
-          ? <li>Already have an account? <Link to="/sign-in">Sign in</Link></li>
-          : <li>New here? <Link to="/sign-up">Create an account</Link></li>}
+          ? <li>Already have an account? <Link to="/login">Log in</Link></li>
+          : <li>New here? <Link to="/signup">Create an account</Link></li>}
         <li><Link to="/forgot-password">Forgot your password?</Link></li>
         <li><Link to="/forgot-email">Forgot which email you used?</Link></li>
         <li><Link to="/privacy">Privacy</Link></li>
@@ -161,7 +177,7 @@ export function ForgotPasswordPage() {
         <div className="session-actions"><button className="button primary" type="submit" disabled={!backend || busy}>Send reset link</button></div>
       </form>
       <ul className="auth-links">
-        <li><Link to="/sign-in">Back to sign in</Link></li>
+        <li><Link to="/login">Back to log in</Link></li>
         <li><Link to="/forgot-email">Forgot which email you used?</Link></li>
       </ul>
     </div>

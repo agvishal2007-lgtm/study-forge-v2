@@ -18,7 +18,7 @@ import { LessonPage } from './features/guided/LessonPage';
 import { SessionPage } from './features/guided/SessionPage';
 import { StudyPage } from './features/guided/StudyPage';
 import { RecordPage } from './features/RecordPage';
-import { AuthPage, ForgotEmailPage, ForgotPasswordPage, PrivacyPage } from './features/AuthPages';
+import { AuthTabsPage, ForgotEmailPage, ForgotPasswordPage, PrivacyPage } from './features/AuthPages';
 import { SearchPage } from './features/SearchPage';
 import { CramPage } from './features/CramPage';
 import { ExamHallPage } from './features/ExamHallPage';
@@ -128,8 +128,12 @@ export function App() {
                 <Route path="/cards" element={<FlashcardsPage />} />
                 <Route path="/cards/review" element={<ReviewPage />} />
                 <Route path="/cards/:id" element={<DeckPage />} />
-                <Route path="/sign-in" element={<AuthPage mode="sign-in" />} />
-                <Route path="/sign-up" element={<AuthPage mode="sign-up" />} />
+                <Route path="/auth" element={<AuthTabsPage mode="sign-in" />} />
+                <Route path="/login" element={<AuthTabsPage mode="sign-in" />} />
+                <Route path="/signup" element={<AuthTabsPage mode="sign-up" />} />
+                {/* The older addresses still work, so saved links and bookmarks don't break. */}
+                <Route path="/sign-in" element={<AuthTabsPage mode="sign-in" />} />
+                <Route path="/sign-up" element={<AuthTabsPage mode="sign-up" />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/forgot-email" element={<ForgotEmailPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />

@@ -967,3 +967,8 @@ h1 + .muted, h1 + .dash-lead { margin-top: .5rem; }
 .also-add { display: grid; gap: .5rem; margin-top: .5rem; max-width: 24rem; min-width: 0; }
 .also-add label { display: grid; gap: .25rem; min-width: 0; }
 .also-add select { width: 100%; min-width: 0; box-sizing: border-box; }
+
+/* One way in: the Log In / Sign Up tabs. */
+.auth-tabs { display: flex; gap: .25rem; margin: 0 auto 1rem; max-width: 26rem; border-bottom: 1px solid var(--line); }
+.auth-tab { padding: .6rem 1rem; border-radius: 10px 10px 0 0; text-decoration: none; color: var(--muted); font-weight: 600; }
+.auth-tab[aria-current='page'] { color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }

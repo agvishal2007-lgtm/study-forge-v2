@@ -52,7 +52,7 @@ async function nav(page, name) {
   }
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
 }
-const signInButton = (page) => page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name: 'Sign in', exact: true });
+const signInButton = (page) => page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name: 'Log In / Sign Up', exact: true });
 const googleButton = (page) => page.getByRole('button', { name: 'Continue with Google' });
 const signOutButton = async (page) => {
   await openMenu(page);
@@ -436,7 +436,8 @@ test('practice sets and answers follow the student', async () => {
 
 test('a new student can sign up with an email and password, and sign in again later', async () => {
   const page = await device('emailer', null);
-  await page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name: 'Sign up' }).click();
+  await page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name: 'Log In / Sign Up', exact: true }).click();
+  await page.getByRole('link', { name: 'Sign Up', exact: true }).click();
   await page.getByRole('heading', { name: 'Create your account' }).waitFor();
   await page.screenshot({ path: path.join(shots, 'sign-up.png') });
   for (const name of ['Continue with Google', 'Continue with Microsoft']) await page.getByRole('button', { name }).waitFor();
@@ -497,7 +498,8 @@ test('a new student can sign up with an email and password, and sign in again la
   await signInButton(page).waitFor();
 
   // Signing up again with the same email points to signing in.
-  await page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name: 'Sign up' }).click();
+  await page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name: 'Log In / Sign Up', exact: true }).click();
+  await page.getByRole('link', { name: 'Sign Up', exact: true }).click();
   await page.getByLabel('Email').fill('dana@school.edu');
   await page.getByLabel('Password', { exact: true }).fill('another password');
   await page.getByLabel('Type the password again').fill('another password');

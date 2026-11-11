@@ -498,3 +498,9 @@ The rules that matter: nothing is copied — there is one record and one set of 
 ## Still on the device until the Firebase rules are published
 
 Study time and resource associations are new kinds of data saved online. The published rules reject anything they don't list, and one rejected write stops the whole sync, so these two are deliberately left out of syncing until the updated `firestore.rules` in this repository is published. They work fully on the device meanwhile and nothing is lost; they start syncing the moment the rules go live and the two names are added back to `COLLECTIONS` in `src/data/sync.ts`.
+
+## One way in: Log In / Sign Up
+
+The top bar had two buttons, Sign in and Sign up, going to two separate pages. There is now a single **Log In / Sign Up** button leading to `/auth`, which has two tabs.
+
+Each tab has its own address, so a direct link opens the right one: `/login` and `/signup`. The older `/sign-in` and `/sign-up` addresses still work and land on the matching tab, so saved links and bookmarks don't break. The sign-in and sign-up forms themselves, and the Google and Microsoft buttons, are unchanged — only the way in changed.

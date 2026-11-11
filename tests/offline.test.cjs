@@ -131,7 +131,7 @@ test('a PDF added offline opens offline, which needs its reader to be saved too'
 });
 
 test('signing in with no internet explains why it can\'t', async () => {
-  await page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name: 'Sign in', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name: 'Log In / Sign Up', exact: true }).click();
   await page.getByLabel('Email').fill('dana@school.edu');
   await page.getByLabel('Password', { exact: true }).fill('long enough now');
   await page.getByRole('main').getByRole('button', { name: 'Sign in', exact: true }).click();

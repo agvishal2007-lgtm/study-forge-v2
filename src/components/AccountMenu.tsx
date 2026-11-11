@@ -44,8 +44,7 @@ function SignedOut() {
   return (
     <>
       <Link className="icon-button" to="/settings" aria-label="Settings" title="Settings"><GearIcon /></Link>
-      <Link className="button" to="/sign-in">Sign in</Link>
-      <Link className="button primary" to="/sign-up">Sign up</Link>
+      <Link className="button primary" to="/auth">Log In / Sign Up</Link>
     </>
   );
 }
