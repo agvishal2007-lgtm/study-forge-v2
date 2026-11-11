@@ -239,7 +239,7 @@ test('it fits a phone, and the top bar keeps every control', async () => {
   await page.getByTestId('search-Notes').waitFor();
   assert.ok((await overflow()) <= 0);
   await page.screenshot({ path: path.join(shots, 'phone-search.png') });
-  for (const name of ['Search', 'Settings', 'Sign in', 'Sign up']) {
+  for (const name of ['Search', 'Settings', 'Log In / Sign Up']) {
     const box = await page.getByRole('navigation', { name: 'Account' }).getByRole('link', { name, exact: true }).boundingBox();
     assert.ok(box.x >= 0 && box.x + box.width <= 360 && box.y < 60, `${name} is in the top row`);
   }
