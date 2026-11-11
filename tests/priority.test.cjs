@@ -258,6 +258,28 @@ test('pinning overrides the order, and the choice is remembered', async () => {
   assert.match(await firstRanked(), /Quick worksheet/, 'the pin is remembered');
 });
 
+test("Today's Plan follows the same saved order, not a second one", async () => {
+  await addWork({ name: 'Small check-in', date: dateIn(3), points: '5', hours: '1' });
+  await addWork({ name: 'Big midterm', date: dateIn(5), points: '250', hours: '6' });
+
+  await page.goto(`${URL_BASE}#/planner`);
+  await page.getByTestId('priority-mode').selectOption('points');
+  await page.goto(URL_BASE);
+  await page.getByTestId('today-order').waitFor();
+  assert.match(await page.getByTestId('today-order').innerText(), /Highest raw points/);
+  const byPoints = await page.getByTestId('due-soon').innerText();
+  assert.ok(byPoints.indexOf('Big midterm') < byPoints.indexOf('Small check-in'), 'the heavier one comes first');
+
+  // Change the order in the Planner; Today follows it.
+  await page.goto(`${URL_BASE}#/planner`);
+  await page.getByTestId('priority-mode').selectOption('quickest');
+  await page.goto(URL_BASE);
+  await page.getByTestId('today-order').waitFor();
+  assert.match(await page.getByTestId('today-order').innerText(), /Quickest to finish/);
+  const byQuickest = await page.getByTestId('due-soon').innerText();
+  assert.ok(byQuickest.indexOf('Small check-in') < byQuickest.indexOf('Big midterm'), 'the quicker one comes first');
+});
+
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });

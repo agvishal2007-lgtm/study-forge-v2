@@ -19,6 +19,8 @@ import { listCalendarEvents, setEventCompleted } from '../data/calendar';
 import { describeTime, noClassesOn, todaysPlan } from '../data/calendarRules';
 import { dayOf, streaksFrom } from '../data/progressRules';
 import { listStudyDays } from '../data/studyLog';
+import { PRIORITY_MODE_LABEL, rankWork } from '../data/priorityRules';
+import { savedMode, savedPinned, savedWeights } from '../data/priorityChoice';
 import { formatDuration, listStudyTime, secondsByDate } from '../data/studyTime';
 import { listExamResults } from '../data/exams';
 import { listPlannerItems, setPlannerStatus } from '../data/planner';
@@ -96,7 +98,13 @@ export function TodayPage() {
   const now = localNow();
   const sorted = [...plannerItems].sort(comparePlanner);
   const overdue = sorted.filter((item) => groupOf(item, now) === 'overdue');
-  const dueSoon = sorted.filter((item) => ['today', 'tomorrow', 'week'].includes(groupOf(item, now)));
+  const dueThisWeek = sorted.filter((item) => ['today', 'tomorrow', 'week'].includes(groupOf(item, now)));
+  // Today's Plan uses the very same ranking engine, and the student's saved choice, as the Planner.
+  // Two formulas would eventually disagree with each other in front of them.
+  const order = savedMode();
+  const dueSoon = order === 'due'
+    ? dueThisWeek
+    : rankWork(dueThisWeek, { mode: order, today: now.date, weights: savedWeights(), pinned: savedPinned() }).ranked.map((entry) => entry.item);
   const dueCards = cards.filter((card) => isDue(cardProgress.get(card.id), now.date));
   const weakCards = cards.filter((card) => isWeak(cardProgress.get(card.id)));
   const decksDue = decks
@@ -214,6 +222,11 @@ export function TodayPage() {
             ? <DeadlineRows items={dueSoon.slice(0, SHOWN_ROWS)} courses={courses} />
             : <p className="muted">Nothing due in the next 7 days.</p>}
           {dueSoon.length > SHOWN_ROWS && <p className="muted">And {dueSoon.length - SHOWN_ROWS} more in your <Link to="/planner">Planner</Link>.</p>}
+          {dueSoon.length > 1 && (
+            <p className="muted small" data-testid="today-order">
+              In your order: {PRIORITY_MODE_LABEL[order]}. <Link to="/planner">Change it in the Planner</Link>.
+            </p>
+          )}
         </section>
 
         <section className="dash-card" aria-labelledby="cards-heading" data-testid="today-cards">

@@ -536,3 +536,9 @@ Every ranking shows its reasoning on the row — urgency, points, time needed an
 Planner items gained a **points** field; a blank stays blank rather than becoming a zero.
 
 Still missing from this area: the grade tracker itself (grading categories and weights), which is what would make grade impact real.
+
+## Today's Plan uses the same order
+
+The guide is firm that Today's Plan must rank work with the *same* engine as the Planner, not a second formula. It now does: the week's deadlines on Today are ordered by whichever mode the student picked in the Planner, with their weighting and pins, and a line under the list says which order is in use with a link to change it. Pick "Highest raw points" in the Planner and Today reorders to match.
+
+One markup bug this caught: the Order by `<select>` sat inside its `<label>`, so the label's computed text swallowed every option ("Order by Earliest due date Highest raw points…"). Anything looking for a control labelled "Due date" matched the sort control instead. The select now carries its own label.

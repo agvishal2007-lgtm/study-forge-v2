@@ -44,6 +44,7 @@ export function PlannerPage() {
         <label className="search">Order by
           <select
             value={mode}
+            aria-label="Order by"
             data-testid="priority-mode"
             onChange={(event) => {
               const chosen = event.target.value as PriorityMode;
