@@ -132,7 +132,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/practice',
     target: ['[data-tour="new-practice"]'],
     title: 'Practice',
-    body: 'Write your own questions, answer them without your notes, and check your work. Study Forge tracks what you missed and shows your weak topics, so you know what to repeat.',
+    body: 'Write your own questions, answer them without your notes, and check your work. Choose 5, 10, 20 or all, save a question for later, and say how hard it felt. Stop whenever you like: practice and flashcard reviews pick up where you left off. Study Forge tracks what you missed and shows your weak topics, so you know what to repeat.',
   },
   {
     id: 'exams',

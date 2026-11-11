@@ -36,6 +36,8 @@ export function PracticeSessionPage() {
   // A long list waits here until the student chooses how many to do.
   const [pool, setPool] = useState<string[] | null>(null);
   const [saved, setSaved] = useState<Set<string>>(new Set());
+  // How many questions this visit found removed, so coming back says so wherever it picks up.
+  const [justSkipped, setJustSkipped] = useState(0);
   const lastTick = useRef(Date.now());
   const [failure, setFailure] = useState('');
   const busy = useRef(false);
@@ -60,6 +62,7 @@ export function PracticeSessionPage() {
         const gone = resumed.questionIds.length - remaining.length;
         const kept = { ...resumed, questionIds: remaining, skipped: (resumed.skipped ?? 0) + gone };
         if (gone) await savePracticeSession(kept);
+        if (active) setJustSkipped(gone);
         lastTick.current = Date.now();
         setSession(kept);
       } else {
@@ -147,7 +150,9 @@ export function PracticeSessionPage() {
     const topicsDone = [...new Set(results.map((attempt) => questions.get(attempt.questionId)?.topic).filter(Boolean))];
     const savedHere = session.questionIds.filter((id) => saved.has(id)).length;
     const felt = (level: string) => results.filter((attempt) => attempt.difficulty === level).length;
-    const notReached = session.questionIds.length - session.position;
+    // Only questions with no answer at all; one answered just before finishing was reached.
+    const answeredIds = new Set(results.map((attempt) => attempt.questionId));
+    const notReached = session.questionIds.slice(session.position).filter((id) => !answeredIds.has(id)).length;
     return (
       <div className="page review-page">
         <h1>{session.endedEarly ? 'Practice stopped' : 'Practice finished'}</h1>
@@ -227,14 +232,15 @@ export function PracticeSessionPage() {
           <button className="text-button" onClick={() => change({ endedEarly: true })}>Finish now</button>
         </div>
       </header>
-      {(session.skipped ?? 0) > 0 && session.position === 0 && <p className="notice">{session.skipped} {session.skipped === 1 ? 'question in this session was' : 'questions in this session were'} removed since, so {session.skipped === 1 ? 'it is' : 'they are'} skipped.</p>}
+      {justSkipped > 0 && <p className="notice">Picked up where you left off. {justSkipped} {justSkipped === 1 ? 'question in this session was' : 'questions in this session were'} removed since, so {justSkipped === 1 ? 'it is' : 'they are'} skipped. Your earlier answers still count.</p>}
       <p className="save-later">
         <button
           className="text-button"
           aria-pressed={saved.has(question.id)}
-          onClick={async () => {
-            const keep = await toggleSavedQuestion(question.id);
+          onClick={() => {
+            const keep = !saved.has(question.id);
             setSaved((current) => { const next = new Set(current); if (keep) next.add(question.id); else next.delete(question.id); return next; });
+            void toggleSavedQuestion(question.id).catch((error: Error) => setFailure(`That wasn't saved for later. ${error.message}`));
           }}
         >
           {saved.has(question.id) ? 'Saved for later ✓' : 'Save for later'}
@@ -305,9 +311,10 @@ export function PracticeSessionPage() {
                   type="radio"
                   name={`${attempt.id}-difficulty`}
                   checked={attempt.difficulty === level}
-                  onChange={async () => {
-                    await setAttemptDifficulty(attempt.id, level);
+                  onChange={() => {
+                    // Shown at once; the save follows, and a failed save is said rather than hidden.
                     setAttempts((current) => new Map(current).set(attempt.id, { ...attempt, difficulty: level }));
+                    void setAttemptDifficulty(attempt.id, level).catch((error: Error) => setFailure(`How hard it felt wasn't saved. ${error.message}`));
                   }}
                 />
                 <span>{level}</span>
