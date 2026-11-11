@@ -52,7 +52,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/',
     target: ['.topbar'],
     title: 'Your account',
-    body: 'Log In / Sign Up opens a page of its own, away from your work. There you can use an email and password, Google, or Microsoft, including a college account if your school allows it. Your courses, notes, lessons, and progress then follow you between devices. Signing in is optional, and every page has a link back here.',
+    body: 'Log In / Sign Up opens a page of its own, away from your work. There you can use an email and password, Google, or Microsoft, including a college account if your school allows it. Once you\'re signed in, your courses, notes, planner, flashcards, practice, settings and study in progress sync to your other devices by themselves, within seconds. The badge beside your picture always says whether everything is synced. Signing in is optional, and every page has a link back here.',
   },
   {
     id: 'today',
@@ -78,7 +78,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/library',
     target: ['[data-tour="add-files"]'],
     title: 'Add your files',
-    body: 'Add slides, readings, and other files here. Choose them or drag them in. Files stay on this device, and if you add the same file twice, Study Forge notices. You can add them from your device or Google Drive.',
+    body: 'Add slides, readings, and other files here. Choose them or drag them in. If you add the same file twice, Study Forge notices. Their names and places sync when you\'re signed in, and the files themselves can sync through your Google Drive. You can add them from your device or Google Drive.',
   },
   {
     id: 'viewer',
@@ -187,7 +187,14 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/settings',
     target: ['[data-tour="backup"]'],
     title: 'Back up your work',
-    body: 'Your files and recordings live only on this device. Create a backup regularly and keep it somewhere safe. You can restore it on any computer.',
+    body: 'Without an account, your files and recordings live only on this device. Create a backup regularly and keep it somewhere safe. You can restore it on any computer.',
+  },
+  {
+    id: 'sync-files',
+    route: '/settings',
+    target: ['[data-testid=drive-backup]', '#content .page'],
+    title: 'Files on all your devices',
+    body: 'Signed in, you can tap Sync files with my Google Drive once on each device. Your files and recordings then go to a Study Forge folder in your own Drive, and a file counts as synced only after Drive confirms it arrived intact. On another device, open the file and tap Get it from Google Drive. Study Forge only sees the files it puts there.',
   },
   {
     id: 'offline',

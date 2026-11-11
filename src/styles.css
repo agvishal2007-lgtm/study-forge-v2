@@ -1344,3 +1344,6 @@ html[data-density='compact'] .files li, html[data-density='compact'] .checkpoint
 html[data-motion="reduce"] .sync-badge .sync-dot { animation: none; }
 @media (prefers-reduced-motion: reduce) { .sync-badge .sync-dot { animation: none; } }
 @media (max-width: 720px) { .sync-badge-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .sync-badge { padding: .25rem; min-width: 32px; justify-content: center; } }
+
+/* While the saving card shows, the page can scroll its last buttons up above it. */
+html.save-panel-open main > :last-child { padding-bottom: min(50vh, 18rem); }

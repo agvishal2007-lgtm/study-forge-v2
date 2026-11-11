@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { SaveCancelled } from '../data/blobs';
 import { formatBytes } from '../data/format';
@@ -143,12 +143,36 @@ const PHASE_LABEL: Partial<Record<Phase, string>> = {
   cancelled: 'Cancelled',
 };
 
+/** How long a finished list stays up, so it's seen, before it gets out of the way. */
+export const FINISHED_CLEAR_MS = 12_000;
+
 export function SavePanel() {
   const { items, cancel, dismiss, moveExisting, clearFinished } = useSaveQueue();
+  const [held, setHeld] = useState(false);
+  const allFinished = items.length > 0 && items.every((item) => item.phase === 'saved' || item.phase === 'cancelled');
+  // Once everything is saved, the card clears itself so it stops covering buttons. It waits while
+  // the student is pointing at it or using it. Problems (failures, duplicates) stay until handled.
+  useEffect(() => {
+    if (!allFinished || held) return;
+    const timer = setTimeout(clearFinished, FINISHED_CLEAR_MS);
+    return () => clearTimeout(timer);
+  }, [allFinished, held, clearFinished, items.length]);
+  // Leave room at the bottom of the page, so nothing underneath is out of reach while it shows.
+  useEffect(() => {
+    document.documentElement.classList.toggle('save-panel-open', items.length > 0);
+    return () => document.documentElement.classList.remove('save-panel-open');
+  }, [items.length]);
   if (items.length === 0) return null;
   const canClear = items.some((item) => item.phase === 'saved' || item.phase === 'cancelled');
   return (
-    <section className="save-panel" aria-label="Files being saved">
+    <section
+      className="save-panel"
+      aria-label="Files being saved"
+      onPointerEnter={() => setHeld(true)}
+      onPointerLeave={() => setHeld(false)}
+      onFocus={() => setHeld(true)}
+      onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setHeld(false); }}
+    >
       <div className="save-head">
         <h2>Saving files</h2>
         {canClear && <button className="text-button" onClick={clearFinished}>Clear finished</button>}
