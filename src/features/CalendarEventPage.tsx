@@ -144,7 +144,7 @@ export function CalendarEventPage() {
         <p className="notice">This came from Google Calendar before Study Forge kept meeting links and descriptions. Get the latest from Google Calendar and they'll appear here.</p>
       )}
       {fromGoogle && <h2 className="event-edit-heading">Your own settings for it</h2>}
-      {fromGoogle && <p className="notice">Its name, date, time, place and links come from Google Calendar and change there. The type, course, what to do and priority are yours to set here.</p>}
+      {fromGoogle && <p className="notice">This comes from Google Calendar, so its name, date, time, place and links change there. The type, course, what to do and priority are yours to set here.</p>}
       <form onSubmit={(event) => { event.preventDefault(); void save(); }}>
         <label>Name<input value={title} disabled={fromGoogle} onChange={(event) => setTitle(event.target.value)} placeholder="ECO 231 class" /></label>
         <div className="form-row">
