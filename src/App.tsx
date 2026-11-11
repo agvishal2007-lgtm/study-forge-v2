@@ -20,6 +20,9 @@ import { SessionPage } from './features/guided/SessionPage';
 import { StudyPage } from './features/guided/StudyPage';
 import { RecordPage } from './features/RecordPage';
 import { AuthShell, AuthTabsPage, ForgotEmailPage, ForgotPasswordPage, PrivacyPage } from './features/AuthPages';
+import { HomePage } from './features/HomePage';
+import { isNewVisitor, WELCOME_SEEN_EVENT } from './data/firstVisit';
+import { getActiveAccount } from './data/account';
 
 /** Every way into an account. These render on their own page, outside the dashboard. */
 const AUTH_ROUTES = ['/auth', '/login', '/signup', '/sign-in', '/sign-up', '/forgot-password', '/forgot-email', '/account-recovery'];
@@ -75,6 +78,16 @@ function NotFound() {
 
 export function App() {
   const { pathname } = useLocation();
+  // Undecided until the device has been looked at. Only someone with no account and no work of
+  // their own is met by the welcome page instead of their own dashboard.
+  const [newVisitor, setNewVisitor] = useState<boolean | null>(null);
+  useEffect(() => {
+    let active = true;
+    isNewVisitor(Boolean(getActiveAccount())).then((answer) => { if (active) setNewVisitor(answer); });
+    const started = () => setNewVisitor(false);
+    window.addEventListener(WELCOME_SEEN_EVENT, started);
+    return () => { active = false; window.removeEventListener(WELCOME_SEEN_EVENT, started); };
+  }, []);
   const [updateBlocked, setUpdateBlocked] = useState(false);
   useEffect(() => {
     // On a phone the bar slides, so the current section is kept in view.
@@ -87,6 +100,11 @@ export function App() {
   }, []);
   // The way in is its own page. It never borrows the student dashboard's shell: no main navigation,
   // no account bar, no recording bar, no floating controls.
+  if (pathname === '/welcome') return <HomePage />;
+  // A new visitor meets the welcome page first; everyone else goes straight to their own work.
+  if (pathname === '/' && newVisitor === null) return <p className="page muted">Loading…</p>;
+  if (pathname === '/' && newVisitor) return <HomePage />;
+
   if (AUTH_ROUTES.includes(pathname)) {
     return (
       <AuthShell>

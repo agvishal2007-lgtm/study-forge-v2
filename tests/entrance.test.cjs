@@ -14,10 +14,16 @@ let server;
 let browser;
 const pageErrors = [];
 
-const open = async (viewport, theme) => {
+const open = async (viewport, theme, firstVisit = false) => {
   const page = await browser.newPage({ viewport, deviceScaleFactor: 1 });
   page.setDefaultTimeout(15000);
   page.on('pageerror', (error) => pageErrors.push(error.message));
+  if (!firstVisit) {
+    // Most of these tests are a student who has been here before, not a brand-new visitor.
+    await page.addInitScript(() => {
+      try { localStorage.setItem('study-forge-seen-welcome', 'yes'); } catch { /* private window */ }
+    });
+  }
   if (theme) {
     await page.addInitScript((value) => {
       try { localStorage.setItem('study-forge-theme', value); } catch { /* private window */ }
@@ -133,4 +139,79 @@ test('the entrance is readable in both themes', async () => {
 
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
+});
+
+
+/* ---- The third experience: the public welcome page. ---- */
+
+test('a brand-new visitor is met by the welcome page, with no dashboard around it', async () => {
+  const page = await open({ width: 1280, height: 900 }, null, true);
+  await page.goto(URL_BASE);
+  await page.getByRole('heading', { level: 1 }).waitFor();
+  await page.locator('.home').waitFor();
+  // None of the student dashboard, and none of the sign-in page either.
+  assert.equal(await page.getByRole('navigation', { name: 'Main' }).count(), 0);
+  assert.equal(await page.getByRole('navigation', { name: 'Account' }).count(), 0);
+  assert.equal(await page.locator('.shell, .nav, .topbar, .recording-bar').count(), 0);
+  // It says how to get in, both ways.
+  await page.getByRole('button', { name: 'Start using it' }).first().waitFor();
+  await page.getByRole('link', { name: 'Log In / Sign Up' }).first().waitFor();
+  await page.close();
+});
+
+test('choosing to start goes to the dashboard, and the welcome page stops taking its place', async () => {
+  const page = await open({ width: 1280, height: 900 }, null, true);
+  await page.goto(URL_BASE);
+  await page.getByRole('button', { name: 'Start using it' }).first().click();
+  // Straight into their own work, with the dashboard back.
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Today', exact: true }).waitFor();
+  // And it does not come back in front of them next time.
+  await page.goto(URL_BASE);
+  await page.getByRole('navigation', { name: 'Main' }).waitFor();
+  assert.equal(await page.locator('.home').count(), 0);
+  // It is still there on purpose for anyone who wants to read it.
+  await page.goto(`${URL_BASE}#/welcome`);
+  await page.locator('.home').waitFor();
+  await page.close();
+});
+
+test('a student who already has work never sees it, account or no account', async () => {
+  const page = await open({ width: 1280, height: 900 }, null, true);
+  await page.goto(`${URL_BASE}#/courses`);
+  await page.getByLabel('Course name').fill('Biology');
+  await page.getByRole('button', { name: 'Create course' }).click();
+  await page.getByRole('heading', { name: 'Biology', level: 1 }).waitFor();
+  // Clear the "already been here" mark: having work is enough on its own.
+  await page.evaluate(() => { try { localStorage.removeItem('study-forge-seen-welcome'); } catch { /* ignore */ } });
+  await page.goto(URL_BASE);
+  await page.getByRole('navigation', { name: 'Main' }).waitFor();
+  assert.equal(await page.locator('.home').count(), 0, 'a sales page replaced their own dashboard');
+  await page.close();
+});
+
+test('the welcome page fits a phone and reads in both themes', async () => {
+  const { contrastRatio } = await import('../src/data/statusRules.ts');
+  const phone = await open({ width: 390, height: 844 }, null, true);
+  await phone.goto(URL_BASE);
+  await phone.locator('.home').waitFor();
+  assert.equal(await phone.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, 'the welcome page scrolls sideways on a phone');
+  for (const name of ['Start using it']) {
+    const box = await phone.getByRole('button', { name, exact: true }).first().boundingBox();
+    assert.ok(box.height >= 44, `${name} is only ${Math.round(box.height)}px tall`);
+  }
+  await phone.close();
+  for (const theme of ['light', 'dark']) {
+    const page = await open({ width: 1280, height: 900 }, theme, true);
+    await page.goto(URL_BASE);
+    await page.locator('.home').waitFor();
+    await page.waitForFunction((want) => document.documentElement.getAttribute('data-theme') === want, theme);
+    const shades = await page.evaluate(() => ({
+      ground: getComputedStyle(document.querySelector('.home')).backgroundColor,
+      heading: getComputedStyle(document.querySelector('.home-hero h1')).color,
+      lead: getComputedStyle(document.querySelector('.home-lead')).color,
+    }));
+    assert.ok(contrastRatio(shades.heading, shades.ground) >= 4.5, `${theme}: the headline is ${contrastRatio(shades.heading, shades.ground).toFixed(2)}:1`);
+    assert.ok(contrastRatio(shades.lead, shades.ground) >= 4.5, `${theme}: the opening line is ${contrastRatio(shades.lead, shades.ground).toFixed(2)}:1`);
+    await page.close();
+  }
 });
