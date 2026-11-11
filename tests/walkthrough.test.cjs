@@ -12,6 +12,8 @@ const work = fs.mkdtempSync(path.join(os.tmpdir(), 'sf-tour-'));
 const shots = path.join(__dirname, '..', 'test-output');
 fs.mkdirSync(shots, { recursive: true });
 const TOTAL = 24;
+/** Where a step sits in the walkthrough, by name, so adding one never moves these tests. */
+const numberOf = (id) => EXPECTED.findIndex(([stepId]) => stepId === id) + 1;
 let server;
 let context;
 let page;
@@ -100,7 +102,7 @@ test('it never opens by itself, and a new student can find it', async () => {
 test('the button starts it at 0%', async () => {
   await open('main');
   await card().waitFor();
-  assert.match(await count(), /Step 1 of 24, 0% complete/);
+  assert.match(await count(), new RegExp(`Step 1 of ${TOTAL}, 0% complete`));
   await page.getByRole('heading', { name: 'Welcome to Study Forge' }).waitFor();
   await settle();
   await page.screenshot({ path: path.join(shots, 'tour-welcome.png') });
@@ -185,10 +187,10 @@ test('every step opens the real screen and puts a box around the real section', 
 
 test('Back returns to the earlier section', async () => {
   await press('Back');
-  await atStep(21);
+  await atStep(numberOf('offline'));
   assert.equal(await card().getAttribute('data-step'), 'offline');
   await page.locator('[data-testid=tour-card]').getByRole('button', { name: 'Back' }).waitFor();
-  assert.match(await count(), /87% complete/);
+  assert.match(await count(), /88% complete/);
 });
 
 test('a reload closes it, and the button picks up at the same step, on the right screen', async () => {
@@ -205,7 +207,7 @@ test('a reload closes it, and the button picks up at the same step, on the right
   await page.waitForTimeout(300);
   assert.equal(await card().count(), 0);
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(21);
+  await atStep(numberOf('offline'));
   await page.getByTestId('tour-box').waitFor();
   assert.ok(page.url().endsWith('#/settings'));
 });
@@ -225,11 +227,11 @@ test('the X cleans up completely, and it does not come back by itself', async ()
 
 test('Escape also leaves, and the question mark resumes at the same step', async () => {
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(21);
+  await atStep(numberOf('offline'));
   await page.keyboard.press('Escape');
   await card().waitFor({ state: 'detached' });
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(21);
+  await atStep(numberOf('offline'));
 });
 
 test('tapping the button the moment the page opens still resumes at the saved step', async () => {
@@ -238,7 +240,7 @@ test('tapping the button the moment the page opens still resumes at the saved st
   await page.waitForTimeout(200);
   await page.reload();
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(21);
+  await atStep(numberOf('offline'));
 });
 
 test('Start over returns to the beginning at 0%', async () => {
@@ -287,9 +289,9 @@ test('a hands-on step whose part is missing never traps anyone', async () => {
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
   await atStep(1);
   await page.addStyleTag({ content: '[data-tour="add-course"] { display: none !important; }' });
-  for (let i = 1; i < 4; i++) await next();
+  for (let i = 1; i < numberOf('courses') - 1; i++) await next();
   await press('Next');
-  await atStep(5);
+  await atStep(numberOf('courses'));
   await page.getByTestId('tour-missing').waitFor();
   assert.equal(await card().getByRole('button', { name: 'Next', exact: true }).isDisabled(), false);
   await closeTour();
@@ -354,7 +356,7 @@ test('it works on a phone: the box fits and the explanation stays on screen', as
 test('during a hands-on step, only the highlighted part works', async () => {
   await open('hands-on');
   await card().waitFor();
-  for (let i = 1; i < 5; i++) await next();
+  for (let i = 1; i < numberOf('courses'); i++) await next();
   assert.equal(await card().getAttribute('data-step'), 'courses');
   await page.getByTestId('tour-try').waitFor();
   await settle();
@@ -380,7 +382,7 @@ test('during a hands-on step, only the highlighted part works', async () => {
   // Pausing and returning keeps the same step, still locked.
   await page.reload();
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(5);
+  await atStep(numberOf('courses'));
   await page.getByTestId('tour-try').waitFor();
   await page.getByLabel('Course name').fill('Biology');
   await page.getByRole('button', { name: 'Create course' }).click();
