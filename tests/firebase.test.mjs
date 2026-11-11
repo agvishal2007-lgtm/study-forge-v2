@@ -146,9 +146,18 @@ test('calendar items and study days can be saved', async () => {
   assert.ok(items.some((entry) => entry.id === 'day-1' && entry.collection === 'studyDays'));
 });
 
+test('file records, transcripts, settings and study in progress can be saved', async () => {
+  const kinds = ['materials', 'transcripts', 'settings', 'studyState'];
+  const { conflicts } = await alice.backend.push(alice.uid, kinds.map((collection) => item(`${collection}-1`, { collection })));
+  assert.deepEqual(conflicts, []);
+  const { items } = await alice.backend.pull(alice.uid, 0);
+  for (const collection of kinds) assert.ok(items.some((entry) => entry.collection === collection), collection);
+});
+
 test('badly shaped or oversized items are refused, so the free storage can\'t be abused', async () => {
   const ref = doc(alice.db, 'users', alice.uid, 'items', 'bad');
-  await denied(() => setDoc(ref, validDoc({ collection: 'materials' })), 'a file record');
+  // File contents never go through here; they travel through the student's own Google Drive.
+  await denied(() => setDoc(ref, validDoc({ collection: 'blobs' })), 'file contents');
   await denied(() => setDoc(ref, validDoc({ extra: 'field' })), 'extra fields');
   await denied(() => setDoc(ref, validDoc({ json: 'x'.repeat(900_001) })), 'an oversized item');
   await denied(() => setDoc(ref, validDoc({ rev: 'one' })), 'a wrong type');
