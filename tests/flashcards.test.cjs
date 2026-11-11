@@ -207,7 +207,9 @@ test('keys work, and a fast double press counts once', async () => {
   await page.keyboard.press('3');
   await page.keyboard.press('3');
   await page.getByRole('heading', { name: 'All done' }).waitFor();
-  assert.match(await page.getByTestId('review-summary').innerText(), /You answered 4 times: 2 Again, 0 Hard, 1 Good, 1 Easy/);
+  // The review was reloaded part-way, and its tally now survives that, so the Good from before
+  // the reload counts too: the summary is the whole review, not just what came after.
+  assert.match(await page.getByTestId('review-summary').innerText(), /You answered 5 times: 2 Again, 0 Hard, 2 Good, 1 Easy/);
   const stored = await page.evaluate(() => new Promise((resolve) => {
     const open = indexedDB.open('study-forge');
     open.onsuccess = () => {

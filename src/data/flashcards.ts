@@ -92,7 +92,11 @@ export interface ReviewSession {
   url: string;
   cardIds: string[];
   tally: Record<CardRating, number>;
+  /** When it was last answered. A review left longer ago than a study sitting starts fresh. */
+  savedAt?: number;
 }
+/** How long a review left part-way waits to be picked up; after that, today's due cards come first. */
+export const REVIEW_RESUME_MS = 12 * 60 * 60 * 1000;
 const REVIEW_KEY = 'reviewSession';
 export const loadReviewSession = async () => (await (await getDb()).get('meta', REVIEW_KEY)) as ReviewSession | undefined;
 export async function saveReviewSession(session: ReviewSession): Promise<void> {

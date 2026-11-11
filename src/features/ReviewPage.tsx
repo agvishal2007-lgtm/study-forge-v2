@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { clearReviewSession, listCardProgress, listCards, listDecks, loadReviewSession, rateCard, saveReviewSession } from '../data/flashcards';
+import { clearReviewSession, listCardProgress, listCards, listDecks, loadReviewSession, rateCard, REVIEW_RESUME_MS, saveReviewSession } from '../data/flashcards';
 import { describeInterval, dueQueue, isWeak, outcome } from '../data/flashcardRules';
 import { localNow } from '../data/plannerRules';
 import { useStudyClock } from '../data/studyClock';
@@ -25,6 +25,12 @@ export function ReviewPage() {
   const [failure, setFailure] = useState('');
   const [tally, setTally] = useState<Record<CardRating, number>>({ Again: 0, Hard: 0, Good: 0, Easy: 0 });
   const busy = useRef(false);
+  // The live queue and tally, so a second key press arriving before the screen updates sees the
+  // card that's really on screen, not the one it was pressed for.
+  const queueNow = useRef<Flashcard[] | null>(null);
+  const tallyNow = useRef<Record<CardRating, number>>({ Again: 0, Hard: 0, Good: 0, Easy: 0 });
+  queueNow.current = queue;
+  tallyNow.current = tally;
   const reveal = useRef<HTMLButtonElement>(null);
 
   // The list is set once at the start, so a card can't jump away mid-session.
@@ -33,7 +39,7 @@ export function ReviewPage() {
     Promise.all([listCards(), listCardProgress(), listDecks(), loadReviewSession()]).then(([cards, saved, decks, resumed]) => {
       if (!active) return;
       // The same review left part-way picks up where it stopped. A card deleted since is skipped, and said so.
-      if (resumed && resumed.url === url && resumed.cardIds.length > 0) {
+      if (resumed && resumed.url === url && resumed.cardIds.length > 0 && Date.now() - (resumed.savedAt ?? 0) < REVIEW_RESUME_MS) {
         const byId = new Map(cards.map((entry) => [entry.id, entry]));
         const left = resumed.cardIds.flatMap((id) => (byId.has(id) ? [byId.get(id) as Flashcard] : []));
         if (left.length > 0) {
@@ -60,7 +66,8 @@ export function ReviewPage() {
   const card = queue?.[0];
 
   const rate = useCallback(async (rating: CardRating) => {
-    if (!card || busy.current) return;
+    // A fast double press, or a press for a card already rated, counts once.
+    if (!card || busy.current || queueNow.current?.[0]?.id !== card.id) return;
     busy.current = true;
     setFailure('');
     try {
@@ -70,13 +77,15 @@ export function ReviewPage() {
         cardId: card.id,
         stage: outcome(current.get(card.id), rating).stage,
       }) : current));
-      const nextTally = { ...tally, [rating]: tally[rating] + 1 };
-      const rest = (queue ?? []).slice(1);
+      const nextTally = { ...tallyNow.current, [rating]: tallyNow.current[rating] + 1 };
+      const rest = (queueNow.current ?? []).slice(1);
       const nextQueue = rating === 'Again' ? [...rest, card] : rest;
+      queueNow.current = nextQueue;
+      tallyNow.current = nextTally;
       setTally(nextTally);
       setQueue(nextQueue);
       // Kept on the device, so closing the tab mid-review loses nothing.
-      if (nextQueue.length > 0) void saveReviewSession({ url, cardIds: nextQueue.map((entry) => entry.id), tally: nextTally }).catch(() => undefined);
+      if (nextQueue.length > 0) void saveReviewSession({ url, cardIds: nextQueue.map((entry) => entry.id), tally: nextTally, savedAt: Date.now() }).catch(() => undefined);
       else void clearReviewSession().catch(() => undefined);
       setRevealed(false);
     } catch (error) {
@@ -84,7 +93,7 @@ export function ReviewPage() {
     } finally {
       busy.current = false;
     }
-  }, [card, saves, queue, tally, url]);
+  }, [card, saves, url]);
 
   useEffect(() => {
     if (!revealed) reveal.current?.focus({ preventScroll: true });
