@@ -1,4 +1,5 @@
 import type { LinkCategory } from './linkRules';
+import type { EventDetails } from './eventDetails';
 export type { LinkCategory };
 
 /**
@@ -301,6 +302,8 @@ export interface CalendarEvent {
   sourceCalendar: string;
   /** Removed by the student, and remembered so getting the latest doesn't bring it back. */
   hidden: boolean;
+  /** For events from Google Calendar: everything useful the event carried. Missing on older imports. */
+  details?: EventDetails;
   createdAt: number;
   updatedAt: number;
 }

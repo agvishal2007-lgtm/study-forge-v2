@@ -1,3 +1,4 @@
+import { readEventDetails, type EventDetails } from './eventDetails.ts';
 import type { CalendarEvent, CalendarKind, PlannerType } from './types';
 
 /** The calendar's date rules and sorting. This file only calculates, so it can be tested directly. */
@@ -111,6 +112,8 @@ export interface GoogleItem {
   endTime: string;
   repeats: boolean;
   cancelled: boolean;
+  /** Meeting links, other links, notes, attachments and the rest, from every place Google keeps them. */
+  details: EventDetails;
 }
 
 const localParts = (value: string) => {
@@ -135,6 +138,8 @@ export function fromGoogleEvent(raw: any, calendarId: string, calendarName: stri
     location: String(raw.location ?? ''),
     repeats: Boolean(raw.recurringEventId),
     cancelled: raw.status === 'cancelled',
+    // Read per occurrence: a changed occurrence of a repeating event can have its own link.
+    details: readEventDetails(raw),
   };
   const key = `${calendarId}|${raw.id}`;
   if (raw.start?.date) {

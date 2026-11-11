@@ -1284,3 +1284,29 @@ html[data-density='compact'] .files li, html[data-density='compact'] .checkpoint
 .sheet-scroll { overflow: auto; max-height: 70vh; border: 1px solid var(--line); border-radius: 10px; }
 .doc-view .sheet { border-collapse: collapse; font-size: .92rem; }
 .doc-view .sheet td { border: 1px solid var(--line); padding: .3rem .5rem; white-space: pre-wrap; vertical-align: top; }
+
+/* A Google Calendar event, in full. */
+.event-card { background: var(--raised); border: 1px solid var(--line); border-radius: 18px; padding: clamp(1rem, 3vw, 1.5rem); margin: 0 0 1.5rem; max-width: 46rem; }
+.event-card h2 { margin: 0 0 .75rem; font-size: 1.35rem; }
+.event-facts { display: grid; gap: .35rem; margin: 0 0 1rem; }
+.event-facts div { display: grid; grid-template-columns: 6.5rem 1fr; gap: .75rem; }
+.event-facts dt { font-weight: 700; color: var(--muted); }
+.event-facts dd { margin: 0; overflow-wrap: anywhere; }
+.event-join { margin: 0 0 1rem; }
+.join-button { min-height: 48px; display: inline-flex; align-items: center; padding-inline: 1.4rem; }
+.event-extras { list-style: none; margin: .5rem 0 0; padding: 0; font-size: .92rem; }
+.event-other-meetings { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: .75rem; }
+.event-other-meetings p { margin: 0; flex-basis: 100%; }
+.event-block { border-top: 1px solid var(--line); padding-top: .85rem; margin-top: .85rem; }
+.event-block h3 { font-size: 1rem; margin: 0 0 .4rem; }
+.event-notes { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.event-links { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
+.event-links li { display: grid; }
+.event-url { font-size: .85rem; overflow-wrap: anywhere; }
+.event-edit-heading { font-size: 1.15rem; margin: .5rem 0 .5rem; }
+@media (max-width: 560px) {
+  .event-facts div { grid-template-columns: 1fr; gap: 0; }
+  .join-button { width: 100%; justify-content: center; }
+}
+.join-chip { display: inline-flex; align-items: center; min-height: 28px; padding: 0 .65rem; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: .85rem; font-weight: 700; text-decoration: none; margin-left: .25rem; }
+.join-chip:hover { background: var(--accent-hover); }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { EventDetailsCard } from '../components/EventDetailsCard';
 import { useStillHere } from '../components/useStillHere';
 import { getCalendarEvent, listCalendarEvents, removeCalendarEvents, saveCalendarEvents } from '../data/calendar';
 import { weeklyDates } from '../data/calendarRules';
@@ -137,8 +138,13 @@ export function CalendarEventPage() {
 
   return (
     <div className="page planner-form">
-      <h1>{isNew ? 'Add to calendar' : 'Edit calendar item'}</h1>
-      {fromGoogle && <p className="notice">This comes from Google Calendar, so its name, date, time, and place change there. You can still change everything else here.</p>}
+      <h1>{isNew ? 'Add to calendar' : fromGoogle ? 'Calendar event' : 'Edit calendar item'}</h1>
+      {fromGoogle && original?.details && <EventDetailsCard event={original} details={original.details} />}
+      {fromGoogle && original && !original.details && (
+        <p className="notice">This came from Google Calendar before Study Forge kept meeting links and descriptions. Get the latest from Google Calendar and they'll appear here.</p>
+      )}
+      {fromGoogle && <h2 className="event-edit-heading">Your own settings for it</h2>}
+      {fromGoogle && <p className="notice">Its name, date, time, place and links come from Google Calendar and change there. The type, course, what to do and priority are yours to set here.</p>}
       <form onSubmit={(event) => { event.preventDefault(); void save(); }}>
         <label>Name<input value={title} disabled={fromGoogle} onChange={(event) => setTitle(event.target.value)} placeholder="ECO 231 class" /></label>
         <div className="form-row">

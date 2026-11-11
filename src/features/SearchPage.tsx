@@ -44,7 +44,7 @@ async function loadSearchable(): Promise<{ items: Searchable[]; scanned: number;
   for (const item of planner) items.push({ group: 'Planner', title: item.title, body: item.details, to: `/planner/${item.id}`, detail: item.type });
   // A class that meets 45 times shows up once.
   const shownSeries = new Set<string>();
-  for (const event of calendar.filter((entry) => !entry.hidden && (!entry.seriesId || !shownSeries.has(entry.seriesId) && shownSeries.add(entry.seriesId)))) items.push({ group: 'Calendar', title: event.title, body: [event.location, event.whatToDo].filter(Boolean).join(' '), to: `/calendar/event/${event.id}`, detail: event.date });
+  for (const event of calendar.filter((entry) => !entry.hidden && (!entry.seriesId || !shownSeries.has(entry.seriesId) && shownSeries.add(entry.seriesId)))) items.push({ group: 'Calendar', title: event.title, body: [event.details?.place ?? event.location, event.whatToDo, event.details?.notes].filter(Boolean).join(' '), to: `/calendar/event/${event.id}`, detail: event.date });
   for (const lesson of lessons) items.push({ group: 'Lessons', title: lesson.title, body: '', to: `/study/lessons/${lesson.id}`, detail: 'Lesson' });
   for (const checkpoint of checkpoints) {
     const teaching = checkpoint.teaching;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PROVIDER_ACTION } from '../data/eventDetails';
 import { Link, useSearchParams } from 'react-router-dom';
 import { listCalendarEvents, getGoogleConnection, setEventCompleted } from '../data/calendar';
 import { STATUS_LABEL, STATUS_MARK, workStatus, type WorkStatus } from '../data/statusRules';
@@ -65,7 +66,7 @@ function TodayView({ events, deadlines, courses, today }: { events: CalendarEven
                   const minutes = minutesOf(event);
                   return (
                     <tr key={event.id} data-testid="plan-row">
-                      <th scope="row"><Link to={`/calendar/event/${event.id}`}>{event.title}</Link>{noClasses.length > 0 && event.kind === 'Class' && <span className="plan-flag"> Check this: today is marked no classes.</span>}</th>
+                      <th scope="row"><Link to={`/calendar/event/${event.id}`}>{event.title}</Link> <JoinChip event={event} />{noClasses.length > 0 && event.kind === 'Class' && <span className="plan-flag"> Check this: today is marked no classes.</span>}</th>
                       <td>{courseName(event.courseId)}</td>
                       <td>{describeTime(event)}{event.location && <span className="muted plan-where">{event.location}</span>}</td>
                       <td data-empty={event.whatToDo ? undefined : 'true'}>{event.whatToDo || '—'}</td>
@@ -85,7 +86,7 @@ function TodayView({ events, deadlines, courses, today }: { events: CalendarEven
       {showFinished && (
         <ul className="plan-list">
           {finished.map((event) => (
-            <li key={event.id}><Completed event={event} onProblem={setProblem} /> <Link to={`/calendar/event/${event.id}`}>{event.title}</Link> <span className="muted">{describeTime(event)}</span></li>
+            <li key={event.id}><Completed event={event} onProblem={setProblem} /> <Link to={`/calendar/event/${event.id}`}>{event.title}</Link> <JoinChip event={event} /> <span className="muted">{describeTime(event)}</span></li>
           ))}
         </ul>
       )}
@@ -193,6 +194,20 @@ function MonthView({ month, items, today, selected, onSelect, onMonth, label, ad
   );
 }
 
+/** One tap to the meeting, straight from the calendar. The full address stays on the event page. */
+function JoinChip({ event }: { event: CalendarEvent }) {
+  const meeting = event.details?.meeting;
+  if (!meeting) return null;
+  return (
+    <a className="join-chip" href={meeting.url} target="_blank" rel="noopener noreferrer" aria-label={`${PROVIDER_ACTION[meeting.provider]}: ${event.title}`}>
+      Join
+    </a>
+  );
+}
+
+/** Where to show for an event: a real place, "Online" for a meeting, never a raw web address. */
+const placeOf = (event: CalendarEvent) => (event.details ? event.details.place || (event.details.meeting ? 'Online' : '') : event.location);
+
 export function CalendarPage() {
   const [params, setParams] = useSearchParams();
   const today = localNow().date;
@@ -246,7 +261,7 @@ export function CalendarPage() {
   const planItems = new Map<string, CellItem[]>();
   for (const event of [...events].sort(compareEvents)) {
     const list = planItems.get(event.date) ?? [];
-    list.push({ id: event.id, to: `/calendar/event/${event.id}`, title: event.kind === 'No classes' ? `No classes: ${event.title}` : event.title, when: [event.kind === 'No classes' ? 'No classes' : describeTime(event), event.location].filter(Boolean).join(', '), color: event.kind === 'No classes' ? 'var(--danger)' : colorOf(event.courseId), done: event.completed, noClasses: event.kind === 'No classes' });
+    list.push({ id: event.id, to: `/calendar/event/${event.id}`, title: event.kind === 'No classes' ? `No classes: ${event.title}` : event.title, when: [event.kind === 'No classes' ? 'No classes' : describeTime(event), placeOf(event)].filter(Boolean).join(', '), color: event.kind === 'No classes' ? 'var(--danger)' : colorOf(event.courseId), done: event.completed, noClasses: event.kind === 'No classes' });
     planItems.set(event.date, list);
   }
   const now = localNow();

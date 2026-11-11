@@ -1,6 +1,21 @@
 import { getDb, notifyChanged } from './db';
 import { cleanTitle, courseTokenIn, fromCanvas, guessDestination, guessPlannerType, matchCourse, stableId, type Destination, type GoogleItem } from './calendarRules';
 import { createCourse, listCourses } from './store';
+import { PROVIDER_ACTION } from './eventDetails';
+
+/**
+ * A deadline's notes: the description as readable text, then every link it carried, including
+ * ones that were only behind a word like "here", so nothing from Google is lost on the way in.
+ */
+function deadlineNotes(item: GoogleItem): string {
+  const { notes, meeting, otherMeetings, links, attachments } = item.details;
+  const extra = [
+    ...[meeting, ...otherMeetings].flatMap((found) => (found && !notes.includes(found.url) ? [`${PROVIDER_ACTION[found.provider]}: ${found.url}`] : [])),
+    ...links.filter((link) => !notes.includes(link.url)).map((link) => `${link.label}: ${link.url}`),
+    ...attachments.map((file) => `Attachment, ${file.title}: ${file.url}`),
+  ];
+  return [notes, ...extra].filter(Boolean).join('\n');
+}
 import type { CalendarEvent, CalendarKind, Course, PlannerItem } from './types';
 
 export const listCalendarEvents = async (): Promise<CalendarEvent[]> => (await getDb()).getAll('calendarEvents');
@@ -211,7 +226,7 @@ export async function applyGoogleItems(items: GoogleItem[], choices: Record<stri
           status: 'Not Started',
           priority: 'Normal',
           estimateHours: null,
-          details: item.description.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 4000),
+          details: deadlineNotes(item).slice(0, 4000),
           createdAt: now,
           updatedAt: now,
           sourceId: item.key,
@@ -246,10 +261,14 @@ export async function applyGoogleItems(items: GoogleItem[], choices: Record<stri
       source: 'google',
       sourceCalendar: item.calendarId,
       hidden: current?.hidden ?? false,
+      details: item.details,
       createdAt: current?.createdAt ?? Date.now(),
       updatedAt: current?.updatedAt ?? Date.now(),
     };
-    const same = current && ['title', 'date', 'startTime', 'endTime', 'location'].every((field) => current[field as keyof CalendarEvent] === next[field as keyof CalendarEvent]);
+    // A new meeting link, description or attachment is a real change, just like a new time.
+    const same = current
+      && ['title', 'date', 'startTime', 'endTime', 'location'].every((field) => current[field as keyof CalendarEvent] === next[field as keyof CalendarEvent])
+      && JSON.stringify(current.details ?? null) === JSON.stringify(next.details);
     if (!same) {
       await events.put({ ...next, updatedAt: later(current?.updatedAt) });
       if (current) report.updated += 1;
