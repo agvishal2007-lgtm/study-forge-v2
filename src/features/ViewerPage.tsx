@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { NewNoteButton, NoteList } from '../components/NoteList';
+import { NoteEditor } from './NoteEditorPage';
 import { listNotes } from '../data/notes';
 import { useStillHere } from '../components/useStillHere';
 import { readBlob } from '../data/blobs';
@@ -151,8 +152,20 @@ function TopicName({ courseId, topicId }: { courseId: string; topicId: string | 
 
 export default function ViewerPage() {
   const { id = '' } = useParams();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const startPage = Number(params.get('page')) || 1;
+  // The note open beside the file. It lives in the address, so reloading keeps the same pair open.
+  const beside = params.get('note');
+  // On a phone the two can't both fit, so one shows at a time. Both stay open underneath, so
+  // switching keeps the place in each.
+  const [pane, setPane] = useState<'file' | 'note'>('file');
+  const openBeside = (noteId: string | null) => {
+    const next = new URLSearchParams(params);
+    if (noteId) next.set('note', noteId);
+    else next.delete('note');
+    setParams(next, { replace: true });
+    setPane(noteId ? 'note' : 'file');
+  };
   const navigate = useNavigate();
   const stage = useRef<HTMLDivElement>(null);
   const stillHere = useStillHere();
@@ -293,15 +306,52 @@ export default function ViewerPage() {
         </div>
       </header>
       <Filing material={material} />
-      <div ref={stage} className={full ? 'stage full' : 'stage'}>
-        {blob && <button className="button stage-toggle" onClick={() => void toggleFull()}>{full ? 'Exit full screen' : 'Full screen'}</button>}
-        {body}
+      {beside && (
+        <div className="pane-switch" role="group" aria-label="Show">
+          <button type="button" className="button" aria-pressed={pane === 'file'} onClick={() => setPane('file')}>File</button>
+          <button type="button" className="button" aria-pressed={pane === 'note'} onClick={() => setPane('note')}>Notes</button>
+        </div>
+      )}
+      <div className={beside ? `workspace-split showing-${pane}` : undefined}>
+        <div ref={stage} className={full ? 'stage full' : 'stage'}>
+          {blob && <button className="button stage-toggle" onClick={() => void toggleFull()}>{full ? 'Exit full screen' : 'Full screen'}</button>}
+          {body}
+        </div>
+        {beside && (
+          <aside className="beside" aria-label="Notes beside this file">
+            <div className="beside-head">
+              <h2>Notes beside this file</h2>
+              <button className="text-button" onClick={() => openBeside(null)}>Close notes</button>
+            </div>
+            {notes && notes.length > 1 && (
+              <label className="beside-pick">Open note
+                <select value={beside} onChange={(event) => openBeside(event.target.value)}>
+                  {notes.map((note) => <option key={note.id} value={note.id}>{note.title || 'Untitled note'}</option>)}
+                  {!notes.some((note) => note.id === beside) && <option value={beside}>New note</option>}
+                </select>
+              </label>
+            )}
+            <NoteEditor
+              key={beside}
+              id={beside}
+              panel
+              start={{ courseId: material.courseId, topicId: material.topicId, materialId: material.id }}
+              onDeleted={() => openBeside(null)}
+            />
+          </aside>
+        )}
       </div>
       {failure && <p className="error" role="alert">{failure}</p>}
       {(kind === 'audio' || kind === 'video') && blob && <TranscriptPanel material={material} blob={blob} />}
       <section className="file-notes" aria-labelledby="file-notes-heading">
         <h2 id="file-notes-heading">Notes on this file</h2>
-        <NewNoteButton courseId={material.courseId} topicId={material.topicId} materialId={material.id} />
+        <div className="row-actions">
+          <button className="button primary" onClick={() => openBeside(crypto.randomUUID())}>Write notes beside this</button>
+          {notes && notes.length > 0 && !beside && (
+            <button className="button" onClick={() => openBeside(notes[0].id)}>Open the latest beside it</button>
+          )}
+          <NewNoteButton courseId={material.courseId} topicId={material.topicId} materialId={material.id} label="New note on its own page" />
+        </div>
         {notes && notes.length > 0 && <NoteList notes={notes} />}
       </section>
     </div>
