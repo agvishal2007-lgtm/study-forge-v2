@@ -27,12 +27,26 @@ interface Draft {
   materialId: string | null;
 }
 
-export function NoteEditorPage() {
+/** Where a brand-new note is filed. An existing note keeps wherever it already is. */
+export interface NoteStart {
+  courseId: string | null;
+  topicId: string | null;
+  materialId: string | null;
+}
+
+/**
+ * The note editor, on its own page or in a panel beside a file. Both use this one component, so
+ * saving as you type, the other-tab conflict check and the save on leaving behave identically.
+ */
+export function NoteEditor({ id, start, panel = false, onDeleted }: {
+  id: string;
+  start: NoteStart;
+  /** Beside a file: no page padding, and no line pointing back at the file already on screen. */
+  panel?: boolean;
+  onDeleted: (where: { courseId: string | null }) => void;
+}) {
   const [previewing, setPreviewing] = useState(false);
   const bodyBox = useRef<HTMLTextAreaElement>(null);
-  const { id = '' } = useParams();
-  const [params] = useSearchParams();
-  const navigate = useNavigate();
   const stillHere = useStillHere();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [status, setStatus] = useState<Status>('loading');
@@ -82,7 +96,7 @@ export function NoteEditorPage() {
       if (!active) return;
       const loaded: Draft = note
         ? { title: note.title, body: note.body, courseId: note.courseId, topicId: note.topicId, materialId: note.materialId }
-        : { title: '', body: '', courseId: params.get('course'), topicId: params.get('topic'), materialId: params.get('file') };
+        : { title: '', body: '', ...start };
       version.current = note?.updatedAt ?? null;
       latest.current = loaded;
       setDraft(loaded);
@@ -103,7 +117,7 @@ export function NoteEditorPage() {
         void saveNote({ id: crypto.randomUUID(), ...unsaved, title: `${unsaved.title || 'Untitled note'} (copy)` }, null);
       });
     };
-    // Only reload when a different note opens. The filing params are read once for a new note.
+    // Only reload when a different note opens. Where a new note is filed is read once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -136,12 +150,13 @@ export function NoteEditorPage() {
   const { data: topics } = useLive(() => (draft?.courseId ? listTopics(draft.courseId) : Promise.resolve([])), [draft?.courseId]);
   const { data: file } = useLive(() => (draft?.materialId ? getMaterial(draft.materialId) : Promise.resolve(undefined)), [draft?.materialId]);
 
-  if (status === 'loading') return <p className="page muted">Loading…</p>;
-  if (!draft) return <div className="page"><h1>This note couldn't be opened</h1><p className="error" role="alert">{failure}</p><Link to="/notes">Go to Notes</Link></div>;
+  const frame = panel ? 'note-editor note-panel' : 'page note-editor';
+  if (status === 'loading') return <p className={panel ? 'muted' : 'page muted'}>Loading…</p>;
+  if (!draft) return <div className={panel ? 'note-panel' : 'page'}><h1>This note couldn't be opened</h1><p className="error" role="alert">{failure}</p><Link to="/notes">Go to Notes</Link></div>;
 
   const hasRecord = version.current !== null;
   return (
-    <div className="page note-editor">
+    <div className={frame}>
       <header className="viewer-head">
         <label className="note-title-label">Title
           <input className="note-title" value={draft.title} onChange={(event) => change({ title: event.target.value })} placeholder="Untitled note" />
@@ -199,7 +214,7 @@ export function NoteEditorPage() {
           </label>
         )}
       </div>
-      {file && <p>About <Link to={`/files/${file.id}`}>{file.name}</Link></p>}
+      {file && !panel && <p>About <Link to={`/files/${file.id}`}>{file.name}</Link></p>}
 
       <div className="note-mode" role="group" aria-label="View">
         <button type="button" className="button" aria-pressed={!previewing} onClick={() => setPreviewing(false)}>Write</button>
@@ -230,7 +245,7 @@ export function NoteEditorPage() {
             try {
               await queue.current;
               await deleteNote(id);
-              if (stillHere.current) navigate(draft.courseId ? `/courses/${draft.courseId}` : '/notes', { replace: true });
+              if (stillHere.current) onDeleted({ courseId: draft.courseId });
             } catch (error) {
               setFailure((error as Error).message);
               setStatus('failed');
@@ -241,5 +256,20 @@ export function NoteEditorPage() {
         </ConfirmDialog>
       )}
     </div>
+  );
+}
+
+/** A note on its own page, at /notes/:id. A new one is filed from the address it was opened with. */
+export function NoteEditorPage() {
+  const { id = '' } = useParams();
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  return (
+    <NoteEditor
+      key={id}
+      id={id}
+      start={{ courseId: params.get('course'), topicId: params.get('topic'), materialId: params.get('file') }}
+      onDeleted={({ courseId }) => navigate(courseId ? `/courses/${courseId}` : '/notes', { replace: true })}
+    />
   );
 }
