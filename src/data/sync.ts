@@ -12,12 +12,10 @@ import type { Checkpoint, CheckpointProgress, Note } from './types';
  */
 /**
  * A collection only belongs here once the published Firebase rules allow it. The rules reject
- * anything else, and one rejected write stops the whole sync, so a new kind of data waits here
- * until its rules are live. `studyTime`, `resourceLinks` and `gradeCategories` are ready in firestore.rules and go in
- * the moment those rules are published; until then they are kept on the device, which is safe and
- * loses nothing.
+ * anything else, and one rejected write stops the whole sync, so a new kind of data must wait
+ * until its rules are live. Publish firestore.rules first, then add the collection here.
  */
-const COLLECTIONS: SyncCollection[] = ['courses', 'topics', 'lessons', 'checkpoints', 'notes', 'checkpointProgress', 'plannerItems', 'decks', 'cards', 'cardProgress', 'practiceSets', 'practiceQuestions', 'practiceAttempts', 'examResults', 'calendarEvents', 'studyDays'];
+const COLLECTIONS: SyncCollection[] = ['courses', 'topics', 'lessons', 'checkpoints', 'notes', 'checkpointProgress', 'plannerItems', 'decks', 'cards', 'cardProgress', 'practiceSets', 'practiceQuestions', 'practiceAttempts', 'examResults', 'calendarEvents', 'studyDays', 'studyTime', 'resourceLinks', 'gradeCategories'];
 const CURSOR_KEY = 'syncCursor';
 const MAX_ITEM_BYTES = 900_000;
 const MAX_BATCH_BYTES = 4_000_000;

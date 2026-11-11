@@ -37,3 +37,15 @@ test('email hints stay short enough to protect the address', async () => {
   assert.equal(maskEmail('Your account'), 'Yo***');
   assert.equal(maskEmail(''), '');
 });
+
+test('everything sync sends is something the published rules accept', () => {
+  // One refused collection stops a student's whole sync, so the list and the rules must agree.
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const read = (file) => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+  const names = (text) => [...text.matchAll(/'([^']+)'/g)].map((found) => found[1]);
+  const allowed = names(read('firestore.rules').match(/data\.collection in \[([^\]]+)\]/)[1]);
+  const sent = names(read('src/data/sync.ts').match(/const COLLECTIONS[^=]*= \[([^\]]+)\]/)[1]);
+  assert.deepEqual(sent.filter((name) => !allowed.includes(name)), [], 'sync sends collections the rules would refuse');
+  for (const name of ['studyTime', 'resourceLinks', 'gradeCategories']) assert.ok(sent.includes(name), `${name} is not synced`);
+});
