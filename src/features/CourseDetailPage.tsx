@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AddFiles } from '../components/AddFiles';
-import { ConfirmDialog } from '../components/ConfirmDialog';
 import { MaterialList } from '../components/MaterialList';
 import { NewNoteButton, NoteList } from '../components/NoteList';
 import { listNotes } from '../data/notes';
 import { useStillHere } from '../components/useStillHere';
-import { createTopic, deleteCourse, deleteTopic, getCourse, listMaterials, listTopics } from '../data/store';
-import type { Topic } from '../data/types';
+import { createTopic, getCourse, listMaterials, listTopics, setCourseStatus, setTopicStatus } from '../data/store';
 import { useLive } from '../data/useLive';
 
 export function CourseDetailPage() {
@@ -15,14 +13,15 @@ export function CourseDetailPage() {
   const navigate = useNavigate();
   const stillHere = useStillHere();
   const [topicName, setTopicName] = useState('');
-  const [confirmCourse, setConfirmCourse] = useState(false);
-  const [confirmTopic, setConfirmTopic] = useState<Topic | null>(null);
   const [failure, setFailure] = useState('');
   const { data, error } = useLive(async () => {
-    const [course, topics, materials, notes] = await Promise.all([getCourse(id), listTopics(id), listMaterials(), listNotes()]);
+    const [course, topics, archivedTopics, materials, notes] = await Promise.all([
+      getCourse(id), listTopics(id), listTopics(id, 'archived'), listMaterials(), listNotes(),
+    ]);
     return {
       course,
       topics,
+      archivedTopics,
       materials: materials.filter((material) => material.courseId === id),
       notes: notes.filter((note) => note.courseId === id),
     };
@@ -30,7 +29,7 @@ export function CourseDetailPage() {
 
   if (error) return <div className="page"><p className="error" role="alert">This course couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { course, topics, materials, notes } = data;
+  const { course, topics, archivedTopics, materials, notes } = data;
   if (!course) return <div className="page"><h1>This course doesn't exist</h1><Link to="/courses">Go to Courses</Link></div>;
 
   const attempt = async (action: () => Promise<void>) => {
@@ -41,6 +40,10 @@ export function CourseDetailPage() {
       setFailure(`That didn't work. ${(problem as Error).message}`);
     }
   };
+  const leave = (action: () => Promise<void>) => void attempt(async () => {
+    await action();
+    if (stillHere.current) navigate('/courses', { replace: true });
+  });
   const loose = materials.filter((material) => !material.topicId);
 
   return (
@@ -49,9 +52,16 @@ export function CourseDetailPage() {
         <div>
           <h1>{course.name}</h1>
           {course.code && <p className="muted">{course.code}</p>}
+          {course.status === 'archived' && <p className="muted">Archived. Everything in it is kept, and it stays searchable.</p>}
         </div>
-        <button className="text-button danger-text" onClick={() => setConfirmCourse(true)}>Delete course</button>
+        <div className="head-actions">
+          {course.status === 'archived'
+            ? <button className="button" onClick={() => void attempt(() => setCourseStatus(course.id, 'active'))}>Put back in use</button>
+            : <button className="text-button" onClick={() => leave(() => setCourseStatus(course.id, 'archived'))}>Archive course</button>}
+          <button className="text-button danger-text" onClick={() => leave(() => setCourseStatus(course.id, 'trashed'))}>Move to bin</button>
+        </div>
       </header>
+      <p className="muted small">Archiving keeps a finished course whole and searchable. The bin holds it until you restore it or remove it for good. Neither one deletes your files.</p>
       {failure && <p className="error" role="alert">{failure}</p>}
 
       <section aria-labelledby="course-files">
@@ -94,7 +104,10 @@ export function CourseDetailPage() {
             <article className="topic" key={topic.id}>
               <header>
                 <h3>{topic.name}</h3>
-                <button className="text-button danger-text" onClick={() => setConfirmTopic(topic)} aria-label={`Delete topic ${topic.name}`}>Delete topic</button>
+                <span className="head-actions">
+                  <button className="text-button" onClick={() => void attempt(() => setTopicStatus(topic.id, 'archived'))} aria-label={`Archive topic ${topic.name}`}>Archive</button>
+                  <button className="text-button danger-text" onClick={() => void attempt(() => setTopicStatus(topic.id, 'trashed'))} aria-label={`Move topic ${topic.name} to the bin`}>Move to bin</button>
+                </span>
               </header>
               <AddFiles courseId={course.id} topicId={topic.id} />
               {files.length > 0 && <MaterialList materials={files} />}
@@ -105,25 +118,19 @@ export function CourseDetailPage() {
         })}
       </section>
 
-      {confirmCourse && (
-        <ConfirmDialog
-          title={`Delete ${course.name}?`}
-          confirmLabel="Delete course"
-          onCancel={() => setConfirmCourse(false)}
-          onConfirm={() => void attempt(async () => { await deleteCourse(course.id); if (stillHere.current) navigate('/courses', { replace: true }); })}
-        >
-          <p>The course and its topics will be removed. Its {materials.length === 1 ? '1 file stays' : `${materials.length} files stay`} in your Library, and its {notes.length === 1 ? '1 note stays' : `${notes.length} notes stay`} in Notes. Any lessons stay in Study, any assignments stay in Planner, any flashcards stay in Flashcards, any practice sets stay in Practice, and exam scores stay in Exam Hall.</p>
-        </ConfirmDialog>
-      )}
-      {confirmTopic && (
-        <ConfirmDialog
-          title={`Delete ${confirmTopic.name}?`}
-          confirmLabel="Delete topic"
-          onCancel={() => setConfirmTopic(null)}
-          onConfirm={() => void attempt(async () => { await deleteTopic(confirmTopic.id); setConfirmTopic(null); })}
-        >
-          <p>The topic will be removed. Its files and notes stay in this course.</p>
-        </ConfirmDialog>
+      {archivedTopics.length > 0 && (
+        <section aria-labelledby="archived-topics" data-testid="archived-topics">
+          <h2 id="archived-topics">Archived topics</h2>
+          <p className="muted">Put away but kept. Their files and notes are still in this course.</p>
+          <ul className="plain-list">
+            {archivedTopics.map((topic) => (
+              <li key={topic.id}>
+                {topic.name}
+                <button className="text-button" onClick={() => void attempt(() => setTopicStatus(topic.id, 'active'))} aria-label={`Put topic ${topic.name} back in use`}>Put back in use</button>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );

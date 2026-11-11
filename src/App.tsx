@@ -37,6 +37,7 @@ import { CalendarEventPage } from './features/CalendarEventPage';
 import { CalendarPage } from './features/CalendarPage';
 import { GoogleCalendarPage } from './features/GoogleCalendarPage';
 import { ProgressPage } from './features/ProgressPage';
+import { BinPage } from './features/BinPage';
 import { SchedulePage } from './features/SchedulePage';
 import { SettingsPage } from './features/SettingsPage';
 import { TodayPage } from './features/TodayPage';
@@ -121,6 +122,7 @@ export function App() {
                 <Route path="/calendar/google" element={<GoogleCalendarPage />} />
                 <Route path="/calendar/event/:id" element={<CalendarEventPage />} />
                 <Route path="/progress" element={<ProgressPage />} />
+                <Route path="/bin" element={<BinPage />} />
                 <Route path="/planner" element={<PlannerPage />} />
                 <Route path="/planner/:id" element={<PlannerItemPage />} />
                 <Route path="/cards" element={<FlashcardsPage />} />

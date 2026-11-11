@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { createLesson, listCheckpoints, listLessons, listProgress } from '../../data/guided';
 import { countLesson, recommendNext, STATUS_LABEL } from '../../data/mastery';
 import { addSampleLesson } from '../../data/sampleLesson';
-import { listCourses } from '../../data/store';
+import { listAllCourses } from '../../data/store';
 import { useLive } from '../../data/useLive';
 
 export function StudyPage() {
@@ -14,7 +14,7 @@ export function StudyPage() {
   const [courseId, setCourseId] = useState(params.get('course') ?? '');
   const [failure, setFailure] = useState('');
   const { data, error } = useLive(async () => {
-    const [courses, lessons, checkpoints, progress] = await Promise.all([listCourses(), listLessons(), listCheckpoints(), listProgress()]);
+    const [courses, lessons, checkpoints, progress] = await Promise.all([listAllCourses(), listLessons(), listCheckpoints(), listProgress()]);
     return { courses, lessons, checkpoints, progress };
   });
   if (error) return <div className="page"><h1>Study</h1><p className="error" role="alert">Your lessons couldn't be loaded. {error.message}</p></div>;

@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { PlannerList } from '../components/PlannerList';
 import { listPlannerItems } from '../data/planner';
 import { GROUP_LABEL, groupItems, localNow } from '../data/plannerRules';
-import { listCourses } from '../data/store';
+import { listAllCourses } from '../data/store';
 import { useLive } from '../data/useLive';
 
 export function PlannerPage() {
@@ -11,7 +11,7 @@ export function PlannerPage() {
   const [params] = useSearchParams();
   const [courseId, setCourseId] = useState(params.get('course') ?? '');
   const { data, error } = useLive(async () => {
-    const [items, courses] = await Promise.all([listPlannerItems(), listCourses()]);
+    const [items, courses] = await Promise.all([listPlannerItems(), listAllCourses()]);
     return { items, courses };
   });
   if (error) return <div className="page"><h1>Planner</h1><p className="error" role="alert">Your planner couldn't be loaded. {error.message}</p></div>;

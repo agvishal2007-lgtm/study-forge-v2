@@ -4,17 +4,24 @@ import type { StudyDay } from './types';
 
 const DEVICE_KEY = 'studyDevice';
 
+/** A stable id for this device, shared by the study-day and study-time records so each device keeps its own. */
+export async function getDevice(): Promise<string> {
+  const db = await getDb();
+  let device = await db.get('meta', DEVICE_KEY) as string | undefined;
+  if (!device) {
+    device = crypto.randomUUID();
+    await db.put('meta', device, DEVICE_KEY);
+  }
+  return device;
+}
+
 export const listStudyDays = async (): Promise<StudyDay[]> => (await getDb()).getAll('studyDays');
 
 /** Counts one bit of studying for today. A problem here never gets in the way of the studying itself. */
 export async function logStudy(field: 'cards' | 'lessons'): Promise<void> {
   try {
     const db = await getDb();
-    let device = await db.get('meta', DEVICE_KEY) as string | undefined;
-    if (!device) {
-      device = crypto.randomUUID();
-      await db.put('meta', device, DEVICE_KEY);
-    }
+    const device = await getDevice();
     const date = localNow().date;
     const id = `${date}_${device}`;
     const tx = db.transaction('studyDays', 'readwrite');

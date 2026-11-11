@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { createPracticeSet, listAllTopics, listPracticeAttempts, listPracticeQuestions, listPracticeSets, loadPracticeSession } from '../data/practice';
 import { accuracyOf, latestAnswers, mistakesIn, weakTopics, WEAK_BELOW_PERCENT } from '../data/practiceRules';
-import { listCourses } from '../data/store';
+import { listAllCourses } from '../data/store';
 import type { PracticeQuestion, PracticeSet, Topic } from '../data/types';
 import { useLive } from '../data/useLive';
 
@@ -25,7 +25,7 @@ export function PracticePage() {
   const [failure, setFailure] = useState('');
   const { data, error } = useLive(async () => {
     const [sets, questions, attempts, courses, topics, session] = await Promise.all([
-      listPracticeSets(), listPracticeQuestions(), listPracticeAttempts(), listCourses(), listAllTopics(), loadPracticeSession(),
+      listPracticeSets(), listPracticeQuestions(), listPracticeAttempts(), listAllCourses(), listAllTopics(), loadPracticeSession(),
     ]);
     return { sets, questions, attempts, courses, topics, session };
   });

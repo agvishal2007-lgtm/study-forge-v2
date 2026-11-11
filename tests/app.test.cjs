@@ -272,25 +272,34 @@ test('a save cut off by a reload leaves nothing behind', async () => {
   await page.getByTestId('viewer-fallback').waitFor();
 });
 
-test('deleting needs confirmation, and only then removes the file', async () => {
-  await page.getByRole('button', { name: 'Delete file' }).click();
-  const dialog = page.getByRole('dialog');
-  await dialog.getByRole('button', { name: 'Cancel' }).click();
-  await page.reload();
-  await page.getByRole('heading', { name: 'large-lecture.bin' }).waitFor();
-  await page.getByRole('button', { name: 'Delete file' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Delete file' }).click();
+const filesOnDevice = () => page.evaluate(async () => {
+  const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('materials');
+  let count = 0;
+  for await (const _ of dir.values()) count++;
+  return count;
+});
+
+test('the bin holds a file safely, and only "remove for good" deletes it', async () => {
+  await page.getByRole('button', { name: 'Move to bin' }).click();
   await page.getByRole('heading', { name: 'Library' }).waitFor();
   await page.getByRole('link', { name: 'accounting-notes.pdf' }).waitFor();
   assert.match(page.url(), /#\/library$/);
-  assert.equal(await page.getByRole('link', { name: 'large-lecture.bin' }).count(), 0);
-  const left = await page.evaluate(async () => {
-    const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('materials');
-    let count = 0;
-    for await (const _ of dir.values()) count++;
-    return count;
-  });
-  assert.equal(left, 7);
+  assert.equal(await page.getByRole('link', { name: 'large-lecture.bin' }).count(), 0, 'it left the Library');
+  assert.equal(await filesOnDevice(), 8, 'nothing was deleted: the file is still on the device');
+
+  await page.goto(`${URL_BASE}#/bin`);
+  await page.getByTestId('bin-files').waitFor();
+  await page.getByRole('button', { name: 'Remove large-lecture.bin for good' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
+  assert.equal(await filesOnDevice(), 8, 'cancelling changes nothing');
+
+  await page.getByRole('button', { name: 'Remove large-lecture.bin for good' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Remove for good' }).click();
+  await page.waitForFunction(() => document.body.innerText.includes('The bin is empty'));
+  assert.equal(await filesOnDevice(), 7);
+  // Leave the next test where it expects to start.
+  await page.goto(`${URL_BASE}#/library`);
+  await page.getByRole('heading', { name: 'Library' }).waitFor();
 });
 
 test('moving to another screen during a delete does not get overridden', async () => {
@@ -298,10 +307,9 @@ test('moving to another screen during a delete does not get overridden', async (
   await saved('extra-note.txt').waitFor();
   await clearPanel();
   await page.getByRole('link', { name: 'extra-note.txt' }).click();
-  await page.getByRole('button', { name: 'Delete file' }).click();
   await page.evaluate(() => {
-    // Leave at the same moment the delete is confirmed.
-    [...document.querySelectorAll('dialog button')].find((b) => b.textContent === 'Delete file').click();
+    // Leave at the same moment the file is moved to the bin.
+    [...document.querySelectorAll('button')].find((b) => b.textContent === 'Move to bin').click();
     location.hash = '#/settings';
   });
   await page.getByRole('heading', { name: 'Settings' }).waitFor();
@@ -315,9 +323,13 @@ test('moving to another screen during a delete does not get overridden', async (
 test('deleting a course keeps its files in the Library', async () => {
   await page.getByRole('navigation').getByRole('link', { name: 'Courses' }).click();
   await page.getByRole('link', { name: /Financial Accounting/ }).click();
-  await page.getByRole('button', { name: 'Delete course' }).click();
-  await page.getByRole('dialog').getByText('7 files stay').waitFor();
-  await page.getByRole('dialog').getByRole('button', { name: 'Delete course' }).click();
+  await page.getByRole('button', { name: 'Move to bin' }).click();
+  await page.getByRole('heading', { name: 'Courses', exact: true }).waitFor();
+  await page.goto(`${URL_BASE}#/bin`);
+  await page.getByTestId('bin-courses').waitFor();
+  await page.getByRole('button', { name: /^Remove Financial Accounting for good$/ }).click();
+  await page.getByRole('dialog').getByText('Your files and notes are kept').waitFor();
+  await page.getByRole('dialog').getByRole('button', { name: 'Remove for good' }).click();
   await page.getByRole('heading', { name: 'Courses' }).waitFor();
   await page.getByRole('navigation').getByRole('link', { name: 'Library' }).click();
   await page.getByRole('link', { name: 'accounting-notes.pdf' }).waitFor();

@@ -1,12 +1,11 @@
 import { lazy, Suspense, useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ConfirmDialog } from '../components/ConfirmDialog';
 import { NewNoteButton, NoteList } from '../components/NoteList';
 import { listNotes } from '../data/notes';
 import { useStillHere } from '../components/useStillHere';
 import { readBlob } from '../data/blobs';
 import { formatBytes, KIND_LABEL, kindOf, olderOfficeAdvice } from '../data/format';
-import { deleteMaterial, fileMaterial, getMaterial, listCourses, listTopics } from '../data/store';
+import { fileMaterial, getMaterial, listAllCourses, listTopics, setMaterialStatus } from '../data/store';
 import type { Material } from '../data/types';
 import { TranscriptPanel } from './TranscriptPanel';
 import { useLive } from '../data/useLive';
@@ -55,7 +54,7 @@ function measureLength(event: SyntheticEvent<HTMLMediaElement>) {
 
 function Filing({ material }: { material: Material }) {
   const { data } = useLive(async () => ({
-    courses: await listCourses(),
+    courses: await listAllCourses(),
     topics: material.courseId ? await listTopics(material.courseId) : [],
   }), [material.courseId]);
   const [failure, setFailure] = useState('');
@@ -92,7 +91,6 @@ export default function ViewerPage() {
   const navigate = useNavigate();
   const stage = useRef<HTMLDivElement>(null);
   const stillHere = useStillHere();
-  const [confirm, setConfirm] = useState(false);
   const [failure, setFailure] = useState('');
   const [viewFailure, setViewFailure] = useState('');
   const [full, setFull] = useState(false);
@@ -162,7 +160,20 @@ export default function ViewerPage() {
         </div>
         <div className="row-actions">
           {url && <a className="button" href={url} download={material.name}>Download</a>}
-          <button className="text-button danger-text" onClick={() => setConfirm(true)}>Delete file</button>
+          <button
+            className="text-button danger-text"
+            onClick={async () => {
+              try {
+                const destination = material.courseId ? `/courses/${material.courseId}` : '/library';
+                await setMaterialStatus(material.id, 'trashed');
+                if (stillHere.current) navigate(destination, { replace: true });
+              } catch (error) {
+                setFailure(`The file wasn't moved. ${(error as Error).message}`);
+              }
+            }}
+          >
+            Move to bin
+          </button>
         </div>
       </header>
       <Filing material={material} />
@@ -177,25 +188,6 @@ export default function ViewerPage() {
         <NewNoteButton courseId={material.courseId} topicId={material.topicId} materialId={material.id} />
         {notes && notes.length > 0 && <NoteList notes={notes} />}
       </section>
-      {confirm && (
-        <ConfirmDialog
-          title={`Delete ${material.name}?`}
-          confirmLabel="Delete file"
-          onCancel={() => setConfirm(false)}
-          onConfirm={async () => {
-            setConfirm(false);
-            try {
-              const destination = material.courseId ? `/courses/${material.courseId}` : '/library';
-              await deleteMaterial(material.id);
-              if (stillHere.current) navigate(destination, { replace: true });
-            } catch (error) {
-              setFailure(`The file wasn't deleted. ${(error as Error).message}`);
-            }
-          }}
-        >
-          <p>This permanently removes the file from this device. It can't be undone. Any notes about it are kept.</p>
-        </ConfirmDialog>
-      )}
     </div>
   );
 }

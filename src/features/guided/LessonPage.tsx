@@ -4,7 +4,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { useStillHere } from '../../components/useStillHere';
 import { deleteCheckpoint, deleteLesson, getLesson, listCheckpoints, listLessons, listProgress, resetProgress, saveLesson } from '../../data/guided';
 import { countLesson, evaluateMastery, missingContent, STATUS_LABEL } from '../../data/mastery';
-import { listCourses } from '../../data/store';
+import { listAllCourses } from '../../data/store';
 import type { Checkpoint } from '../../data/types';
 import { useLive } from '../../data/useLive';
 
@@ -15,7 +15,7 @@ export function LessonPage() {
   const [confirm, setConfirm] = useState<{ kind: 'lesson' } | { kind: 'checkpoint' | 'reset'; checkpoint: Checkpoint } | null>(null);
   const [failure, setFailure] = useState('');
   const { data, error } = useLive(async () => {
-    const [lesson, all, progress, lessons, courses] = await Promise.all([getLesson(id), listCheckpoints(), listProgress(), listLessons(), listCourses()]);
+    const [lesson, all, progress, lessons, courses] = await Promise.all([getLesson(id), listCheckpoints(), listProgress(), listLessons(), listAllCourses()]);
     return { lesson, checkpoints: all.filter((c) => c.lessonId === id), all, progress, lessons, courses };
   }, [id]);
   if (error) return <div className="page"><p className="error" role="alert">This lesson couldn't be loaded. {error.message}</p></div>;

@@ -210,7 +210,7 @@ after(async () => {
 
 test('an empty calendar says how to start', async () => {
   await nav('Calendar');
-  await page.getByRole('heading', { name: 'Calendar', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Study Forge Calendar', exact: true }).waitFor();
   await page.getByTestId('calendar-start').waitFor();
   await page.getByText('Nothing left on your plan today.').waitFor();
 });
@@ -327,7 +327,7 @@ test('a class on a no-class day is flagged, and deleting the marker clears it', 
   await page.getByTestId('selected-day').getByRole('link', { name: 'No classes: Fall reading day' }).click();
   await page.getByRole('button', { name: 'Delete' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
-  await page.getByRole('heading', { name: 'Calendar', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Study Forge Calendar', exact: true }).waitFor();
   assert.equal(await page.getByTestId('no-classes').count(), 0);
 });
 
@@ -431,7 +431,7 @@ test('something deleted here stays deleted after the next update', async () => {
   await page.getByRole('button', { name: 'Delete' }).click();
   await page.getByRole('dialog').getByText('Google Calendar itself stays the same.').waitFor();
   await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
-  await page.getByRole('heading', { name: 'Calendar', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Study Forge Calendar', exact: true }).waitFor();
 
   await page.goto(`${URL_BASE}#/calendar/google`);
   await page.getByTestId('google-connected').waitFor();

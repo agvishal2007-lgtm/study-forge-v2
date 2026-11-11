@@ -10,14 +10,14 @@ import { listCalendarEvents } from '../data/calendar';
 import { listPlannerItems } from '../data/planner';
 import { listPracticeQuestions, listPracticeSets } from '../data/practice';
 import { highlight, runSearch, searchTerms, type Searchable } from '../data/searchRules';
-import { listCourses, listMaterials } from '../data/store';
+import { listAllCourses, listMaterials } from '../data/store';
 import { useLive } from '../data/useLive';
 
 const MAX_SHOWN = 30;
 
 async function loadSearchable(): Promise<{ items: Searchable[]; scanned: number; materials: Awaited<ReturnType<typeof listMaterials>> }> {
   const [notes, materials, fileText, decks, cards, sets, questions, planner, lessons, checkpoints, courses, calendar, transcripts] = await Promise.all([
-    listNotes(), listMaterials(), listFileText(), listDecks(), listCards(), listPracticeSets(), listPracticeQuestions(), listPlannerItems(), listLessons(), listCheckpoints(), listCourses(), listCalendarEvents(), listTranscripts(),
+    listNotes(), listMaterials(), listFileText(), listDecks(), listCards(), listPracticeSets(), listPracticeQuestions(), listPlannerItems(), listLessons(), listCheckpoints(), listAllCourses(), listCalendarEvents(), listTranscripts(),
   ]);
   const items: Searchable[] = [];
   for (const note of notes) items.push({ group: 'Notes', title: note.title || 'Untitled note', body: plainNote(note.body), to: `/notes/${note.id}` });

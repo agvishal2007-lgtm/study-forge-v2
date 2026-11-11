@@ -810,7 +810,7 @@ test('after signing in with Google, that calendar connects in one tap, and other
   await page.getByRole('button', { name: 'Get the latest' }).click();
   await page.getByTestId('calendar-update-note').getByText('1 updated').waitFor();
   await page.reload();
-  await page.getByRole('heading', { name: 'Calendar', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Study Forge Calendar', exact: true }).waitFor();
   assert.equal(await offer.count(), 0, 'once connected it stops asking');
 
   await nav(page, 'Courses');

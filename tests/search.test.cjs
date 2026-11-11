@@ -224,9 +224,7 @@ test('opening a result right after typing stays on that result', async () => {
 test('deleting a file removes it from search', async () => {
   await searchFor('photosynthesis');
   await page.getByTestId('search-Files').getByRole('link', { name: 'biology.pdf' }).click();
-  await page.getByRole('button', { name: 'Delete file' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Delete file' }).click();
-  await page.getByRole('heading', { name: 'Library' }).waitFor();
+  await page.getByRole('button', { name: 'Move to bin' }).click();
   await searchFor('photosynthesis');
   await page.getByTestId('search-empty').waitFor();
 });

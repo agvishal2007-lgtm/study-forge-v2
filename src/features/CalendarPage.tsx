@@ -7,7 +7,7 @@ import { CalendarError, hasGoogleAccess, prepareGoogle } from '../data/googleCal
 import { getLatestFromGoogle, reportWords } from '../data/googleConnect';
 import { listPlannerItems } from '../data/planner';
 import { describeDue, isDone, localNow } from '../data/plannerRules';
-import { listCourses } from '../data/store';
+import { listAllCourses } from '../data/store';
 import type { CalendarEvent, Course, PlannerItem } from '../data/types';
 import { useLive } from '../data/useLive';
 
@@ -181,7 +181,7 @@ export function CalendarPage() {
   const [updateNote, setUpdateNote] = useState('');
   const [selected, setSelected] = useState(/^\d{4}-\d{2}-\d{2}$/.test(params.get('day') ?? '') ? params.get('day') as string : today);
   const { data, error } = useLive(async () => {
-    const [events, planner, courses, connection] = await Promise.all([listCalendarEvents(), listPlannerItems(), listCourses(), getGoogleConnection()]);
+    const [events, planner, courses, connection] = await Promise.all([listCalendarEvents(), listPlannerItems(), listAllCourses(), getGoogleConnection()]);
     return { events, planner, courses, connection };
   }, []);
   const connected = Boolean(data?.connection);
@@ -208,7 +208,7 @@ export function CalendarPage() {
       },
     ).finally(() => setUpdating(false));
   };
-  if (error) return <div className="page"><h1>Calendar</h1><p className="error" role="alert">Your calendar couldn't be loaded. {error.message}</p></div>;
+  if (error) return <div className="page"><h1>Study Forge Calendar</h1><p className="error" role="alert">Your calendar couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
   const { courses, connection } = data;
   const change = (next: Record<string, string>) => {
@@ -237,7 +237,7 @@ export function CalendarPage() {
   return (
     <div className="page calendar-page">
       <div className="section-head calendar-head">
-        <h1>Calendar</h1>
+        <h1>Study Forge Calendar</h1>
         <div className="calendar-actions" data-tour="calendar-add">
           {connection ? (
             <>

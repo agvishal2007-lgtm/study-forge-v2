@@ -1,16 +1,37 @@
+/**
+ * Where a record is in its life. Active is in use, Archived is put away but kept whole,
+ * and Trashed is in the bin, still restorable. Removing for good is a separate, explicit step.
+ */
+export type Lifecycle = 'active' | 'archived' | 'trashed';
+
 export interface Course {
   id: string;
   name: string;
   code: string;
   color: string;
+  /** The semester or term this course belongs to. Empty means no term — an independent study. */
+  term: string;
+  /** Where the student dragged it; lower comes first. */
+  position: number;
+  status: Lifecycle;
+  /** When it last entered its current status, so the bin can show how long something has been there. */
+  statusAt: number;
   createdAt: number;
+  updatedAt: number;
 }
 
 export interface Topic {
   id: string;
   courseId: string;
   name: string;
+  /** A heading the student writes to group topics, such as "Chapter 1", "Week 3" or "Unit 2". Empty means ungrouped. */
+  heading: string;
+  /** Where the student dragged it within its course; lower comes first. */
+  position: number;
+  status: Lifecycle;
+  statusAt: number;
   createdAt: number;
+  updatedAt: number;
 }
 
 /** A saved file. A record exists only after the original was stored completely. */
@@ -22,6 +43,8 @@ export interface Material {
   hash: string;
   courseId: string | null;
   topicId: string | null;
+  status: Lifecycle;
+  statusAt: number;
   createdAt: number;
 }
 
@@ -235,6 +258,19 @@ export interface StudyDay {
   date: string;
   cards: number;
   lessons: number;
+  updatedAt: number;
+}
+
+/**
+ * Active study time one device gathered on one day, in seconds.
+ * Keyed by date and device like StudyDay, so two devices add up instead of overwriting each other.
+ * `byCourse` holds the seconds that could be tied to a course; the rest is still in `seconds`.
+ */
+export interface StudyTime {
+  id: string;
+  date: string;
+  seconds: number;
+  byCourse: Record<string, number>;
   updatedAt: number;
 }
 

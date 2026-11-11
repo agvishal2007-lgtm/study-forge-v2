@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { AddFiles } from '../components/AddFiles';
 import { MaterialList } from '../components/MaterialList';
-import { listCourses, listMaterials } from '../data/store';
+import { listAllCourses, listMaterials } from '../data/store';
 import { useLive } from '../data/useLive';
 
 export function LibraryPage() {
   const [query, setQuery] = useState('');
   const { data, error } = useLive(async () => {
-    const [courses, materials] = await Promise.all([listCourses(), listMaterials()]);
+    const [courses, materials] = await Promise.all([listAllCourses(), listMaterials()]);
     return { courses, materials };
   });
   const shown = data?.materials.filter((material) => material.name.toLowerCase().includes(query.trim().toLowerCase())) ?? [];

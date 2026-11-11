@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { listCardProgress, listCards, listDecks, rateCard } from '../data/flashcards';
 import { describeInterval, dueQueue, isWeak, outcome } from '../data/flashcardRules';
 import { localNow } from '../data/plannerRules';
+import { useStudyClock } from '../data/studyClock';
 import { CARD_RATINGS, type CardProgress, type CardRating, type Flashcard } from '../data/types';
 
 type Mode = 'due' | 'practice' | 'weak';
@@ -12,6 +13,7 @@ export function ReviewPage() {
   const deckId = params.get('deck');
   const mode: Mode = params.get('mode') === 'practice' ? 'practice' : params.get('mode') === 'weak' ? 'weak' : 'due';
   const saves = mode === 'due';
+  useStudyClock(params.get('course'));
   const [queue, setQueue] = useState<Flashcard[] | null>(null);
   const [progress, setProgress] = useState<Map<string, CardProgress>>(new Map());
   const [deckNames, setDeckNames] = useState<Map<string, string>>(new Map());

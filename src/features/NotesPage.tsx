@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { NewNoteButton, NoteList } from '../components/NoteList';
 import { listNotes, noteLabel } from '../data/notes';
-import { listCourses } from '../data/store';
+import { listAllCourses } from '../data/store';
 import { useLive } from '../data/useLive';
 
 export function NotesPage() {
   const [query, setQuery] = useState('');
   const { data, error } = useLive(async () => {
-    const [notes, courses] = await Promise.all([listNotes(), listCourses()]);
+    const [notes, courses] = await Promise.all([listNotes(), listAllCourses()]);
     return { notes, courses };
   });
   const search = query.trim().toLowerCase();

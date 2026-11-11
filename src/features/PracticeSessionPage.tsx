@@ -5,6 +5,7 @@ import {
   clearPracticeSession, listAllTopics, listPracticeAttempts, listPracticeQuestions, listPracticeSets, loadPracticeSession, recordAttempt, savePracticeSession, type PracticeSession,
 } from '../data/practice';
 import { feedbackFor, mistakesIn } from '../data/practiceRules';
+import { useStudyClock } from '../data/studyClock';
 import { CONFIDENCE_LEVELS, PRACTICE_KIND_LABEL, type Confidence, type PracticeAttempt, type PracticeKind, type PracticeQuestion, type PracticeResult } from '../data/types';
 import { topicLabeler } from './PracticePage';
 
@@ -16,6 +17,7 @@ export function PracticeSessionPage() {
   const url = `${pathname}${search}`;
   const setId = params.get('set');
   const mode = params.get('mode') ?? 'all';
+  useStudyClock(params.get('course'));
   const [session, setSession] = useState<PracticeSession | null>(null);
   const [questions, setQuestions] = useState<Map<string, PracticeQuestion>>(new Map());
   const [attempts, setAttempts] = useState<Map<string, PracticeAttempt>>(new Map());

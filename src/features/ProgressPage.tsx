@@ -9,8 +9,9 @@ import { isDone, localNow } from '../data/plannerRules';
 import { listPracticeAttempts, listPracticeQuestions, listPracticeSets } from '../data/practice';
 import { accuracyOf, latestAnswers } from '../data/practiceRules';
 import { activityWeeks, dayOf, lastDays, streaksFrom, totalsByDay } from '../data/progressRules';
-import { listCourses } from '../data/store';
+import { listAllCourses } from '../data/store';
 import { listStudyDays } from '../data/studyLog';
+import { formatDuration, listStudyTime, secondsByCourse, secondsByDate, secondsOverDates } from '../data/studyTime';
 import { useLive } from '../data/useLive';
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
@@ -18,16 +19,19 @@ const DAY_LETTERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export function ProgressPage() {
   const { data, error } = useLive(async () => {
-    const [courses, studyDays, attempts, questions, sets, exams] = await Promise.all([listCourses(), listStudyDays(), listPracticeAttempts(), listPracticeQuestions(), listPracticeSets(), listExamResults()]);
-    const [cards, decks, cardProgress, lessons, checkpoints, progress, planner] = await Promise.all([listCards(), listDecks(), listCardProgress(), listLessons(), listCheckpoints(), listProgress(), listPlannerItems()]);
-    return { courses, studyDays, attempts, questions, sets, exams, cards, decks, cardProgress, lessons, checkpoints, progress, planner };
+    const [courses, studyDays, attempts, questions, sets, exams] = await Promise.all([listAllCourses(), listStudyDays(), listPracticeAttempts(), listPracticeQuestions(), listPracticeSets(), listExamResults()]);
+    const [cards, decks, cardProgress, lessons, checkpoints, progress, planner, studyTime] = await Promise.all([listCards(), listDecks(), listCardProgress(), listLessons(), listCheckpoints(), listProgress(), listPlannerItems(), listStudyTime()]);
+    return { courses, studyDays, attempts, questions, sets, exams, cards, decks, cardProgress, lessons, checkpoints, progress, planner, studyTime };
   }, []);
   if (error) return <div className="page"><h1>Progress</h1><p className="error" role="alert">Your progress couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { courses, studyDays, attempts, questions, sets, exams, cards, decks, cardProgress, lessons, checkpoints, progress, planner } = data;
+  const { courses, studyDays, attempts, questions, sets, exams, cards, decks, cardProgress, lessons, checkpoints, progress, planner, studyTime } = data;
 
   const today = localNow().date;
   const logged = totalsByDay(studyDays);
+  const timeByDate = secondsByDate(studyTime);
+  const timeByCourse = secondsByCourse(studyTime);
+  const secondsToday = timeByDate.get(today) ?? 0;
   const answersOn = new Map<string, number>();
   for (const attempt of attempts) answersOn.set(dayOf(attempt.at), (answersOn.get(dayOf(attempt.at)) ?? 0) + 1);
   const studied = new Set<string>([
@@ -41,6 +45,9 @@ export function ProgressPage() {
   const week = lastDays(today, 7);
   const cardsThisWeek = week.reduce((sum, date) => sum + (logged.get(date)?.cards ?? 0), 0);
   const answersThisWeek = week.reduce((sum, date) => sum + (answersOn.get(date) ?? 0), 0);
+  const secondsThisWeek = secondsOverDates(timeByDate, week);
+  const weekTime = [...week].reverse().map((date) => ({ date, seconds: timeByDate.get(date) ?? 0 }));
+  const peakWeekTime = Math.max(1, ...weekTime.map((day) => day.seconds));
   const daysThisMonth = lastDays(today, 30).filter((date) => studied.has(date)).length;
 
   const courseRows = courses.map((course) => {
@@ -61,6 +68,7 @@ export function ProgressPage() {
       practice: accuracy === null ? '—' : `${accuracy}%`,
       work: work.length > 0 ? `${work.filter(isDone).length} of ${work.length} done` : '—',
       exam: latestExam ? (examScore(latestExam.items) === null ? 'Needs checking' : `${examScore(latestExam.items)}%`) : '—',
+      time: timeByCourse.has(course.id) ? formatDuration(timeByCourse.get(course.id) ?? 0) : '—',
     };
   });
 
@@ -68,6 +76,8 @@ export function ProgressPage() {
     { id: 'current', label: 'Day streak', value: streak.current },
     { id: 'longest', label: 'Longest streak', value: streak.longest },
     { id: 'month', label: 'Days studied, last 30', value: daysThisMonth },
+    { id: 'time-today', label: 'Studied today', value: formatDuration(secondsToday) },
+    { id: 'time-week', label: 'Study time, last 7 days', value: formatDuration(secondsThisWeek) },
     { id: 'cards', label: 'Cards reviewed, last 7 days', value: cardsThisWeek },
     { id: 'answers', label: 'Questions answered, last 7 days', value: answersThisWeek },
     { id: 'done', label: 'Planner items done', value: planner.filter(isDone).length },
@@ -108,18 +118,35 @@ export function ProgressPage() {
             ))}
           </div>
         </section>
+        <section className="dash-card dash-wide" aria-labelledby="studytime-heading" data-testid="study-time">
+          <h2 id="studytime-heading">Study time this week</h2>
+          <p className="dash-note">Active time on flashcards, practice, mock exams, and lessons. It's an estimate — it pauses when the tab is in the background or you stop interacting.</p>
+          {secondsThisWeek > 0
+            ? (
+              <ul className="time-bars">
+                {weekTime.map((day) => (
+                  <li key={day.date} className="time-bar">
+                    <span className="time-bar-day">{DAY_LETTERS[new Date(`${day.date}T00:00:00`).getDay()]}{day.date === today ? ' (today)' : ''}</span>
+                    <span className="time-bar-track" aria-hidden="true"><i style={{ width: `${Math.round((day.seconds / peakWeekTime) * 100)}%` }} data-on={day.seconds > 0 ? 'true' : undefined} /></span>
+                    <span className="time-bar-value">{formatDuration(day.seconds)}</span>
+                  </li>
+                ))}
+              </ul>
+            )
+            : <p className="muted">No study time yet this week. It starts counting when you review flashcards, answer practice questions, take a mock exam, or work through a lesson.</p>}
+        </section>
         <section className="dash-card dash-wide" aria-labelledby="courses-heading" data-testid="course-progress">
           <h2 id="courses-heading">By course</h2>
           {courseRows.length > 0
             ? (
               <div className="table-scroll">
                 <table className="plan-table">
-                  <thead><tr><th scope="col">Course</th><th scope="col">Lessons</th><th scope="col">Flashcards</th><th scope="col">Practice accuracy</th><th scope="col">Planner</th><th scope="col">Latest mock exam</th></tr></thead>
+                  <thead><tr><th scope="col">Course</th><th scope="col">Lessons</th><th scope="col">Flashcards</th><th scope="col">Practice accuracy</th><th scope="col">Planner</th><th scope="col">Latest mock exam</th><th scope="col">Study time</th></tr></thead>
                   <tbody>
                     {courseRows.map((row) => (
                       <tr key={row.course.id}>
                         <th scope="row"><Link to={`/courses/${row.course.id}`}>{row.course.name}</Link></th>
-                        <td>{row.lessons}</td><td>{row.cards}</td><td>{row.practice}</td><td>{row.work}</td><td>{row.exam}</td>
+                        <td>{row.lessons}</td><td>{row.cards}</td><td>{row.practice}</td><td>{row.work}</td><td>{row.exam}</td><td>{row.time}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -132,7 +159,8 @@ export function ProgressPage() {
           <h2 id="progress-counts">What this counts</h2>
           <p className="dash-note">Every number comes from what you've saved. Nothing here predicts a grade.</p>
           <dl className="dash-defs">
-            <dt>A day you studied</dt><dd>A day with a flashcard review, a practice answer, a finished mock exam, or work in a lesson. Adding notes or files doesn't count, and study time isn't tracked.</dd>
+            <dt>A day you studied</dt><dd>A day with a flashcard review, a practice answer, a finished mock exam, or work in a lesson. Adding notes or files doesn't count.</dd>
+            <dt>Study time</dt><dd>Active time on those same study screens. It pauses when the tab is in the background or you stop interacting, so it's an estimate, not a stopwatch. Each device adds its own, so two devices never overwrite each other.</dd>
             <dt>Streak</dt><dd>Days in a row you studied. Not having studied yet today doesn't end it.</dd>
             <dt>Older days</dt><dd>Practice and mock exams count from their saved dates. For days before this page was added, flashcards and lessons only show the latest day you worked on each one, so older streaks may look shorter than they were.</dd>
             <dt>Practice accuracy</dt><dd>Your latest answer to each question. A partly right answer counts as half.</dd>

@@ -19,6 +19,7 @@ import { listCalendarEvents, setEventCompleted } from '../data/calendar';
 import { describeTime, noClassesOn, todaysPlan } from '../data/calendarRules';
 import { dayOf, streaksFrom } from '../data/progressRules';
 import { listStudyDays } from '../data/studyLog';
+import { formatDuration, listStudyTime, secondsByDate } from '../data/studyTime';
 import { listExamResults } from '../data/exams';
 import { listPlannerItems, setPlannerStatus } from '../data/planner';
 import { comparePlanner, describeDue, groupOf, localNow } from '../data/plannerRules';
@@ -72,13 +73,13 @@ export function TodayPage() {
     const [lessons, checkpoints, progress, plannerItems] = await Promise.all([listLessons(), listCheckpoints(), listProgress(), listPlannerItems()]);
     const [decks, cards, cardProgress] = await Promise.all([listDecks(), listCards(), listCardProgress()]);
     const [practiceSets, practiceQuestions, practiceAttempts, topics] = await Promise.all([listPracticeSets(), listPracticeQuestions(), listPracticeAttempts(), listAllTopics()]);
-    const [calendarEvents, studyDays, examResults] = await Promise.all([listCalendarEvents(), listStudyDays(), listExamResults()]);
-    return { calendarEvents, studyDays, examResults, practiceSets, practiceQuestions, practiceAttempts, topics, courses, materials, storage, unfinished, notes, lastBackup, plannerItems, decks, cards, cardProgress, progress, next: recommendNext(lessons, checkpoints, progress) };
+    const [calendarEvents, studyDays, examResults, studyTime] = await Promise.all([listCalendarEvents(), listStudyDays(), listExamResults(), listStudyTime()]);
+    return { calendarEvents, studyDays, examResults, studyTime, practiceSets, practiceQuestions, practiceAttempts, topics, courses, materials, storage, unfinished, notes, lastBackup, plannerItems, decks, cards, cardProgress, progress, next: recommendNext(lessons, checkpoints, progress) };
   }, [askedToKeep]);
 
   if (error) return <div className="page"><h1>Today</h1><p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress, practiceSets, practiceQuestions, practiceAttempts, topics, calendarEvents, studyDays, examResults } = data;
+  const { courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress, practiceSets, practiceQuestions, practiceAttempts, topics, calendarEvents, studyDays, examResults, studyTime } = data;
   const backupDue = (materials.length > 0 || notes.length > 0) && (lastBackup === null || Date.now() - lastBackup > BACKUP_REMINDER_MS);
 
   if (courses.length === 0 && materials.length === 0 && unfinished.length === 0 && notes.length === 0 && plannerItems.length === 0 && cards.length === 0 && decks.length === 0 && practiceSets.length === 0 && calendarEvents.length === 0) {
@@ -116,6 +117,7 @@ export function TodayPage() {
     ...[...progress.values()].map((entry) => dayOf(entry.lastStudiedAt)),
   ]);
   const streak = streaksFrom(studied, now.date);
+  const secondsToday = secondsByDate(studyTime).get(now.date) ?? 0;
   const [year, month, day] = now.date.split('-').map(Number);
   const dateWords = new Date(year, month - 1, day).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -127,6 +129,7 @@ export function TodayPage() {
     { label: 'Practice accuracy', value: practiceAccuracy === null ? '—' : `${practiceAccuracy}%`, to: '/practice', id: 'practice' },
     { label: 'Lessons to review', value: toReview, to: '/study', id: 'lessons' },
     { label: 'Study streak', value: streak.current, to: '/progress', id: 'streak' },
+    { label: 'Studied today', value: formatDuration(secondsToday), to: '/progress', id: 'time-today' },
   ];
 
   return (

@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { createDeck, listCardProgress, listCards, listDecks } from '../data/flashcards';
 import { isDue, isWeak } from '../data/flashcardRules';
 import { localNow } from '../data/plannerRules';
-import { listCourses } from '../data/store';
+import { listAllCourses } from '../data/store';
 import { useLive } from '../data/useLive';
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
@@ -15,7 +15,7 @@ export function FlashcardsPage() {
   const [name, setName] = useState('');
   const [failure, setFailure] = useState('');
   const { data, error } = useLive(async () => {
-    const [decks, cards, progress, courses] = await Promise.all([listDecks(), listCards(), listCardProgress(), listCourses()]);
+    const [decks, cards, progress, courses] = await Promise.all([listDecks(), listCards(), listCardProgress(), listAllCourses()]);
     return { decks, cards, progress, courses };
   });
   if (error) return <div className="page"><h1>Flashcards</h1><p className="error" role="alert">Your flashcards couldn't be loaded. {error.message}</p></div>;

@@ -669,6 +669,14 @@ input[type='radio']:checked { border-color: var(--accent); background: radial-gr
 .activity-week i { display: block; width: 1.1rem; height: 1.1rem; border-radius: 3px; background: var(--ground); }
 .activity-week i[data-on='true'] { background: var(--accent); }
 .activity-week i[data-today='true'] { box-shadow: inset 0 0 0 2px var(--paper); }
+
+.time-bars { list-style: none; margin: .75rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.time-bar { display: grid; grid-template-columns: 5.5rem 1fr 3.5rem; align-items: center; gap: .6rem; }
+.time-bar-day { font-size: .85rem; color: var(--muted); }
+.time-bar-track { height: .85rem; background: var(--ground); border-radius: 6px; overflow: hidden; }
+.time-bar-track i { display: block; height: 100%; min-width: 2px; border-radius: 6px; background: var(--ground); }
+.time-bar-track i[data-on='true'] { background: var(--accent); }
+.time-bar-value { font-size: .85rem; text-align: right; font-variant-numeric: lining-nums tabular-nums; }
 .activity-week i[data-empty='true'] { background: none; }
 
 /* Clean and light: more room, quieter surfaces, and one blue. Colors come from the tokens at the top, so both modes stay matched. */
@@ -922,3 +930,9 @@ h1 + .muted, h1 + .dash-lead { margin-top: .5rem; }
   .nav-links a svg { width: 22px; height: 22px; }
   .nav-links a span { font-size: .66rem; line-height: 1; }
 }
+
+/* Archive, bin and restore controls. */
+.head-actions { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+.small { font-size: .85rem; }
+.plain-list li .bin-name { font-weight: 600; }
+.plain-list li { display: flex; flex-wrap: wrap; gap: .5rem .75rem; align-items: baseline; }

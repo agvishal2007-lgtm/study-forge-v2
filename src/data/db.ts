@@ -1,6 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { CURRENT_DB } from './account';
-import { OLD_YELLOW, SPINE_COLORS, type Checkpoint, type PlannerItem, type CalendarEvent, type StudyDay, type Transcript, type FileText, type ExamResult, type PracticeAttempt, type PracticeQuestion, type PracticeSet, type CardProgress, type Deck, type Flashcard, CheckpointProgress, Course, Lesson, Material, Note, RecordingSession, Topic } from './types';
+import { OLD_YELLOW, SPINE_COLORS, type Checkpoint, type PlannerItem, type CalendarEvent, type StudyDay, type StudyTime, type Transcript, type FileText, type ExamResult, type PracticeAttempt, type PracticeQuestion, type PracticeSet, type CardProgress, type Deck, type Flashcard, CheckpointProgress, Course, Lesson, Material, Note, RecordingSession, Topic } from './types';
 
 /**
  * IndexedDB is the single source of truth for courses, topics, and file records.
@@ -31,12 +31,13 @@ interface StudyForgeDB extends DBSchema {
   calendarEvents: { key: string; value: CalendarEvent };
   studyDays: { key: string; value: StudyDay };
   transcripts: { key: string; value: Transcript };
+  studyTime: { key: string; value: StudyTime };
 }
 
 let dbPromise: Promise<IDBPDatabase<StudyForgeDB>> | null = null;
 
 export function getDb() {
-  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 13, {
+  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 15, {
     async upgrade(db, oldVersion, _newVersion, transaction) {
       // Each step only adds to what's there, so existing students keep their data.
       if (oldVersion < 1) {
@@ -90,6 +91,29 @@ export function getDb() {
       }
       if (oldVersion < 13) {
         db.createObjectStore('transcripts', { keyPath: 'materialId' });
+      }
+      if (oldVersion < 14) {
+        db.createObjectStore('studyTime', { keyPath: 'id' });
+      }
+      if (oldVersion < 15) {
+        // Everything saved before now is in use, so it all starts Active with its place kept.
+        const now = Date.now();
+        const courses = transaction.objectStore('courses');
+        let rank = 0;
+        for (const course of await courses.getAll()) {
+          await courses.put({ ...course, term: course.term ?? '', position: course.position ?? rank++, status: course.status ?? 'active', statusAt: course.statusAt ?? course.createdAt ?? now, updatedAt: course.updatedAt ?? course.createdAt ?? now });
+        }
+        const topics = transaction.objectStore('topics');
+        const ranks = new Map<string, number>();
+        for (const topic of await topics.getAll()) {
+          const next = ranks.get(topic.courseId) ?? 0;
+          ranks.set(topic.courseId, next + 1);
+          await topics.put({ ...topic, heading: topic.heading ?? '', position: topic.position ?? next, status: topic.status ?? 'active', statusAt: topic.statusAt ?? topic.createdAt ?? now, updatedAt: topic.updatedAt ?? topic.createdAt ?? now });
+        }
+        const materials = transaction.objectStore('materials');
+        for (const material of await materials.getAll()) {
+          await materials.put({ ...material, status: material.status ?? 'active', statusAt: material.statusAt ?? material.createdAt ?? now });
+        }
       }
       if (oldVersion >= 1 && oldVersion < 6) {
         for (let cursor = await transaction.objectStore('courses').openCursor(); cursor; cursor = await cursor.continue()) {

@@ -5,7 +5,7 @@ import { noteLabel } from './notes';
 import { listUnfinished } from './recordings';
 import { findByHash, getStorageStatus, hashFile, storeMaterial } from './store';
 import {
-  CALENDAR_KINDS, PLAN_PRIORITIES, type CalendarEvent, type StudyDay, type Transcript, OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem, type ExamResult, type ExamItem, type PracticeAttempt, type PracticeQuestion, type PracticeSet, CONFIDENCE_LEVELS, PRACTICE_KINDS, type CardProgress, type Deck, type Flashcard, CARD_RATINGS,
+  CALENDAR_KINDS, PLAN_PRIORITIES, type CalendarEvent, type StudyDay, type StudyTime, type Transcript, OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem, type ExamResult, type ExamItem, type PracticeAttempt, type PracticeQuestion, type PracticeSet, CONFIDENCE_LEVELS, PRACTICE_KINDS, type CardProgress, type Deck, type Flashcard, CARD_RATINGS,
   type AnswerRecord, type Checkpoint, type CheckpointProgress, type Course, type ExplanationRecord, type GuidedQuestion,
   type KeyPointRating, type Lesson, type Material, type MasteryStatus, type Note, type QuestionKind, type Reteach, type Topic,
 } from './types';
@@ -19,7 +19,7 @@ import { NotAZip, readZipEntries, type ZipEntry } from './zipReader';
  */
 const MANIFEST_PATH = 'study-forge-backup.json';
 const FORMAT = 'study-forge-backup';
-const VERSION = 8;
+const VERSION = 9;
 const LAST_BACKUP_KEY = 'lastBackupAt';
 
 export interface BackupManifest {
@@ -43,6 +43,7 @@ export interface BackupManifest {
   examResults: ExamResult[];
   calendarEvents: CalendarEvent[];
   studyDays: StudyDay[];
+  studyTime: StudyTime[];
   transcripts: Transcript[];
 }
 
@@ -139,11 +140,11 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     : null;
 
   const db = await getDb();
-  const [courses, topics, notes, materials, lessons, checkpoints, progress, plannerItems, decks, cards, cardProgress, practiceSets, practiceQuestions, practiceAttempts, examResults, calendarEvents, studyDays, transcripts] = await Promise.all([
+  const [courses, topics, notes, materials, lessons, checkpoints, progress, plannerItems, decks, cards, cardProgress, practiceSets, practiceQuestions, practiceAttempts, examResults, calendarEvents, studyDays, studyTime, transcripts] = await Promise.all([
     db.getAll('courses'), db.getAll('topics'), db.getAll('notes'), db.getAll('materials'),
     db.getAll('lessons'), db.getAll('checkpoints'), db.getAll('checkpointProgress'), db.getAll('plannerItems'),
     db.getAll('decks'), db.getAll('cards'), db.getAll('cardProgress'),
-    db.getAll('practiceSets'), db.getAll('practiceQuestions'), db.getAll('practiceAttempts'), db.getAll('examResults'), db.getAll('calendarEvents'), db.getAll('studyDays'), db.getAll('transcripts'),
+    db.getAll('practiceSets'), db.getAll('practiceQuestions'), db.getAll('practiceAttempts'), db.getAll('examResults'), db.getAll('calendarEvents'), db.getAll('studyDays'), db.getAll('studyTime'), db.getAll('transcripts'),
   ]);
   const courseFolder = (courseId: string | null, topicId: string | null) => {
     const course = courses.find((candidate) => candidate.id === courseId);
@@ -185,6 +186,7 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     examResults,
     calendarEvents,
     studyDays,
+    studyTime,
     transcripts,
   };
   const noteFiles = notes.map((note) => ({
@@ -238,12 +240,26 @@ const isOptionalId = (value: unknown): value is string | null => value === null 
 function cleanCourse(raw: unknown): Course | null {
   if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.name) || !isTime(raw.createdAt)) return null;
   const color = isText(raw.color) && /^#[0-9a-f]{6}$/i.test(raw.color) && raw.color !== OLD_YELLOW ? raw.color : SPINE_COLORS[0];
-  return { id: raw.id, name: raw.name, code: isText(raw.code) ? raw.code : '', color, createdAt: raw.createdAt };
+  const status = raw.status === 'archived' || raw.status === 'trashed' ? raw.status : 'active';
+  return {
+    id: raw.id, name: raw.name, code: isText(raw.code) ? raw.code : '', color,
+    term: isText(raw.term) ? raw.term : '',
+    position: typeof raw.position === 'number' && Number.isFinite(raw.position) ? raw.position : 0,
+    status, statusAt: isTime(raw.statusAt) ? raw.statusAt : raw.createdAt,
+    createdAt: raw.createdAt, updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.createdAt,
+  };
 }
 
 function cleanTopic(raw: unknown): Topic | null {
   if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.courseId) || !isText(raw.name) || !isTime(raw.createdAt)) return null;
-  return { id: raw.id, courseId: raw.courseId, name: raw.name, createdAt: raw.createdAt };
+  const status = raw.status === 'archived' || raw.status === 'trashed' ? raw.status : 'active';
+  return {
+    id: raw.id, courseId: raw.courseId, name: raw.name,
+    heading: isText(raw.heading) ? raw.heading : '',
+    position: typeof raw.position === 'number' && Number.isFinite(raw.position) ? raw.position : 0,
+    status, statusAt: isTime(raw.statusAt) ? raw.statusAt : raw.createdAt,
+    createdAt: raw.createdAt, updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.createdAt,
+  };
 }
 
 function cleanNote(raw: unknown): Note | null {
@@ -257,7 +273,8 @@ function cleanMaterial(raw: unknown): BackupManifest['materials'][number] | null
   if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.name) || !isText(raw.path) || !isText(raw.mimeType)) return null;
   if (!isText(raw.hash) || !/^[0-9a-f]{64}$/.test(raw.hash) || !isTime(raw.size) || !isTime(raw.createdAt)) return null;
   if (!isOptionalId(raw.courseId) || !isOptionalId(raw.topicId)) return null;
-  return { id: raw.id, name: raw.name, path: raw.path, mimeType: raw.mimeType, hash: raw.hash, size: raw.size, courseId: raw.courseId, topicId: raw.topicId, createdAt: raw.createdAt };
+  const status = raw.status === 'archived' || raw.status === 'trashed' ? raw.status : 'active';
+  return { id: raw.id, name: raw.name, path: raw.path, mimeType: raw.mimeType, hash: raw.hash, size: raw.size, courseId: raw.courseId, topicId: raw.topicId, status, statusAt: isTime(raw.statusAt) ? raw.statusAt : raw.createdAt, createdAt: raw.createdAt };
 }
 
 const isTextList = (value: unknown): value is string[] => Array.isArray(value) && value.every(isText);
@@ -398,6 +415,18 @@ function cleanStudyDay(raw: unknown): StudyDay | null {
   return { id: raw.id, date: raw.date, cards: amount(raw.cards), lessons: amount(raw.lessons), updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : 0 };
 }
 
+function cleanStudyTime(raw: unknown): StudyTime | null {
+  if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.date) || !isValidDate(raw.date)) return null;
+  const amount = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0);
+  const byCourse: Record<string, number> = {};
+  if (isObject(raw.byCourse)) {
+    for (const [courseId, seconds] of Object.entries(raw.byCourse)) {
+      if (courseId && amount(seconds) > 0) byCourse[courseId] = amount(seconds);
+    }
+  }
+  return { id: raw.id, date: raw.date, seconds: amount(raw.seconds), byCourse, updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : 0 };
+}
+
 function cleanDeck(raw: unknown): Deck | null {
   if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.name) || !isOptionalId(raw.courseId) || !isOptionalId(raw.topicId) || !isTime(raw.createdAt)) return null;
   return { id: raw.id, name: raw.name, courseId: raw.courseId, topicId: raw.topicId, createdAt: raw.createdAt, updatedAt: isTime(raw.updatedAt) ? raw.updatedAt : raw.createdAt };
@@ -535,6 +564,7 @@ export async function openBackup(file: File): Promise<OpenedBackup> {
     examResults: raw.examResults === undefined ? [] : cleanList(raw.examResults, cleanExamResult),
     calendarEvents: raw.calendarEvents === undefined ? [] : cleanList(raw.calendarEvents, cleanCalendarEvent),
     studyDays: raw.studyDays === undefined ? [] : cleanList(raw.studyDays, cleanStudyDay),
+    studyTime: raw.studyTime === undefined ? [] : cleanList(raw.studyTime, cleanStudyTime),
     transcripts: raw.transcripts === undefined ? [] : cleanList(raw.transcripts, cleanTranscript),
   };
 
@@ -749,6 +779,9 @@ export async function restoreBackup(
   }
   for (const day of manifest.studyDays) {
     if (!(await db.getKey('studyDays', day.id))) await db.put('studyDays', day);
+  }
+  for (const span of manifest.studyTime) {
+    if (!(await db.getKey('studyTime', span.id))) await db.put('studyTime', span);
   }
   for (const transcript of manifest.transcripts) {
     if (!(await db.getKey('transcripts', transcript.materialId))) await db.put('transcripts', transcript);

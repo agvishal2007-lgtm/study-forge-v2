@@ -8,7 +8,7 @@ import { listPlannerItems } from '../data/planner';
 import { comparePlanner, describeDue, groupOf, isDone, localNow } from '../data/plannerRules';
 import { listAllTopics, listPracticeAttempts, listPracticeQuestions, listPracticeSets } from '../data/practice';
 import { accuracyOf, latestAnswers, mistakesIn, weakTopics } from '../data/practiceRules';
-import { listCourses } from '../data/store';
+import { listAllCourses } from '../data/store';
 import { useLive } from '../data/useLive';
 import { topicLabeler } from './PracticePage';
 
@@ -21,7 +21,7 @@ export function ExamHallPage() {
   const [minutes, setMinutes] = useState('30');
   const { data, error } = useLive(async () => {
     const [courses, sets, questions, attempts, topics, results, inProgress, planner, decks, cards, progress] = await Promise.all([
-      listCourses(), listPracticeSets(), listPracticeQuestions(), listPracticeAttempts(), listAllTopics(), listExamResults(), loadExamInProgress(), listPlannerItems(), listDecks(), listCards(), listCardProgress(),
+      listAllCourses(), listPracticeSets(), listPracticeQuestions(), listPracticeAttempts(), listAllTopics(), listExamResults(), loadExamInProgress(), listPlannerItems(), listDecks(), listCards(), listCardProgress(),
     ]);
     return { courses, sets, questions, attempts, topics, results, inProgress, planner, decks, cards, progress };
   });

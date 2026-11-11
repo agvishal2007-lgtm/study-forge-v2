@@ -7,7 +7,7 @@ import {
 } from '../data/flashcards';
 import { describeCardDue, isDue, isWeak } from '../data/flashcardRules';
 import { localNow } from '../data/plannerRules';
-import { listCourses, listTopics } from '../data/store';
+import { listAllCourses, listTopics } from '../data/store';
 import type { Flashcard } from '../data/types';
 import { useLive } from '../data/useLive';
 
@@ -53,7 +53,7 @@ export function DeckPage() {
   const navigate = useNavigate();
   const stillHere = useStillHere();
   const { data, error } = useLive(async () => {
-    const [deck, cards, progress, courses] = await Promise.all([getDeck(id), listDeckCards(id), listCardProgress(), listCourses()]);
+    const [deck, cards, progress, courses] = await Promise.all([getDeck(id), listDeckCards(id), listCardProgress(), listAllCourses()]);
     return { deck, cards, progress, courses };
   }, [id]);
   const [front, setFront] = useState('');

@@ -5,6 +5,7 @@ import {
   canAutoGrade, countLesson, evaluateMastery, gradeAutomatically, missingContent, newProgress, recommendNext, STATUS_LABEL, type StudyAction,
 } from '../../data/mastery';
 import { getCourse, getMaterial } from '../../data/store';
+import { useStudyClock } from '../../data/studyClock';
 import type { Checkpoint, CheckpointProgress, GuidedQuestion, KeyPointRating, Lesson } from '../../data/types';
 import { useLive } from '../../data/useLive';
 
@@ -163,6 +164,7 @@ export function SessionPage() {
   const draftTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const latestDraft = useRef<string | null>(null);
   const loadedRef = useRef<Checkpoint | null>(null);
+  useStudyClock(lesson?.courseId ?? null);
   const { data: others } = useLive(async () => {
     const [lessons, checkpoints, records] = await Promise.all([listLessons(), listCheckpoints(), listProgress()]);
     return { lessons, checkpoints, records };

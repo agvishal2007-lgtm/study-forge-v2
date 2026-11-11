@@ -1,22 +1,36 @@
 import { createSHA256 } from 'hash-wasm';
 import { deleteBlob, removeLeftovers, saveBlob, whileSaving } from './blobs';
 import { getDb, notifyChanged } from './db';
-import { SPINE_COLORS, type Course, type Material, type Topic } from './types';
+import { SPINE_COLORS, type Course, type Lifecycle, type Material, type Topic } from './types';
 
-export async function listCourses(): Promise<Course[]> {
+/** Courses in use. Archived and binned courses are kept, but asked for separately. */
+export async function listCourses(status: Lifecycle = 'active'): Promise<Course[]> {
   const courses = await (await getDb()).getAll('courses');
-  return courses.sort((a, b) => a.createdAt - b.createdAt);
+  return courses.filter((course) => course.status === status).sort(byPlace);
 }
+
+/** Every course whatever its status, for the places that need the whole picture (backup, search, the bin). */
+export const listAllCourses = async (): Promise<Course[]> => (await (await getDb()).getAll('courses')).sort(byPlace);
+
+/** Where the student put it, falling back to when it was made. */
+const byPlace = (a: { position: number; createdAt: number }, b: { position: number; createdAt: number }) =>
+  a.position - b.position || a.createdAt - b.createdAt;
 
 export async function createCourse(name: string, code: string): Promise<Course> {
   const db = await getDb();
   const count = await db.count('courses');
+  const now = Date.now();
   const course: Course = {
     id: crypto.randomUUID(),
     name: name.trim(),
     code: code.trim(),
     color: SPINE_COLORS[count % SPINE_COLORS.length],
-    createdAt: Date.now(),
+    term: '',
+    position: count,
+    status: 'active',
+    statusAt: now,
+    createdAt: now,
+    updatedAt: now,
   };
   await db.put('courses', course);
   notifyChanged();
@@ -63,14 +77,21 @@ export async function deleteCourse(id: string): Promise<void> {
   notifyChanged();
 }
 
-export async function listTopics(courseId: string): Promise<Topic[]> {
+export async function listTopics(courseId: string, status: Lifecycle = 'active'): Promise<Topic[]> {
   const topics = await (await getDb()).getAllFromIndex('topics', 'courseId', courseId);
-  return topics.sort((a, b) => a.createdAt - b.createdAt);
+  return topics.filter((topic) => topic.status === status).sort(byPlace);
 }
 
-export async function createTopic(courseId: string, name: string): Promise<void> {
-  const topic: Topic = { id: crypto.randomUUID(), courseId, name: name.trim(), createdAt: Date.now() };
-  await (await getDb()).put('topics', topic);
+/** Every topic of a course whatever its status. */
+export const listTopicsAnyStatus = async (courseId: string): Promise<Topic[]> =>
+  (await (await getDb()).getAllFromIndex('topics', 'courseId', courseId)).sort(byPlace);
+
+export async function createTopic(courseId: string, name: string, heading = ''): Promise<void> {
+  const db = await getDb();
+  const now = Date.now();
+  const count = (await db.getAllFromIndex('topics', 'courseId', courseId)).length;
+  const topic: Topic = { id: crypto.randomUUID(), courseId, name: name.trim(), heading: heading.trim(), position: count, status: 'active', statusAt: now, createdAt: now, updatedAt: now };
+  await db.put('topics', topic);
   notifyChanged();
 }
 
@@ -95,10 +116,15 @@ export async function deleteTopic(id: string): Promise<void> {
   notifyChanged();
 }
 
-export async function listMaterials(): Promise<Material[]> {
+/** Files in use. Archived and binned files are kept, but asked for separately. */
+export async function listMaterials(status: Lifecycle = 'active'): Promise<Material[]> {
   const materials = await (await getDb()).getAll('materials');
-  return materials.sort((a, b) => b.createdAt - a.createdAt);
+  return materials.filter((material) => material.status === status).sort((a, b) => b.createdAt - a.createdAt);
 }
+
+/** Every file whatever its status, for backup and the bin. */
+export const listAllMaterials = async (): Promise<Material[]> =>
+  (await (await getDb()).getAll('materials')).sort((a, b) => b.createdAt - a.createdAt);
 
 export const getMaterial = async (id: string) => (await getDb()).get('materials', id);
 
@@ -170,6 +196,8 @@ export async function storeMaterial(
     hash,
     courseId: target.courseId,
     topicId: target.topicId,
+    status: 'active',
+    statusAt: Date.now(),
     createdAt: restored?.createdAt ?? Date.now(),
   };
   // The file and its record count as one save, so cleanup can't run between them.
@@ -205,4 +233,47 @@ export async function getStorageStatus(): Promise<StorageStatus> {
 
 export async function requestKeepFiles(): Promise<boolean> {
   return (await navigator.storage?.persist?.().catch(() => false)) ?? false;
+}
+
+/* ---- Lifecycle: Active, Archived, Trashed. Removing for good stays a separate, explicit step. ---- */
+
+/**
+ * Moves a course between in use, put away, and the bin. Nothing inside it is touched: its topics,
+ * files, notes and history stay exactly as they are, so restoring brings the whole course back.
+ */
+export async function setCourseStatus(id: string, status: Lifecycle): Promise<void> {
+  const db = await getDb();
+  const course = await db.get('courses', id);
+  if (!course) return;
+  const now = Date.now();
+  await db.put('courses', { ...course, status, statusAt: now, updatedAt: Math.max(now, course.updatedAt + 1) });
+  notifyChanged();
+}
+
+/** Moves a topic between in use, put away, and the bin. Its files and notes stay where they are. */
+export async function setTopicStatus(id: string, status: Lifecycle): Promise<void> {
+  const db = await getDb();
+  const topic = await db.get('topics', id);
+  if (!topic) return;
+  const now = Date.now();
+  await db.put('topics', { ...topic, status, statusAt: now, updatedAt: Math.max(now, topic.updatedAt + 1) });
+  notifyChanged();
+}
+
+/** Moves a file between in use, put away, and the bin. The file itself is kept until it is removed for good. */
+export async function setMaterialStatus(id: string, status: Lifecycle): Promise<void> {
+  const db = await getDb();
+  const material = await db.get('materials', id);
+  if (!material) return;
+  await db.put('materials', { ...material, status, statusAt: Date.now() });
+  notifyChanged();
+}
+
+/** Everything sitting in the bin, newest first, so it can be restored or removed for good. */
+export async function listTrash(): Promise<{ courses: Course[]; topics: Topic[]; materials: Material[] }> {
+  const db = await getDb();
+  const [courses, topics, materials] = await Promise.all([db.getAll('courses'), db.getAll('topics'), db.getAll('materials')]);
+  const binned = <T extends { status: Lifecycle; statusAt: number }>(list: T[]) =>
+    list.filter((item) => item.status === 'trashed').sort((a, b) => b.statusAt - a.statusAt);
+  return { courses: binned(courses), topics: binned(topics), materials: binned(materials) };
 }

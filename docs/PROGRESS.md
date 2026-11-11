@@ -438,3 +438,25 @@ A polish pass on the clean, light look the owner chose, keeping it simple. The a
 ## Typography and section icons
 
 The type scale was refined (still Figtree, the owner's choice): larger, tighter headings, bolder tile numbers, steadier spacing, for a clearer hierarchy. Each sidebar section now has a clean line icon, so the menu reads at a glance; on phones the bottom bar shows the icon above a small label like a normal app tab bar. Icons are decorative (aria-hidden); the labels still carry the meaning, so nothing changes for screen readers or the tests.
+
+## Study time
+
+Progress counted the days a student studied but never the minutes. Now a clock runs on the study screens (Guided Study, flashcard review, practice, and mock exams) and credits active time to the day. It only counts while the tab is in front and the student is interacting, it pauses after a minute and a half of nothing, and a single step is capped, so a laptop that goes to sleep or a tab left open overnight can't invent hours. It's an estimate, and the page says so.
+
+Each device keeps its own daily record, keyed by date and device exactly like the study-day records, so two devices add up instead of overwriting one another. Progress shows today, the last seven days as a per-day bar, and a study-time column per course; Today shows a "Studied today" tile. The maths lives in `src/data/studyTimeRules.ts` with its own unit tests, and a browser test drives a real review session with a controllable clock and checks the minutes land in the database and on the page.
+
+## Active, Archived, Trashed
+
+Until now, deleting was immediate and permanent and there was no way to put a finished course away. Courses, topics and files now have a life: **Active** (in use), **Archived** (put away but kept whole), and **Trashed** (in the bin). Removing something for good is a separate, explicit step that only exists inside the bin, and it's the only action that asks for confirmation — archiving and binning are reversible, so they don't get in the way.
+
+- A finished course can be archived. Nothing inside it is touched, and it stays searchable and reachable, which is what the Semester Archive was always meant to be.
+- The bin (`/bin`) lists binned courses, topics and files, each with Restore and Remove for good. Each one says plainly what removing it for good would actually do.
+- Removing a course or topic for good still keeps its files, notes, lessons, assignments and results — they just stop belonging to it, exactly as before.
+- Courses and topics gained an `updatedAt` and now resolve sync conflicts by newest-wins. Without it, archiving on a phone would never have reached a laptop.
+- Archived courses keep their names everywhere they're referenced (Library, Search, Planner, Progress and the rest), so nothing goes nameless; only the Courses page and the dashboard show just the working set.
+
+Courses also gained a term, and courses and topics a position and a heading, so semesters, reordering and custom groupings (chapters, units, weeks) can be built on top without another migration. Their screens aren't built yet.
+
+## Study Forge Calendar
+
+The calendar page is now titled Study Forge Calendar rather than the generic "Calendar".

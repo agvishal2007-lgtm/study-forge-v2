@@ -5,11 +5,13 @@ import { correctTextOf, formatClock } from '../data/examRules';
 import { clearExamInProgress, finishExam, loadExamInProgress, saveExamInProgress, type ExamInProgress } from '../data/exams';
 import { gradeAutomatically } from '../data/mastery';
 import { listPracticeQuestions } from '../data/practice';
+import { useStudyClock } from '../data/studyClock';
 import { PRACTICE_KIND_LABEL, type ExamItem, type PracticeQuestion } from '../data/types';
 
 export function ExamRunPage() {
   const navigate = useNavigate();
   const [exam, setExam] = useState<ExamInProgress | null | undefined>(undefined);
+  useStudyClock(exam?.courseId ?? null);
   const [questions, setQuestions] = useState<PracticeQuestion[]>([]);
   const [now, setNow] = useState(Date.now());
   const [confirmFinish, setConfirmFinish] = useState(false);

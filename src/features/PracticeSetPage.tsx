@@ -6,7 +6,7 @@ import {
   deletePracticeQuestion, deletePracticeSet, getPracticeSet, listPracticeAttempts, listPracticeQuestions, savePracticeQuestion, updatePracticeSet,
 } from '../data/practice';
 import { latestAnswers, questionProblems, splitLines } from '../data/practiceRules';
-import { listCourses, listTopics } from '../data/store';
+import { listAllCourses, listTopics } from '../data/store';
 import { PRACTICE_KIND_LABEL, PRACTICE_KINDS, type PracticeKind, type PracticeQuestion } from '../data/types';
 import { useLive } from '../data/useLive';
 
@@ -106,7 +106,7 @@ export function PracticeSetPage() {
   const navigate = useNavigate();
   const stillHere = useStillHere();
   const { data, error } = useLive(async () => {
-    const [set, questions, attempts, courses] = await Promise.all([getPracticeSet(id), listPracticeQuestions(), listPracticeAttempts(), listCourses()]);
+    const [set, questions, attempts, courses] = await Promise.all([getPracticeSet(id), listPracticeQuestions(), listPracticeAttempts(), listAllCourses()]);
     return { set, questions: questions.filter((question) => question.setId === id), attempts, courses };
   }, [id]);
   const [editing, setEditing] = useState<string | null>(null);
