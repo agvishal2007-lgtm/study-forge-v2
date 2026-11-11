@@ -37,7 +37,7 @@ interface StudyForgeDB extends DBSchema {
 let dbPromise: Promise<IDBPDatabase<StudyForgeDB>> | null = null;
 
 export function getDb() {
-  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 15, {
+  dbPromise ??= openDB<StudyForgeDB>(CURRENT_DB, 16, {
     async upgrade(db, oldVersion, _newVersion, transaction) {
       // Each step only adds to what's there, so existing students keep their data.
       if (oldVersion < 1) {
@@ -94,6 +94,13 @@ export function getDb() {
       }
       if (oldVersion < 14) {
         db.createObjectStore('studyTime', { keyPath: 'id' });
+      }
+      if (oldVersion < 16) {
+        // Everything saved before now is an uploaded file with real bytes, not a saved link.
+        const resources = transaction.objectStore('materials');
+        for (const resource of await resources.getAll()) {
+          await resources.put({ ...resource, kind: resource.kind ?? 'upload', url: resource.url ?? '', category: resource.category ?? 'other' });
+        }
       }
       if (oldVersion < 15) {
         // Everything saved before now is in use, so it all starts Active with its place kept.

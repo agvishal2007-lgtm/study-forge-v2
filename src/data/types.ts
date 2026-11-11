@@ -1,3 +1,6 @@
+import type { LinkCategory } from './linkRules';
+export type { LinkCategory };
+
 /**
  * Where a record is in its life. Active is in use, Archived is put away but kept whole,
  * and Trashed is in the bin, still restorable. Removing for good is a separate, explicit step.
@@ -35,14 +38,26 @@ export interface Topic {
 }
 
 /** A saved file. A record exists only after the original was stored completely. */
+/**
+ * What a resource actually is. An upload has real bytes saved on the device. A link is only an
+ * address: Study Forge has not downloaded, imported or copied whatever sits behind it.
+ */
+export type ResourceKind = 'upload' | 'link';
+
 export interface Material {
   id: string;
   name: string;
   mimeType: string;
   size: number;
+  /** The checksum of the saved bytes. Empty for a link, which has no bytes. */
   hash: string;
   courseId: string | null;
   topicId: string | null;
+  kind: ResourceKind;
+  /** The web address, for a link. Empty for an upload. */
+  url: string;
+  /** What sort of thing a link points at, so it can be found later. 'other' for an upload. */
+  category: LinkCategory;
   status: Lifecycle;
   statusAt: number;
   createdAt: number;

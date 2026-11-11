@@ -15,7 +15,7 @@ let server;
 let context;
 let page;
 const pageErrors = [];
-const nav = (name) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
+const nav = (name) => page.getByRole('navigation', { name: name === 'Settings' ? 'Account' : 'Main' }).getByRole('link', { name, exact: true }).click();
 async function open(name, content) {
   await nav('Library');
   await page.getByTestId('file-input').setInputFiles(content ? { name, mimeType: 'application/octet-stream', buffer: Buffer.from(content) } : path.join(work, name));

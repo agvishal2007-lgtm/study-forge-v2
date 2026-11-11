@@ -23,7 +23,8 @@ async function loadSearchable(): Promise<{ items: Searchable[]; scanned: number;
   for (const note of notes) items.push({ group: 'Notes', title: note.title || 'Untitled note', body: plainNote(note.body), to: `/notes/${note.id}` });
   const read = new Map(fileText.map((entry) => [entry.materialId, entry]));
   for (const material of materials) {
-    items.push({ group: 'Files', title: material.name, body: '', to: `/files/${material.id}` });
+    // A saved link is findable by its address as well as its name.
+    items.push({ group: 'Files', title: material.name, body: material.kind === 'link' ? material.url : '', to: `/files/${material.id}` });
     read.get(material.id)?.pages.forEach((page, index, pages) => {
       if (page.trim()) items.push({ group: 'Files', title: material.name, body: page, to: `/files/${material.id}${pages.length > 1 ? `?page=${index + 1}` : ''}`, detail: pages.length > 1 ? `Page ${index + 1}` : undefined });
     });

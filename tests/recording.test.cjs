@@ -25,7 +25,7 @@ async function open(profile = 'main', init) {
   await page.goto(URL_BASE);
 }
 
-const nav = (name) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
+const nav = (name) => page.getByRole('navigation', { name: name === 'Settings' ? 'Account' : 'Main' }).getByRole('link', { name, exact: true }).click();
 const savedPieces = () => page.evaluate(() => new Promise((resolve, reject) => {
   const request = indexedDB.open('study-forge');
   request.onerror = reject;

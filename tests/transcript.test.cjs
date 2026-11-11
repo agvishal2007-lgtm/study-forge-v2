@@ -11,7 +11,7 @@ const PORT = 4198;
 const URL_BASE = `http://localhost:${PORT}/`;
 let server; let context; let page; let work;
 const pageErrors = [];
-const nav = (name) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
+const nav = (name) => page.getByRole('navigation', { name: name === 'Settings' ? 'Account' : 'Main' }).getByRole('link', { name, exact: true }).click();
 
 // A tiny, valid silent WAV so the browser treats it as real audio.
 function silentWav(file) {

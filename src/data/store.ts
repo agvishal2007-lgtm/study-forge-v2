@@ -2,6 +2,7 @@ import { createSHA256 } from 'hash-wasm';
 import { deleteBlob, removeLeftovers, saveBlob, whileSaving } from './blobs';
 import { getDb, notifyChanged } from './db';
 import { byPlace, reordered } from './courseRules';
+import { categorize, nameFromUrl, tidyUrl, type LinkCategory } from './linkRules';
 import { SPINE_COLORS, type Course, type Lifecycle, type Material, type Topic } from './types';
 
 /** Courses in use. Archived and binned courses are kept, but asked for separately. */
@@ -136,7 +137,9 @@ export async function fileMaterial(id: string, courseId: string | null, topicId:
 
 /** Only ever called after the student confirms. The file goes first, then its record. */
 export async function deleteMaterial(id: string): Promise<void> {
-  await deleteBlob(id);
+  // A saved link has no bytes on the device; removing it never touches the page it points at.
+  const existing = await (await getDb()).get('materials', id);
+  if (existing?.kind !== 'link') await deleteBlob(id);
   const tx = (await getDb()).transaction(['materials', 'notes', 'checkpoints', 'fileText', 'transcripts'], 'readwrite');
   await tx.objectStore('fileText').delete(id);
   await tx.objectStore('transcripts').delete(id);
@@ -194,6 +197,9 @@ export async function storeMaterial(
     hash,
     courseId: target.courseId,
     topicId: target.topicId,
+    kind: 'upload',
+    url: '',
+    category: 'other',
     status: 'active',
     statusAt: Date.now(),
     createdAt: restored?.createdAt ?? Date.now(),
@@ -347,4 +353,54 @@ export async function moveTopic(id: string, direction: 'up' | 'down'): Promise<v
   const siblings = (await db.getAllFromIndex('topics', 'courseId', topic.courseId))
     .filter((other) => other.status === 'active' && other.heading === topic.heading);
   await applyOrder(async (next) => { await db.put('topics', next); }, siblings, id, direction);
+}
+
+
+/* ---- Saved links. A link is an address, not a copy of whatever sits behind it. ---- */
+
+/**
+ * Saves a web address as a resource of its own, alongside uploaded files. Study Forge stores only
+ * the address: it does not download, import or copy the page, and opening it may still need the
+ * student's own login to that site.
+ */
+export async function saveLink(input: {
+  url: string;
+  name?: string;
+  category?: LinkCategory;
+  courseId?: string | null;
+  topicId?: string | null;
+}): Promise<Material> {
+  const url = tidyUrl(input.url);
+  if (!url) throw new Error('That is not a web address Study Forge can save. It needs to start with http:// or https://.');
+  const now = Date.now();
+  const link: Material = {
+    id: crypto.randomUUID(),
+    name: (input.name ?? '').trim() || nameFromUrl(url),
+    mimeType: 'text/uri-list',
+    size: 0,
+    hash: '',
+    courseId: input.courseId ?? null,
+    topicId: input.topicId ?? null,
+    kind: 'link',
+    url,
+    category: input.category ?? categorize(url),
+    status: 'active',
+    statusAt: now,
+    createdAt: now,
+  };
+  await (await getDb()).put('materials', link);
+  notifyChanged();
+  return link;
+}
+
+/** Changes a saved link's name, address or category. */
+export async function updateLink(id: string, changes: { name?: string; url?: string; category?: LinkCategory }): Promise<void> {
+  const db = await getDb();
+  const link = await db.get('materials', id);
+  if (!link || link.kind !== 'link') return;
+  const url = changes.url === undefined ? link.url : tidyUrl(changes.url);
+  if (!url) throw new Error('That is not a web address Study Forge can save.');
+  const name = (changes.name === undefined ? link.name : changes.name).trim();
+  await db.put('materials', { ...link, name: name || nameFromUrl(url), url, category: changes.category ?? link.category });
+  notifyChanged();
 }

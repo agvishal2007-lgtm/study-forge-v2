@@ -133,7 +133,7 @@ let page;
 let work;
 const pageErrors = [];
 const shots = path.join(__dirname, '..', 'test-output');
-const nav = (name) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
+const nav = (name) => page.getByRole('navigation', { name: name === 'Settings' ? 'Account' : 'Main' }).getByRole('link', { name, exact: true }).click();
 
 const cellHas = (date, pattern) => page.waitForFunction(([day, source]) => new RegExp(source).test(document.querySelector(`[data-date="${day}"]`)?.innerText ?? ''), [date, pattern.source]);
 

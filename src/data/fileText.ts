@@ -132,7 +132,8 @@ export const listFileText = async (): Promise<FileText[]> => (await getDb()).get
 export async function readNewFiles(materials: Material[], isActive: () => boolean, onProgress: (done: number, total: number) => void): Promise<void> {
   const db = await getDb();
   const known = new Set(await db.getAllKeys('fileText'));
-  const waiting = materials.filter((material) => !known.has(material.id));
+  // A saved link has no bytes to read, so it is never scanned for words.
+  const waiting = materials.filter((material) => material.kind !== 'link' && !known.has(material.id));
   for (let index = 0; index < waiting.length && isActive(); index++) {
     onProgress(index, waiting.length);
     await db.put('fileText', await readWords(waiting[index]));

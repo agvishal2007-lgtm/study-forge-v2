@@ -84,7 +84,7 @@ async function open(profile, viewport = { width: 1280, height: 800 }, when = '20
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto(URL_BASE);
 }
-const nav = (name) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
+const nav = (name) => page.getByRole('navigation', { name: name === 'Settings' ? 'Account' : 'Main' }).getByRole('link', { name, exact: true }).click();
 const front = () => page.getByLabel('Front', { exact: true });
 const back = () => page.getByLabel('Back', { exact: true });
 let tick = 0;

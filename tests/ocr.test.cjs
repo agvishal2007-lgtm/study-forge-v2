@@ -11,7 +11,7 @@ const PORT = 4197;
 const URL_BASE = `http://localhost:${PORT}/`;
 let server; let context; let page; let work;
 const pageErrors = [];
-const nav = (name) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
+const nav = (name) => page.getByRole('navigation', { name: name === 'Settings' ? 'Account' : 'Main' }).getByRole('link', { name, exact: true }).click();
 
 async function addFile(name) {
   await nav('Library');

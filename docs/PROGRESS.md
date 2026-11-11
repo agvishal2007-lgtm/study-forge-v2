@@ -472,3 +472,15 @@ Courses and topics used to be a flat list in the order they were created, with n
 - **Breadcrumbs.** The course page and the file viewer show the trail back up — Courses → the course → the file, or Library → the file.
 
 The ordering and grouping rules are pure functions in `src/data/courseRules.ts` with their own unit tests, and `tests/organize.test.cjs` drives the whole thing in a real browser.
+
+## Saved links: the universal URL library
+
+Study Forge could only hold files you uploaded. Now a web address is a resource in its own right, sitting beside your files in the Library and in a course.
+
+- **What can be saved.** Research articles, journals, Google Scholar, JSTOR, PubMed, library catalogues, news and government sources, school portals (Canvas, Blackboard, Moodle, Brightspace, Schoology, Google Classroom), Google Docs/Sheets/Slides, videos, Quizlet, textbooks, calculators — any ordinary web page.
+- **What is refused.** Only `http://` and `https://` addresses are saved. A `javascript:`, `data:`, `file:` or `mailto:` address is turned away, because those can do things a saved link should never do.
+- **Sorted automatically.** A link is categorised from its address — Research, School portal, Cloud document, Video, Reference or Other — and the student can override it.
+- **Honest about what it is.** Opening a saved link says plainly that Study Forge kept the address and not a copy of the page: nothing behind it was downloaded or imported, a site needing a login will still ask for it, and removing the link here never changes or deletes the original. A Google Docs link is never dressed up as an imported document.
+- **Everywhere a file is.** Links are searchable by name *and* address, can be filed to a course or topic, can have notes, and go through the same bin as anything else. They're kept in backups too, with no bytes in the zip since there are none.
+
+The address rules are pure functions in `src/data/linkRules.ts` with unit tests, and `tests/links.test.cjs` drives the whole thing in a real browser.

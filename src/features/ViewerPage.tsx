@@ -6,6 +6,7 @@ import { useStillHere } from '../components/useStillHere';
 import { readBlob } from '../data/blobs';
 import { formatBytes, KIND_LABEL, kindOf, olderOfficeAdvice } from '../data/format';
 import { Breadcrumbs } from '../components/Breadcrumbs';
+import { LINK_CATEGORY_LABEL, siteOf } from '../data/linkRules';
 import { fileMaterial, getCourse, getMaterial, listAllCourses, listTopics, setMaterialStatus } from '../data/store';
 import type { Material } from '../data/types';
 import { TranscriptPanel } from './TranscriptPanel';
@@ -124,6 +125,50 @@ export default function ViewerPage() {
   if (loading && !material) return <p className="page muted">Loading…</p>;
   if (!material) return <div className="page"><h1>This file isn't here</h1><p>It may have been deleted.</p><Link to="/library">Go to Library</Link></div>;
 
+  const trailFor = (name: string) => (owner
+    ? [{ label: 'Courses', to: '/courses' }, { label: owner.name, to: `/courses/${owner.id}` }, { label: name }]
+    : [{ label: 'Library', to: '/library' }, { label: name }]);
+
+  if (material.kind === 'link') {
+    const leaveForBin = async () => {
+      try {
+        const destination = material.courseId ? `/courses/${material.courseId}` : '/library';
+        await setMaterialStatus(material.id, 'trashed');
+        if (stillHere.current) navigate(destination, { replace: true });
+      } catch (error) {
+        setFailure(`The link wasn't moved. ${(error as Error).message}`);
+      }
+    };
+    return (
+      <div className="page viewer">
+        <Breadcrumbs trail={trailFor(material.name)} />
+        <header className="viewer-head">
+          <div>
+            <h1>{material.name}</h1>
+            <p className="muted">{LINK_CATEGORY_LABEL[material.category]}{siteOf(material.url) && ` · ${siteOf(material.url)}`}</p>
+          </div>
+          <div className="row-actions">
+            <a className="button" href={material.url} target="_blank" rel="noopener noreferrer">Open in a new tab</a>
+            <button className="text-button danger-text" onClick={() => void leaveForBin()}>Move to bin</button>
+          </div>
+        </header>
+        {failure && <p className="error" role="alert">{failure}</p>}
+        <p className="notice" data-testid="link-notice">
+          This is a saved address, not a copy of the page. Study Forge has not downloaded or imported anything behind
+          it, a site that needs your login will still ask for it, and removing this link never changes or deletes the
+          original.
+        </p>
+        <p className="link-address"><a href={material.url} target="_blank" rel="noopener noreferrer">{material.url}</a></p>
+        <Filing material={material} />
+        <section className="file-notes" aria-labelledby="file-notes-heading">
+          <h2 id="file-notes-heading">Notes on this link</h2>
+          <NewNoteButton courseId={material.courseId} topicId={material.topicId} materialId={material.id} />
+          {notes && notes.length > 0 && <NoteList notes={notes} />}
+        </section>
+      </div>
+    );
+  }
+
   const kind = kindOf(material);
   const fallback = (reason: string) => (
     <div className="notice" data-testid="viewer-fallback">
@@ -160,11 +205,7 @@ export default function ViewerPage() {
 
   return (
     <div className="page viewer">
-      <Breadcrumbs
-        trail={owner
-          ? [{ label: 'Courses', to: '/courses' }, { label: owner.name, to: `/courses/${owner.id}` }, { label: material.name }]
-          : [{ label: 'Library', to: '/library' }, { label: material.name }]}
-      />
+      <Breadcrumbs trail={trailFor(material.name)} />
       <header className="viewer-head">
         <div>
           <h1>{material.name}</h1>

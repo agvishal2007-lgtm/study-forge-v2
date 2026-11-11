@@ -947,3 +947,9 @@ h1 + .muted, h1 + .dash-lead { margin-top: .5rem; }
 .stack-form { display: grid; gap: .6rem; max-width: 26rem; margin: .5rem 0 1rem; }
 .topic-group { margin-top: 1rem; }
 .topic-heading { margin: 1rem 0 .5rem; font-size: 1.05rem; color: var(--muted); text-transform: none; }
+
+/* Saved links. */
+.link-adder { margin: .5rem 0 1rem; }
+.link-adder summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+.save-link { display: grid; gap: .6rem; max-width: 30rem; margin-top: .75rem; }
+.link-address { word-break: break-all; }

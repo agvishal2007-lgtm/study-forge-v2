@@ -50,7 +50,7 @@ async function open(init = NO_PICKER, keepProfile) {
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto(URL_BASE);
 }
-const nav = (name) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
+const nav = (name) => page.getByRole('navigation', { name: name === 'Settings' ? 'Account' : 'Main' }).getByRole('link', { name, exact: true }).click();
 const clearPanel = async () => {
   const clear = page.getByRole('button', { name: 'Clear finished' });
   if (await clear.count()) await clear.click();
@@ -111,7 +111,7 @@ before(async () => {
 
 after(async () => {
   await context?.close().catch(() => undefined);
-  if (server) process.kill(-server.pid);
+  try { if (server) process.kill(-server.pid); } catch { /* already stopped */ }
   fs.rmSync(work, { recursive: true, force: true });
 });
 

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AddFiles } from '../components/AddFiles';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { MaterialList } from '../components/MaterialList';
+import { SaveLinkForm } from '../components/SaveLinkForm';
 import { NewNoteButton, NoteList } from '../components/NoteList';
 import { listNotes } from '../data/notes';
 import { useStillHere } from '../components/useStillHere';
@@ -103,6 +104,10 @@ export function CourseDetailPage() {
       <section aria-labelledby="course-files">
         <h2 id="course-files">Files</h2>
         <AddFiles courseId={course.id} />
+        <details className="link-adder">
+          <summary>Save a link for this course</summary>
+          <SaveLinkForm courseId={course.id} />
+        </details>
         <p><Link to={`/record?course=${course.id}`}>Record a lecture for this course</Link></p>
         <p><Link to={`/study?course=${course.id}`}>Study this course</Link></p>
         <p><Link to={`/planner?course=${course.id}`}>Assignments and exams for this course</Link></p>

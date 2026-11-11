@@ -52,7 +52,7 @@ let context;
 let page;
 let work;
 const pageErrors = [];
-const nav = (name) => page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }).click();
+const nav = (name) => page.getByRole('navigation', { name: name === 'Settings' ? 'Account' : 'Main' }).getByRole('link', { name, exact: true }).click();
 const tile = (id) => page.getByTestId(`progress-${id}`).locator('b').innerText();
 
 const readSeconds = async () => page.evaluate(async () => {

@@ -4,6 +4,7 @@ import { getDb, notifyChanged } from './db';
 import { noteLabel } from './notes';
 import { listUnfinished } from './recordings';
 import { findByHash, getStorageStatus, hashFile, storeMaterial } from './store';
+import { LINK_CATEGORIES, type LinkCategory } from './linkRules';
 import {
   CALENDAR_KINDS, PLAN_PRIORITIES, type CalendarEvent, type StudyDay, type StudyTime, type Transcript, OLD_YELLOW, PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, SPINE_COLORS, type PlannerItem, type ExamResult, type ExamItem, type PracticeAttempt, type PracticeQuestion, type PracticeSet, CONFIDENCE_LEVELS, PRACTICE_KINDS, type CardProgress, type Deck, type Flashcard, CARD_RATINGS,
   type AnswerRecord, type Checkpoint, type CheckpointProgress, type Course, type ExplanationRecord, type GuidedQuestion,
@@ -155,7 +156,13 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
   const pathFor = uniquePaths();
   const missing: string[] = [];
   const included: { material: BackupManifest['materials'][number]; blob: Blob }[] = [];
+  const savedLinks: BackupManifest['materials'] = [];
   for (const material of materials) {
+    if (material.kind === 'link') {
+      // A saved link has no bytes to put in the zip, but the link itself is still backed up.
+      savedLinks.push({ ...material, path: '' });
+      continue;
+    }
     const blob = await readBlob(material.id);
     if (!blob) {
       missing.push(material.name);
@@ -172,7 +179,7 @@ export async function createBackup(signal: AbortSignal, onProgress: (bytes: numb
     courses,
     topics,
     notes,
-    materials: included.map(({ material }) => material),
+    materials: [...included.map(({ material }) => material), ...savedLinks],
     lessons,
     checkpoints,
     progress,
@@ -271,10 +278,22 @@ function cleanNote(raw: unknown): Note | null {
 
 function cleanMaterial(raw: unknown): BackupManifest['materials'][number] | null {
   if (!isObject(raw) || !isText(raw.id) || !raw.id || !isText(raw.name) || !isText(raw.path) || !isText(raw.mimeType)) return null;
-  if (!isText(raw.hash) || !/^[0-9a-f]{64}$/.test(raw.hash) || !isTime(raw.size) || !isTime(raw.createdAt)) return null;
+  const kind = raw.kind === 'link' ? 'link' : 'upload';
+  // A link has no bytes, so it has no checksum and no size; an upload must have both.
+  if (kind === 'upload' && (!isText(raw.hash) || !/^[0-9a-f]{64}$/.test(raw.hash) || !isTime(raw.size))) return null;
+  if (kind === 'link' && (!isText(raw.url) || !/^https?:\/\//i.test(raw.url))) return null;
+  if (!isTime(raw.createdAt)) return null;
   if (!isOptionalId(raw.courseId) || !isOptionalId(raw.topicId)) return null;
   const status = raw.status === 'archived' || raw.status === 'trashed' ? raw.status : 'active';
-  return { id: raw.id, name: raw.name, path: raw.path, mimeType: raw.mimeType, hash: raw.hash, size: raw.size, courseId: raw.courseId, topicId: raw.topicId, status, statusAt: isTime(raw.statusAt) ? raw.statusAt : raw.createdAt, createdAt: raw.createdAt };
+  const category = LINK_CATEGORIES.includes(raw.category as LinkCategory) ? (raw.category as LinkCategory) : 'other';
+  return {
+    id: raw.id, name: raw.name, path: raw.path, mimeType: raw.mimeType,
+    hash: kind === 'link' ? '' : (raw.hash as string),
+    size: kind === 'link' ? 0 : (raw.size as number),
+    courseId: raw.courseId, topicId: raw.topicId,
+    kind, url: kind === 'link' ? (raw.url as string) : '', category,
+    status, statusAt: isTime(raw.statusAt) ? raw.statusAt : raw.createdAt, createdAt: raw.createdAt,
+  };
 }
 
 const isTextList = (value: unknown): value is string[] => Array.isArray(value) && value.every(isText);
@@ -571,6 +590,7 @@ export async function openBackup(file: File): Promise<OpenedBackup> {
   let neededBytes = 0;
   let newFiles = 0;
   for (const material of manifest.materials) {
+    if (material.kind === 'link') continue; // A saved link takes no space.
     if (!(await findByHash(material.hash))) {
       neededBytes += material.size;
       newFiles += 1;
@@ -642,6 +662,23 @@ export async function restoreBackup(
   for (const material of manifest.materials) {
     if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
     const finished = done + material.size;
+    if (material.kind === 'link') {
+      // A link has no bytes: restore the record itself, and never match it to a file by checksum.
+      const already = await db.getKey('materials', material.id);
+      if (already) {
+        fileIds.set(material.id, material.id);
+        report.filesAlreadyHere += 1;
+      } else {
+        const courseId = courseOrNull(material.courseId);
+        const { path: _path, ...record } = material;
+        await db.put('materials', { ...record, courseId, topicId: topicOrNull(material.topicId, courseId) });
+        fileIds.set(material.id, material.id);
+        report.filesAdded += 1;
+      }
+      done = finished;
+      onProgress(done, total);
+      continue;
+    }
     const existing = await findByHash(material.hash);
     if (existing) {
       fileIds.set(material.id, existing.id);
