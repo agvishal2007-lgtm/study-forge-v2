@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState, type SyntheticEvent } from
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { NewNoteButton, NoteList } from '../components/NoteList';
 import { NoteEditor } from './NoteEditorPage';
+import { RecordingExport } from '../components/RecordingExport';
 import { listNotes } from '../data/notes';
 import { useStillHere } from '../components/useStillHere';
 import { readBlob } from '../data/blobs';
@@ -312,6 +313,7 @@ export default function ViewerPage() {
         </div>
       </header>
       <Filing material={material} />
+      {blob && (kind === 'audio' || kind === 'video') && <RecordingExport blob={blob} name={material.name} isVideo={kind === 'video'} />}
       {beside && (
         <div className="pane-switch" role="group" aria-label="Show">
           <button type="button" className="button" aria-pressed={pane === 'file'} onClick={() => setPane('file')}>File</button>
