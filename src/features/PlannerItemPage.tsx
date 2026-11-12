@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { LinkedFiles } from '../components/RelatedWork';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useStillHere } from '../components/useStillHere';
@@ -184,6 +185,7 @@ export function PlannerItemPage() {
           <Link to="/planner">Cancel</Link>
         </div>
       </form>
+      {!isNew && <LinkedFiles itemId={id} />}
       {confirmDelete && (
         <ConfirmDialog
           title={`Delete ${title || 'this item'}?`}

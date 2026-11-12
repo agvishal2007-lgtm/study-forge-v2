@@ -29,6 +29,8 @@ interface Draft {
   courseId: string | null;
   topicId: string | null;
   materialId: string | null;
+  /** The page of the file this note is about, shown but not edited here. */
+  page?: number | null;
 }
 
 /** Where a brand-new note is filed. An existing note keeps wherever it already is. */
@@ -114,7 +116,7 @@ export function NoteEditor({ id, start, panel = false, onDeleted }: {
     void getNote(id).then((note) => {
       if (!active) return;
       const loaded: Draft = note
-        ? { title: note.title, body: note.body, courseId: note.courseId, topicId: note.topicId, materialId: note.materialId }
+        ? { title: note.title, body: note.body, courseId: note.courseId, topicId: note.topicId, materialId: note.materialId, page: note.page ?? null }
         : { title: '', body: '', ...start };
       version.current = note?.updatedAt ?? null;
       latest.current = loaded;
@@ -234,7 +236,8 @@ export function NoteEditor({ id, start, panel = false, onDeleted }: {
           </label>
         )}
       </div>
-      {file && !panel && <p>About <Link to={`/files/${file.id}`}>{file.name}</Link></p>}
+      {file && !panel && <p>About <Link to={`/files/${file.id}`}>{file.name}</Link>{draft.page ? `, page ${draft.page}` : ''}</p>}
+      {panel && draft.page ? <p><button type="button" className="button" onClick={() => window.dispatchEvent(new CustomEvent('study-forge-goto-page', { detail: draft.page }))}>Go to page {draft.page}</button></p> : null}
 
       <div className="note-mode" role="group" aria-label="View">
         <button type="button" className="button" aria-pressed={!previewing} onClick={() => setPreviewing(false)}>Write</button>

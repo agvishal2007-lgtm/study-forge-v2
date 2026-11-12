@@ -9,6 +9,8 @@ import { RecordingExport } from '../components/RecordingExport';
 import { listNotes } from '../data/notes';
 import { useStillHere } from '../components/useStillHere';
 import { readBlob } from '../data/blobs';
+import { addPageNote } from '../data/reading';
+import { RelatedAssignments } from '../components/RelatedWork';
 import { formatBytes, KIND_LABEL, kindOf, olderOfficeAdvice } from '../data/format';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { LINK_CATEGORY_LABEL, siteOf } from '../data/linkRules';
@@ -181,7 +183,7 @@ function TopicName({ courseId, topicId }: { courseId: string; topicId: string | 
 export default function ViewerPage() {
   const { id = '' } = useParams();
   const [params, setParams] = useSearchParams();
-  const startPage = Number(params.get('page')) || 1;
+  const startPage = Number(params.get('page')) || null;
   // The note open beside the file. It lives in the address, so reloading keeps the same pair open.
   const beside = params.get('note');
   // On a phone the two can't both fit, so one shows at a time. Both stay open underneath, so
@@ -299,7 +301,7 @@ export default function ViewerPage() {
   else if (!blob && getActiveAccount() && material) body = <FromDrive material={material} email={getActiveAccount()?.email} />;
   else if (!blob) body = <p className="error" role="alert">This file is no longer on this device. The browser may have cleared it, or it was deleted in another tab.</p>;
   else if (viewFailure) body = fallback(`Study Forge couldn't display this ${KIND_LABEL[kind].toLowerCase()} file, but the original is safe. You can download it and open it in another app.`);
-  else if (kind === 'pdf') body = <Suspense fallback={<p className="muted">Opening PDF…</p>}><PdfViewer key={startPage} initialPage={startPage} blob={blob} onFail={fail} /></Suspense>;
+  else if (kind === 'pdf') body = <Suspense fallback={<p className="muted">Opening PDF…</p>}><PdfViewer key={startPage ?? 'saved'} initialPage={startPage} blob={blob} onFail={fail} materialId={material.id} onNotePage={(page) => { void addPageNote({ materialId: material.id, courseId: material.courseId, topicId: material.topicId }, page).then((note) => openBeside(note.id)); }} /></Suspense>;
   else if (kind === 'word' || kind === 'sheet' || kind === 'slides') body = <Suspense fallback={<p className="muted">Opening file…</p>}><OfficeViewer kind={kind} blob={blob} onFail={fail} /></Suspense>;
   else if (kind === 'opendoc' || kind === 'ebook') body = <Suspense fallback={<p className="muted">Opening file…</p>}><OpenDocViewer blob={blob} name={material.name} materialId={material.id} onFail={fail} /></Suspense>;
   else if (kind === 'code') body = <TextView blob={blob} />;
@@ -392,6 +394,7 @@ export default function ViewerPage() {
         </div>
         {notes && notes.length > 0 && <NoteList notes={notes} />}
       </section>
+      <RelatedAssignments materialId={material.id} courseId={material.courseId} />
     </div>
   );
 }

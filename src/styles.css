@@ -1678,3 +1678,17 @@ main :where(*) { scroll-margin-top: 14px; }
 .success-note { font-weight: 600; }
 .library-views { margin: .25rem 0 .5rem; }
 .shelf-group h2 { font-size: 1.1rem; margin: 1.25rem 0 .4rem; }
+
+/* Textbook navigation */
+.goto-page { display: inline-flex; gap: .3rem; align-items: center; }
+.goto-page input { width: 4.5rem; }
+.book-tools { display: grid; gap: .5rem; margin: .5rem 0; }
+.book-section { margin: 0; }
+.bookmark-label { min-width: 12rem; flex: 1; }
+.book-panel { border: 1px solid var(--line); border-radius: 12px; padding: .4rem .75rem; }
+.book-panel summary { cursor: pointer; font-weight: 600; min-height: 32px; display: flex; align-items: center; }
+.book-outline { list-style: none; padding: 0; margin: .25rem 0; max-height: 16rem; overflow-y: auto; }
+.book-outline .text-button { text-align: left; min-height: 32px; }
+.book-outline .current { font-weight: 700; }
+.bookmark-row { display: flex; justify-content: space-between; gap: .5rem; align-items: center; padding: .15rem 0; }
+.related-work { margin-top: 1.5rem; }

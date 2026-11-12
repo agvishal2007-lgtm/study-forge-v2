@@ -31,7 +31,8 @@ export async function saveNote(
     throw new NoteConflict(current);
   }
   const updatedAt = Math.max(Date.now(), (current?.updatedAt ?? 0) + 1);
-  await tx.store.put({ ...note, createdAt: current?.createdAt ?? note.createdAt ?? updatedAt, updatedAt });
+  // Anything the editor doesn't show (a page or a moment it's tied to) is kept as it was.
+  await tx.store.put({ ...current, ...note, createdAt: current?.createdAt ?? note.createdAt ?? updatedAt, updatedAt });
   await tx.done;
   notifyChanged();
   return updatedAt;

@@ -92,6 +92,8 @@ export const ACADEMY: AcademyTopic[] = [
       'Tick several files to pin, move, put away or bin them together.',
       'Personal library: tick files or links worth keeping beyond one course (research papers, career information, writing guides, references), type a shelf name, and press Put on shelf. The Personal library tab shows your shelves, plus anything that isn’t in a course yet.',
       'Download gives you the original, byte for byte.',
+      'Textbooks and other PDFs: Contents lists the chapters and sections (when the PDF has them), Go to page jumps anywhere, and Bookmark page keeps your place with an optional name. Reopening a PDF picks up on the page you stopped at. Note this page writes a note tied to that page, with Go to page to jump back.',
+      'Related assignments, under the file, links it to work in your Planner. The assignment then lists it under Linked files and readings.',
     ],
     result: 'A file only says Saved once every byte is safely on this device and has been checked. If a save fails or you cancel, Try again picks the same file.',
     limits: [
@@ -101,6 +103,7 @@ export const ACADEMY: AcademyTopic[] = [
       'A file over 2 GB was tested and saved correctly on a computer. How much fits depends on the space your browser allows. Settings shows it under Storage on this device.',
       'Without Google Drive sync, files live only on this device. Make backups.',
       'Nothing in a file is ever run: no macros or scripts.',
+      'Contents only appear for PDFs that include a table of contents. Scanned books often don’t, so use bookmarks there. Bookmarks and reading position are for PDFs.',
     ],
     connections: 'Shelving never copies or moves a file: it stays in its courses too, and Undo takes it off again. Files can be attached to topics and assignments, searched (including words inside PDFs, Office files and scans), synced through your Google Drive, and included in backups.',
   },

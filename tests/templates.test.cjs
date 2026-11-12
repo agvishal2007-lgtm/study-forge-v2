@@ -216,3 +216,100 @@ test('personal library shelves group things beyond one course, without copying o
   await personal.getByRole('heading', { name: 'Not in a course or on a shelf (1)' }).waitFor();
   assert.deepEqual(pageErrors, []);
 });
+
+/** A small textbook: 6 pages and a table of contents with two chapters and a section. */
+function makeBook() {
+  const pages = 6;
+  const objects = [];
+  // 1 catalog, 2 pages, then page/content pairs, then the outline.
+  const pageRef = (i) => 3 + i * 2;
+  const outlineRoot = 3 + pages * 2;
+  objects[0] = `<< /Type /Catalog /Pages 2 0 R /Outlines ${outlineRoot} 0 R /PageMode /UseOutlines >>`;
+  objects[1] = `<< /Type /Pages /Kids [${Array.from({ length: pages }, (_, i) => `${pageRef(i)} 0 R`).join(' ')}] /Count ${pages} >>`;
+  for (let i = 0; i < pages; i++) {
+    const stream = `BT /F1 24 Tf 72 700 Td (Textbook page ${i + 1}) Tj ET`;
+    objects[pageRef(i) - 1] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents ${pageRef(i) + 1} 0 R /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> >>`;
+    objects[pageRef(i)] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+  }
+  const ch1 = outlineRoot + 1; const ch2 = outlineRoot + 2; const sec = outlineRoot + 3;
+  objects[outlineRoot - 1] = `<< /Type /Outlines /First ${ch1} 0 R /Last ${ch2} 0 R /Count 3 >>`;
+  objects[ch1 - 1] = `<< /Title (Chapter 1: Assets) /Parent ${outlineRoot} 0 R /Next ${ch2} 0 R /First ${sec} 0 R /Last ${sec} 0 R /Count 1 /Dest [${pageRef(0)} 0 R /Fit] >>`;
+  objects[ch2 - 1] = `<< /Title (Chapter 2: Liabilities) /Parent ${outlineRoot} 0 R /Prev ${ch1} 0 R /Dest [${pageRef(3)} 0 R /Fit] >>`;
+  objects[sec - 1] = `<< /Title (1.2 Current assets) /Parent ${ch1} 0 R /Dest [${pageRef(1)} 0 R /Fit] >>`;
+  let out = '%PDF-1.4\n';
+  const offsets = [];
+  objects.forEach((body, i) => { offsets.push(out.length); out += `${i + 1} 0 obj\n${body}\nendobj\n`; });
+  const xref = out.length;
+  out += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  offsets.forEach((o) => { out += `${String(o).padStart(10, '0')} 00000 n \n`; });
+  out += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(out, 'latin1');
+}
+
+test('reading rules: bookmarks, starting page and sections', async () => {
+  const { cleanReading, addBookmark, removeBookmark, startingPage, flattenOutline, currentSection } = await import('../src/data/readingRules.ts');
+  let r = cleanReading({ page: 4, bookmarks: [{ page: 2, label: 'x' }, { page: -1 }, { page: 2, label: 'y' }] });
+  assert.deepEqual(r.bookmarks.map((b) => [b.page, b.label]), [[2, 'y']], 'bad and repeated bookmarks are cleaned');
+  r = addBookmark(r, 5, '  Ratios ', 9);
+  r = addBookmark(r, 1, '', 9);
+  assert.deepEqual(r.bookmarks.map((b) => b.page), [1, 2, 5]);
+  assert.equal(r.bookmarks[2].label, 'Ratios');
+  assert.deepEqual(removeBookmark(r, 2).bookmarks.map((b) => b.page), [1, 5]);
+  assert.equal(startingPage(null, r, 10), 4, 'opens where they stopped');
+  assert.equal(startingPage(7, r, 10), 7, 'a page asked for wins');
+  assert.equal(startingPage(null, cleanReading(null), 10), 1);
+  assert.equal(startingPage(null, { ...r, page: 40 }, 10), 10, 'never past the end');
+  const outline = flattenOutline([{ title: 'Ch 1', page: 1, items: [{ title: 'Sec', page: 2, items: [] }] }, { title: 'Ch 2', page: 4, items: [] }]);
+  assert.deepEqual(outline.map((e) => [e.title, e.depth]), [['Ch 1', 0], ['Sec', 1], ['Ch 2', 0]]);
+  assert.equal(currentSection(outline, 3).title, 'Sec');
+  assert.equal(currentSection(outline, 5).title, 'Ch 2');
+});
+
+test('a textbook PDF has contents, go to page, bookmarks, the page you stopped on, page notes and related work', async () => {
+  const book = path.join(work, 'Accounting textbook.pdf');
+  fs.writeFileSync(book, makeBook());
+  await page.goto(`${URL_BASE}#/planner/new`);
+  await page.getByLabel('Name', { exact: true }).fill('Read chapter 2');
+  await page.getByRole('button', { name: 'Save item' }).click();
+  await page.waitForURL(/#\/planner$/);
+  await page.goto(`${URL_BASE}#/library`);
+  await page.locator('input[type=file]').first().setInputFiles(book);
+  await page.getByRole('link', { name: 'Accounting textbook.pdf' }).click();
+  const tools = page.getByTestId('book-tools');
+  await tools.getByTestId('book-outline').waitFor();
+  assert.deepEqual(await tools.getByTestId('book-outline').getByRole('button').allInnerTexts(), ['Chapter 1: Assets p. 1', '1.2 Current assets p. 2', 'Chapter 2: Liabilities p. 4']);
+  await tools.getByRole('button', { name: /Chapter 2: Liabilities/ }).click();
+  await page.getByText('Page 4 of 6').waitFor();
+  assert.equal(await tools.getByTestId('book-section').innerText(), 'In: Chapter 2: Liabilities');
+  await tools.getByLabel('Bookmark name').fill('Bonds');
+  await tools.getByRole('button', { name: 'Bookmark page 4' }).click();
+  await tools.getByTestId('bookmarks').getByText('Page 4: Bonds').waitFor();
+  await page.getByLabel('Go to page').fill('6');
+  await page.getByRole('button', { name: 'Go', exact: true }).click();
+  await page.getByText('Page 6 of 6').waitFor();
+  await tools.getByTestId('bookmarks').getByRole('button', { name: 'Page 4: Bonds' }).click({ timeout: 5000 }).catch(async (e) => { await page.screenshot({ path: '/tmp/claude-0/book-fail.png', fullPage: true }); console.log(await tools.innerHTML()); throw e; });
+  await page.getByText('Page 4 of 6').waitFor();
+  // A note for this page opens beside the file and can jump back to it.
+  await tools.getByRole('button', { name: 'Note this page' }).click();
+  const beside = page.getByRole('complementary', { name: 'Notes beside this file' });
+  await beside.getByRole('button', { name: 'Go to page 4' }).waitFor();
+  await page.getByRole('button', { name: 'Previous page' }).click();
+  await page.getByText('Page 3 of 6').waitFor();
+  await beside.getByRole('button', { name: 'Go to page 4' }).click();
+  await page.getByText('Page 4 of 6').waitFor();
+  // Linking it to an assignment never changes the assignment's dates.
+  const related = page.getByTestId('related-assignments');
+  await related.getByLabel('Link to an assignment').selectOption({ label: 'Read chapter 2' });
+  await related.getByRole('button', { name: 'Link', exact: true }).click();
+  await related.getByRole('link', { name: 'Read chapter 2' }).waitFor();
+  // Leaving and coming back opens on the page they stopped on.
+  await page.waitForTimeout(1500);
+  const fileUrl = page.url();
+  await page.goto(`${URL_BASE}#/library`);
+  await page.goto(fileUrl);
+  await page.getByTestId('resumed').getByText('Picked up where you left off, on page 4.').waitFor();
+  await page.getByText('Page 4 of 6').waitFor();
+  await page.getByTestId('related-assignments').getByRole('link', { name: 'Read chapter 2' }).click();
+  await page.getByTestId('linked-files').getByRole('link', { name: 'Accounting textbook.pdf' }).waitFor();
+  assert.deepEqual(pageErrors, []);
+});

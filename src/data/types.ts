@@ -108,6 +108,8 @@ export interface Note {
   /** While the lecture is still being recorded, the recording it belongs to. Replaced by
    *  materialId once the recording is saved. */
   recordingId?: string | null;
+  /** A note about one page of a PDF: the page number. */
+  page?: number | null;
 }
 
 /** A recording in progress, or one a crash left unfinished. Its audio is saved in small pieces. */
@@ -286,6 +288,8 @@ export interface PlannerItem {
   updatedAt: number;
   /** Set when this came from a connected calendar, so getting the latest updates it instead of copying it. */
   sourceId?: string;
+  /** Files and links the student linked to this work, such as the reading it covers. */
+  materialIds?: string[];
 }
 
 /* Calendar */
