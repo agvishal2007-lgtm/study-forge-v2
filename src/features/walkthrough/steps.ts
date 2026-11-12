@@ -78,7 +78,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/library',
     target: ['[data-tour="add-files"]'],
     title: 'Add your files',
-    body: 'Add slides, readings, and other files here. Choose them or drag them in. If you add the same file twice, Study Forge notices. Their names and places sync when you\'re signed in, and the files themselves can sync through your Google Drive. You can add them from your device or Google Drive.',
+    body: 'Add slides, readings, and other files here. Choose them or drag them in, even big ones: files over 2 GB have been tested. A progress bar shows each one, and it only says Saved once every byte is safely on this device. If a save fails or you cancel it, Try again picks the same file. If you add the same file twice, Study Forge notices. Their names and places sync when you\'re signed in, and the files themselves can sync through your Google Drive. You can add them from your device or Google Drive.',
   },
   {
     id: 'viewer',
@@ -194,7 +194,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/settings',
     target: ['[data-testid=drive-backup]', '[data-tour="sync-files"]'],
     title: 'Files on all your devices',
-    body: 'Signed in, you can tap Sync files with my Google Drive once on each device. Your files and recordings then go to a Study Forge folder in your own Drive, and a file counts as synced only after Drive confirms it arrived intact. On another device, open the file and tap Get it from Google Drive. Study Forge only sees the files it puts there.',
+    body: 'Signed in, you can tap Sync files with my Google Drive once on each device. Your files and recordings then go to a Study Forge folder in your own Drive, and a file counts as synced only after Drive confirms it arrived intact. On another device, open the file and tap Get it from Google Drive. Study Forge only sees the files it puts there. If an upload is cut off, it carries on from where it stopped next time, instead of starting over.',
   },
   {
     id: 'offline',

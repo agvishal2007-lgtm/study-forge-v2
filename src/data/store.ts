@@ -1,5 +1,5 @@
 import { createSHA256 } from 'hash-wasm';
-import { deleteBlob, removeLeftovers, saveBlob, whileSaving } from './blobs';
+import { deleteBlob, readBlob, removeLeftovers, saveBlob, whileSaving } from './blobs';
 import { getDb, notifyChanged } from './db';
 import { recordUndo, snapshotOf, type UndoStore } from './undo';
 import { byPlace, reordered } from './courseRules';
@@ -212,6 +212,12 @@ export async function storeMaterial(
   // The file and its record count as one save, so cleanup can't run between them.
   await whileSaving(async () => {
     await saveBlob(material.id, file, signal, onProgress);
+    // Saved only once the stored copy is really there, every byte of it.
+    const stored = await readBlob(material.id);
+    if (!stored || stored.size !== file.size) {
+      await deleteBlob(material.id).catch(() => undefined);
+      throw new Error(`The copy on this device came out ${stored ? `${stored.size.toLocaleString()} bytes instead of ${file.size.toLocaleString()}` : 'missing'}, so it was removed rather than kept half-saved.`);
+    }
     try {
       await (await getDb()).put('materials', material);
     } catch (error) {

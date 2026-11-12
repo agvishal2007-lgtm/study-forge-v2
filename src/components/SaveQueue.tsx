@@ -27,6 +27,7 @@ interface Queue {
   items: SaveItem[];
   addFiles: (files: File[], target: Target) => void;
   cancel: (key: string) => void;
+  retry: (key: string) => void;
   dismiss: (key: string) => void;
   moveExisting: (key: string) => Promise<void>;
   clearFinished: () => void;
@@ -61,6 +62,8 @@ function throttled(report: (bytes: number) => void) {
 export function SaveProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<SaveItem[]>([]);
   const controllers = useRef(new Map<string, AbortController>());
+  // The chosen files, kept until each is saved, so a failed or cancelled one can be tried again.
+  const chosen = useRef(new Map<string, File>());
   const chain = useRef<Promise<void>>(Promise.resolve());
 
   const update = useCallback((key: string, patch: Partial<SaveItem>) => {
@@ -89,6 +92,7 @@ export function SaveProvider({ children }: { children: ReactNode }) {
       update(key, { phase: 'saving', bytes: 0 });
       const material = await storeMaterial(file, hash, target, signal, throttled((bytes) => update(key, { bytes })));
       update(key, { phase: 'saved', bytes: file.size, material });
+      chosen.current.delete(key);
       void requestKeepFiles();
     } catch (error) {
       const cancelled = error instanceof SaveCancelled || (error instanceof DOMException && error.name === 'AbortError');
@@ -105,6 +109,7 @@ export function SaveProvider({ children }: { children: ReactNode }) {
         const key = crypto.randomUUID();
         const controller = new AbortController();
         controllers.current.set(key, controller);
+        chosen.current.set(key, file);
         setItems((current) => [...current, { key, name: file.name, size: file.size, phase: 'waiting', bytes: 0, target }]);
         chain.current = chain.current.then(() => process(key, file, target, controller));
       }
@@ -114,7 +119,17 @@ export function SaveProvider({ children }: { children: ReactNode }) {
       // A running save reports Cancelled itself, once it has really stopped and cleaned up.
       setItems((current) => current.map((item) => (item.key === key && item.phase === 'waiting' ? { ...item, phase: 'cancelled' } : item)));
     },
+    retry(key) {
+      const file = chosen.current.get(key);
+      const item = items.find((candidate) => candidate.key === key);
+      if (!file || !item) return;
+      const controller = new AbortController();
+      controllers.current.set(key, controller);
+      update(key, { phase: 'waiting', bytes: 0, message: undefined });
+      chain.current = chain.current.then(() => process(key, file, item.target, controller));
+    },
     dismiss(key) {
+      chosen.current.delete(key);
       setItems((current) => current.filter((item) => item.key !== key));
     },
     async moveExisting(key) {
@@ -128,6 +143,7 @@ export function SaveProvider({ children }: { children: ReactNode }) {
       }
     },
     clearFinished() {
+      for (const item of items) if (item.phase === 'saved' || item.phase === 'cancelled') chosen.current.delete(item.key);
       setItems((current) => current.filter((item) => item.phase !== 'saved' && item.phase !== 'cancelled'));
     },
   }), [items, process, update]);
@@ -147,7 +163,7 @@ const PHASE_LABEL: Partial<Record<Phase, string>> = {
 export const FINISHED_CLEAR_MS = 12_000;
 
 export function SavePanel() {
-  const { items, cancel, dismiss, moveExisting, clearFinished } = useSaveQueue();
+  const { items, cancel, retry, dismiss, moveExisting, clearFinished } = useSaveQueue();
   const [held, setHeld] = useState(false);
   const allFinished = items.length > 0 && items.every((item) => item.phase === 'saved' || item.phase === 'cancelled');
   // Once everything is saved, the card clears itself so it stops covering buttons. It waits while
@@ -198,7 +214,10 @@ export function SavePanel() {
               ) : item.phase === 'failed' ? (
                 <>
                   <p className="error" role="alert">{item.message}</p>
-                  <button className="text-button" onClick={() => dismiss(item.key)}>Dismiss</button>
+                  <span className="row-actions">
+                    <button className="text-button" onClick={() => retry(item.key)}>Try again</button>
+                    <button className="text-button" onClick={() => dismiss(item.key)}>Dismiss</button>
+                  </span>
                 </>
               ) : (
                 <>
@@ -209,6 +228,9 @@ export function SavePanel() {
                     )}
                     {(active || item.phase === 'waiting') && (
                       <button className="text-button" onClick={() => cancel(item.key)}>Cancel</button>
+                    )}
+                    {item.phase === 'cancelled' && (
+                      <button className="text-button" onClick={() => retry(item.key)}>Try again</button>
                     )}
                   </div>
                   {active && (

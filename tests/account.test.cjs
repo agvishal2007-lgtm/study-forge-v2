@@ -962,6 +962,25 @@ test('files and recordings sync through the student\'s own Google Drive, checked
   assert.equal(await phone.getByTestId('file-in-drive').count(), 0);
 });
 
+test('an upload cut off part-way picks up where it stopped instead of starting again', async () => {
+  const laptop = await device('laptop');
+  const big = path.join(work, 'long-lecture.webm');
+  fs.writeFileSync(big, Buffer.alloc(20 * 1024 * 1024, 7));
+  const before = fake.state.drive.received;
+  fake.state.drive.cutAfterPieces = 1; // the first 8 MB arrive, then the connection drops
+  await nav(laptop, 'Library');
+  await laptop.getByTestId('file-input').first().setInputFiles(big);
+  await laptop.locator('.save-panel li[data-phase=saved]').waitFor({ timeout: 60000 });
+  await nav(laptop, 'Settings');
+  await laptop.locator('[data-testid=drive-status][data-phase=offline], [data-testid=drive-status][data-phase=error]').waitFor({ timeout: 30000 });
+  assert.equal(fake.state.drive.contents('long-lecture.webm'), null, 'nothing half-finished counts as a file');
+  await saved(laptop); // the next sync tries the files again
+  await laptop.locator('[data-testid=drive-status][data-phase=idle]').waitFor({ timeout: 60000 });
+  assert.deepEqual(fake.state.drive.contents('long-lecture.webm'), fs.readFileSync(big), 'Drive has the exact file');
+  const sent = fake.state.drive.received - before;
+  assert.ok(sent < 1.5 * 20 * 1024 * 1024, `resumed rather than restarted: ${sent} bytes sent for a 20 MB file`);
+});
+
 test('a copy that arrives damaged in Drive is never marked as synced, and a good retry is', async () => {
   const laptop = await device('laptop');
   const small = path.join(work, 'handout.txt');
@@ -974,13 +993,13 @@ test('a copy that arrives damaged in Drive is never marked as synced, and a good
   const status = laptop.getByTestId('drive-status');
   await laptop.locator('[data-testid=drive-status][data-phase=error]').waitFor({ timeout: 30000 });
   await laptop.getByText(/handout\.txt didn't arrive in Google Drive intact/).waitFor();
-  await status.getByText(/^1 of 2 files/).waitFor();
+  await status.getByText(/^2 of 3 files/).waitFor();
   await saved(laptop);
   const record = () => fake.state.items('alice-uid').map((item) => JSON.parse(item.json)).find((item) => item.name === 'handout.txt');
   assert.equal(record()?.driveFileId, undefined, 'not marked as synced');
   fake.state.drive.mode = 'ok';
   await saved(laptop); // A successful sync tries the files again.
-  await status.getByText(/^2 of 2 files are in your Google Drive/).waitFor({ timeout: 30000 });
+  await status.getByText(/^3 of 3 files are in your Google Drive/).waitFor({ timeout: 30000 });
   await saved(laptop);
   assert.ok(record()?.driveFileId);
 });

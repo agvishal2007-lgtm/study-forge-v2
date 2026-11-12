@@ -203,16 +203,36 @@ async function recordingInProgress(): Promise<boolean> {
   return held.some((lock) => lock.name?.startsWith('study-forge-recording-'));
 }
 
-/** Sends one file in pieces, then checks Drive's checksum before trusting the copy. */
+/** Sends one file in pieces, then checks Drive's checksum before trusting the copy. An upload cut
+ *  off part-way (closed tab, lost connection) picks up where Drive says it got to, not from zero. */
 async function upload(material: Material, blob: Blob, parent: string, signal: AbortSignal): Promise<DriveFileInfo> {
-  const start = await call(`${UPLOAD}/files?uploadType=resumable&fields=id,size,sha256Checksum`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': material.mimeType || 'application/octet-stream', 'X-Upload-Content-Length': String(blob.size) },
-    body: JSON.stringify({ name: material.name, parents: [parent], appProperties: { studyForgeId: material.id, sha256: material.hash } }),
-  });
-  const session = start.headers.get('Location');
-  if (!start.ok || !session) throw new DriveError(`Google Drive had a problem starting the upload (${start.status}). It will try again.`);
+  const db = await getDb();
+  const sessionKey = `driveSession-${material.id}`;
+  let session: string | null = null;
   let sent = 0;
+  const saved = (await db.get('meta', sessionKey)) as { url: string; size: number } | undefined;
+  if (saved && saved.size === blob.size) {
+    // Ask Drive how much of the earlier attempt arrived.
+    const status = await call(saved.url, { method: 'PUT', headers: { 'Content-Range': `bytes */${blob.size}` } }).catch(() => null);
+    if (status?.status === 308) {
+      session = saved.url;
+      sent = receivedFrom(status.headers.get('Range'));
+    } else if (status && status.ok) {
+      await db.delete('meta', sessionKey);
+      return (await status.json()) as DriveFileInfo;
+    }
+  }
+  if (!session) {
+    const start = await call(`${UPLOAD}/files?uploadType=resumable&fields=id,size,sha256Checksum`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': material.mimeType || 'application/octet-stream', 'X-Upload-Content-Length': String(blob.size) },
+      body: JSON.stringify({ name: material.name, parents: [parent], appProperties: { studyForgeId: material.id, sha256: material.hash } }),
+    });
+    session = start.headers.get('Location');
+    if (!start.ok || !session) throw new DriveError(`Google Drive had a problem starting the upload (${start.status}). It will try again.`);
+    await db.put('meta', { url: session, size: blob.size }, sessionKey);
+  }
+  setState({ current: { name: material.name, sent, size: blob.size } });
   for (;;) {
     if (signal.aborted) throw new DriveError('Stopped.', 'cancelled');
     const range = nextRange(sent, blob.size);
@@ -222,7 +242,13 @@ async function upload(material: Material, blob: Blob, parent: string, signal: Ab
       setState({ current: { name: material.name, sent, size: blob.size } });
       continue;
     }
+    if (response.status === 404 || response.status === 410) {
+      // Drive forgot the upload (they expire after about a week). Start again cleanly next time.
+      await db.delete('meta', sessionKey);
+      throw new DriveError('Google Drive lost track of an earlier upload, so it will start that file again.');
+    }
     if (!response.ok) throw new DriveError(`Google Drive had a problem during the upload (${response.status}). It will try again.`);
+    await db.delete('meta', sessionKey);
     setState({ current: { name: material.name, sent: blob.size, size: blob.size } });
     let info = (await response.json()) as DriveFileInfo;
     // Drive sometimes adds the checksum a moment later, so ask once more before giving up.

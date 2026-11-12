@@ -11,6 +11,10 @@ function createDrive() {
     /** 'ok', 'corrupt' (stores different bytes than were sent), or 'down'. */
     mode: 'ok',
     pieces: 0,
+    /** Bytes that arrived in upload pieces, to show an interrupted upload resumes instead of restarting. */
+    received: 0,
+    /** When set, the upload breaks off after this many more pieces, as when a connection drops. */
+    cutAfterPieces: null,
     contents: (name) => [...files.values()].find((file) => file.name === name)?.bytes ?? null,
   };
 
@@ -53,7 +57,12 @@ function createDrive() {
     if (session && req.method === 'PUT') {
       const upload = sessions.get(session[1]);
       if (!upload) { json(404, {}); return true; }
+      if (drive.cutAfterPieces !== null && body.length > 0) {
+        if (drive.cutAfterPieces <= 0) { drive.cutAfterPieces = null; json(503, { error: 'backendError' }); return true; }
+        drive.cutAfterPieces -= 1;
+      }
       drive.pieces += 1;
+      drive.received += body.length;
       upload.parts.push(body);
       const have = upload.parts.reduce((sum, part) => sum + part.length, 0);
       if (have < upload.total) {
