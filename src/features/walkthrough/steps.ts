@@ -173,7 +173,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/record',
     target: ['[data-tour="record-source"]', '#content .page'],
     title: 'Record lectures',
-    body: 'Choose In person to record the room with your microphone, or Virtual to record your screen and the lecture\'s sound. Virtual works best in Chrome or Edge on a computer. While it records, a live transcript appears beside it, made on your device about half a minute behind the speaker. Select any words and tap Add note, tap + Note beside a passage, or tap Note this moment, and write while the recording and transcript keep going. Return to live jumps back to the newest words. Afterwards, open the recording and tap a note to hear that exact moment, or tap a passage to see its notes. You can download your notes with their timestamps, or print them as a PDF.',
+    body: 'Choose In person to record the room with your microphone, or Virtual to record your screen and the lecture\'s sound. Virtual works best in a Chrome-based browser on a computer, such as Chrome, Edge, Arc or Brave. While it records, a live transcript appears beside it, made on your device about half a minute behind the speaker. Select any words and tap Add note, tap + Note beside a passage, or tap Note this moment, and write while the recording and transcript keep going. Return to live jumps back to the newest words. Afterwards, open the recording and tap a note to hear that exact moment, or tap a passage to see its notes. You can download your notes with their timestamps, or print them as a PDF.',
   },
   {
     id: 'record-safe',
@@ -215,7 +215,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/settings',
     target: ['[data-testid=permissions]'],
     title: 'Permissions and notifications',
-    body: 'This shows what your browser allows: microphone, camera and notifications. Study Forge asks only when you start something that needs one, and never nags. To turn on notifications, tap the Notifications status itself. Your browser asks, and the status changes to Allowed. If it says Blocked, tapping it shows how to unblock it in your browser. On iPhone and iPad, notifications only work after you add Study Forge to your Home Screen (in Safari: Share, then Add to Home Screen) and open it from there.',
+    body: 'This shows what your browser allows: microphone, camera and notifications. Study Forge asks only when you start something that needs one, and never nags. To turn on notifications, tap the Notifications status itself. Your browser asks, and the status changes to Allowed. If it says Blocked, tapping it shows the exact steps for your browser, whether that\'s Chrome, Arc, Brave, Edge, Safari, Firefox or another. Once Allowed, Send a test notification checks it really works. On iPhone and iPad, notifications only work after you add Study Forge to your Home Screen (in Safari: Share, then Add to Home Screen) and open it from there.',
   },
   {
     id: 'search',

@@ -111,7 +111,7 @@ function describeScreenFailure(error: unknown): string {
     return 'Screen sharing was cancelled, so nothing was recorded. Start again and choose what to share. If no choice appears, allow screen sharing for this browser in your device settings.';
   }
   if (name === 'NotFoundError' || name === 'NotSupportedError') {
-    return "This browser or device can't share its screen. Try Chrome or Edge on a computer.";
+    return "This browser or device can't share its screen. Try a Chrome-based browser on a computer, such as Chrome, Edge, Arc, Brave or Opera.";
   }
   return `Screen recording couldn't start. ${error instanceof Error ? error.message : ''}`.trim();
 }
@@ -169,7 +169,7 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
     setHasAudio(true);
     setSource(chosen);
     if (chosen === 'screen' && !canRecordScreen()) {
-      setError("This browser or device can't record its screen. Try Chrome or Edge on a computer, or record in person with the microphone.");
+      setError("This browser or device can't record its screen. Try a Chrome-based browser on a computer, such as Chrome, Edge, Arc, Brave or Opera, or record in person with the microphone.");
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {

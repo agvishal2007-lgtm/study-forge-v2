@@ -172,6 +172,26 @@ test('on an iPhone tab, the Notifications status explains the Home Screen step i
   }
 });
 
+test('in Arc, a blocked Notifications status gives Arc\'s own steps, and Allowed offers a test', async () => {
+  await open(false);
+  await page.addInitScript(() => {
+    // Arc adds its palette to every page; that's how it's recognised.
+    document.addEventListener('DOMContentLoaded', () => document.documentElement.style.setProperty('--arc-palette-title', '#123456'));
+    window.Notification = function Notification() { window.__shown = (window.__shown ?? 0) + 1; };
+    window.Notification.permission = 'denied';
+    window.Notification.requestPermission = async () => 'denied';
+  });
+  await page.goto(`${URL_BASE}#/settings`);
+  await page.reload();
+  await page.getByTestId('notification-control').click();
+  assert.match(await page.getByTestId('notification-help').innerText(), /In Arc[\s\S]*arc:\/\/settings\/content\/notifications/);
+  // Once the student allows it in Arc and comes back, a test notification checks it really shows.
+  await page.evaluate(() => { window.Notification.permission = 'granted'; window.dispatchEvent(new Event('focus')); });
+  await page.getByTestId('notification-test').click();
+  assert.equal(await page.evaluate(() => window.__shown), 1);
+  await page.getByText(/A test was sent/).waitFor();
+});
+
 test('nothing threw', () => {
   assert.deepEqual(pageErrors, []);
 });

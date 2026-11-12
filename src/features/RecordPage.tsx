@@ -214,7 +214,7 @@ export function RecordPage() {
             </label>
             <label className={source === 'screen' ? 'source chosen' : 'source'}>
               <input type="radio" name="source" checked={source === 'screen'} disabled={!screenAvailable} onChange={() => setSource('screen')} />
-              <span><strong>Virtual</strong><br /><span className="muted">{screenAvailable ? 'Records your screen and the lecture audio.' : "Needs Chrome or Edge on a computer. This browser or device can't record its screen."}</span></span>
+              <span><strong>Virtual</strong><br /><span className="muted">{screenAvailable ? 'Records your screen and the lecture audio.' : "Needs a Chrome-based browser on a computer (Chrome, Edge, Arc, Brave or Opera). This browser or device can't record its screen."}</span></span>
             </label>
           </fieldset>
           <div className="inline-form">
@@ -246,7 +246,7 @@ export function RecordPage() {
                 <li>Turn on the option to share audio. Without it, the recording will have no lecture sound.</li>
                 <li>If the lecture is in the Zoom or Teams app, audio capture depends on your computer. On Windows, share your entire screen with system audio. On a Mac, join in a browser tab if you can.</li>
               </ol>
-              <p className="muted">Use Chrome or Edge for sound. Safari and Firefox may record only the picture. Uses about 500 MB per hour of this device's space.</p>
+              <p className="muted">For the lecture's sound, use a Chrome-based browser: Chrome, Edge, Arc, Brave, Opera or Vivaldi. Safari and Firefox may record only the picture. Uses about 500 MB per hour of this device's space.</p>
             </div>
           )}
           <label className="check live-choice">

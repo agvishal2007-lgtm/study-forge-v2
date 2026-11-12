@@ -1,3 +1,5 @@
+import { currentBrowser } from '../data/browser';
+import { unblockNotificationSteps } from '../data/browserRules';
 import { useEffect, useState } from 'react';
 import { ACCESS_LABEL, describeAccess, readAccess, watchAccess, type DeviceAccess } from '../data/permissions';
 
@@ -12,12 +14,7 @@ const APPLE_LABEL = 'Add to Home Screen first';
 
 /** Where this browser keeps the switch, once it has been blocked. A site can't flip it back itself. */
 function unblockSteps(): string {
-  const agent = navigator.userAgent;
-  if (/iPhone|iPad/.test(agent)) return 'On iPhone or iPad, notifications work once Study Forge is added to your Home Screen. Then open Settings, Notifications, Study Forge, and turn on Allow Notifications.';
-  if (/Android/.test(agent)) return 'Tap the icon at the left of the address bar, then Permissions, then Notifications, and choose Allow. Then come back here.';
-  if (/Firefox/.test(agent)) return 'Click the icon at the left of the address bar, find Send notifications, and remove the Blocked setting. Then tap this again.';
-  if (/Safari/.test(agent) && !/Chrome|Edg/.test(agent)) return 'In Safari, open Settings, Websites, Notifications, and set this site to Allow. Then come back here.';
-  return 'Click the icon at the left of the address bar, then turn Notifications on (or choose Reset permission). Then come back here.';
+  return unblockNotificationSteps(currentBrowser(), /Android/.test(navigator.userAgent), /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints <= 1);
 }
 
 /** iPhone or iPad in an ordinary browser tab, where Apple only allows notifications from the Home Screen. */
@@ -76,6 +73,18 @@ function NotificationControl({ state, onChange }: { state: DeviceAccess; onChang
         <span aria-hidden="true">{shown === 'granted' ? '✓' : shown === 'denied' ? '✕' : shown === 'prompt' ? '○' : '–'}</span>{shown === 'unknown' && appleTab() ? APPLE_LABEL : NOTIFY_LABEL[shown]}
       </button>
       <span className="muted small permission-wide">{words}</span>
+      {shown === 'granted' && (
+        <button type="button" className="text-button permission-wide" data-testid="notification-test" onClick={() => {
+          try {
+            new Notification('Study Forge', { body: 'Notifications are working.' });
+            setHelp(/Macintosh/.test(navigator.userAgent)
+              ? "A test was sent. If nothing appeared, your Mac may be blocking this browser's notifications: open System Settings, Notifications, choose your browser, and turn on Allow notifications."
+              : 'A test was sent. If nothing appeared, check your device\'s notification settings for this browser, and that Do Not Disturb or Focus is off.');
+          } catch {
+            setHelp("This browser allows notifications but couldn't show one from here. Try again from Study Forge installed as an app.");
+          }
+        }}>Send a test notification</button>
+      )}
       {help && <span className="notice permission-wide" role="status" data-testid="notification-help">{help}</span>}
     </>
   );

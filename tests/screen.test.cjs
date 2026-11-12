@@ -258,7 +258,7 @@ test('devices that cannot share a screen explain why, and in-person still works'
   await open('delete MediaDevices.prototype.getDisplayMedia;');
   await page.getByRole('radio', { name: /Virtual/ }).isDisabled();
   assert.equal(await page.getByRole('radio', { name: /Virtual/ }).isDisabled(), true);
-  await page.getByText("Needs Chrome or Edge on a computer").waitFor();
+  await page.getByText(/Needs a Chrome-based browser on a computer/).waitFor();
   await page.setViewportSize({ width: 375, height: 700 });
   const overflow = await page.evaluate(() => {
     const main = document.querySelector('main');
