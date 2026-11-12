@@ -169,6 +169,8 @@ test('nobody uses Study Forge until they open and agree to the Terms of Use and 
     assert.equal(await page.getByRole('navigation', { name: 'Main' }).count(), 0, `${route} is usable without agreeing`);
     assert.equal(await page.getByRole('button', { name: /^Continue with/ }).count(), 0, `${route}: signing in is possible without agreeing`);
   }
+  // Agreeing then carries on to wherever they were going.
+  await page.goto(`${URL_BASE}#/notes`);
   const terms = page.getByLabel('I have read and agree to the Terms of Use');
   const privacy = page.getByLabel('I have read and agree to the Privacy Policy');
   const go = page.getByRole('button', { name: 'Continue' });
