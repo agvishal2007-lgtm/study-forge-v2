@@ -33,9 +33,11 @@ export interface SyncState {
   lastSyncedAt: number | null;
   tooLarge: string[];
   message: string;
+  /** Something changed on this device that hasn't reached the account yet. */
+  pending: boolean;
 }
 
-let state: SyncState = { phase: 'off', lastSyncedAt: null, tooLarge: [], message: '' };
+let state: SyncState = { phase: 'off', lastSyncedAt: null, tooLarge: [], message: '', pending: false };
 const listeners = new Set<() => void>();
 const setState = (patch: Partial<SyncState>) => {
   state = { ...state, ...patch };
@@ -274,7 +276,7 @@ export async function syncNow(): Promise<void> {
       tooLarge = changes.tooLarge;
       if (!(await pushChanges(backendInstance, account.uid, changes.items))) break;
     }
-    setState({ phase: 'synced', lastSyncedAt: Date.now(), tooLarge, message: '' });
+    setState({ phase: 'synced', lastSyncedAt: Date.now(), tooLarge, message: '', pending: false });
     // Files go up after the records, so another device learns where they are on the next sync.
     void import('./driveFiles').then(({ backUpFiles }) => backUpFiles());
     retryDelay = 0;
@@ -328,6 +330,7 @@ export async function startSync(): Promise<void> {
     }
   });
   subscribe(() => {
+    if (!state.pending) setState({ pending: true });
     clearTimeout(timer);
     timer = setTimeout(() => void syncNow(), AFTER_CHANGE_MS);
   });

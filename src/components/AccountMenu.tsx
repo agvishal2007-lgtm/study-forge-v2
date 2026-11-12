@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
 import { SmartAdd } from './SmartAdd';
+import { SyncBadge } from './SyncBadge';
 import { WalkthroughButton } from '../features/walkthrough/Walkthrough';
 import { getActiveAccount, switchAccount } from '../data/account';
 import { setThemeChoice, useIsDark } from '../data/theme';
@@ -104,12 +105,7 @@ function SignedIn() {
     : sync.phase === 'offline' ? 'Offline, waiting to sync' : sync.phase === 'error' ? 'Sync failed, retrying' : 'Not syncing right now';
   return (
     <div className="account-menu" ref={menu}>
-      {syncLine && (
-        <Link className="sync-badge" to="/settings" data-testid="sync-badge" data-phase={sync.phase} title={syncLine} aria-label={`${syncLine}. Open sync settings`}>
-          <span className="sync-dot" aria-hidden="true" />
-          <span className="sync-badge-text">{syncLine}</span>
-        </Link>
-      )}
+      <SyncBadge />
       <button
         className="avatar-button"
         aria-haspopup="true"

@@ -160,7 +160,9 @@ const EXPECTED = [
   ['record-type', '#/record', '[data-tour=record-source]'],
   ['record-safe', '#/record', '[data-tour=record-start]'],
   ['backup', '#/settings', '[data-tour=backup]'],
+  ['sync-files', '#/settings', '[data-tour=sync-files]'],
   ['offline', '#/settings', '[data-tour=offline]'],
+  ['permissions', '#/settings', '[data-testid=permissions]'],
   ['search', '#/search', '[data-tour=search-box]'],
 ];
 
@@ -197,29 +199,32 @@ test('every step opens the real screen and puts a box around the real section', 
   }
 });
 
+// The step just before Search, read from the real order so adding a step changes nothing here.
+const BEFORE_SEARCH = STEP_IDS[STEP_IDS.indexOf('search') - 1];
+
 test('Back returns to the earlier section', async () => {
   await press('Back');
-  await atStep(numberOf('offline'));
-  assert.equal(await card().getAttribute('data-step'), 'offline');
+  await atStep(numberOf(BEFORE_SEARCH));
+  assert.equal(await card().getAttribute('data-step'), BEFORE_SEARCH);
   await page.locator('[data-testid=tour-card]').getByRole('button', { name: 'Back' }).waitFor();
-  assert.match(await count(), /88% complete/);
+  assert.match(await count(), new RegExp(`${Math.round((STEP_IDS.indexOf(BEFORE_SEARCH) / TOTAL) * 100)}% complete`));
 });
 
 test('a reload closes it, and the button picks up at the same step, on the right screen', async () => {
   // The place is saved a moment after the tap, so give that time to land before reloading.
-  await page.waitForFunction(() => new Promise((resolve) => {
+  await page.waitForFunction((want) => new Promise((resolve) => {
     const request = indexedDB.open('study-forge');
     request.onsuccess = () => {
       const read = request.result.transaction('meta').objectStore('meta').get('walkthrough');
-      read.onsuccess = () => { request.result.close(); resolve(read.result?.step === 20); };
+      read.onsuccess = () => { request.result.close(); resolve(read.result?.step === want); };
     };
-  }));
+  }), STEP_IDS.indexOf(BEFORE_SEARCH) - 1);
   await page.reload();
   await page.getByRole('heading', { name: 'Settings' }).waitFor();
   await page.waitForTimeout(300);
   assert.equal(await card().count(), 0);
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(numberOf('offline'));
+  await atStep(numberOf(BEFORE_SEARCH));
   await page.getByTestId('tour-box').waitFor();
   assert.ok(page.url().endsWith('#/settings'));
 });
@@ -239,11 +244,11 @@ test('the X cleans up completely, and it does not come back by itself', async ()
 
 test('Escape also leaves, and the question mark resumes at the same step', async () => {
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(numberOf('offline'));
+  await atStep(numberOf(BEFORE_SEARCH));
   await page.keyboard.press('Escape');
   await card().waitFor({ state: 'detached' });
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(numberOf('offline'));
+  await atStep(numberOf(BEFORE_SEARCH));
 });
 
 test('tapping the button the moment the page opens still resumes at the saved step', async () => {
@@ -252,7 +257,7 @@ test('tapping the button the moment the page opens still resumes at the saved st
   await page.waitForTimeout(200);
   await page.reload();
   await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
-  await atStep(numberOf('offline'));
+  await atStep(numberOf(BEFORE_SEARCH));
 });
 
 test('Start over returns to the beginning at 0%', async () => {

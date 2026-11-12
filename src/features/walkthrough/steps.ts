@@ -45,14 +45,14 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/',
     target: ['[data-tour=smart-add]'],
     title: 'Adding anything',
-    body: 'This button starts anything: a file, a link, a note, flashcards, a question set, a recording, a topic or a course. It suggests the course and topic you are looking at, and you can change that before it saves.',
+    body: 'This button starts anything: a file, a link, a note, flashcards, a question set, a recording, a topic or a course. It suggests the course and topic you are looking at, and you can change that before it saves. If you make a mistake, Undo appears at the bottom, and deleted things wait in the Trash until you empty it.',
   },
   {
     id: 'account',
     route: '/',
     target: ['.topbar'],
     title: 'Your account',
-    body: 'Log In / Sign Up opens a page of its own, away from your work. There you can use an email and password, Google, or Microsoft, including a college account if your school allows it. Once you\'re signed in, your courses, notes, planner, flashcards, practice, settings and study in progress sync to your other devices by themselves, within seconds. The badge beside your picture always says whether everything is synced. Signing in is optional, and every page has a link back here.',
+    body: 'Log In / Sign Up opens a page of its own, away from your work. There you can use an email and password, Google, or Microsoft, including a college account if your school allows it. Once you\'re signed in, your courses, notes, planner, flashcards, practice, settings and study in progress sync to your other devices by themselves, within seconds. The badge beside your picture shows Synced (green), Syncing (blue), Offline or Pending (amber), or Sync failed (red). Tap it for details such as the last sync time. It only shows information and never takes you anywhere. Signing in is optional, and every page has a link back here.',
   },
   {
     id: 'today',
@@ -92,7 +92,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/planner',
     target: ['[data-tour="add-planner"]'],
     title: 'Planner',
-    body: 'Add assignments and exams with their due dates. Anything due soon shows up on Today, so you can see what needs attention first.',
+    body: 'Add assignments and exams with their due dates, points and how long they will take. Choose how they are ordered, such as earliest due, biggest grade impact, quickest, or your own weighting, and pin anything to the top. Overdue and due-soon work always stays visible, and Today uses the same order. Enter your grades to see where each course stands.',
   },
   {
     id: 'study',
@@ -192,7 +192,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'sync-files',
     route: '/settings',
-    target: ['[data-testid=drive-backup]', '#content .page'],
+    target: ['[data-testid=drive-backup]', '[data-tour="sync-files"]'],
     title: 'Files on all your devices',
     body: 'Signed in, you can tap Sync files with my Google Drive once on each device. Your files and recordings then go to a Study Forge folder in your own Drive, and a file counts as synced only after Drive confirms it arrived intact. On another device, open the file and tap Get it from Google Drive. Study Forge only sees the files it puts there.',
   },
@@ -202,6 +202,13 @@ export const TOUR_STEPS: TourStep[] = [
     target: ['[data-tour="offline"]'],
     title: 'Study without internet',
     body: 'After your first visit, Study Forge opens with no internet, and your work on this device keeps saving. You can also install it on your phone or computer like an app.',
+  },
+  {
+    id: 'permissions',
+    route: '/settings',
+    target: ['[data-testid=permissions]'],
+    title: 'Permissions and notifications',
+    body: 'This shows what your browser allows: microphone, camera and notifications. Study Forge asks only when you start something that needs one, and never nags. To turn on notifications, tap the Notifications status itself. Your browser asks, and the status changes to Allowed. If it says Blocked, tapping it shows how to unblock it in your browser.',
   },
   {
     id: 'search',
