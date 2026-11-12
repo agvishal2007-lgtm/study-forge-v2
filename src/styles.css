@@ -1645,3 +1645,10 @@ main :where(*) { scroll-margin-top: 14px; }
 .academy-topic h3 { font-size: 1rem; margin: 1rem 0 .35rem; }
 .academy-topic ol, .academy-topic ul { padding-left: 1.25rem; }
 .academy-topic li { margin: .25rem 0; }
+
+/* The ? button's Help menu: the quick walkthrough, or the in-depth Academy. */
+.help-menu-wrap { position: relative; display: inline-flex; }
+.help-menu { position: absolute; z-index: 60; top: calc(100% + .4rem); right: 0; width: 17rem; display: grid; gap: .25rem; padding: .4rem; background: var(--raised); border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: 0 12px 32px rgba(15, 18, 30, .18); }
+.help-menu [role=menuitem] { display: grid; gap: .15rem; text-align: left; padding: .6rem .75rem; min-height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--paper); font: inherit; cursor: pointer; }
+.help-menu [role=menuitem]:hover, .help-menu [role=menuitem]:focus-visible { background: var(--accent-soft); outline: none; }
+.help-menu { max-width: calc(100vw - 2rem); }

@@ -500,15 +500,54 @@ export function WalkthroughProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * The ? button: help in two depths. The walkthrough is the quick guided tour; Study Forge Academy
+ * is the in-depth guide to every feature.
+ */
 export function WalkthroughButton() {
   const { start } = useWalkthrough();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (event: PointerEvent) => { if (!wrap.current?.contains(event.target as Node)) setOpen(false); };
+    document.addEventListener('pointerdown', away);
+    wrap.current?.querySelector<HTMLElement>('[role=menuitem]')?.focus();
+    return () => document.removeEventListener('pointerdown', away);
+  }, [open]);
+  const choose = (action: () => void) => { setOpen(false); action(); };
   return (
-    <button className="icon-button" aria-label="Walkthrough" title="Walkthrough" onClick={start}>
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="9.2" />
-        <path d="M9.4 9.3a2.7 2.7 0 0 1 5.2 1c0 1.8-2.6 2.3-2.6 3.9" />
-        <path d="M12 17.2h.01" />
-      </svg>
-    </button>
+    <div className="help-menu-wrap" ref={wrap}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && open) { event.stopPropagation(); setOpen(false); button.current?.focus(); }
+        if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && open) {
+          event.preventDefault();
+          const items = [...(wrap.current?.querySelectorAll<HTMLElement>('[role=menuitem]') ?? [])];
+          const at = items.indexOf(document.activeElement as HTMLElement);
+          items[(at + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length]?.focus();
+        }
+      }}>
+      <button ref={button} className="icon-button" aria-label="Help" title="Help: walkthrough or Academy" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((now) => !now)}>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9.2" />
+          <path d="M9.4 9.3a2.7 2.7 0 0 1 5.2 1c0 1.8-2.6 2.3-2.6 3.9" />
+          <path d="M12 17.2h.01" />
+        </svg>
+      </button>
+      {open && (
+        <div className="help-menu" role="menu" aria-label="Help" data-testid="help-menu">
+          <button type="button" role="menuitem" onClick={() => choose(start)}>
+            <b>Take the walkthrough</b>
+            <span className="muted small">A quick guided tour, about 2 minutes</span>
+          </button>
+          <button type="button" role="menuitem" onClick={() => choose(() => navigate('/help'))}>
+            <b>Study Forge Academy</b>
+            <span className="muted small">Step-by-step help for every feature</span>
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

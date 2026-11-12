@@ -37,7 +37,10 @@ async function open(profile, { auto = true, viewport = { width: 1280, height: 80
   page = context.pages()[0] ?? (await context.newPage());
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto(URL_BASE);
-  if (auto) await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
+  if (auto) {
+    await page.getByRole('button', { name: 'Help', exact: true }).click();
+    await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
+  }
 }
 const card = () => page.getByTestId('tour-card');
 const closeTour = () => page.getByRole('button', { name: 'Close walkthrough' }).click();
@@ -107,7 +110,7 @@ test('it never opens by itself, and a new student can find it', async () => {
   await atStep(1);
   // It's beside Settings, to its left.
   await closeTour();
-  const help = await page.getByRole('button', { name: 'Walkthrough', exact: true }).boundingBox();
+  const help = await page.getByRole('button', { name: 'Help', exact: true }).boundingBox();
   const gear = await page.getByRole('link', { name: 'Settings' }).boundingBox();
   assert.ok(help.x + help.width <= gear.x, 'the walkthrough button is left of Settings');
   assert.ok(Math.abs(help.y - gear.y) < 4, 'in the same row');
@@ -231,7 +234,7 @@ test('a reload closes it, and the button picks up at the same step, on the right
   await page.getByRole('heading', { name: 'Settings' }).waitFor();
   await page.waitForTimeout(300);
   assert.equal(await card().count(), 0);
-  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click(); await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
   await atStep(numberOf(BEFORE_SEARCH));
   await page.getByTestId('tour-box').waitFor();
   assert.ok(page.url().endsWith('#/settings'));
@@ -251,11 +254,11 @@ test('the X cleans up completely, and it does not come back by itself', async ()
 });
 
 test('Escape also leaves, and the question mark resumes at the same step', async () => {
-  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click(); await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
   await atStep(numberOf(BEFORE_SEARCH));
   await page.keyboard.press('Escape');
   await card().waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click(); await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
   await atStep(numberOf(BEFORE_SEARCH));
 });
 
@@ -264,7 +267,7 @@ test('tapping the button the moment the page opens still resumes at the saved st
   await card().waitFor({ state: 'detached' });
   await page.waitForTimeout(200);
   await page.reload();
-  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click(); await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
   await atStep(numberOf(BEFORE_SEARCH));
 });
 
@@ -290,13 +293,13 @@ test('finishing reaches the last step, cleans up, and does not repeat', async ()
   await page.getByRole('heading', { name: 'Courses', exact: true }).waitFor();
   await page.waitForTimeout(300);
   assert.equal(await card().count(), 0);
-  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click(); await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
   await atStep(1);
   await closeTour();
 });
 
 test('a section that is missing never crashes it', async () => {
-  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click(); await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
   await atStep(1);
   await page.addStyleTag({ content: '[data-tour="add-files"] { display: none !important; }' });
   for (let i = 1; i < numberOf('library'); i++) await next();
@@ -311,7 +314,7 @@ test('a section that is missing never crashes it', async () => {
 test('a hands-on step whose part is missing never traps anyone', async () => {
   await open('trapped', { auto: false });
   await page.addStyleTag({ content: '[data-tour="add-course"] { display: none !important; }' });
-  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click(); await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
   await atStep(1);
   await page.addStyleTag({ content: '[data-tour="add-course"] { display: none !important; }' });
   for (let i = 1; i < numberOf('courses') - 1; i++) await next();
@@ -329,7 +332,7 @@ test('a student with real content gets accurate boxes too, and their work is unt
   await page.getByRole('heading', { name: /Lesson 1/ }).waitFor();
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Today', exact: true }).click();
   await page.getByRole('link', { name: /Sample: Accounting Basics/ }).waitFor();
-  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click(); await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
   await atStep(1);
   for (let i = 1; i < TOTAL; i++) {
     await next();
@@ -344,11 +347,11 @@ test('starting from an unsaved lesson editor asks first', async () => {
   await page.getByRole('link', { name: /Lesson 1/ }).click();
   await page.getByRole('button', { name: 'Add checkpoint' }).click();
   await page.getByLabel('Checkpoint title').fill('Half written');
-  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click(); await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
   assert.equal(await page.getByLabel('Checkpoint title').inputValue(), 'Half written');
   assert.equal(await card().count(), 0);
-  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click(); await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Leave and start walkthrough' }).click();
   await atStep(1);
   await closeTour();
@@ -452,7 +455,7 @@ test('during a hands-on step, only the highlighted part works', async () => {
   assert.equal(await card().getByRole('button', { name: 'Next', exact: true }).isDisabled(), true);
   // Pausing and returning keeps the same step, still locked.
   await page.reload();
-  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click(); await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
   await atStep(numberOf('courses'));
   await page.getByTestId('tour-try').waitFor();
   await page.getByLabel('Course name').fill('Biology');
@@ -471,7 +474,7 @@ test('work already done is not asked for again', async () => {
   await page.getByLabel('Course name').fill('Existing');
   await page.getByRole('button', { name: 'Create course' }).click();
   await page.getByRole('heading', { name: 'Existing' }).waitFor();
-  await page.getByRole('button', { name: 'Walkthrough', exact: true }).click();
+  await page.getByRole('button', { name: 'Help', exact: true }).click(); await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
   await atStep(1);
   for (let i = 1; i < numberOf('courses'); i++) await next();
   assert.equal(await card().getAttribute('data-step'), 'courses');
@@ -512,4 +515,32 @@ test('Study Forge Academy explains every feature in the same order of questions,
   await page.getByRole('button', { name: 'Take the short walkthrough' }).click();
   await card().waitFor();
   await closeTour();
+});
+
+test('the ? button offers both kinds of help: the quick walkthrough or the Academy', async () => {
+  await open('help-menu', { auto: false });
+  await page.goto(`${URL_BASE}#/notes`);
+  const help = page.getByRole('button', { name: 'Help', exact: true });
+  await help.click();
+  const menu = page.getByRole('menu', { name: 'Help' });
+  assert.deepEqual((await menu.getByRole('menuitem').allInnerTexts()).map((t) => t.split('\n')[0]), ['Take the walkthrough', 'Study Forge Academy']);
+  assert.equal(await help.getAttribute('aria-expanded'), 'true');
+  await page.keyboard.press('Escape');
+  assert.equal(await menu.count(), 0, 'Escape closes it');
+  await help.click();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await page.getByRole('heading', { name: 'Study Forge Academy', level: 1 }).waitFor();
+  await help.click();
+  await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
+  await card().waitFor();
+  await closeTour();
+  for (const width of [390, 360]) {
+    await page.setViewportSize({ width, height: 800 });
+    await help.click();
+    const box = await menu.boundingBox();
+    assert.ok(box.x >= 0 && box.x + box.width <= width, `the menu fits a ${width}px phone`);
+    await page.keyboard.press('Escape');
+  }
+  await page.setViewportSize({ width: 1280, height: 800 });
 });

@@ -232,6 +232,6 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'finish',
     route: '/',
     title: 'You’re ready',
-    body: 'A good first step is to add a course, then try the sample lesson in Study. Reopen this tour anytime with the question mark at the top. For step-by-step help with every feature, open Study Forge Academy from the bottom of Settings.',
+    body: 'A good first step is to add a course, then try the sample lesson in Study. The ? at the top opens this tour again, or Study Forge Academy for step-by-step help with every feature.',
   },
 ];

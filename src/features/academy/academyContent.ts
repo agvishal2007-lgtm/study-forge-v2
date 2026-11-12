@@ -22,13 +22,13 @@ export const ACADEMY: AcademyTopic[] = [
     title: 'Getting started',
     what: 'Study Forge keeps your courses, files, links, notes, deadlines, calendar, flashcards, practice and lecture recordings in one place, so you hop between fewer sites.',
     why: 'Everything for a class lives together, and it works without an account or internet.',
-    where: 'The welcome page, then Today. The Log In / Sign Up button is at the top right, and Settings is the gear.',
+    where: 'The welcome page, then Today. The Log In / Sign Up button is at the top right, Settings is the gear, and help is the ?.',
     steps: [
       'The first time you open Study Forge on a device, open the Terms of Use and the Privacy Policy, tick both boxes, and press Continue.',
       'Add your first course on Courses, or straight from Today.',
       'Optional: press Log In / Sign Up. It opens its own page with Log In and Sign Up tabs (also at /login and /signup). Choose email and password, Google, Microsoft or Yahoo.',
       'Forgot your password? Use Forgot your password? on the Log In tab. Forgot which email you used? Forgot which email you used? shows hints from this browser and where to look. It never lists other people’s accounts.',
-      'The ? button at the top starts the walkthrough again whenever you want it.',
+      'The ? button at the top opens a menu: Take the walkthrough for a quick tour, or Study Forge Academy (this guide) for step-by-step help.',
     ],
     result: 'You land on Today with your course ready. If you signed in, a badge beside your picture shows whether your work is synced.',
     limits: [
