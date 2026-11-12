@@ -45,8 +45,9 @@ const openCourse = async () => {
 const dateIn = (days) => {
   const when = new Date();
   when.setDate(when.getDate() + days);
-  // The date on the student's own clock, not the UTC one, which differs in the evening.
-  return `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, '0')}-${String(when.getDate()).padStart(2, '0')}`;
+  // The date on the student's clock. The browser in this test is set to New York, whatever the
+  // machine running it uses, so the date is read in New York too.
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(when);
 };
 
 test('a student sets up a course for the semester', async () => {
