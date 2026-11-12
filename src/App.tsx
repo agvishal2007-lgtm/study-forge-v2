@@ -7,6 +7,7 @@ import { WalkthroughProvider } from './features/walkthrough/Walkthrough';
 import { CalculatorProvider } from './components/calculator/CalculatorWindow';
 import { TermsPage } from './features/TermsPage';
 import { AcademyPage } from './features/academy/AcademyPage';
+import { SemesterPage } from './features/SemesterPage';
 import { AgreementPage } from './features/AgreementPage';
 import { agreedNow, subscribeAgreement } from './data/agreement';
 import { RecorderProvider, RecordingBar } from './components/Recorder';
@@ -180,6 +181,7 @@ export function App() {
               <Routes>
                 <Route path="/" element={<TodayPage />} />
                 <Route path="/courses" element={<CoursesPage />} />
+                <Route path="/courses/new-semester" element={<SemesterPage />} />
                 <Route path="/courses/:id" element={<CourseDetailPage />} />
                 <Route path="/library" element={<LibraryPage />} />
                 <Route path="/files/:id" element={<ViewerPage />} />

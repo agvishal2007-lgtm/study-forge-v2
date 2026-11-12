@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { NewCourseForm } from '../components/NewCourseForm';
+import { MyTemplates } from '../components/CourseTemplates';
 import { Shelf } from '../components/Shelf';
 import { groupCourses } from '../data/courseRules';
 import { listCourses, listMaterials, moveCourse, setCourseStatus } from '../data/store';
@@ -19,7 +20,10 @@ export function CoursesPage() {
 
   return (
     <div className="page">
-      <h1>Courses</h1>
+      <div className="section-head">
+        <h1>Courses</h1>
+        <Link className="button" to="/courses/new-semester" data-testid="new-semester">Start a new semester</Link>
+      </div>
       {error && <p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p>}
       {data && data.courses.length > 1 && (
         <p>
@@ -69,6 +73,8 @@ export function CoursesPage() {
         <h2 id="add-course">Add a course</h2>
         <NewCourseForm />
       </section>
+
+      <MyTemplates />
 
       {data && data.archived.length > 0 && (
         <section aria-labelledby="archived-courses" data-testid="archived-courses">

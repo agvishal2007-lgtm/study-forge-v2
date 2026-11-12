@@ -1652,3 +1652,27 @@ main :where(*) { scroll-margin-top: 14px; }
 .help-menu [role=menuitem] { display: grid; gap: .15rem; text-align: left; padding: .6rem .75rem; min-height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--paper); font: inherit; cursor: pointer; }
 .help-menu [role=menuitem]:hover, .help-menu [role=menuitem]:focus-visible { background: var(--accent-soft); outline: none; }
 .help-menu { max-width: calc(100vw - 2rem); }
+
+/* Course templates */
+.template-picker { display: grid; gap: .4rem; flex-basis: 100%; }
+.template-preview { border: 1px solid var(--line); border-radius: 12px; padding: .5rem .75rem; }
+.template-preview summary { cursor: pointer; font-weight: 600; }
+.template-preview p { margin: .35rem 0; }
+.template-tools { border-top: 1px solid var(--line); margin-top: 1rem; padding-top: .75rem; }
+.template-tools h3 { margin: 0 0 .5rem; }
+.template-list li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .5rem; padding: .5rem 0; border-bottom: 1px solid var(--line); }
+.check-label { display: inline-flex; gap: .45rem; align-items: center; min-height: 44px; }
+
+/* Semester transition assistant */
+.semester-steps { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; margin: 1rem 0; }
+.semester-steps li { padding: .3rem .7rem; border-radius: 999px; border: 1px solid var(--line); font-size: .85rem; }
+.semester-steps li.current { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 700; }
+.semester-steps li.done { background: var(--accent-soft); color: var(--accent-text); }
+.semester-course { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .75rem; padding: .75rem 0; border-bottom: 1px solid var(--line); }
+.semester-course p { margin: .2rem 0 0; }
+.choice-pair { display: flex; flex-wrap: wrap; gap: .25rem 1rem; border: 0; padding: 0; margin: 0; }
+.choice-pair label { display: inline-flex; gap: .4rem; align-items: center; min-height: 44px; }
+.semester-block { border: 1px solid var(--line); border-radius: 14px; padding: .75rem 1rem; margin: .75rem 0; }
+.semester-block h3 { margin: 0 0 .4rem; }
+.semester-new li { align-items: end; border-bottom: 1px solid var(--line); padding: .5rem 0; }
+.success-note { font-weight: 600; }

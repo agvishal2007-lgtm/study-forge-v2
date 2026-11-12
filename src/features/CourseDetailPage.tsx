@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AddFiles } from '../components/AddFiles';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { GradesSection } from './GradesSection';
+import { CourseTemplateTools } from '../components/CourseTemplates';
 import { MaterialList } from '../components/MaterialList';
 import { SaveLinkForm } from '../components/SaveLinkForm';
 import { NewNoteButton, NoteList } from '../components/NoteList';
@@ -104,6 +105,7 @@ export function CourseDetailPage() {
           <button className="button" type="submit">Save course</button>
         </form>
       )}
+      {editingCourse && <CourseTemplateTools courseId={course.id} courseName={course.name} />}
 
       <section aria-labelledby="course-files">
         <h2 id="course-files">Files</h2>
