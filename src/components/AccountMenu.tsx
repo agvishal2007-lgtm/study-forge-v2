@@ -46,7 +46,7 @@ function SignedOut() {
   return (
     <>
       <Link className="icon-button" to="/settings" aria-label="Settings" title="Settings"><GearIcon /></Link>
-      <Link className="button primary" to="/auth">Log In / Sign Up</Link>
+      <Link className="button primary" to="/auth" data-tour="account">Log In / Sign Up</Link>
     </>
   );
 }
@@ -104,7 +104,7 @@ function SignedIn() {
   const syncLine = sync.phase === 'synced' ? 'Synced across devices' : sync.phase === 'syncing' ? 'Syncing…' : sync.phase === 'off' ? ''
     : sync.phase === 'offline' ? 'Offline, waiting to sync' : sync.phase === 'error' ? 'Sync failed, retrying' : 'Not syncing right now';
   return (
-    <div className="account-menu" ref={menu}>
+    <div className="account-menu" ref={menu} data-tour="account">
       <SyncBadge />
       <button
         className="avatar-button"

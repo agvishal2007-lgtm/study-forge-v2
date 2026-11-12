@@ -1517,3 +1517,18 @@ code.note-math { font-family: ui-monospace, monospace; }
 .calc-warning { display: flex; gap: .5rem; align-items: flex-start; margin: 0; padding: .6rem .7rem; border-radius: 12px; border: 1px solid #b45309; background: #fff7ed; color: #7c2d12; font-size: .88rem; line-height: 1.4; }
 :root[data-theme="dark"] .calc-warning { background: #2a1d10; color: #fed7aa; border-color: #c2410c; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .calc-warning { background: #2a1d10; color: #fed7aa; border-color: #c2410c; } }
+
+/* Walkthrough: the card keeps its buttons in view on short screens, and the body scrolls instead. */
+.tour-card { display: flex; flex-direction: column; }
+.tour-scroll { min-height: 0; overflow-y: auto; }
+.tour-actions { flex: none; }
+.tour-actions .text-button { min-height: 44px; }
+.tour-box { box-sizing: border-box; }
+@media (max-height: 480px) {
+  .tour-card { padding: .7rem 1rem; }
+  .tour-card h2 { margin: .4rem 0 .25rem; font-size: 1.1rem; }
+  .tour-actions { margin-top: .5rem; }
+}
+/* Leaves a little room above anything the walkthrough scrolls to the top. */
+main :where(*) { scroll-margin-top: 14px; }
+@media (max-height: 480px) { .tour-card { font-size: .92rem; } .tour-count { font-size: .8rem; } }

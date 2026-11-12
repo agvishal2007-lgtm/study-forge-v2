@@ -9,8 +9,9 @@ import { TOUR_STEPS } from './steps';
 
 const STATE_KEY = 'walkthrough';
 const FIND_TARGET_MS = 1500;
-const BOX_PADDING = 6;
-const CARD_GAP = 14;
+const CARD_GAP = 12;
+const CARD_WIDTH = 380;
+const CARD_MIN_SIDE_WIDTH = 240;
 
 interface SavedTour {
   status: 'active' | 'paused' | 'finished';
@@ -46,15 +47,54 @@ interface Box {
   left: number;
   width: number;
   height: number;
+  /** Corner rounding that follows the shape of the part, so a round button gets a round ring. */
+  radius: number;
 }
 
-/** The target's visible area, kept inside the screen and any scrolling panel around it. */
+const isClear = (color: string) => color === 'transparent' || /rgba\(.*,\s*0\)$/.test(color);
+
+/** Whether an element draws its own outline: a button, a field, or a card with a background or border. */
+function drawsItsOwnBox(element: Element): boolean {
+  if (element.matches('button, a, input, select, textarea, label.search, [role=radiogroup], fieldset, li')) return true;
+  const style = getComputedStyle(element);
+  return !isClear(style.backgroundColor) || parseFloat(style.borderTopWidth) > 0 || style.boxShadow !== 'none';
+}
+
+/**
+ * The area the part really takes up. A wrapper that only lines things up (a full-width row with
+ * one button in it, say) is shrunk to what's inside, so the ring fits the button, not the row.
+ */
+function fittedRect(element: Element, depth = 0): { rect: DOMRect; radius: number } {
+  const own = element.getBoundingClientRect();
+  const ownRadius = parseFloat(getComputedStyle(element).borderTopLeftRadius) || 0;
+  if (drawsItsOwnBox(element) || depth > 3) return { rect: own, radius: ownRadius };
+  const parts = [...element.children].filter((child) => child.getClientRects().length > 0 && getComputedStyle(child).visibility !== 'hidden');
+  const fitted = parts.map((child) => fittedRect(child, depth + 1));
+  // Words take up only their own width, even in a heading that stretches across the page.
+  for (const node of element.childNodes) {
+    if (node.nodeType !== Node.TEXT_NODE || !node.textContent?.trim()) continue;
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    const rect = range.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) fitted.push({ rect, radius: 8 });
+  }
+  if (fitted.length === 0) return { rect: own, radius: ownRadius };
+  const left = Math.min(...fitted.map((item) => item.rect.left));
+  const top = Math.min(...fitted.map((item) => item.rect.top));
+  const right = Math.max(...fitted.map((item) => item.rect.right));
+  const bottom = Math.max(...fitted.map((item) => item.rect.bottom));
+  return { rect: new DOMRect(left, top, right - left, bottom - top), radius: fitted.length === 1 ? fitted[0].radius : 12 };
+}
+
+/** The ring around the part: a small, even margin, the part's own shape, kept on screen. */
 function visibleBox(element: Element): Box {
-  const rect = element.getBoundingClientRect();
-  let top = rect.top;
-  let left = rect.left;
-  let right = rect.right;
-  let bottom = rect.bottom;
+  const { rect, radius } = fittedRect(element);
+  // Small controls get a snug ring; bigger areas get a little more room so the ring doesn't touch.
+  const pad = Math.min(rect.width, rect.height) <= 64 ? 6 : 8;
+  let top = rect.top - pad;
+  let left = rect.left - pad;
+  let right = rect.right + pad;
+  let bottom = rect.bottom + pad;
   const panel = element.closest('main');
   if (panel) {
     const limit = panel.getBoundingClientRect();
@@ -63,33 +103,67 @@ function visibleBox(element: Element): Box {
     right = Math.min(right, limit.right);
     bottom = Math.min(bottom, limit.bottom);
   }
-  const edge = BOX_PADDING + 3;
-  top = Math.max(top - BOX_PADDING, edge - BOX_PADDING);
-  left = Math.max(left - BOX_PADDING, edge - BOX_PADDING);
-  right = Math.min(right + BOX_PADDING, window.innerWidth - 3);
-  bottom = Math.min(bottom + BOX_PADDING, window.innerHeight - 3);
-  return { top, left, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+  top = Math.max(top, 3);
+  left = Math.max(left, 3);
+  right = Math.min(right, window.innerWidth - 3);
+  bottom = Math.min(bottom, window.innerHeight - 3);
+  const width = Math.max(0, right - left);
+  const height = Math.max(0, bottom - top);
+  return { top, left, width, height, radius: Math.min(radius + pad, height / 2, width / 2) };
 }
 
 const sameBox = (a: Box | null, b: Box | null) =>
-  a === b || (!!a && !!b && a.top === b.top && a.left === b.left && a.width === b.width && a.height === b.height);
+  a === b || (!!a && !!b && a.top === b.top && a.left === b.left && a.width === b.width && a.height === b.height && a.radius === b.radius);
 
-/** Puts the explanation beside the box when there's room, and otherwise wherever it fits. */
-function placeCard(box: Box | null, width: number, height: number): { top: number; left: number } {
+interface CardPlace { top: number; left: number; width: number }
+
+/**
+ * Puts the explanation right beside the part when there's room: below or above a wide part,
+ * to the right or left of a narrow one, narrowing the card a little if that makes it fit. Only
+ * when nothing fits does it cover the part, and then on whichever edge hides the least of it.
+ * `heightAt` measures the card at a given width, since narrower cards are taller.
+ */
+function placeCard(box: Box | null, heightAt: (width: number) => number): CardPlace {
   const screenW = window.innerWidth;
   const screenH = window.innerHeight;
   const margin = 12;
-  const clampLeft = (value: number) => Math.min(Math.max(margin, value), screenW - width - margin);
-  const clampTop = (value: number) => Math.min(Math.max(margin, value), screenH - height - margin);
-  if (!box) return { top: clampTop((screenH - height) / 2), left: clampLeft((screenW - width) / 2) };
-  const roomBelow = screenH - (box.top + box.height) - CARD_GAP - margin;
-  const roomAbove = box.top - CARD_GAP - margin;
-  const roomRight = screenW - (box.left + box.width) - CARD_GAP - margin;
-  if (roomRight >= width) return { top: clampTop(box.top), left: box.left + box.width + CARD_GAP };
-  if (roomBelow >= height) return { top: box.top + box.height + CARD_GAP, left: clampLeft(box.left) };
-  if (roomAbove >= height) return { top: box.top - height - CARD_GAP, left: clampLeft(box.left) };
-  // A tall section fills the screen, so the card sits along the bottom edge and covers part of it.
-  return { top: screenH - height - margin, left: clampLeft(box.left + (box.width - width) / 2) };
+  const full = Math.min(CARD_WIDTH, screenW - margin * 2);
+  const clampLeft = (value: number, width: number) => Math.min(Math.max(margin, value), screenW - width - margin);
+  const clampTop = (value: number, height: number) => Math.min(Math.max(margin, value), screenH - height - margin);
+  const fullHeight = heightAt(full);
+  if (!box) return { top: clampTop((screenH - fullHeight) / 2, fullHeight), left: clampLeft((screenW - full) / 2, full), width: full };
+
+  const below = () => {
+    const room = screenH - (box.top + box.height) - CARD_GAP - margin;
+    return room >= fullHeight ? { top: box.top + box.height + CARD_GAP, left: clampLeft(box.left, full), width: full } : null;
+  };
+  const above = () => {
+    const room = box.top - CARD_GAP - margin;
+    return room >= fullHeight ? { top: box.top - fullHeight - CARD_GAP, left: clampLeft(box.left, full), width: full } : null;
+  };
+  const side = (where: 'right' | 'left') => {
+    const room = where === 'right' ? screenW - (box.left + box.width) - CARD_GAP - margin : box.left - CARD_GAP - margin;
+    if (room < CARD_MIN_SIDE_WIDTH) return null;
+    const width = Math.min(full, room);
+    const height = heightAt(width);
+    if (height > screenH - margin * 2) return null;
+    const left = where === 'right' ? box.left + box.width + CARD_GAP : box.left - CARD_GAP - width;
+    // Lined up with the top of the part, or with its middle when the part is small.
+    const top = clampTop(box.height < height ? box.top + box.height / 2 - height / 2 : box.top, height);
+    return { top, left, width };
+  };
+  const wide = box.width > screenW * 0.5;
+  const order = wide ? [below, above, () => side('right'), () => side('left')] : [() => side('right'), below, above, () => side('left')];
+  for (const attempt of order) {
+    const place = attempt();
+    if (place) return place;
+  }
+  // Nothing fits beside it, so the card sits along the top or bottom edge, whichever covers less.
+  const atBottom = screenH - fullHeight - margin;
+  const coveredBottom = Math.max(0, box.top + box.height - atBottom);
+  const coveredTop = Math.max(0, margin + fullHeight - box.top);
+  const top = coveredTop < coveredBottom ? margin : atBottom;
+  return { top, left: clampLeft(box.left + (box.width - full) / 2, full), width: full };
 }
 
 function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
@@ -106,7 +180,7 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
   const primary = useRef<HTMLButtonElement>(null);
   const [box, setBox] = useState<Box | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [cardPosition, setCardPosition] = useState<{ top: number; left: number } | null>(null);
+  const [cardPosition, setCardPosition] = useState<CardPlace | null>(null);
 
   // Whether the action this step asks for is done yet. Null means still checking.
   const [actionDone, setActionDone] = useState<boolean | null>(definition.action ? null : true);
@@ -170,7 +244,10 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
           // A tall section starts at its top, and anything smaller is centered.
           const panel = element.closest('main');
           const tall = panel && element.getBoundingClientRect().height > panel.clientHeight * 0.8;
-          element.scrollIntoView({ block: tall ? 'start' : 'center', inline: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+          // On a short screen, such as a phone on its side, the part goes near the top so the
+          // explanation has room under it instead of covering it.
+          const short = window.innerHeight < 640;
+          element.scrollIntoView({ block: tall || short ? 'start' : 'center', inline: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
         }
         const next = visibleBox(element);
         if (!sameBox(last, next)) {
@@ -196,9 +273,16 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
 
   useLayoutEffect(() => {
     const measure = () => {
-      if (!card.current) return;
-      const { offsetWidth, offsetHeight } = card.current;
-      setCardPosition(placeCard(box, offsetWidth, offsetHeight));
+      const element = card.current;
+      if (!element) return;
+      const before = element.style.width;
+      const heightAt = (width: number) => {
+        element.style.width = `${width}px`;
+        return element.offsetHeight;
+      };
+      const place = placeCard(box, heightAt);
+      element.style.width = before;
+      setCardPosition((now) => (now && now.top === place.top && now.left === place.left && now.width === place.width ? now : place));
     };
     measure();
     window.addEventListener('resize', measure);
@@ -266,7 +350,7 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
         </>
       ) : <div className="tour-blocker" data-testid="tour-blocker" />}
       {box && !(definition.action && actionDone === true && !findTarget(definition.target))
-        ? <div className="tour-box" data-testid="tour-box" style={{ top: box.top, left: box.left, width: box.width, height: box.height }} />
+        ? <div className="tour-box" data-testid="tour-box" style={{ top: box.top, left: box.left, width: box.width, height: box.height, borderRadius: box.radius }} />
         : <div className="tour-dark" />}
       <div
         ref={card}
@@ -279,7 +363,7 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
         data-step={definition.id}
         data-action-pending={nextLocked}
         data-trying={trying && !notFound}
-        style={cardPosition ? { top: cardPosition.top, left: cardPosition.left } : { visibility: 'hidden', top: 0, left: 0 }}
+        style={cardPosition ? { top: cardPosition.top, left: cardPosition.left, width: cardPosition.width } : { visibility: 'hidden', top: 0, left: 0 }}
       >
         <button className="tour-close" aria-label="Close walkthrough" title="Close walkthrough" onClick={onPause}>
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
@@ -290,11 +374,13 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
         <div className="meter" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-label="Walkthrough progress">
           <span style={{ width: `${percent}%` }} />
         </div>
+        <div className="tour-scroll">
         <h2 id="tour-title" aria-live="polite">{definition.title}</h2>
         <p id="tour-body">{definition.body}</p>
         {trying && !notFound && <p className="tour-try" data-testid="tour-try">{definition.action?.instruction}</p>}
         {definition.action && actionDone === true && <p className="tour-done" data-testid="tour-done" role="status">{definition.action.doneMessage}</p>}
         {notFound && !(definition.action && actionDone === true) && <p className="muted" data-testid="tour-missing">This part isn't on the screen right now, so there's nothing to highlight. You can keep going.</p>}
+        </div>
         <div className="tour-actions">
           {isLast
             ? <button ref={primary} className="button primary" onClick={onFinish}>Finish</button>

@@ -141,14 +141,15 @@ test('nothing outside the walkthrough can be clicked or tabbed to', async () => 
   assert.equal(await page.evaluate(() => !!document.activeElement.closest('[data-testid=tour-card]')), true);
 });
 
+// The first selector present is the part the step should highlight, as in steps.ts.
 const EXPECTED = [
   ['sections', '#/', '.nav-links'],
   ['add', '#/', '[data-tour=smart-add]'],
-  ['account', '#/', '.topbar'],
-  ['today', '#/', '#content .page'],
+  ['account', '#/', '[data-tour=account]'],
+  ['today', '#/', '[data-testid=start-studying], #content .page h1'],
   ['courses', '#/courses', '[data-tour=add-course]'],
   ['library', '#/library', '[data-tour=add-files]'],
-  ['viewer', '#/library', '#content .page'],
+  ['viewer', '#/library', '#content .files, #content .page h1'],
   ['planner', '#/planner', '[data-tour=add-planner]'],
   ['study', '#/study', '[data-tour=study-intro]'],
   ['mastery', '#/study', '[data-tour=sample-lesson]'],
@@ -161,11 +162,11 @@ const EXPECTED = [
   ['notes', '#/notes', '[data-tour=new-note]'],
   ['record-type', '#/record', '[data-tour=record-source]'],
   ['record-safe', '#/record', '[data-tour=record-start]'],
-  ['backup', '#/settings', '[data-tour=backup]'],
-  ['sync-files', '#/settings', '[data-tour=sync-files]'],
+  ['backup', '#/settings', '[data-tour=backup-actions]'],
+  ['sync-files', '#/settings', '[data-testid=drive-backup], [data-tour=account]'],
   ['offline', '#/settings', '[data-tour=offline]'],
-  ['appearance', '#/settings', '[aria-labelledby=appearance-heading]'],
-  ['permissions', '#/settings', '[data-testid=permissions]'],
+  ['appearance', '#/settings', '.segmented[aria-labelledby=appearance-heading]'],
+  ['permissions', '#/settings', '[data-testid=permission-notifications]'],
   ['search', '#/search', '[data-tour=search-box]'],
 ];
 
@@ -177,24 +178,28 @@ test('every step opens the real screen and puts a box around the real section', 
     assert.equal(new URL(page.url()).hash || '#/', hash, `${id} is on the right screen`);
     await page.getByTestId('tour-box').waitFor();
     await settle();
-    const fit = await page.evaluate((target) => {
+    const fit = await page.evaluate((targets) => {
       const box = document.querySelector('[data-testid=tour-box]').getBoundingClientRect();
-      const element = document.querySelector(target).getBoundingClientRect();
-      const panel = document.querySelector(target).closest('main')?.getBoundingClientRect();
+      const found = targets.split(', ').map((one) => document.querySelector(one)).find((el) => el && el.getClientRects().length);
+      const element = found.getBoundingClientRect();
+      const panel = found.closest('main')?.getBoundingClientRect();
       const top = Math.max(element.top, panel?.top ?? 0, 0);
       const bottom = Math.min(element.bottom, panel?.bottom ?? innerHeight, innerHeight);
       const left = Math.max(element.left, 0);
       const right = Math.min(element.right, innerWidth);
       const c = document.querySelector('[data-testid=tour-card]').getBoundingClientRect();
       return {
-        // At the very edge of the screen, the box sits just inside it so its border can be seen.
-        surrounds: box.top <= top + 4 && box.bottom >= bottom - 4 && box.left <= left + 4 && box.right >= right - 4,
-        close: box.top >= top - 12 && box.bottom <= bottom + 12,
+        // The ring hugs what the part actually shows: never wider than the part plus a small
+        // margin, and never empty. A row with one button in it gets a ring around the button.
+        surrounds: box.width > 20 && box.height > 20 && box.left + box.width / 2 >= left && box.left + box.width / 2 <= right
+          && box.top + box.height / 2 >= top - 2 && box.top + box.height / 2 <= bottom + 2,
+        close: box.top >= top - 12 && box.bottom <= bottom + 12 && box.left >= left - 12 && box.right <= right + 12,
         visible: bottom - top,
+        debug: JSON.stringify({ box: [box.left, box.top, box.width, box.height], el: [left, top, right, bottom] }),
         cardOnScreen: c.top >= 0 && c.left >= 0 && c.bottom <= innerHeight && c.right <= innerWidth,
       };
     }, selector);
-    assert.ok(fit.surrounds, `${id}: the box surrounds the section`);
+    assert.ok(fit.surrounds, `${id}: the box surrounds the section ${fit.debug}`);
     assert.ok(fit.close, `${id}: the box fits the section`);
     assert.ok(fit.visible > 10, `${id}: the section is scrolled into view`);
     assert.ok(fit.cardOnScreen, `${id}: the explanation is fully on screen`);
@@ -347,6 +352,52 @@ test('starting from an unsaved lesson editor asks first', async () => {
   await page.getByRole('dialog').getByRole('button', { name: 'Leave and start walkthrough' }).click();
   await atStep(1);
   await closeTour();
+});
+
+test('the ring fits the control it points at, in the control\'s own shape', async () => {
+  await open('snug');
+  await card().waitFor();
+  for (let i = 1; i < numberOf('add'); i++) await next();
+  await settle();
+  const plus = await page.evaluate(() => {
+    const box = document.querySelector('[data-testid=tour-box]');
+    const b = box.getBoundingClientRect();
+    const button = document.querySelector('[data-tour=smart-add]').getBoundingClientRect();
+    return { extraW: b.width - button.width, extraH: b.height - button.height, radius: parseFloat(box.style.borderRadius), height: b.height };
+  });
+  assert.ok(plus.extraW <= 14 && plus.extraH <= 14, `the + ring is snug (${plus.extraW} by ${plus.extraH} px around it)`);
+  assert.ok(plus.radius >= plus.height / 2 - 1, 'a round button gets a round ring');
+  assert.equal(await page.locator('#tour-title').textContent(), 'Create or Add Something');
+  assert.match(await page.locator('#tour-body').textContent(), /^Use the \+ button to add study materials/);
+  for (let i = numberOf('add'); i < numberOf('planner'); i++) await next();
+  await settle();
+  const planner = await page.evaluate(() => {
+    const b = document.querySelector('[data-testid=tour-box]').getBoundingClientRect();
+    const button = document.querySelector('[data-tour=add-planner] button').getBoundingClientRect();
+    return { extraW: b.width - button.width };
+  });
+  assert.ok(planner.extraW <= 14, 'a full-width row with one button gets a ring around the button, not the row');
+  await closeTour();
+});
+
+test('on a phone turned sideways, the explanation sits beside the part instead of over it', async () => {
+  await open('landscape', { viewport: { width: 844, height: 390 }, mobile: true });
+  await card().waitFor();
+  for (let i = 1; i <= TOTAL; i++) {
+    await settle();
+    const fit = await page.evaluate(() => {
+      const c = document.querySelector('[data-testid=tour-card]').getBoundingClientRect();
+      const box = document.querySelector('[data-testid=tour-box]')?.getBoundingClientRect();
+      const actions = document.querySelector('.tour-actions').getBoundingClientRect();
+      const overlap = box ? Math.max(0, Math.min(c.right, box.right) - Math.max(c.left, box.left)) * Math.max(0, Math.min(c.bottom, box.bottom) - Math.max(c.top, box.top)) / (box.width * box.height) : 0;
+      return { onScreen: c.top >= 0 && c.bottom <= innerHeight && c.left >= 0 && c.right <= innerWidth, overlap, buttons: actions.bottom <= c.bottom + 1 && actions.top >= c.top };
+    });
+    assert.ok(fit.onScreen, `step ${i}: the explanation is on screen`);
+    assert.ok(fit.buttons, `step ${i}: Next and Back stay visible`);
+    assert.ok(fit.overlap < 0.05, `step ${i}: the explanation covers ${Math.round(fit.overlap * 100)}% of the part`);
+    if (i < TOTAL) await next();
+  }
+  await press('Finish');
 });
 
 test('it works on a phone: the box fits and the explanation stays on screen', async () => {

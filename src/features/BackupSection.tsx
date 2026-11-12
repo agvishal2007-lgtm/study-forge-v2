@@ -132,7 +132,7 @@ export function BackupSection() {
       )}
       {recording && <p className="notice">A recording is running, and it won't be in a backup until it's saved.</p>}
 
-      <div className="row-actions">
+      <div className="row-actions" data-tour="backup-actions">
         <button className="button primary" disabled={busy !== ''} onClick={() => void backUp()}>Create backup</button>
         <button className="button" disabled={busy !== ''} onClick={() => fileInput.current?.click()}>Restore from backup</button>
         <input
