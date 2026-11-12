@@ -8,8 +8,8 @@ const PROMISES = [
     body: 'Open it and start. An account is optional — it only exists to carry your work between your own devices.',
   },
   {
-    title: 'Your files stay on your device',
-    body: 'Uploads, lecture recordings and transcripts are saved on the device you are using. They are never uploaded to Study Forge.',
+    title: 'Your files stay yours',
+    body: 'Uploads, lecture recordings and transcripts are saved on your device, and copied only to your own Google Drive if you turn on sync. Study Forge never keeps them.',
   },
   {
     title: 'Works without internet',
@@ -24,7 +24,8 @@ const FEATURES = [
   { title: 'Flashcards and practice', body: 'Spaced repetition on a 1, 5, 10 and 15 day schedule, question sets, and weak topics worked out from your own answers.' },
   { title: 'Exam Hall', body: 'Timed mock exams and a cram mode, scored from the work you saved — never a made-up readiness percentage.' },
   { title: 'Guided Study', body: 'Lessons you write yourself, with checkpoints that only count once you can actually answer them.' },
-  { title: 'Lecture recording', body: 'Record a lecture in person or on screen, then make a transcript on the device itself.' },
+  { title: 'Lecture recording', body: 'Record a lecture in person or on screen, with a live transcript made on the device and notes tied to the exact moment.' },
+  { title: 'Notes with equations and a calculator', body: 'Notes that save as you type, 50+ kinds of equation, and a scientific or TI-84-style graphing calculator for study.' },
   { title: 'Search that reads inside', body: 'Finds words inside your PDFs, Word, Excel and PowerPoint files, and inside photos and scans.' },
   { title: 'Grades that stay honest', body: 'Your real categories and weights. Work you have not had marked yet is never counted as a zero.' },
 ];
@@ -98,6 +99,7 @@ export function HomePage() {
       <footer className="home-foot">
         <Link to="/privacy">Privacy Policy</Link>
         <Link to="/terms">Terms of Use</Link>
+        <Link to="/help">Academy</Link>
         <span className="muted">Built for students. No adverts, no tracking, no selling anything.</span>
       </footer>
     </div>

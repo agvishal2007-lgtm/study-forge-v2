@@ -40,7 +40,7 @@ export function SettingsPage() {
           </>
         )}
       </section>
-      <p className="muted settings-legal"><Link to="/terms">Terms of Use</Link> · <Link to="/privacy">Privacy Policy</Link></p>
+      <p className="muted settings-legal"><Link to="/help">Study Forge Academy</Link> · <Link to="/terms">Terms of Use</Link> · <Link to="/privacy">Privacy Policy</Link></p>
     </div>
   );
 }

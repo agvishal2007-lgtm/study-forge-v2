@@ -1637,3 +1637,11 @@ main :where(*) { scroll-margin-top: 14px; }
 :root[data-theme="dark"] .lcd-f0 { color: #60a5fa; } :root[data-theme="dark"] .lcd-f1 { color: #f87171; } :root[data-theme="dark"] .lcd-f2 { color: #f3f4f6; }
 :root[data-theme="dark"] .lcd-f3 { color: #e879f9; } :root[data-theme="dark"] .lcd-f4 { color: #4ade80; } :root[data-theme="dark"] .lcd-f5 { color: #fb923c; }
 @media (max-height: 720px) { .tour-card .meter { display: none; } .tour-card h2 { margin-top: .4rem; } }
+.academy { max-width: 50rem; }
+.academy-tools { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; margin: 1rem 0; }
+.academy-search { flex: 1; min-width: 14rem; }
+.academy-toc ul { display: flex; flex-wrap: wrap; gap: .4rem .9rem; padding: 0; list-style: none; margin: .5rem 0 1.5rem; }
+.academy-topic { border-top: 1px solid var(--line); padding-top: 1rem; margin-top: 1.25rem; scroll-margin-top: 1rem; }
+.academy-topic h3 { font-size: 1rem; margin: 1rem 0 .35rem; }
+.academy-topic ol, .academy-topic ul { padding-left: 1.25rem; }
+.academy-topic li { margin: .25rem 0; }

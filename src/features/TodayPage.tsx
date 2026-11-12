@@ -198,7 +198,7 @@ export function TodayPage() {
       )}
       {backupDue && (
         <p className="notice" data-testid="backup-reminder">
-          {lastBackup === null ? "You haven't backed up yet." : "It's been a while since your last backup."} Your files are only on this device. <Link to="/settings">Create a backup</Link>
+          {lastBackup === null ? "You haven't backed up yet." : "It's been a while since your last backup."} Unless you sync them through Google Drive, your files are only on this device. <Link to="/settings">Create a backup</Link>
         </p>
       )}
       {materials.length > 0 && storage.persisted === false && (

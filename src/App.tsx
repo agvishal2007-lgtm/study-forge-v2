@@ -6,6 +6,7 @@ import { NAV_ICONS } from './components/NavIcons';
 import { WalkthroughProvider } from './features/walkthrough/Walkthrough';
 import { CalculatorProvider } from './components/calculator/CalculatorWindow';
 import { TermsPage } from './features/TermsPage';
+import { AcademyPage } from './features/academy/AcademyPage';
 import { AgreementPage } from './features/AgreementPage';
 import { agreedNow, subscribeAgreement } from './data/agreement';
 import { RecorderProvider, RecordingBar } from './components/Recorder';
@@ -195,6 +196,8 @@ export function App() {
                 <Route path="/cards/:id" element={<DeckPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
+                <Route path="/help" element={<AcademyPage />} />
+                <Route path="/academy" element={<AcademyPage />} />
                 <Route path="/practice" element={<PracticePage />} />
                 <Route path="/practice/session" element={<PracticeSessionPage />} />
                 <Route path="/practice/:id" element={<PracticeSetPage />} />

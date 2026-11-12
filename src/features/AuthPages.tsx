@@ -261,8 +261,8 @@ export function PrivacyContent() {
         <li>Files and recordings themselves aren't saved online by Study Forge. If you turn on Sync files with my Google Drive, they're copied to a Study Forge folder in your own Google Drive, which only you control. Study Forge can only see the files it put there.</li>
         <li>This is stored in Google's Firebase service. Other students can't read it, but whoever runs this site could technically view it, so don't save anything you wouldn't want seen.</li>
       </ul>
-      <h2>Files from Google Drive or Dropbox</h2>
-      <p>Study Forge only gets the files you pick. They're copied to your device. Screens where you add files load a small piece of code from those services, so the button is ready when you tap it.</p>
+      <h2>Files from Google Drive</h2>
+      <p>Study Forge only gets the files you pick (the same goes for Dropbox, where it's offered). They're copied to your device. Screens where you add files load a small piece of code from Google, so the button is ready when you tap it.</p>
       <h2>Lecture transcripts and the calculator</h2>
       <p>Transcripts are made on your device by a speech model downloaded once from the internet. Your recordings aren't uploaded to make them. The calculator also works entirely on your device.</p>
       <h2>Pictures of your schedule</h2>

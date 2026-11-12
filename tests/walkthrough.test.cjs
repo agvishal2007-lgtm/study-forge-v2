@@ -484,3 +484,32 @@ test('work already done is not asked for again', async () => {
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });
+
+test('Study Forge Academy explains every feature in the same order of questions, and can be searched', async () => {
+  await open('academy', { auto: false });
+  await page.goto(`${URL_BASE}#/settings`);
+  await page.getByRole('link', { name: 'Study Forge Academy' }).click();
+  await page.getByRole('heading', { name: 'Study Forge Academy', level: 1 }).waitFor();
+  const topics = page.locator('.academy-topic');
+  assert.ok(await topics.count() >= 15, 'every major feature has a section');
+  for (const title of ['Getting started', 'Research links and portals', 'Files and reading them inside Study Forge', 'Study Forge Calendar', 'Assignments, grades and priorities', 'The calculator', 'Adding, organizing, Undo and Trash', 'Permissions and notifications']) {
+    const section = page.locator('.academy-topic', { has: page.getByRole('heading', { name: title, exact: true }) });
+    const text = await section.innerText();
+    for (const part of ['What it does.', 'Why it helps.', 'Where to find it.', 'How to use it', 'What you’ll see.', 'Good to know', 'Works with.']) assert.ok(text.includes(part), `${title}: ${part}`);
+  }
+  // Honest about limits, and never the old wording.
+  const all = await page.getByTestId('academy').innerText();
+  assert.match(all, /Save Link is not the same as Preview or Import/);
+  assert.match(all, /not an officially approved examination calculator/);
+  assert.match(all, /older \.doc, \.xls and \.ppt/);
+  assert.doesNotMatch(all, /gray calendar/i);
+  await page.getByLabel('Search the Academy').fill('intersect');
+  assert.equal(await topics.count(), 1);
+  assert.match(await topics.first().innerText(), /The calculator/);
+  await page.getByLabel('Search the Academy').fill('zzzz nothing');
+  await page.getByText('Nothing in the Academy matches that').waitFor();
+  await page.getByLabel('Search the Academy').fill('');
+  await page.getByRole('button', { name: 'Take the short walkthrough' }).click();
+  await card().waitFor();
+  await closeTour();
+});
