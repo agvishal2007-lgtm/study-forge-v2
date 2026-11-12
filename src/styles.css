@@ -1442,5 +1442,5 @@ code.note-math { font-family: ui-monospace, monospace; }
 .settings-page > section ul:not(.permission-list):not(.plain-list) { list-style: disc; padding-left: 1.4rem; }
 .settings-page .permission-list { padding-left: 0; list-style: none; }
 .settings-page .permission-list .small { font-size: .92rem; }
-.status-button { display: inline-flex; align-items: center; gap: .3rem; min-height: 32px; line-height: 1.2; }
+.status-button { display: inline-flex; align-items: center; gap: .3rem; min-height: 36px; line-height: 1.2; }
 @media (max-width: 720px) { .settings-page .segmented { border-radius: 18px; } }

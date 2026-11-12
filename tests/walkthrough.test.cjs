@@ -72,7 +72,9 @@ async function next() {
 }
 const settle = () => page.waitForFunction(() => {
   const el = document.querySelector('[data-testid=tour-box]') ?? document.querySelector('[data-testid=tour-card]');
-  const now = JSON.stringify(el.getBoundingClientRect());
+  // Steady means the box and the page under it have both stopped moving.
+  const scrollers = [document.scrollingElement, document.querySelector('main'), document.getElementById('content')].map((node) => node?.scrollTop ?? 0);
+  const now = JSON.stringify([el.getBoundingClientRect(), scrollers]);
   const same = window.__lastRect === now;
   window.__lastRect = now;
   return same && document.querySelector('[data-testid=tour-card]').style.visibility !== 'hidden';
