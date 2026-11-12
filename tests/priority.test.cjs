@@ -211,8 +211,8 @@ const addWork = async ({ name, date, points, hours, priority }) => {
 const dateIn = (days) => {
   const when = new Date();
   when.setDate(when.getDate() + days);
-  // The date on the student's own clock, not the UTC one, which differs in the evening.
-  return `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, '0')}-${String(when.getDate()).padStart(2, '0')}`;
+  // The browser in this test is set to New York, whatever the machine running it uses.
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(when);
 };
 
 const firstRanked = async () => (await page.locator('.ranked-list > li').first().innerText()).split('\n')[0];
