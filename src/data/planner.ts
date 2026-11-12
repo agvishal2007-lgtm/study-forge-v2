@@ -12,7 +12,9 @@ export async function savePlannerItem(item: Omit<PlannerItem, 'createdAt' | 'upd
   const db = await getDb();
   const current = await db.get('plannerItems', item.id);
   const updatedAt = Math.max(Date.now(), (current?.updatedAt ?? 0) + 1);
-  await db.put('plannerItems', { ...item, createdAt: current?.createdAt ?? item.createdAt ?? updatedAt, updatedAt });
+  // Anything the form doesn't show (where it came from in Google Calendar, a pin) is kept as it was,
+  // so editing a Google deadline never cuts its link and a later delete is still remembered.
+  await db.put('plannerItems', { ...current, ...item, createdAt: current?.createdAt ?? item.createdAt ?? updatedAt, updatedAt });
   notifyChanged();
 }
 

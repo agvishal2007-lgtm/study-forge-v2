@@ -424,6 +424,12 @@ test('something deleted here stays deleted after the next update', async () => {
   await page.getByRole('button', { name: 'Delete item' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Delete item' }).click();
   await page.getByRole('heading', { name: 'Planner' }).waitFor();
+  // Its status was changed on the item page earlier, and it still remembers it came from Google.
+  const remembered = await page.evaluate(() => new Promise((resolve) => {
+    const request = indexedDB.open('study-forge');
+    request.onsuccess = () => { const keys = request.result.transaction('calendarEvents').objectStore('calendarEvents').getAllKeys(); keys.onsuccess = () => resolve(keys.result.some((key) => String(key).startsWith('removed-'))); };
+  }));
+  assert.equal(remembered, true, 'deleting a Google deadline is remembered');
 
   await page.goto(`${URL_BASE}#/calendar?view=plan`);
   await page.locator('[data-date="2026-11-07"]').click();
@@ -444,6 +450,10 @@ test('something deleted here stays deleted after the next update', async () => {
   await page.getByTestId('month-view').waitFor();
   assert.doesNotMatch(await page.locator('[data-date="2026-11-07"]').innerText(), /Tutoring/);
   await page.getByRole('tab', { name: 'Deadline Calendar' }).click();
+  // The tab redraws a moment after the click, so read the day once it shows the deadline view.
+  await page.getByRole('tab', { name: 'Deadline Calendar', selected: true }).waitFor();
+  await page.waitForFunction(() => !/Quiz 1/.test(document.querySelector('[data-date="2026-11-11"]')?.textContent ?? ''), null, { timeout: 5000 })
+    .catch(() => undefined);
   assert.doesNotMatch(await page.locator('[data-date="2026-11-11"]').innerText(), /Quiz 1/);
 });
 
