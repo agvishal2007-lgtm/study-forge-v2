@@ -1444,3 +1444,10 @@ code.note-math { font-family: ui-monospace, monospace; }
 .settings-page .permission-list .small { font-size: .92rem; }
 .status-button { display: inline-flex; align-items: center; gap: .3rem; min-height: 36px; line-height: 1.2; }
 @media (max-width: 720px) { .settings-page .segmented { border-radius: 18px; } }
+
+/* Settings: headings centered in each card, with the choices under them centered to match. */
+.settings-page > section > h2, .settings-page > section h3 { text-align: center; }
+.settings-page [aria-labelledby="appearance-heading"] .segmented { display: flex; width: fit-content; max-width: 100%; margin-left: auto; margin-right: auto; justify-content: center; }
+.settings-page [aria-labelledby="appearance-heading"] .segmented + p, .settings-page [aria-labelledby="appearance-heading"] .pref-row > p { text-align: center; }
+.settings-page .row-actions, .settings-page section > .button { justify-content: center; }
+.settings-page [aria-labelledby="backup-heading"] .row-actions, .settings-page [aria-labelledby="backup-heading"] > p { text-align: center; justify-content: center; }
