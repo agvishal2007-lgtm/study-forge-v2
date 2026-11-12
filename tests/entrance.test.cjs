@@ -94,8 +94,7 @@ test('both tabs are reachable, and each one keeps every way to sign in', async (
     await page.getByRole('button', { name: 'Continue with Google' }).waitFor();
     await page.getByRole('button', { name: 'Continue with Microsoft' }).waitFor();
     await page.getByLabel('Email', { exact: true }).waitFor();
-    // Deferred for now, so it must not be offered as though it worked.
-    assert.equal(await page.getByRole('button', { name: /Yahoo/i }).count(), 0);
+    await page.getByRole('button', { name: 'Continue with Yahoo' }).waitFor();
   }
   // Recovery is reachable without typing an address by hand.
   await page.getByRole('link', { name: 'Forgot your password?' }).click();

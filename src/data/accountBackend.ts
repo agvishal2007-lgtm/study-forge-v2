@@ -5,7 +5,7 @@ export interface AccountUser {
   usesGoogle?: boolean;
 }
 
-export type LoginProvider = 'google' | 'microsoft';
+export type LoginProvider = 'google' | 'microsoft' | 'yahoo';
 
 export type SyncCollection = 'courses' | 'topics' | 'notes' | 'lessons' | 'checkpoints' | 'checkpointProgress' | 'plannerItems' | 'decks' | 'cards' | 'cardProgress' | 'practiceSets' | 'practiceQuestions' | 'practiceAttempts' | 'examResults' | 'calendarEvents' | 'studyDays' | 'studyTime' | 'resourceLinks' | 'gradeCategories' | 'materials' | 'transcripts' | 'settings' | 'studyState';
 

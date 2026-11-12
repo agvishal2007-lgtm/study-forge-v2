@@ -922,6 +922,13 @@ test('after signing in with Google, that calendar connects in one tap, and other
   await microsoft.getByRole('button', { name: /Account menu for/ }).waitFor();
   assert.equal(await microsoft.getByTestId('calendar-offer').count(), 0, 'it only offers Google Calendar to Google accounts');
   await close('calendar-microsoft');
+  // Yahoo signs in the same way, and is not offered Google Calendar either.
+  const yahoo = await device('calendar-yahoo', { uid: 'yahoo-uid', email: 'student@yahoo.com' });
+  await signInButton(yahoo).click();
+  await yahoo.getByRole('button', { name: 'Continue with Yahoo' }).click();
+  await yahoo.getByRole('button', { name: 'Account menu for student@yahoo.com' }).waitFor();
+  assert.equal(await yahoo.getByTestId('calendar-offer').count(), 0);
+  await close('calendar-yahoo');
 });
 
 test('files and recordings sync through the student\'s own Google Drive, checked on both ends', async () => {

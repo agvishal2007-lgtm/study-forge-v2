@@ -52,7 +52,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/',
     target: ['.topbar'],
     title: 'Your account',
-    body: 'Log In / Sign Up opens a page of its own, away from your work. There you can use an email and password, Google, or Microsoft, including a college account if your school allows it. Once you\'re signed in, your courses, notes, planner, flashcards, practice, settings and study in progress sync to your other devices by themselves, within seconds. The badge beside your picture shows Synced (green), Syncing (blue), Offline or Pending (amber), or Sync failed (red). Tap it for details such as the last sync time. It only shows information and never takes you anywhere. Signing in is optional, and every page has a link back here.',
+    body: 'Log In / Sign Up opens a page of its own, away from your work. There you can use an email and password, Google, Microsoft, or Yahoo, including a college account if your school allows it. Once you\'re signed in, your courses, notes, planner, flashcards, practice, settings and study in progress sync to your other devices by themselves, within seconds. The badge beside your picture shows Synced (green), Syncing (blue), Offline or Pending (amber), or Sync failed (red). Tap it for details such as the last sync time. It only shows information and never takes you anywhere. Signing in is optional, and every page has a link back here.',
   },
   {
     id: 'today',

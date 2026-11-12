@@ -25,6 +25,14 @@ function translate(error: unknown): BackendError {
 const docId = (item: { collection: string; id: string }) => encodeURIComponent(itemKey(item.collection, item.id));
 
 function providerFor(provider: LoginProvider) {
+  if (provider === 'yahoo') {
+    // Only the two permissions set up in Yahoo's developer console (email and profile).
+    const yahoo = new OAuthProvider('yahoo.com');
+    yahoo.addScope('email');
+    yahoo.addScope('profile');
+    yahoo.setCustomParameters({ prompt: 'login' });
+    return yahoo;
+  }
   if (provider === 'microsoft') {
     const microsoft = new OAuthProvider('microsoft.com');
     microsoft.setCustomParameters({ prompt: 'select_account' });

@@ -6,7 +6,7 @@ import { describeAuthFailure, looksLikeEmail, signUpProblems } from '../data/aut
 import { forgetKnownAccounts, listKnownAccounts, rememberAccount } from '../data/knownAccounts';
 import { loadBackend } from '../data/sync';
 
-const PROVIDER_LABEL: Record<LoginProvider, string> = { google: 'Google', microsoft: 'Microsoft' };
+const PROVIDER_LABEL: Record<LoginProvider, string> = { google: 'Google', microsoft: 'Microsoft', yahoo: 'Yahoo' };
 
 /**
  * The entrance to Study Forge. Signing in is its own page, so none of the student dashboard is
@@ -115,7 +115,7 @@ export function AuthPage({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   return (
     <div className="page auth-page">
       <h1>{signingUp ? 'Create your account' : 'Sign in'}</h1>
-      <p className="muted">{signingUp ? 'Your courses, notes, and study progress then follow you between devices.' : 'Welcome back.'} An account is optional, and files and recordings stay on your device.</p>
+      <p className="muted">{signingUp ? 'Your courses, notes, and study progress then follow you between devices.' : 'Welcome back.'} An account is optional. Files and recordings stay on your device unless you choose to sync them through your Google Drive.</p>
       {loadFailed && <p className="error" role="alert">Sign-in couldn't load. Check your internet connection, then reload this page.</p>}
       <div className="auth-providers">
         {(backend?.providers ?? ['google' as LoginProvider]).map((provider) => (
@@ -182,7 +182,7 @@ export function ForgotPasswordPage() {
       <div className="page auth-page">
         <h1>Check your email</h1>
         <p role="status" data-testid="reset-sent">If there's an account for {email.trim()}, a link to choose a new password is on its way. It can take a few minutes, so check your spam folder too.</p>
-        <p className="muted">If you signed up with Google or Microsoft, use that button to sign in instead.</p>
+        <p className="muted">If you signed up with Google, Microsoft or Yahoo, use that button to sign in instead.</p>
         <p><Link className="button primary" to="/sign-in">Back to sign in</Link></p>
       </div>
     );
@@ -229,7 +229,7 @@ export function ForgotEmailPage() {
           <li>Try your school email and your personal email.</li>
           <li>Search each inbox for "Study Forge". We sent a confirmation email when you signed up with an email and password.</li>
           <li>Check your browser's or phone's saved passwords for this site.</li>
-          <li>If you used Google or Microsoft, you don't need to remember an email. Just use that button.</li>
+          <li>If you used Google, Microsoft or Yahoo, you don't need to remember an email. Just use that button.</li>
         </ul>
       </section>
       <p><Link className="button primary" to="/sign-in">Back to sign in</Link></p>
@@ -246,7 +246,7 @@ export function PrivacyPage() {
       <p>Everything stays in your browser on your device. Nothing is sent to Study Forge.</p>
       <h2>With an account</h2>
       <ul className="plain-list">
-        <li>Your email address, plus your name and picture if you sign in with Google or Microsoft, are used to sign you in.</li>
+        <li>Your email address, plus your name and picture if you sign in with Google, Microsoft or Yahoo, are used to sign you in.</li>
         <li>The text you create is saved online so it can follow you: courses, topics, notes, lessons, planner items, calendar items, flashcards, practice questions, and your progress.</li>
         <li>Files and recordings aren't saved online. They stay on your device.</li>
         <li>This is stored in Google's Firebase service. Other students can't read it, but whoever runs this site could technically view it, so don't save anything you wouldn't want seen.</li>
