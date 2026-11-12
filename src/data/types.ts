@@ -264,6 +264,15 @@ export interface GradeCategory {
   updatedAt: number;
 }
 
+/** One step of a broken-down assignment. The target date is the student's own, never an official deadline. */
+export interface PlannerStep {
+  id: string;
+  title: string;
+  done: boolean;
+  /** YYYY-MM-DD, or empty for no target. */
+  targetDate: string;
+}
+
 export interface PlannerItem {
   id: string;
   title: string;
@@ -290,6 +299,8 @@ export interface PlannerItem {
   sourceId?: string;
   /** Files and links the student linked to this work, such as the reading it covers. */
   materialIds?: string[];
+  /** Optional steps the student broke this work into. The item's own due date stays the real deadline. */
+  steps?: PlannerStep[];
 }
 
 /* Calendar */

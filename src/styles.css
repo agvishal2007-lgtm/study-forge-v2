@@ -1692,3 +1692,17 @@ main :where(*) { scroll-margin-top: 14px; }
 .book-outline .current { font-weight: 700; }
 .bookmark-row { display: flex; justify-content: space-between; gap: .5rem; align-items: center; padding: .15rem 0; }
 .related-work { margin-top: 1.5rem; }
+
+/* Assignment steps */
+.assignment-steps { margin-top: 1.5rem; }
+.step-list { padding-left: 1.4rem; display: grid; gap: .35rem; }
+.step-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.step-row .check-label { flex: 1 1 12rem; }
+.step-title.done { text-decoration: line-through; color: var(--muted); }
+.step-date { width: auto; }
+.step-summary { display: block; }
+
+/* Study suggestions on Today */
+.suggestion-list { display: grid; gap: .5rem; margin: .5rem 0; }
+.suggestion-row { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; }
+.suggestion-why { display: block; }

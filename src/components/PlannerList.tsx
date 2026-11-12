@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { setPlannerStatus } from '../data/planner';
 import { describeDue, groupOf, isDone, localNow } from '../data/plannerRules';
+import { describeProgress, stepProgress } from '../data/stepRules';
+import { shortDate } from './AssignmentSteps';
 import { PLANNER_STATUSES, type Course, type PlannerItem, type PlannerStatus } from '../data/types';
 
 export function PlannerRow({ item, course, now }: { item: PlannerItem; course?: Course; now: { date: string; time: string } }) {
@@ -11,6 +13,7 @@ export function PlannerRow({ item, course, now }: { item: PlannerItem; course?: 
     setPlannerStatus(item.id, status).catch((error: Error) => setFailure(`That wasn't saved. ${error.message}`));
   };
   const overdue = groupOf(item, now) === 'overdue';
+  const progress = stepProgress(item.steps, now.date);
   const details = [item.type, course?.name, item.priority === 'High' ? 'High priority' : '', item.estimateHours ? `About ${item.estimateHours} ${item.estimateHours === 1 ? 'hour' : 'hours'}` : ''].filter(Boolean);
   return (
     <li className="planner-row" data-testid="planner-row" data-done={isDone(item)} style={{ '--spine': course?.color ?? 'var(--line)' } as React.CSSProperties}>
@@ -18,6 +21,7 @@ export function PlannerRow({ item, course, now }: { item: PlannerItem; course?: 
         <Link to={`/planner/${item.id}`}>{item.title}</Link>
         <span className={overdue ? 'planner-due overdue' : 'planner-due'}>{describeDue(item, now)}</span>
         <span className="muted file-meta">{details.join(', ')}</span>
+        {progress && !isDone(item) && <span className="muted small step-summary" data-testid="row-steps">{describeProgress(progress, shortDate)}</span>}
         {failure && <span className="error" role="alert">{failure}</span>}
       </div>
       <div className="planner-actions">

@@ -138,6 +138,8 @@ export const ACADEMY: AcademyTopic[] = [
       'Press Add item. Fill in the course, type, due date and time, points, how long it will take and how important it is to you.',
       'Choose an order: Earliest due date, Highest raw points, Greatest grade impact, Quickest to finish, Most important to me, Balanced, or My own weighting, where you set the weights.',
       'Pin anything to the top, or reset to the chosen order.',
+      'Open an item and use Steps to break it down. Add suggested steps (choose a topic, research, outline, draft, revise, submit) or your own, reorder them, and give each your own target date. Suggest target dates spreads them evenly up to the due date.',
+      'Tick steps as you go. The Planner shows progress like “2 of 6 steps done. Next: Outline”. When every step is done, you’re offered Mark the item Completed.',
       'In a course’s Grades, add your categories and weights, enter scores, and use “If everything left scores…” to see a what-if.',
     ],
     result: 'Your list is ordered your way, with the reason shown. Overdue and due-soon work stays visible in every order.',
@@ -145,8 +147,9 @@ export const ACADEMY: AcademyTopic[] = [
       'Missing points or estimates are never made up. Items without them say so.',
       'Points and grade impact are different: a 10-point quiz in a 40% category can matter more than a 50-point homework.',
       'Work not yet graded never counts as a zero.',
+      'Steps are optional, and their target dates are your own goals. They never change the real due date, and finishing them never completes the item by itself.',
     ],
-    connections: 'Today’s next 7 days uses exactly the same order. Deadlines appear on the Deadline Calendar.',
+    connections: 'A step whose target date has arrived appears in Today’s Also worth doing. Today’s next 7 days uses exactly the same order. Deadlines appear on the Deadline Calendar.',
   },
   {
     id: 'studying',
@@ -240,6 +243,7 @@ export const ACADEMY: AcademyTopic[] = [
     where: 'Today, the first item in the main menu.',
     steps: [
       'Press Start studying. It resumes unfinished practice or flashcards, or else picks the most useful next thing and says why.',
+      'Also worth doing, just below, suggests up to four more things: a test within a week, due flashcards, questions you saved, a step whose target date arrived, missed questions, or your next lesson. Each says why. Press Not today to hide one until tomorrow.',
       'Next 7 days lists deadlines in your own Planner order, with events alongside.',
       'Missed study time lists study blocks that went by. Move each to Today or Tomorrow.',
       'Your last 7 days shows bars that say what they count, like “2 of 8 checkpoints”.',
@@ -248,6 +252,7 @@ export const ACADEMY: AcademyTopic[] = [
     limits: [
       'Only your own study blocks can be moved. Class deadlines never move.',
       'There are no background reminders. A free website can’t promise to deliver them while it’s closed.',
+      'Suggestions follow fixed rules over your own records. No AI is used, and they report what you did, such as a practice score, never a guess about what you know. Hiding one applies on this device only.',
     ],
     connections: 'Uses the same priority order as the Planner and the same events as the Calendar.',
   },

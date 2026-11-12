@@ -27,14 +27,16 @@ import { listAllGradeCategories } from '../data/grades';
 import { formatDuration, listStudyTime, secondsByDate } from '../data/studyTime';
 import { listExamResults } from '../data/exams';
 import { listPlannerItems, setPlannerStatus } from '../data/planner';
-import { comparePlanner, describeDue, groupOf, localNow } from '../data/plannerRules';
+import { comparePlanner, describeDue, groupOf, isDone, localNow } from '../data/plannerRules';
 import { listUnfinished } from '../data/recordings';
 import { getStorageStatus, listCourses, listMaterials, requestKeepFiles } from '../data/store';
 import type { Course, PlannerItem } from '../data/types';
 import { useLive } from '../data/useLive';
 import { MissedStudy, StartStudying, WeekLookBack, WeekWorkload } from '../components/WeekPlan';
 import { lastWeek, missedStudyBlocks, startStudying, weekWorkload } from '../data/workloadRules';
-import { loadPracticeSession } from '../data/practice';
+import { loadPracticeSession, savedQuestionIds } from '../data/practice';
+import { StudySuggestions } from '../components/StudySuggestions';
+import { cleanSteps } from '../data/stepRules';
 import { loadReviewSession, REVIEW_RESUME_MS } from '../data/flashcards';
 import { totalsByDay } from '../data/progressRules';
 
@@ -84,13 +86,13 @@ export function TodayPage() {
     const [decks, cards, cardProgress] = await Promise.all([listDecks(), listCards(), listCardProgress()]);
     const [practiceSets, practiceQuestions, practiceAttempts, topics] = await Promise.all([listPracticeSets(), listPracticeQuestions(), listPracticeAttempts(), listAllTopics()]);
     const [calendarEvents, studyDays, examResults, studyTime] = await Promise.all([listCalendarEvents(), listStudyDays(), listExamResults(), listStudyTime()]);
-    const [practiceSession, reviewSession] = await Promise.all([loadPracticeSession(), loadReviewSession()]);
-    return { practiceSession, reviewSession, gradeCategories, calendarEvents, studyDays, examResults, studyTime, practiceSets, practiceQuestions, practiceAttempts, topics, courses, materials, storage, unfinished, notes, lastBackup, plannerItems, decks, cards, cardProgress, progress, next: recommendNext(lessons, checkpoints, progress) };
+    const [practiceSession, reviewSession, savedIds] = await Promise.all([loadPracticeSession(), loadReviewSession(), savedQuestionIds()]);
+    return { savedIds, practiceSession, reviewSession, gradeCategories, calendarEvents, studyDays, examResults, studyTime, practiceSets, practiceQuestions, practiceAttempts, topics, courses, materials, storage, unfinished, notes, lastBackup, plannerItems, decks, cards, cardProgress, progress, next: recommendNext(lessons, checkpoints, progress) };
   }, [askedToKeep]);
 
   if (error) return <div className="page"><h1>Today</h1><p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { practiceSession, reviewSession, gradeCategories, courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress, practiceSets, practiceQuestions, practiceAttempts, topics, calendarEvents, studyDays, examResults, studyTime } = data;
+  const { savedIds, practiceSession, reviewSession, gradeCategories, courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress, practiceSets, practiceQuestions, practiceAttempts, topics, calendarEvents, studyDays, examResults, studyTime } = data;
   const backupDue = (materials.length > 0 || notes.length > 0) && (lastBackup === null || Date.now() - lastBackup > BACKUP_REMINDER_MS);
 
   if (courses.length === 0 && materials.length === 0 && unfinished.length === 0 && notes.length === 0 && plannerItems.length === 0 && cards.length === 0 && decks.length === 0 && practiceSets.length === 0 && calendarEvents.length === 0) {
@@ -210,6 +212,26 @@ export function TodayPage() {
       )}
 
       <StartStudying choice={choice} />
+      <StudySuggestions
+        inputs={{
+          today: now.date,
+          primaryTo: choice.to,
+          pausedPractice: practiceSession && !practiceSession.endedEarly ? { url: practiceSession.url, position: practiceSession.position, total: practiceSession.questionIds.length } : null,
+          pausedReview: reviewSession && Date.now() - (reviewSession.savedAt ?? 0) < REVIEW_RESUME_MS ? { url: reviewSession.url, left: reviewSession.cardIds.length } : null,
+          cardsDue: dueCards.length,
+          tests: plannerItems.filter((item) => !isDone(item) && item.dueDate && (item.type === 'Exam' || item.type === 'Quiz')).map((item) => ({ id: item.id, title: item.title, dueDate: item.dueDate })),
+          hasPracticeQuestions: practiceQuestions.length > 0,
+          savedQuestions: savedIds.filter((id) => practiceQuestions.some((question) => question.id === id)).length,
+          mistakes: practiceMistakes.length,
+          weakTopic: weak[0] ? { label: weak[0].label, answered: weak[0].answered, percent: weak[0].percent } : null,
+          lessonsToReview: toReview,
+          nextCheckpoint: next ? { id: next.checkpoint.id, title: next.checkpoint.title } : null,
+          steps: plannerItems.filter((item) => !isDone(item)).flatMap((item) => {
+            const step = cleanSteps(item.steps).find((entry) => !entry.done);
+            return step ? [{ itemId: item.id, itemTitle: item.title, stepId: step.id, stepTitle: step.title, targetDate: step.targetDate }] : [];
+          }),
+        }}
+      />
 
       <div className="dash-tiles">
         {tiles.map((tile) => (

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { LinkedFiles } from '../components/RelatedWork';
+import { AssignmentSteps } from '../components/AssignmentSteps';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useStillHere } from '../components/useStillHere';
@@ -180,11 +181,13 @@ export function PlannerItemPage() {
             <ul>{problems.map((problem) => <li key={problem}>{problem}</li>)}</ul>
           </div>
         )}
+        {isNew && <p className="muted small">After saving, open it again to break it into steps.</p>}
         <div className="session-actions">
           <button className="button primary" type="submit" disabled={saving}>Save item</button>
           <Link to="/planner">Cancel</Link>
         </div>
       </form>
+      {!isNew && <AssignmentSteps itemId={id} />}
       {!isNew && <LinkedFiles itemId={id} />}
       {confirmDelete && (
         <ConfirmDialog

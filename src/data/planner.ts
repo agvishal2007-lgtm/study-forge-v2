@@ -1,6 +1,7 @@
 import { getDb, notifyChanged } from './db';
 import { localNow } from './plannerRules';
-import type { PlannerItem, PlannerStatus } from './types';
+import { cleanSteps } from './stepRules';
+import type { PlannerItem, PlannerStatus, PlannerStep } from './types';
 
 export async function listPlannerItems(): Promise<PlannerItem[]> {
   return (await getDb()).getAll('plannerItems');
@@ -39,6 +40,16 @@ export async function deletePlannerItem(id: string): Promise<void> {
       completed: true, seriesId: '', plannerItemId: null, source: 'manual', sourceCalendar: '', hidden: true, createdAt: now, updatedAt: now,
     });
   }
+  await tx.done;
+  notifyChanged();
+}
+
+/** Saves an item's own steps. Only the steps change; its due date, status and everything else stay as they are. */
+export async function savePlannerSteps(id: string, steps: PlannerStep[]): Promise<void> {
+  const tx = (await getDb()).transaction('plannerItems', 'readwrite');
+  const item = await tx.store.get(id);
+  if (!item) throw new Error('This item no longer exists.');
+  await tx.store.put({ ...item, steps: cleanSteps(steps), updatedAt: Math.max(Date.now(), item.updatedAt + 1) });
   await tx.done;
   notifyChanged();
 }

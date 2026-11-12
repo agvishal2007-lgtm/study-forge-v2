@@ -63,7 +63,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/',
     target: ['[data-testid=start-studying]', '#content .page h1'],
     title: 'Today',
-    body: 'Your starting point. Start studying picks the most useful thing to do next and says why. Below it are the next 7 days, any study time you missed, and a look back at your week.',
+    body: 'Your starting point. Start studying picks the most useful thing to do next and says why. Also worth doing lists a few more ideas, each with its reason; hide any for today. Below are the next 7 days, missed study time, and a look back at your week.',
   },
   {
     id: 'courses',
@@ -96,7 +96,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/planner',
     target: ['[data-tour="add-planner"]'],
     title: 'Planner',
-    body: 'Add assignments and exams with their due dates. Sort them the way that suits you, such as by due date or grade impact, and enter grades to see how each course is going.',
+    body: 'Add assignments and exams with their due dates. Open one to break it into steps with your own target dates; the due date stays the same. Sort work your way, such as by due date or grade impact, and enter grades to see how each course is going.',
   },
   {
     id: 'study',
