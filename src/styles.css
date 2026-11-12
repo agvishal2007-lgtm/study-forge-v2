@@ -1437,13 +1437,11 @@ code.note-math { font-family: ui-monospace, monospace; }
 .settings-page .permission-list .status-tag { padding: .2rem .75rem; }
 @media (max-width: 720px) {
   .settings-page > section { padding: 1.25rem 1.1rem; border-radius: 14px; margin-bottom: 1.25rem; }
-  .settings-page .segmented { display: flex; }
 }
 .settings-page > section ul:not(.permission-list):not(.plain-list) { list-style: disc; padding-left: 1.4rem; }
 .settings-page .permission-list { padding-left: 0; list-style: none; }
 .settings-page .permission-list .small { font-size: .92rem; }
 .status-button { display: inline-flex; align-items: center; gap: .3rem; min-height: 36px; line-height: 1.2; }
-@media (max-width: 720px) { .settings-page .segmented { border-radius: 18px; } }
 
 /* Settings: headings centered in each card, with the choices under them centered to match. */
 .settings-page > section > h2, .settings-page > section h3 { text-align: center; }
@@ -1451,3 +1449,17 @@ code.note-math { font-family: ui-monospace, monospace; }
 .settings-page [aria-labelledby="appearance-heading"] .segmented + p, .settings-page [aria-labelledby="appearance-heading"] .pref-row > p { text-align: center; }
 .settings-page .row-actions, .settings-page section > .button { justify-content: center; }
 .settings-page [aria-labelledby="backup-heading"] .row-actions, .settings-page [aria-labelledby="backup-heading"] > p { text-align: center; justify-content: center; }
+
+/* On a phone, a group of choices fills its row evenly, with no empty space left inside the bubble. */
+@media (max-width: 720px) {
+  .segmented, .settings-page .segmented, .settings-page [aria-labelledby="appearance-heading"] .segmented {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; border-radius: 16px; gap: .3rem;
+  }
+  /* Three short choices sit side by side. */
+  .segmented:has(> .segment:nth-child(3):last-child):not(:has(.segment-sample)) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* An odd one out takes the whole last row instead of leaving a gap beside it. */
+  .segmented > .segment:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .segmented:has(> .segment:nth-child(3):last-child):not(:has(.segment-sample)) > .segment:last-child { grid-column: auto; }
+  .segmented > .segment { justify-content: center; text-align: center; padding: .55rem .5rem; border-radius: 12px; }
+  .settings-page .segment:has(.segment-sample) { align-items: center; }
+}
