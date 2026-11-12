@@ -1486,7 +1486,7 @@ code.note-math { font-family: ui-monospace, monospace; }
 .calc-panel { border: 1px solid var(--line); border-radius: 16px; background: var(--raised); padding: .85rem; display: grid; gap: .7rem; }
 .calc-head { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 .calc-tabs { display: flex; gap: .35rem; }
-.calc-tabs [aria-selected="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+.calc-tabs [aria-selected="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .calc-modes { display: flex; flex-wrap: wrap; gap: .35rem; }
 .calc-segment { display: inline-flex; gap: .25rem; }
 .calc-segment .button { min-height: 36px; padding: 0 .7rem; font-size: .85rem; }
@@ -1593,7 +1593,7 @@ main :where(*) { scroll-margin-top: 14px; }
 .ti-num { background: #e7e8ec; color: #111827; font-size: 1rem; }
 .ti-graph { background: #4b4f59; font-size: .7rem; }
 .ti-shift2 { background: #2f6fda; color: #fff; }
-.ti-key.ti-alpha { background: #1f8f4e; color: #fff; }
+.ti-key.ti-alpha { background: #17803f; color: #fff; }
 .ti-enter, .ti-clear { background: #5b5f6a; }
 .ti-armed { box-shadow: 0 0 0 3px #fff, inset 0 -3px 0 rgba(0, 0, 0, .35); }
 .ti-arrows { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: .15rem; padding-top: .95rem; }
@@ -1631,3 +1631,9 @@ main :where(*) { scroll-margin-top: 14px; }
 .calc-warning { display: block; }
 @media (max-width: 640px) { .ti-screen { height: 150px; } .ti-key { min-height: 42px; } .ti-labels { min-height: .85rem; } }
 @media (max-height: 720px) { body.tour-active main#content { padding-bottom: 75vh; } }
+
+/* Each function's own colour, readable on the light and the dark calculator screen. */
+.lcd-f0 { color: #1d4ed8; } .lcd-f1 { color: #b91c1c; } .lcd-f2 { color: #111827; } .lcd-f3 { color: #a21caf; } .lcd-f4 { color: #15803d; } .lcd-f5 { color: #9a3412; }
+:root[data-theme="dark"] .lcd-f0 { color: #60a5fa; } :root[data-theme="dark"] .lcd-f1 { color: #f87171; } :root[data-theme="dark"] .lcd-f2 { color: #f3f4f6; }
+:root[data-theme="dark"] .lcd-f3 { color: #e879f9; } :root[data-theme="dark"] .lcd-f4 { color: #4ade80; } :root[data-theme="dark"] .lcd-f5 { color: #fb923c; }
+@media (max-height: 720px) { .tour-card .meter { display: none; } .tour-card h2 { margin-top: .4rem; } }

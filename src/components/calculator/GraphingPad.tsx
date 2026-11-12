@@ -14,7 +14,7 @@ import {
 
 type Screen = 'home' | 'yeq' | 'window' | 'tblset' | 'graph' | 'table' | 'mode' | 'zoom' | 'calc' | 'math';
 
-const FUNCTION_COLORS = ['#1d4ed8', '#dc2626', '#111827', '#c026d3', '#15803d', '#ea580c'];
+const FUNCTION_COLORS = ['#1d4ed8', '#b91c1c', '#111827', '#a21caf', '#15803d', '#9a3412'];
 const FUNCTION_COLORS_DARK = ['#60a5fa', '#f87171', '#f3f4f6', '#e879f9', '#4ade80', '#fb923c'];
 
 const MATH_MENU: { key: string; label: string; type: string }[] = [
@@ -571,7 +571,7 @@ export function GraphingPad({ calc, angle, onAngle, state, setState, onInsert }:
           <div className="lcd-text" data-testid="lcd-yeq">
             {funcs.map((text, i) => (
               <div key={i} className={`lcd-row${row === i ? ' lcd-selected' : ''}`}>
-                <span className="lcd-fname" style={{ color: FUNCTION_COLORS[i] }}>Y{i + 1}=</span>
+                <span className={`lcd-fname lcd-f${i}`}>Y{i + 1}=</span>
                 <span data-testid={`lcd-y${i + 1}`}>{row === i ? shown(text, cursor) : text}</span>
                 {compiled[i] && 'error' in compiled[i]! && <span className="lcd-dim"> (can’t graph)</span>}
               </div>
@@ -624,7 +624,7 @@ export function GraphingPad({ calc, angle, onAngle, state, setState, onInsert }:
         const rows = tableRows(shownFns.map((i) => fnAt(i)!), tblStart + tblTop * tblStep, tblStep, 7);
         return (
           <table className="lcd-table" data-testid="lcd-table">
-            <thead><tr><th scope="col">X</th>{shownFns.map((i) => <th key={i} scope="col" style={{ color: FUNCTION_COLORS[i] }}>Y{i + 1}</th>)}</tr></thead>
+            <thead><tr><th scope="col">X</th>{shownFns.map((i) => <th key={i} scope="col" className={`lcd-f${i}`}>Y{i + 1}</th>)}</tr></thead>
             <tbody>{rows.map((r) => <tr key={r.x}><td>{num(r.x)}</td>{r.ys.map((y, i) => <td key={i}>{y === null ? 'ERROR' : num(y)}</td>)}</tr>)}</tbody>
           </table>
         );
@@ -633,7 +633,7 @@ export function GraphingPad({ calc, angle, onAngle, state, setState, onInsert }:
         return (
           <div className="lcd-graph">
             <canvas ref={canvas} className="lcd-canvas" role="img" aria-label={graphDescription} data-testid="lcd-canvas" />
-            {trace && <div className="lcd-top" style={{ color: FUNCTION_COLORS[trace.fn] }}>Y{trace.fn + 1}={funcs[trace.fn]}</div>}
+            {trace && <div className={`lcd-top lcd-f${trace.fn}`}>Y{trace.fn + 1}={funcs[trace.fn]}</div>}
             <div className="lcd-bottom" data-testid="lcd-coords" aria-live="polite">
               {prompt ? <>X={shown(prompt.text, null)}</>
                 : found ? found

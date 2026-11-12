@@ -183,7 +183,7 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
   const box = measured && measured.step === step ? measured.box : null;
   const setBox = useCallback((next: Box | null) => setMeasured(next ? { step, box: next } : null), [step]);
   const [notFound, setNotFound] = useState(false);
-  const [cardPosition, setCardPosition] = useState<CardPlace | null>(null);
+  const [cardPosition, setCardPosition] = useState<(CardPlace & { height: number }) | null>(null);
 
   // Whether the action this step asks for is done yet. Null means still checking.
   const [actionDone, setActionDone] = useState<boolean | null>(definition.action ? null : true);
@@ -290,14 +290,28 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
         element.style.width = `${width}px`;
         return element.offsetHeight;
       };
-      const place = placeCard(box, heightAt);
+      const spot = placeCard(box, heightAt);
+      const place = { ...spot, height: heightAt(spot.width) };
       element.style.width = before;
-      setCardPosition((now) => (now && now.top === place.top && now.left === place.left && now.width === place.width ? now : place));
+      setCardPosition((now) => (now && now.top === place.top && now.left === place.left && now.width === place.width && now.height === place.height ? now : place));
     };
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
   }, [box, step, notFound, actionDone, trying]);
+
+  // On a screen too small for both, a tall part's ring shows only the part that the explanation
+  // leaves uncovered (its heading and first controls), instead of a ring hidden under the card.
+  const ring = (() => {
+    if (!box || !cardPosition) return box;
+    const c = cardPosition;
+    const sideBySide = c.left >= box.left + box.width || c.left + c.width <= box.left;
+    if (sideBySide) return box;
+    const cardBottom = c.top + c.height;
+    if (c.top > box.top + 48 && c.top < box.top + box.height) return { ...box, height: c.top - 8 - box.top };
+    if (cardBottom < box.top + box.height - 48 && cardBottom > box.top) return { ...box, top: cardBottom + 8, height: box.top + box.height - cardBottom - 8 };
+    return box;
+  })();
 
   const isFirst = step === 0;
   const isLast = step === TOUR_STEPS.length - 1;
@@ -350,17 +364,17 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
   return createPortal(
     <div className="tour">
       {/* Catches every click outside the explanation. */}
-      {trying && box ? (
+      {trying && ring ? (
         // Four walls around the box, so only the highlighted part can be used.
         <>
-          <div className="tour-blocker" data-testid="tour-blocker" style={{ bottom: `calc(100% - ${box.top}px)` }} />
-          <div className="tour-blocker" style={{ top: box.top + box.height }} />
-          <div className="tour-blocker" style={{ top: box.top, height: box.height, right: `calc(100% - ${box.left}px)` }} />
-          <div className="tour-blocker" style={{ top: box.top, height: box.height, left: box.left + box.width }} />
+          <div className="tour-blocker" data-testid="tour-blocker" style={{ bottom: `calc(100% - ${ring.top}px)` }} />
+          <div className="tour-blocker" style={{ top: ring.top + ring.height }} />
+          <div className="tour-blocker" style={{ top: ring.top, height: ring.height, right: `calc(100% - ${ring.left}px)` }} />
+          <div className="tour-blocker" style={{ top: ring.top, height: ring.height, left: ring.left + ring.width }} />
         </>
       ) : <div className="tour-blocker" data-testid="tour-blocker" />}
-      {box && !(definition.action && actionDone === true && !findTarget(definition.target))
-        ? <div className="tour-box" data-testid="tour-box" style={{ top: box.top, left: box.left, width: box.width, height: box.height, borderRadius: box.radius }} />
+      {ring && !(definition.action && actionDone === true && !findTarget(definition.target))
+        ? <div className="tour-box" data-testid="tour-box" style={{ top: ring.top, left: ring.left, width: ring.width, height: ring.height, borderRadius: Math.min(ring.radius, ring.height / 2) }} />
         : <div className="tour-dark" />}
       <div
         ref={card}
