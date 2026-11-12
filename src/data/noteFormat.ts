@@ -77,7 +77,7 @@ export interface FormatEdit {
 
 const LINE_MARK: Record<'heading' | 'bullet' | 'number' | 'check', RegExp> = {
   heading: /^## /,
-  bullet: /^- (?!\[)/,
+  bullet: /^(- (?!\[)|• )/,
   number: /^\d+\. /,
   check: /^- \[[ xX]\] /,
 };
@@ -104,17 +104,40 @@ export function formatEdit(text: string, start: number, end: number, kind: Forma
   const after = text.indexOf('\n', Math.max(start, end - (end > start && text[end - 1] === '\n' ? 1 : 0)));
   const to = after === -1 ? text.length : after;
   const lines = text.slice(from, to).split('\n');
-  const removing = lines.every((line) => !line.trim() || LINE_MARK[kind].test(line));
+  // Pressing a list button again takes the marks off, but on a blank line it starts the list.
+  const removing = lines.some((line) => line.trim()) && lines.every((line) => !line.trim() || LINE_MARK[kind].test(line));
   let counter = 0;
   const insert = lines.map((line) => {
-    const bare = line.replace(/^(## |- \[[ xX]\] |- |\d+\. )/, '');
+    const bare = line.replace(/^(## |- \[[ xX]\] |- |• |\d+\. )/, '');
     if (removing) return bare;
     if (!line.trim() && lines.length > 1) return line;
     counter += 1;
-    const mark = kind === 'heading' ? '## ' : kind === 'bullet' ? '- ' : kind === 'check' ? '- [ ] ' : `${counter}. `;
+    const mark = kind === 'heading' ? '## ' : kind === 'bullet' ? '• ' : kind === 'check' ? '- [ ] ' : `${counter}. `;
     return `${mark}${bare}`;
   }).join('\n');
   return { from, to, insert, selectionStart: from + insert.length, selectionEnd: from + insert.length };
 }
 
 export const applyEdit = (text: string, edit: FormatEdit) => `${text.slice(0, edit.from)}${edit.insert}${text.slice(edit.to)}`;
+
+/**
+ * Enter inside a list starts the next item: the next number, another bullet, or another box to
+ * tick. Enter on an empty item ends the list instead. Anything else is left to the textarea.
+ */
+export function continueList(text: string, start: number, end: number): FormatEdit | null {
+  if (start !== end) return null;
+  const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+  const lineEnd = text.indexOf('\n', start) === -1 ? text.length : text.indexOf('\n', start);
+  const line = text.slice(lineStart, lineEnd);
+  const found = /^(\s*)(- \[[ xX]\] |• |- |(\d+)\. )/.exec(line);
+  if (!found) return null;
+  const [mark, indent, symbol, number] = found;
+  if (start < lineStart + mark.length) return null;
+  // An item with nothing in it ends the list.
+  if (!line.slice(mark.length).trim() && lineEnd === start) {
+    return { from: lineStart, to: lineEnd, insert: '', selectionStart: lineStart, selectionEnd: lineStart };
+  }
+  const next = number ? `${Number(number) + 1}. ` : symbol.startsWith('- [') ? '- [ ] ' : symbol;
+  const insert = `\n${indent}${next}`;
+  return { from: start, to: start, insert, selectionStart: start + insert.length, selectionEnd: start + insert.length };
+}

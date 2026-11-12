@@ -40,12 +40,38 @@ test('toolbar edits wrap and unwrap the selection', async () => {
   assert.equal(run('hello **world**', 8, 13, 'bold'), 'hello world', 'pressing again takes it off');
   assert.equal(run('hello world', 0, 5, 'italic'), '*hello* world');
   assert.equal(run('hi', 2, 2, 'bold'), 'hi****');
-  assert.equal(run('one\ntwo', 0, 7, 'bullet'), '- one\n- two');
+  assert.equal(run('one\ntwo', 0, 7, 'bullet'), '• one\n• two');
+  assert.equal(run('• one\n• two', 0, 11, 'bullet'), 'one\ntwo');
   assert.equal(run('- one\n- two', 0, 11, 'bullet'), 'one\ntwo');
   assert.equal(run('one\ntwo', 0, 7, 'number'), '1. one\n2. two');
   assert.equal(run('one', 1, 1, 'check'), '- [ ] one');
   assert.equal(run('first\nsecond', 7, 7, 'heading'), 'first\n## second', 'only the current line changes');
   assert.equal(run('- one', 2, 2, 'number'), '1. one', 'it switches list types');
+  // On a blank line the list buttons start a list right away.
+  assert.equal(run('', 0, 0, 'bullet'), '• ');
+  assert.equal(run('', 0, 0, 'number'), '1. ');
+  assert.equal(run('', 0, 0, 'check'), '- [ ] ');
+  assert.equal(run('Notes\n', 6, 6, 'number'), 'Notes\n1. ');
+});
+
+test('Enter continues a list, and Enter on an empty item ends it', async () => {
+  const { continueList, applyEdit, parseNote } = await format();
+  const enter = (text, at = text.length) => {
+    const edit = continueList(text, at, at);
+    return edit ? { text: applyEdit(text, edit), cursor: edit.selectionStart } : null;
+  };
+  assert.deepEqual(enter('1. one'), { text: '1. one\n2. ', cursor: 10 });
+  assert.equal(enter('9. nine').text, '9. nine\n10. ');
+  assert.equal(enter('• one').text, '• one\n• ');
+  assert.equal(enter('- one').text, '- one\n- ');
+  assert.equal(enter('- [x] done').text, '- [x] done\n- [ ] ', 'the next box starts unticked');
+  assert.equal(enter('  • nested').text, '  • nested\n  • ');
+  assert.deepEqual(enter('1. one\n2. '), { text: '1. one\n', cursor: 7 }, 'an empty item ends the list');
+  assert.equal(enter('• one\n• ').text, '• one\n');
+  assert.equal(enter('plain words'), null, 'ordinary lines are left alone');
+  assert.equal(enter('1. one', 1), null, 'inside the number itself, nothing special happens');
+  assert.equal(enter('1. one two', 6).text, '1. one\n2.  two', 'Enter mid-item splits it into the next item');
+  assert.deepEqual(parseNote('• a\n• b').map((block) => block.type), ['bullets']);
 });
 
 test('search needs every word, ignoring capitals and accents', async () => {
@@ -120,12 +146,19 @@ test('a note can be formatted with the toolbar and keys, and it saves', async ()
   await body().evaluate((box) => { const at = box.value.indexOf('line one'); box.setSelectionRange(at, box.value.length); });
   await page.getByRole('button', { name: 'Bullet points' }).click();
   await body().evaluate((box) => box.setSelectionRange(box.value.length, box.value.length));
+  // Enter starts the next bullet; Enter on that empty bullet ends the list.
   await page.keyboard.type('\n\nword');
   await body().evaluate((box) => box.setSelectionRange(box.value.length - 4, box.value.length));
   await page.keyboard.press('ControlOrMeta+i');
-  assert.match(await body().inputValue(), /\*\*Mitochondria\*\* notes\n- line one\n- line two\n\n\*word\*$/);
+  assert.match(await body().inputValue(), /\*\*Mitochondria\*\* notes\n• line one\n• line two\n\*word\*$/);
+  // On a new blank line, Numbering starts at 1 and Enter counts on.
   await body().evaluate((box) => box.setSelectionRange(box.value.length, box.value.length));
-  await page.keyboard.type('\n<img src=x onerror=window.__hacked=1>');
+  await page.keyboard.press('Enter');
+  await page.getByRole('button', { name: 'Numbered list' }).click();
+  await page.keyboard.type('first\nsecond\n\n');
+  assert.match(await body().inputValue(), /\*word\*\n1\. first\n2\. second\n$/);
+  await body().evaluate((box) => box.setSelectionRange(box.value.length, box.value.length));
+  await page.keyboard.type('<img src=x onerror=window.__hacked=1>');
   await page.getByTestId('save-status').getByText(/saved/i).waitFor();
   await page.screenshot({ path: path.join(shots, 'note-write.png') });
 });
@@ -136,6 +169,7 @@ test('Preview shows the formatting, and nothing in a note can run', async () => 
   assert.equal(await view.locator('strong').innerText(), 'Mitochondria');
   assert.equal(await view.locator('em').innerText(), 'word');
   assert.equal(await view.locator('ul li').count(), 2);
+  assert.equal(await view.locator('ol li').count(), 2);
   await view.getByText('<img src=x onerror=window.__hacked=1>').waitFor();
   assert.equal(await view.locator('img').count(), 0);
   assert.equal(await page.evaluate(() => window.__hacked), undefined);

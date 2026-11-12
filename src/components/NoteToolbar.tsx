@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import { applyEdit, formatEdit, type FormatKind } from '../data/noteFormat';
+import { applyEdit, formatEdit, type FormatKind, type FormatEdit } from '../data/noteFormat';
 
 // Each button shows a small icon and its name, so nobody has to guess what a letter means.
 const ICON: Record<FormatKind, string> = {
@@ -23,7 +23,11 @@ const BUTTONS: { kind: FormatKind; label: string; word: string }[] = [
 
 /** Changes the text the way typing would, so Undo keeps working wherever the browser allows it. */
 export function applyFormat(box: HTMLTextAreaElement, kind: FormatKind, onChange: (text: string) => void) {
-  const edit = formatEdit(box.value, box.selectionStart, box.selectionEnd, kind);
+  applyToBox(box, formatEdit(box.value, box.selectionStart, box.selectionEnd, kind), onChange);
+}
+
+/** Makes an edit as if typed, so the browser's own undo still works. */
+export function applyToBox(box: HTMLTextAreaElement, edit: FormatEdit, onChange: (text: string) => void) {
   box.focus();
   box.setSelectionRange(edit.from, edit.to);
   let typed = false;

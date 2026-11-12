@@ -160,7 +160,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/notes',
     target: ['[data-tour="new-note"]'],
     title: 'Notes',
-    body: 'Notes save as you type. The buttons above a note add Bold, Italic, a Heading (a section title), Bullets, Numbering, a Checklist, or an Equation, which you type like x^2 or \\frac{a}{b} and see drawn properly in Preview. You can file them under a course or topic, and attach them to a file or recording.',
+    body: 'Notes save as you type. The buttons above a note add Bold, Italic, a Heading (a section title), Bullets, Numbering, a Checklist, or an Equation, which you type like x^2 or \\frac{a}{b} and see drawn properly in Preview. In a list, Enter starts the next bullet or number, and Enter on an empty one ends the list. You can file them under a course or topic, and attach them to a file or recording.',
     action: {
       isDone: hasAny('notes'),
       instruction: 'Try it: press New note and type anything. It saves by itself.',

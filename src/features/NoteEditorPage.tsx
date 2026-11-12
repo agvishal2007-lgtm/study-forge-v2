@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { applyFormat, NoteToolbar } from '../components/NoteToolbar';
+import { applyFormat, applyToBox, NoteToolbar } from '../components/NoteToolbar';
+import { continueList } from '../data/noteFormat';
 import { NoteView } from '../components/NoteView';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useStillHere } from '../components/useStillHere';
@@ -224,6 +225,15 @@ export function NoteEditor({ id, start, panel = false, onDeleted }: {
       {previewing && <NoteView body={draft.body} />}
       <label className="note-body-label" hidden={previewing}>Your note
         <textarea ref={bodyBox} onKeyDown={(event) => {
+          if (event.key === 'Enter' && !event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey && !event.nativeEvent.isComposing) {
+            const box = event.currentTarget;
+            const next = continueList(box.value, box.selectionStart, box.selectionEnd);
+            if (next) {
+              event.preventDefault();
+              applyToBox(box, next, (body) => change({ body }));
+            }
+            return;
+          }
           if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
           const kind = event.key.toLowerCase() === 'b' ? 'bold' : event.key.toLowerCase() === 'i' ? 'italic' : null;
           if (kind) {

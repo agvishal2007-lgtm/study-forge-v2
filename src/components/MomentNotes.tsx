@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { deleteNote, getNote, saveNote } from '../data/notes';
 import { formatStamp, momentOfSelection, segmentForNote, type MomentNote } from '../data/momentRules';
 import type { TranscriptSegment } from '../data/types';
+import { continueList } from '../data/noteFormat';
+import { applyToBox } from './NoteToolbar';
 
 /** One note pinned to a moment. It saves by itself while the student types. */
 export function MomentNoteCard({ note, segments, active, focus, onJump }: {
@@ -54,7 +56,11 @@ export function MomentNoteCard({ note, segments, active, focus, onJump }: {
       </div>
       {quote && <blockquote className="moment-quote">{quote}</blockquote>}
       <label className="sr-only" htmlFor={`moment-${note.id}`}>Note at {formatStamp(note.atMs)}</label>
-      <textarea id={`moment-${note.id}`} ref={box} rows={3} value={text} placeholder="Your note about this moment" onChange={(event) => change(event.target.value)} />
+      <textarea id={`moment-${note.id}`} ref={box} rows={3} value={text} placeholder="Your note about this moment" onChange={(event) => change(event.target.value)} onKeyDown={(event) => {
+        if (event.key !== 'Enter' || event.shiftKey || event.metaKey || event.ctrlKey || event.altKey || event.nativeEvent.isComposing) return;
+        const next = continueList(event.currentTarget.value, event.currentTarget.selectionStart, event.currentTarget.selectionEnd);
+        if (next) { event.preventDefault(); applyToBox(event.currentTarget, next, change); }
+      }} />
       <div className="row-actions">
         {confirming ? (
           <>
