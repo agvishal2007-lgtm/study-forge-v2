@@ -78,7 +78,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/library',
     target: ['[data-tour="add-files"]'],
     title: 'Add your files',
-    body: 'Add slides, readings, and other files here. Choose them or drag them in, even big ones: files over 2 GB have been tested. A progress bar shows each one, and it only says Saved once every byte is safely on this device. If a save fails or you cancel it, Try again picks the same file. If you add the same file twice, Study Forge notices. Their names and places sync when you\'re signed in, and the files themselves can sync through your Google Drive. You can add them from your device or Google Drive.',
+    body: 'Add slides, readings, and other files here. Choose them or drag them in, even big ones: files over 2 GB have been tested. A progress bar shows each one, and it only says Saved once every byte is safely on this device. If a save fails or you cancel it, Try again picks the same file. PDFs, Word, Excel, PowerPoint, OpenDocument, EPUB, pictures (including SVG), audio, video, text, code and notebooks open right inside, and a zip lists what\'s in it. The few that can\'t, like older .doc, .xls and .ppt files, say how to convert them, and every file can be downloaded exactly as it was. If you add the same file twice, Study Forge notices. Their names and places sync when you\'re signed in, and the files themselves can sync through your Google Drive. You can add them from your device or Google Drive.',
   },
   {
     id: 'viewer',

@@ -1,0 +1,273 @@
+[
+  {
+    "file": "biology.py",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "text",
+    "download": true
+  },
+  {
+    "file": "chapter.odt",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "reading view",
+    "download": true
+  },
+  {
+    "file": "grades.ods",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "reading view",
+    "download": true
+  },
+  {
+    "file": "analysis.ipynb",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "text",
+    "download": true
+  },
+  {
+    "file": "clip.avi",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": null,
+    "ifNot": "Study Forge can't display this file type yet, but the original is safe. You can download it and open it in another app.",
+    "download": true
+  },
+  {
+    "file": "clip.mkv",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "video player",
+    "download": true
+  },
+  {
+    "file": "clip.mov",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "video player",
+    "download": true
+  },
+  {
+    "file": "clip.mp4",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "video player",
+    "download": true
+  },
+  {
+    "file": "clip.webm",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "video player",
+    "download": true
+  },
+  {
+    "file": "data.csv",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "text",
+    "download": true
+  },
+  {
+    "file": "data.json",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "text",
+    "download": true
+  },
+  {
+    "file": "data.tsv",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "text",
+    "download": true
+  },
+  {
+    "file": "data.xml",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "text",
+    "download": true
+  },
+  {
+    "file": "diagram.svg",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "image",
+    "download": true
+  },
+  {
+    "file": "essay.rtf",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "text",
+    "download": true
+  },
+  {
+    "file": "grades.xls",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": null,
+    "ifNot": "This is an older .xls file, which can't be shown here. Save it from Excel as .xlsx and add that copy to read it right here, or download this one.",
+    "download": true
+  },
+  {
+    "file": "grades.xlsx",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "spreadsheet with tabs",
+    "download": true
+  },
+  {
+    "file": "lecture.flac",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "audio player",
+    "download": true
+  },
+  {
+    "file": "lecture.m4a",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "audio player",
+    "download": true
+  },
+  {
+    "file": "lecture.mp3",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "audio player",
+    "download": true
+  },
+  {
+    "file": "lecture.ogg",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "audio player",
+    "download": true
+  },
+  {
+    "file": "lecture.ppt",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": null,
+    "ifNot": "This is an older .ppt file, which can't be shown here. Save it from PowerPoint as .pptx and add that copy to read it right here, or download this one.",
+    "download": true
+  },
+  {
+    "file": "lecture.pptx",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "slides with notes",
+    "download": true
+  },
+  {
+    "file": "lecture.wav",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "audio player",
+    "download": true
+  },
+  {
+    "file": "notes.doc",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": null,
+    "ifNot": "This is an older .doc file, which can't be shown here. Save it from Word as .docx and add that copy to read it right here, or download this one.",
+    "download": true
+  },
+  {
+    "file": "notes.docx",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "document reading view",
+    "download": true
+  },
+  {
+    "file": "photo.gif",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "image",
+    "download": true
+  },
+  {
+    "file": "photo.jpg",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "image",
+    "download": true
+  },
+  {
+    "file": "photo.png",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "image",
+    "download": true
+  },
+  {
+    "file": "photo.tiff",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": null,
+    "ifNot": "Study Forge can't display this file type yet, but the original is safe. You can download it and open it in another app.",
+    "download": true
+  },
+  {
+    "file": "photo.webp",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "image",
+    "download": true
+  },
+  {
+    "file": "plain.txt",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "text",
+    "download": true
+  },
+  {
+    "file": "project.zip",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "list of files inside",
+    "download": true
+  },
+  {
+    "file": "query.sql",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "text",
+    "download": true
+  },
+  {
+    "file": "reading.pdf",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "PDF pages",
+    "download": true
+  },
+  {
+    "file": "readme.md",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "text",
+    "download": true
+  },
+  {
+    "file": "reader.epub",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "reading view",
+    "download": true
+  },
+  {
+    "file": "slides.odp",
+    "accepted": true,
+    "storedExactly": true,
+    "viewedInside": "reading view",
+    "download": true
+  }
+]

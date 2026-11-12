@@ -113,6 +113,16 @@ for (const theme of ['light', 'dark']) {
       assert.ok(stripe >= 3, `${status} marker is ${stripe.toFixed(2)}:1 against the day, needs 3:1`);
     }
     console.log(`  ${theme}: ${report.join(' | ')}`);
+    // Kept for the verification report, so the measured numbers are on record, not just a pass.
+    const file = path.join(__dirname, '..', 'verification', 'contrast.json');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const saved = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : {};
+    saved[theme] = Object.fromEntries(Object.entries(measured).map(([status, colours]) => [STATUS_LABEL[status], {
+      chipText: Number(contrastRatio(colours.chipText, colours.chipFill).toFixed(2)),
+      tagText: Number(contrastRatio(colours.tagText, colours.tagFill).toFixed(2)),
+      marker: Number(contrastRatio(colours.stripe, colours.cell).toFixed(2)),
+    }]));
+    fs.writeFileSync(file, `${JSON.stringify(saved, null, 2)}\n`);
   });
 }
 

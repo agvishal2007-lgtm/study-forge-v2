@@ -119,7 +119,7 @@ export interface RecordingSession {
   bytes: number;
 }
 
-export type MaterialKind = 'pdf' | 'image' | 'audio' | 'video' | 'text' | 'code' | 'word' | 'sheet' | 'slides' | 'opendoc' | 'ebook' | 'other';
+export type MaterialKind = 'pdf' | 'image' | 'audio' | 'video' | 'text' | 'code' | 'word' | 'sheet' | 'slides' | 'opendoc' | 'ebook' | 'archive' | 'other';
 
 export const SPINE_COLORS = ['#7DD3FC', '#6EE7C8', '#B4A7F5', '#F5A3C0', '#B5E48C', '#8FB3FF'];
 /** The old yellow course color, swapped for the new look when older courses are opened or restored. */

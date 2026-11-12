@@ -7,9 +7,12 @@ const TEXT = ['txt', 'md', 'markdown', 'csv', 'json', 'html', 'htm', 'rtf'];
 const CODE = ['py', 'js', 'mjs', 'ts', 'tsx', 'jsx', 'java', 'c', 'h', 'cpp', 'hpp', 'cs', 'go', 'rs', 'rb', 'php', 'swift', 'kt',
   'r', 'm', 'sql', 'sh', 'ps1', 'css', 'scss', 'xml', 'yaml', 'yml', 'toml', 'ini', 'tex', 'bib', 'log', 'tsv', 'ipynb'];
 export const OPENDOC = ['odt', 'ods', 'odp'];
-const AUDIO = ['mp3', 'wav', 'm4a', 'ogg', 'oga', 'weba'];
-const VIDEO = ['mp4', 'mov', 'webm', 'm4v'];
-const IMAGE = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+const AUDIO = ['mp3', 'wav', 'm4a', 'ogg', 'oga', 'weba', 'flac', 'aac', 'opus'];
+// MKV plays in Chrome-based browsers; where it can't, the player says so and offers the file.
+const VIDEO = ['mp4', 'mov', 'webm', 'm4v', 'mkv'];
+// SVG is shown as a picture, which browsers never let run scripts.
+const IMAGE = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif', 'bmp', 'ico'];
+export const ARCHIVE = ['zip'];
 
 export function kindOf(material: Pick<Material, 'name' | 'mimeType'>): MaterialKind {
   const ext = extension(material.name);
@@ -25,6 +28,7 @@ export function kindOf(material: Pick<Material, 'name' | 'mimeType'>): MaterialK
   if (ext === 'pptx') return 'slides';
   if (OPENDOC.includes(ext)) return 'opendoc';
   if (ext === 'epub') return 'ebook';
+  if (ARCHIVE.includes(ext)) return 'archive';
   return 'other';
 }
 
@@ -41,6 +45,7 @@ export const KIND_LABEL: Record<MaterialKind, string> = {
   opendoc: 'OpenDocument',
   ebook: 'EPUB book',
   other: 'File',
+  archive: 'Zip archive',
 };
 
 /** Older Office formats that can't be read in a browser, with what to do instead. */

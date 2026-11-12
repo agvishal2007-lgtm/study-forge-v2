@@ -1,0 +1,56 @@
+{
+  "light": {
+    "Overdue": {
+      "chipText": 7.97,
+      "tagText": 7.97,
+      "marker": 3.84
+    },
+    "Due soon": {
+      "chipText": 7.71,
+      "tagText": 7.71,
+      "marker": 3.84
+    },
+    "In progress": {
+      "chipText": 8.39,
+      "tagText": 8.39,
+      "marker": 4.06
+    },
+    "Not started": {
+      "chipText": 8.67,
+      "tagText": 8.67,
+      "marker": 3.52
+    },
+    "Completed": {
+      "chipText": 8.18,
+      "tagText": 8.18,
+      "marker": 3.93
+    }
+  },
+  "dark": {
+    "Overdue": {
+      "chipText": 11.08,
+      "tagText": 11.08,
+      "marker": 9.32
+    },
+    "Due soon": {
+      "chipText": 10.47,
+      "tagText": 10.47,
+      "marker": 9.98
+    },
+    "In progress": {
+      "chipText": 11.4,
+      "tagText": 11.4,
+      "marker": 9.73
+    },
+    "Not started": {
+      "chipText": 11.16,
+      "tagText": 11.16,
+      "marker": 8.34
+    },
+    "Completed": {
+      "chipText": 11.07,
+      "tagText": 11.07,
+      "marker": 12.09
+    }
+  }
+}

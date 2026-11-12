@@ -1,3 +1,5 @@
+import { rtfToText } from '../data/rtfText';
+import { readZipEntries } from '../data/zipReader';
 import { lazy, Suspense, useEffect, useRef, useState, type RefObject, type SyntheticEvent } from 'react';
 import { RecordingNotes } from '../components/RecordingNotes';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -22,13 +24,34 @@ const OfficeViewer = lazy(() => import('./OfficeViewer').then((module) => ({ def
 const OpenDocViewer = lazy(() => import('./OpenDocViewer').then((module) => ({ default: module.OpenDocViewer })));
 const TEXT_LIMIT = 2 * 1024 * 1024;
 
-function TextView({ blob }: { blob: Blob }) {
+/** What's inside a zip, listed by name. Nothing is unpacked or opened, so nothing in it can run. */
+function ArchiveView({ blob }: { blob: Blob }) {
+  const [names, setNames] = useState<string[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let active = true;
+    readZipEntries(blob).then((entries) => active && setNames([...entries.keys()].filter((name) => !name.endsWith('/')).sort()), () => active && setFailed(true));
+    return () => { active = false; };
+  }, [blob]);
+  if (failed) return <p className="notice">This zip couldn't be read. The original is safe, and you can download it.</p>;
+  if (names === null) return <p className="muted">Opening file…</p>;
+  return (
+    <div data-testid="archive-view">
+      <p className="muted">{names.length} {names.length === 1 ? 'file' : 'files'} inside. Nothing is unpacked or opened here; download the zip to use them.</p>
+      <ul className="archive-list">{names.slice(0, 500).map((name) => <li key={name}>{name}</li>)}</ul>
+      {names.length > 500 && <p className="muted">And {names.length - 500} more.</p>}
+    </div>
+  );
+}
+
+function TextView({ blob, rtf = false }: { blob: Blob; rtf?: boolean }) {
   const [text, setText] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
-    void blob.slice(0, TEXT_LIMIT).text().then((value) => active && setText(value));
+    // An RTF document shows its words, not its formatting codes.
+    void blob.slice(0, TEXT_LIMIT).text().then((value) => active && setText(rtf ? rtfToText(value) : value));
     return () => { active = false; };
-  }, [blob]);
+  }, [blob, rtf]);
   if (text === null) return <p className="muted">Opening file…</p>;
   return (
     <>
@@ -280,11 +303,12 @@ export default function ViewerPage() {
   else if (kind === 'word' || kind === 'sheet' || kind === 'slides') body = <Suspense fallback={<p className="muted">Opening file…</p>}><OfficeViewer kind={kind} blob={blob} onFail={fail} /></Suspense>;
   else if (kind === 'opendoc' || kind === 'ebook') body = <Suspense fallback={<p className="muted">Opening file…</p>}><OpenDocViewer blob={blob} name={material.name} materialId={material.id} onFail={fail} /></Suspense>;
   else if (kind === 'code') body = <TextView blob={blob} />;
-  else if (!url) body = kind === 'text' ? <TextView blob={blob} /> : <p className="muted">Opening file…</p>;
+  else if (!url) body = kind === 'text' ? <TextView blob={blob} rtf={/\.rtf$/i.test(material.name)} /> : <p className="muted">Opening file…</p>;
   else if (kind === 'image') body = <ImageView url={url} name={material.name} />;
   else if (kind === 'audio') body = <audio ref={media as RefObject<HTMLAudioElement>} controls src={url} data-testid="audio-player" onLoadedMetadata={measureLength} onError={() => fail('audio')} />;
   else if (kind === 'video') body = <video ref={media as RefObject<HTMLVideoElement>} controls playsInline src={url} data-testid="video-player" onLoadedMetadata={measureLength} onError={() => fail('video')} />;
-  else if (kind === 'text') body = <TextView blob={blob} />;
+  else if (kind === 'text') body = <TextView blob={blob} rtf={/\.rtf$/i.test(material.name)} />;
+  else if (kind === 'archive') body = <ArchiveView blob={blob} />;
   else if (olderOfficeAdvice(material.name)) body = fallback(olderOfficeAdvice(material.name));
   else body = fallback("Study Forge can't display this file type yet, but the original is safe. You can download it and open it in another app.");
 

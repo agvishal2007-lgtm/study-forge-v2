@@ -1463,3 +1463,4 @@ code.note-math { font-family: ui-monospace, monospace; }
   .segmented > .segment { justify-content: center; text-align: center; padding: .55rem .5rem; border-radius: 12px; }
   .settings-page .segment:has(.segment-sample) { align-items: center; }
 }
+.archive-list { max-height: 24rem; overflow: auto; font-family: ui-monospace, monospace; font-size: .9rem; padding-left: 1.25rem; }
