@@ -194,6 +194,51 @@ test('the look is the same on every page, including signing in, and works on a p
   await page.setViewportSize({ width: 1280, height: 900 });
 });
 
+test('dates and times are written the way the student chose, with the device clock underneath', async () => {
+  const { formatDay, formatClockTime, sampleDate, formatWhen } = await import('../src/data/dateFormat.ts');
+  assert.equal(sampleDate('mdy'), '11/25/2026');
+  assert.equal(sampleDate('dmy'), '25/11/2026');
+  assert.equal(sampleDate('ymd'), '2026-11-25');
+  assert.equal(formatClockTime('16:30', '12'), '4:30 PM');
+  assert.equal(formatClockTime('16:30', '24'), '16:30');
+  assert.equal(formatClockTime('00:05', '12'), '12:05 AM');
+  assert.equal(formatClockTime('00:05', '24'), '00:05');
+  assert.equal(formatDay('2026-11-25', { weekday: 'short', month: 'short', day: 'numeric' }, 'mdy'), 'Wed, Nov 25');
+  assert.equal(formatDay('2026-11-25', { weekday: 'short', month: 'short', day: 'numeric' }, 'dmy'), 'Wed 25 Nov');
+  // A stored calendar day is the same day in every time zone.
+  assert.equal(formatDay('2026-01-01', { month: 'short', day: 'numeric' }, 'mdy'), 'Jan 1');
+  assert.equal(formatWhen(Date.UTC(2026, 10, 25, 21, 5), { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' }, 'mdy', '24'), '21:05');
+
+  // In the app: a planner deadline and a class time change format, everywhere, at once.
+  await page.goto(`${URL_BASE}#/planner`);
+  await page.getByRole('button', { name: 'Add item' }).click();
+  await page.getByLabel('Name', { exact: true }).fill('Lab report');
+  await page.getByLabel('Due date', { exact: true }).fill('2026-11-25');
+  await page.getByLabel('Due time (optional)').fill('16:30').catch(() => {});
+  await page.getByRole('button', { name: 'Save item' }).click();
+  await page.getByRole('heading', { name: 'Planner', exact: true }).waitFor();
+  const row = page.getByText('Lab report').locator('xpath=ancestor::li[1]');
+  await page.goto(`${URL_BASE}#/settings`);
+  await page.locator('[data-testid=date-format] label.segment').filter({ hasText: /^Day\/Month\/Year/ }).click();
+  await page.locator('[data-testid=date-format] label.segment').filter({ hasText: /^24-hour/ }).click();
+  assert.match(await page.getByTestId('date-format-now').innerText(), /time zone \(America\/New York\)/);
+  await page.goto(`${URL_BASE}#/planner`);
+  await row.waitFor();
+  const dmy = await row.innerText();
+  assert.match(dmy, /25 Nov/, `day first: ${dmy}`);
+  if (/16:30|4:30/.test(dmy)) assert.match(dmy, /16:30/);
+  await page.goto(`${URL_BASE}#/settings`);
+  await page.locator('[data-testid=date-format] label.segment').filter({ hasText: /^Month\/Day\/Year/ }).click();
+  await page.locator('[data-testid=date-format] label.segment').filter({ hasText: /^12-hour/ }).click();
+  await page.goto(`${URL_BASE}#/planner`);
+  const mdy = await row.innerText();
+  assert.match(mdy, /Nov 25/, `month first: ${mdy}`);
+  if (/16:30|4:30/.test(mdy)) assert.match(mdy, /4:30 PM/);
+  // It's remembered.
+  await page.reload();
+  assert.match(await row.innerText(), /Nov 25/);
+});
+
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });

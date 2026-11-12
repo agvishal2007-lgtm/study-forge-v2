@@ -1,3 +1,4 @@
+import { formatWhen } from '../data/dateFormat';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -34,7 +35,7 @@ interface Row {
 
 const dayWords = (date: string) => {
   const [year, month, day] = date.split('-').map(Number);
-  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  return formatWhen(new Date(Date.UTC(year, month - 1, day)), { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
 };
 
 export function GoogleCalendarPage() {
@@ -155,7 +156,7 @@ export function GoogleCalendarPage() {
     if (report) setMessage(reportWords(report));
   });
 
-  const lastSync = useMemo(() => (connection?.lastSync ? new Date(connection.lastSync).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''), [connection]);
+  const lastSync = useMemo(() => (connection?.lastSync ? formatWhen(connection.lastSync, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''), [connection]);
 
   if (loadError) return <div className="page"><h1>Google Calendar</h1><p className="error" role="alert">This couldn't be loaded. {loadError.message}</p></div>;
 

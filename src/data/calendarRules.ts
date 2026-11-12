@@ -1,4 +1,5 @@
 import { readEventDetails, type EventDetails } from './eventDetails.ts';
+import { formatClockTime } from './dateFormat.ts';
 import type { CalendarEvent, CalendarKind, PlannerType } from './types';
 
 /** The calendar's date rules and sorting. This file only calculates, so it can be tested directly. */
@@ -35,11 +36,7 @@ export function monthGrid(month: string): string[][] {
   return weeks;
 }
 
-export const formatTime = (time: string) => {
-  if (!time) return '';
-  const [hours, minutes] = time.split(':').map(Number);
-  return `${hours % 12 || 12}:${pad(minutes)} ${hours >= 12 ? 'PM' : 'AM'}`;
-};
+export const formatTime = (time: string) => formatClockTime(time);
 
 export function describeTime(event: Pick<CalendarEvent, 'startTime' | 'endTime'>): string {
   if (!event.startTime) return 'All day';

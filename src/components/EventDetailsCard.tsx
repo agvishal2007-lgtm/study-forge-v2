@@ -1,10 +1,11 @@
+import { formatClockTime, formatDay } from '../data/dateFormat';
 import { PROVIDER_ACTION, type EventDetails, type Meeting } from '../data/eventDetails';
 import type { CalendarEvent } from '../data/types';
 
 /** "Tuesday, November 18" and "3:00 PM – 4:00 PM", in the student's own words and time. */
 function when(event: CalendarEvent): { day: string; time: string } {
-  const day = new Date(`${event.date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-  const clock = (value: string) => new Date(`${event.date}T${value}:00`).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  const day = formatDay(event.date, { weekday: 'long', month: 'long', day: 'numeric' });
+  const clock = (value: string) => formatClockTime(value);
   if (!event.startTime) return { day, time: 'All day' };
   return { day, time: event.endTime ? `${clock(event.startTime)} – ${clock(event.endTime)}` : clock(event.startTime) };
 }

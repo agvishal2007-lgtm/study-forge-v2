@@ -1,3 +1,4 @@
+import { formatWhen } from '../data/dateFormat';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AddFiles } from '../components/AddFiles';
@@ -9,7 +10,7 @@ import { listCourses, listTopics } from '../data/store';
 import type { RecordingSession } from '../data/types';
 import { useLive } from '../data/useLive';
 
-const defaultName = () => `Lecture ${new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+const defaultName = () => `Lecture ${formatWhen(new Date(), { month: 'short', day: 'numeric', year: 'numeric' })}`;
 
 function Interrupted() {
   const { data } = useLive(listUnfinished);

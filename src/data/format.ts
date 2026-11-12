@@ -1,4 +1,5 @@
 import type { Material, MaterialKind } from './types';
+import { formatWhen } from './dateFormat.ts';
 
 const extension = (name: string) => name.split('.').pop()?.toLowerCase() ?? '';
 const TEXT = ['txt', 'md', 'markdown', 'csv', 'json', 'html', 'htm', 'rtf'];
@@ -70,4 +71,4 @@ export function formatDuration(ms: number): string {
 }
 
 export const formatDate = (time: number) =>
-  new Date(time).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  formatWhen(time, { month: 'short', day: 'numeric', year: 'numeric' });

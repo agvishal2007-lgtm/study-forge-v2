@@ -1,3 +1,4 @@
+import { formatWhen } from '../data/dateFormat';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { getSyncState, subscribeSync, syncNow, type SyncState } from '../data/sync';
 import { getDriveState, subscribeDrive, type DriveState } from '../data/driveFiles';
@@ -48,7 +49,7 @@ export function SyncBadge() {
   const badge = badgeFor(sync, drive);
   if (!badge) return null;
   const filesWaiting = drive.phase !== 'off' ? Math.max(0, drive.total - drive.inDrive) : 0;
-  const last = sync.lastSyncedAt ? new Date(sync.lastSyncedAt).toLocaleString(undefined, { hour: 'numeric', minute: '2-digit', month: 'short', day: 'numeric' }) : null;
+  const last = sync.lastSyncedAt ? formatWhen(sync.lastSyncedAt, { hour: 'numeric', minute: '2-digit', month: 'short', day: 'numeric' }) : null;
   return (
     <div className="sync-badge-wrap" ref={box}>
       <button type="button" className="sync-badge" data-testid="sync-badge" data-tone={badge.tone} aria-expanded={open} aria-label={`Sync status: ${badge.label}. Show details`} onClick={() => setOpen(!open)}>

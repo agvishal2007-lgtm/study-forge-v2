@@ -1,3 +1,4 @@
+import { formatWhen } from '../data/dateFormat';
 import { useEffect, useState } from 'react';
 import { PROVIDER_ACTION } from '../data/eventDetails';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -25,7 +26,7 @@ const AUTO_UPDATE_MS = 15 * 60 * 1000;
 
 const words = (date: string, options: Intl.DateTimeFormatOptions) => {
   const [year, month, day] = date.split('-').map(Number);
-  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString(undefined, { ...options, timeZone: 'UTC' });
+  return formatWhen(new Date(Date.UTC(year, month - 1, day)), { ...options, timeZone: 'UTC' });
 };
 
 function Completed({ event, onProblem }: { event: CalendarEvent; onProblem: (text: string) => void }) {

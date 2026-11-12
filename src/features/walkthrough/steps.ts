@@ -208,7 +208,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/settings',
     target: ['[aria-labelledby="appearance-heading"]'],
     title: 'Light, dark, or automatic',
-    body: 'The sun or moon button at the top switches straight between light and dark, in one tap. Here in Settings you choose the preference: Light, Dark, Match Device, or Sunrise/Sunset, which is light by day and dark at night for the city you pick. If you tap the button while an automatic option is on, your choice stays until you pick an option here again. Text size, motion and spacing are here too.',
+    body: 'The sun or moon button at the top switches straight between light and dark, in one tap. Here in Settings you choose the preference: Light, Dark, Match Device, or Sunrise/Sunset, which is light by day and dark at night for the city you pick. If you tap the button while an automatic option is on, your choice stays until you pick an option here again. You can also choose how dates and times are written (Month/Day/Year, Day/Month/Year or Year-Month-Day, and 12-hour or 24-hour). Times always follow your device\'s own clock and time zone. Text size, motion and spacing are here too.',
   },
   {
     id: 'permissions',

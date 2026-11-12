@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState, useSyncExternalStore } from 'react';
+import { dateFormatVersion, subscribeDateFormat } from './data/dateFormat';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { AccountMenu } from './components/AccountMenu';
 import { NAV_ICONS } from './components/NavIcons';
@@ -78,6 +79,8 @@ function NotFound() {
 
 export function App() {
   const { pathname } = useLocation();
+  // A new date or time format redraws every screen at once.
+  useSyncExternalStore(subscribeDateFormat, dateFormatVersion);
   // Undecided until the device has been looked at. Only someone with no account and no work of
   // their own is met by the welcome page instead of their own dashboard.
   const [newVisitor, setNewVisitor] = useState<boolean | null>(null);

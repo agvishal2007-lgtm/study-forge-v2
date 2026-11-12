@@ -1,4 +1,5 @@
 import type { PlannerItem } from './types';
+import { formatClockTime, formatDay as formatDayIn } from './dateFormat.ts';
 
 /** The Planner's date rules. This file only calculates, so it can be tested directly. */
 const DONE = ['Submitted', 'Waiting for Grade', 'Completed'];
@@ -79,16 +80,9 @@ export function groupItems(items: PlannerItem[], now: { date: string; time: stri
     .filter((entry) => entry.items.length > 0);
 }
 
-const formatTime = (time: string) => {
-  const [hours, minutes] = time.split(':').map(Number);
-  const suffix = hours >= 12 ? 'PM' : 'AM';
-  return `${hours % 12 || 12}:${String(minutes).padStart(2, '0')} ${suffix}`;
-};
+const formatTime = (time: string) => formatClockTime(time);
 
-const formatDay = (date: string) => {
-  const [year, month, day] = parts(date);
-  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
-};
+const formatDay = (date: string) => formatDayIn(date, { weekday: 'short', month: 'short', day: 'numeric' });
 
 /** Plain words for a due date, such as "Due today at 3:00 PM" or "2 days overdue". */
 export function describeDue(item: Pick<PlannerItem, 'status' | 'dueDate' | 'dueTime'>, now: { date: string; time: string }): string {

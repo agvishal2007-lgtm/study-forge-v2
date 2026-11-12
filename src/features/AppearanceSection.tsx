@@ -1,5 +1,7 @@
 import { setThemeChoice, setThemePlace, useTheme, type ThemeChoice } from '../data/theme';
 import { PLACES } from '../data/sunRules';
+import { formatWhen, getClockStyle, getDateOrder, sampleDate, sampleTime, setDateFormat, subscribeDateFormat, dateFormatVersion, type ClockStyle, type DateOrder } from '../data/dateFormat';
+import { useSyncExternalStore } from 'react';
 import { setDisplayPref, useDisplayPrefs, type DisplayPrefs } from '../data/displayPrefs';
 
 /** One row of choices. Radios underneath, so keyboards and screen readers get them for free. */
@@ -41,7 +43,53 @@ const CHOICE_HINT: Record<ThemeChoice, string> = {
   sun: 'Light during the day and dark at night, using sunrise and sunset in your city.',
 };
 
-const clock = (ms: number | null) => (ms === null ? '' : new Date(ms).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }));
+const clock = (ms: number | null) => (ms === null ? '' : formatWhen(ms, { hour: 'numeric', minute: '2-digit' }));
+
+const ORDERS: { value: DateOrder; label: string }[] = [
+  { value: 'device', label: 'Match my device' },
+  { value: 'mdy', label: 'Month/Day/Year' },
+  { value: 'dmy', label: 'Day/Month/Year' },
+  { value: 'ymd', label: 'Year-Month-Day' },
+];
+const CLOCKS: { value: ClockStyle; label: string }[] = [
+  { value: 'device', label: 'Match my device' },
+  { value: '12', label: '12-hour' },
+  { value: '24', label: '24-hour' },
+];
+
+/** How dates and times are written. The clock and time zone always come from the device. */
+function DateTimeChoices() {
+  useSyncExternalStore(subscribeDateFormat, dateFormatVersion);
+  const order = getDateOrder();
+  const clock = getClockStyle();
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return (
+    <div className="pref-row" data-testid="date-format">
+      <h3 id="pref-date-order">Date format</h3>
+      <div className="segmented" role="radiogroup" aria-labelledby="pref-date-order">
+        {ORDERS.map((option) => (
+          <label key={option.value} className="segment" data-chosen={order === option.value ? 'true' : undefined}>
+            <input className="sr-only" type="radio" name="date-order" checked={order === option.value} onChange={() => setDateFormat({ order: option.value })} />
+            {option.label} <span className="muted small">({sampleDate(option.value)})</span>
+          </label>
+        ))}
+      </div>
+      <h3 id="pref-clock">Time format</h3>
+      <div className="segmented" role="radiogroup" aria-labelledby="pref-clock">
+        {CLOCKS.map((option) => (
+          <label key={option.value} className="segment" data-chosen={clock === option.value ? 'true' : undefined}>
+            <input className="sr-only" type="radio" name="clock" checked={clock === option.value} onChange={() => setDateFormat({ clock: option.value })} />
+            {option.label} <span className="muted small">({sampleTime(option.value)})</span>
+          </label>
+        ))}
+      </div>
+      <p className="muted" data-testid="date-format-now">
+        Right now: {formatWhen(new Date(), { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}.
+        Times always follow this device's own clock and time zone ({zone.replace(/_/g, ' ')}), in any country. Date boxes you type into use your browser's own format.
+      </p>
+    </div>
+  );
+}
 
 export function AppearanceSection() {
   const theme = useTheme();
@@ -80,6 +128,7 @@ export function AppearanceSection() {
           <button type="button" className="text-button" onClick={() => setThemeChoice(choice)}>Go back to {choice === 'sun' ? 'Sunrise/Sunset' : 'Match Device'}</button>
         </p>
       )}
+      <DateTimeChoices />
       <Choices
         name="text"
         label="Text size"

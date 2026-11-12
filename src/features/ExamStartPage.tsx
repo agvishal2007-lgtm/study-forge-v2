@@ -1,3 +1,4 @@
+import { formatWhen } from '../data/dateFormat';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { pickQuestions } from '../data/examRules';
@@ -31,7 +32,7 @@ export function ExamStartPage() {
       const startedAt = Date.now();
       await saveExamInProgress({
         id: crypto.randomUUID(),
-        name: `${course?.name ?? 'Mock exam'}, ${new Date(startedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`,
+        name: `${course?.name ?? 'Mock exam'}, ${formatWhen(startedAt, { month: 'short', day: 'numeric' })}`,
         courseId,
         durationMinutes,
         startedAt,

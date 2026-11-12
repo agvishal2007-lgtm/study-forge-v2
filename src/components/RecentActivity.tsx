@@ -1,14 +1,15 @@
+import { formatWhen } from '../data/dateFormat';
 import { clearActivity, useActivity } from '../data/activity';
 
 /** "Today at 2:14 PM", "Yesterday at 9:03 AM", or a date for anything older. */
 function when(at: number): string {
   const date = new Date(at);
-  const time = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  const time = formatWhen(date, { hour: 'numeric', minute: '2-digit' });
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   if (at >= startOfToday.getTime()) return `Today at ${time}`;
   if (at >= startOfToday.getTime() - 86_400_000) return `Yesterday at ${time}`;
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return formatWhen(date, { month: 'short', day: 'numeric' });
 }
 
 /** The last changes made and anything put back, newest first. Nothing is shown that didn't happen. */
