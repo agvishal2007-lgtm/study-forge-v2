@@ -131,6 +131,73 @@ test('the tiles and lists match what was saved', async () => {
   await page.screenshot({ path: path.join(shots, 'dashboard-bottom.png') });
 });
 
+test('Start studying picks the most useful thing and says why', async () => {
+  await nav('Today');
+  const start = page.getByTestId('start-studying');
+  await start.waitFor();
+  // Something is overdue, so that comes first, ahead of the due flashcards.
+  assert.match(await start.getByRole('link').innerText(), /Start studying: Start Late essay/);
+  assert.match(await page.getByTestId('start-reason').innerText(), /overdue, and first in your order/);
+  await start.getByRole('link').click();
+  await page.waitForFunction(() => location.hash.startsWith('#/planner/'));
+  assert.equal(await page.getByLabel('Name', { exact: true }).inputValue(), 'Late essay');
+  await nav('Today');
+});
+
+test('the next 7 days list each deadline once, on its day, with a status in words', async () => {
+  // A study block reserved for the midterm must not count as a second thing to do.
+  await page.evaluate(() => new Promise((resolve) => {
+    const request = indexedDB.open('study-forge');
+    request.onsuccess = async () => {
+      const db = request.result;
+      const items = await new Promise((done) => { const get = db.transaction('plannerItems').objectStore('plannerItems').getAll(); get.onsuccess = () => done(get.result); });
+      const midterm = items.find((item) => item.title === 'Midterm');
+      const tx = db.transaction('calendarEvents', 'readwrite');
+      const base = { courseId: null, location: '', whatToDo: '', priority: 'Normal', completed: false, seriesId: '', source: 'manual', sourceCalendar: '', hidden: false, createdAt: 1, updatedAt: 1 };
+      tx.objectStore('calendarEvents').put({ ...base, id: 'review', title: 'Review for midterm', kind: 'Study block', date: '2026-11-05', startTime: '10:00', endTime: '11:30', plannerItemId: midterm.id });
+      tx.objectStore('calendarEvents').put({ ...base, id: 'missed', title: 'Read chapter 4', kind: 'Study block', date: '2026-11-03', startTime: '16:00', endTime: '17:00', plannerItemId: null });
+      tx.objectStore('calendarEvents').put({ ...base, id: 'lecture', title: 'Lecture', kind: 'Class', date: '2026-11-02', startTime: '09:00', endTime: '10:00', plannerItemId: null });
+      tx.oncomplete = () => { db.close(); resolve(); };
+    };
+  }));
+  await page.reload();
+  await nav('Today');
+  const week = page.getByTestId('week-workload');
+  await week.waitFor();
+  const days = week.getByTestId('week-day');
+  assert.equal(await days.count(), 7);
+  assert.equal(await days.first().getAttribute('data-date'), '2026-11-04');
+  const thursday = week.locator('[data-testid=week-day][data-date="2026-11-05"]');
+  assert.equal(await thursday.getByTestId('week-deadline').count(), 1);
+  const midterm = await thursday.getByTestId('week-deadline').innerText();
+  assert.match(midterm, /Due soon[\s\S]*Midterm[\s\S]*Study time reserved 10:00 AM to 11:30 AM/);
+  assert.equal(await thursday.locator('.week-event').count(), 0, 'the reserved block is not listed twice');
+  assert.match(await week.locator('[data-testid=week-day][data-date="2026-11-09"]').innerText(), /Project draft/);
+  assert.match(await page.getByTestId('week-totals').innerText(), /^2 deadlines[\s\S]*1 hour 30 minutes of study blocks planned|^2 deadlines[\s\S]*1h 30m of study blocks planned|^2 deadlines/);
+  assert.doesNotMatch(await week.innerText(), /Late essay|Final paper/, 'overdue and far-off work are not in the week');
+});
+
+test('a missed study block of the student\'s own can move, and deadlines never do', async () => {
+  const missed = page.getByTestId('missed-study');
+  await missed.waitFor();
+  assert.match(await missed.innerText(), /Read chapter 4/);
+  assert.doesNotMatch(await missed.innerText(), /Lecture|Midterm/);
+  await missed.getByRole('button', { name: 'Move Read chapter 4 to tomorrow' }).click();
+  await missed.waitFor({ state: 'detached' });
+  assert.match(await page.locator('[data-testid=week-day][data-date="2026-11-05"]').innerText(), /Read chapter 4/);
+});
+
+test('the last 7 days say exactly what they count, from saved records only', async () => {
+  const look = page.getByTestId('week-look');
+  await look.waitFor();
+  assert.match(await page.getByTestId('bar-deadlines').innerText(), /Deadlines from the last 7 days[\s\S]*0 of 1 done/);
+  assert.match(await page.getByTestId('bar-cards').innerText(), /Flashcards today[\s\S]*0 of 3 cards reviewed/);
+  assert.match(await page.getByTestId('bar-days').innerText(), /0 of 7 days/);
+  assert.match(await look.innerText(), /not the same as mastery/);
+  const bar = page.getByTestId('bar-deadlines').getByRole('progressbar');
+  assert.equal(await bar.getAttribute('aria-label'), 'Deadlines from the last 7 days: 0 of 1 done');
+});
+
 test('the numbers change when the work changes, and every tile goes somewhere useful', async () => {
   await page.getByRole('button', { name: 'Mark Midterm done' }).click();
   await page.getByTestId('due-soon').getByRole('link', { name: 'Midterm' }).waitFor({ state: 'detached' });
