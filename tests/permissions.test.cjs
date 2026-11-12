@@ -108,6 +108,53 @@ test('account recovery has its own address, and the old one still works', async 
   assert.doesNotMatch(await page.getByRole('main').innerText(), /@[a-z]+\.(com|edu)\b/i);
 });
 
+test('the Notifications status is the control: tapping it asks the browser and then reads Allowed', async () => {
+  await open(false);
+  // A browser that hasn't been asked yet, and says yes when it is.
+  await page.addInitScript(() => {
+    let asked = 0;
+    window.__asked = () => asked;
+    window.Notification = { permission: 'default', requestPermission: async () => { asked += 1; window.Notification.permission = 'granted'; return 'granted'; } };
+  });
+  await page.goto(`${URL_BASE}#/settings`);
+  await page.reload();
+  const control = page.getByTestId('notification-control');
+  await control.waitFor();
+  assert.equal(await control.getAttribute('data-state'), 'prompt');
+  assert.match(await control.innerText(), /Not yet enabled/);
+  assert.equal(await page.evaluate(() => window.__asked()), 0, 'nothing is asked until the student taps');
+  // One control, not a status with a second button beside it.
+  assert.equal(await page.getByTestId('permission-notifications').getByRole('button').count(), 1);
+  await control.click();
+  await page.locator('[data-testid=notification-control][data-state=granted]').waitFor();
+  assert.match(await control.innerText(), /Allowed/);
+  assert.equal(await page.evaluate(() => window.__asked()), 1);
+});
+
+test('a blocked Notifications status explains how to unblock, and never asks again', async () => {
+  await open(false);
+  await page.addInitScript(() => {
+    window.__asked = 0;
+    window.Notification = { permission: 'denied', requestPermission: async () => { window.__asked += 1; return 'denied'; } };
+  });
+  await page.goto(`${URL_BASE}#/settings`);
+  await page.reload();
+  const control = page.getByTestId('notification-control');
+  await control.waitFor();
+  assert.match(await control.innerText(), /Blocked/);
+  await control.click();
+  assert.match(await page.getByTestId('notification-help').innerText(), /address bar/);
+  assert.equal(await page.evaluate(() => window.__asked), 0, 'a blocked browser is not asked again');
+  // The student turns it on in the browser and comes back: the same control now reads Allowed.
+  await page.evaluate(() => { window.Notification.permission = 'granted'; window.dispatchEvent(new Event('focus')); });
+  await page.locator('[data-testid=notification-control][data-state=granted]').waitFor();
+  // Works on a phone too.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await control.scrollIntoViewIfNeeded();
+  const box = await control.boundingBox();
+  assert.ok(box.height >= 36 && box.x >= 0 && box.x + box.width <= 390);
+});
+
 test('nothing threw', () => {
   assert.deepEqual(pageErrors, []);
 });

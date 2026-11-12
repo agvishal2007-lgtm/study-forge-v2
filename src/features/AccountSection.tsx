@@ -61,7 +61,7 @@ export function AccountSection() {
 
   if (!account) {
     return (
-      <section aria-labelledby="account-heading">
+      <section aria-labelledby="account-heading" data-tour="sync-files">
         <h2 id="account-heading">Account</h2>
         <p>Sign in to keep your courses, notes, lessons, and study progress across your devices. It's optional, and everything else works without it.</p>
         <ul className="plain-list">
@@ -76,7 +76,7 @@ export function AccountSection() {
 
   const trouble = sync.phase === 'offline' || sync.phase === 'quota' || sync.phase === 'denied' || sync.phase === 'error';
   return (
-    <section aria-labelledby="account-heading">
+    <section aria-labelledby="account-heading" data-tour="sync-files">
       <h2 id="account-heading">Account</h2>
       <p className={trouble ? 'notice' : 'muted'} role="status" data-testid="sync-status" data-phase={sync.phase}>
         {PHASE_TEXT[sync.phase]}{sync.phase === 'synced' && sync.lastSyncedAt ? ` on ${formatDate(sync.lastSyncedAt)}.` : ''}

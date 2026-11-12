@@ -1,3 +1,4 @@
+import { formatWhen } from '../data/dateFormat';
 import DOMPurify from 'dompurify';
 import { useEffect, useMemo, useState } from 'react';
 import { readPresentation, type SlideContent } from '../data/pptxReader';
@@ -46,7 +47,7 @@ function WordView({ blob, onFail }: { blob: Blob; onFail: (what: string) => void
 
 const cellText = (value: unknown) => {
   if (value === null || value === undefined) return '';
-  if (value instanceof Date) return value.toLocaleDateString(undefined, { timeZone: 'UTC' });
+  if (value instanceof Date) return formatWhen(value, { year: 'numeric', month: 'numeric', day: 'numeric', timeZone: 'UTC' });
   return String(value);
 };
 

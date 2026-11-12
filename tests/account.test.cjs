@@ -648,6 +648,45 @@ test('a change on one device appears on another that is already open, without pr
   assert.ok(Date.now() - started < 15000);
 });
 
+test('the sync indicator shows the real state, and tapping it only shows details', async () => {
+  const laptop = await device('laptop');
+  await saved(laptop);
+  await nav(laptop, 'Notes');
+  const badge = laptop.getByTestId('sync-badge');
+  assert.equal(await badge.count(), 1, 'one indicator, not two');
+  await laptop.locator('[data-testid=sync-badge][data-tone=synced]').waitFor();
+  assert.match(await badge.innerText(), /Synced/);
+  const before = laptop.url();
+  await badge.click();
+  const details = laptop.getByTestId('sync-popover');
+  await details.waitFor();
+  assert.equal(laptop.url(), before, 'it never opens Settings');
+  assert.match(await details.innerText(), /Last synced/);
+  assert.match(await details.innerText(), /No changes are waiting/);
+  assert.equal(await details.getByRole('button').count(), 0, 'nothing to press when all is well');
+  await laptop.keyboard.press('Escape');
+  await details.waitFor({ state: 'detached' });
+  // A change that hasn't reached the account yet is amber, never green.
+  fake.state.mode = 'down';
+  await addNote(laptop, 'Waiting note', 'Not online yet');
+  await laptop.locator('[data-testid=sync-badge]:not([data-tone=synced])').waitFor();
+  await laptop.locator('[data-testid=sync-badge][data-tone=pending], [data-testid=sync-badge][data-tone=failed]').waitFor({ timeout: 20000 });
+  await badge.click();
+  assert.match(await details.innerText(), /Some changes are waiting to sync/);
+  // Retry is offered only now that something is wrong.
+  const retry = details.getByRole('button', { name: 'Retry sync' });
+  await retry.waitFor();
+  fake.state.mode = 'ok';
+  await retry.click();
+  await laptop.locator('[data-testid=sync-badge][data-tone=synced]').waitFor({ timeout: 20000 });
+  assert.ok(laptop.url().includes('#/notes'), 'still where the student was');
+  // On a phone the indicator is still there and fits.
+  await laptop.setViewportSize({ width: 390, height: 844 });
+  const box = await badge.boundingBox();
+  assert.ok(box.x >= 0 && box.x + box.width <= 390);
+  await laptop.setViewportSize({ width: 1280, height: 900 });
+});
+
 test('a pin made on the phone and the look chosen on the laptop reach the other device', async () => {
   const laptop = await device('laptop');
   const phone = await device('phone');

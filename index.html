@@ -10,6 +10,20 @@
         var saved = null;
         try { saved = localStorage.getItem('study-forge-theme'); } catch (e) {}
         var dark = saved === 'dark' || (saved === 'system' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+        if (saved === 'sun') {
+          // Today's sunrise and sunset were saved by the last visit. A day or two old is close enough
+          // for this first paint; the exact times are worked out again as soon as the page loads.
+          try {
+            var sun = JSON.parse(localStorage.getItem('study-forge-theme-sun') || 'null');
+            if (sun && sun.always) dark = sun.always === 'dark';
+            else if (sun) { var day = 86400000, at = Date.now(), rise = sun.rise + Math.floor((at - sun.rise) / day) * day, length = sun.set - sun.rise; dark = at - rise >= length; }
+          } catch (e) {}
+        }
+        if (saved === 'system' || saved === 'sun') {
+          var override = null;
+          try { override = localStorage.getItem('study-forge-theme-override'); } catch (e) {}
+          if (override === 'dark' || override === 'light') dark = override === 'dark';
+        }
         document.documentElement.dataset.theme = dark ? 'dark' : 'light';
         if (dark) document.querySelector('meta[name="theme-color"]').setAttribute('content', '#15181d');
         // Text size, motion and spacing, so a larger text size never jumps in after loading.

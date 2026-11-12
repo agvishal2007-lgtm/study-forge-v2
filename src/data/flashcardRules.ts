@@ -1,4 +1,5 @@
 import type { CardProgress, CardRating, Flashcard } from './types';
+import { formatDay } from './dateFormat.ts';
 
 /**
  * The review schedule. This file only calculates, so it can be tested directly.
@@ -69,6 +70,5 @@ export function describeCardDue(progress: Pick<CardProgress, 'dueDate'> | null |
   if (!progress) return 'New';
   if (progress.dueDate <= today) return 'Due today';
   if (progress.dueDate === addDays(today, 1)) return 'Due tomorrow';
-  const [year, month, day] = progress.dueDate.split('-').map(Number);
-  return `Due ${new Date(Date.UTC(year, month - 1, day)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' })}`;
+  return `Due ${formatDay(progress.dueDate, { month: 'short', day: 'numeric' })}`;
 }

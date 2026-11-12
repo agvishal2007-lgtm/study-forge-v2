@@ -1,3 +1,4 @@
+import { formatWhen } from '../data/dateFormat';
 import { useState } from 'react';
 import { RecentActivity } from '../components/RecentActivity';
 import { useWalkthrough } from './walkthrough/Walkthrough';
@@ -162,7 +163,7 @@ export function TodayPage() {
   });
   const reviewedToday = [...cardProgress.values()].filter((entry) => entry.lastReviewedAt && dayOf(entry.lastReviewedAt) === now.date).length;
   const [year, month, day] = now.date.split('-').map(Number);
-  const dateWords = new Date(year, month - 1, day).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  const dateWords = formatWhen(new Date(year, month - 1, day), { weekday: 'long', month: 'long', day: 'numeric' });
 
   const tiles = [
     { label: 'Due in 7 days', value: dueSoon.length, to: '/planner', id: 'due' },

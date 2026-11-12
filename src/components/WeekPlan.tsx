@@ -1,3 +1,4 @@
+import { formatDay } from '../data/dateFormat';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { moveStudyBlock } from '../data/calendar';
@@ -10,8 +11,7 @@ import { formatDuration } from '../data/studyTime';
 const dayName = (date: string, today: string) => {
   if (date === today) return 'Today';
   if (date === addDays(today, 1)) return 'Tomorrow';
-  const [y, m, d] = date.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  return formatDay(date, { weekday: 'short', month: 'short', day: 'numeric' });
 };
 
 const hours = (value: number) => `${Number.isInteger(value) ? value : value.toFixed(1)} ${value === 1 ? 'hour' : 'hours'}`;
