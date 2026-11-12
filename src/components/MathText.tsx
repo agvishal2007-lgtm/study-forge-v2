@@ -15,14 +15,18 @@ function loadMath(): Promise<Render> {
 }
 
 /** An equation from a note, drawn properly. Until it's ready, the plain text shows. */
-export function MathText({ source }: { source: string }) {
+/** Starts loading the equation drawer early, for example when the Equation menu opens. */
+export const preloadMath = () => { loadMath().catch(() => undefined); };
+
+export function MathText({ source, quiet }: { source: string; quiet?: boolean }) {
   const [html, setHtml] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
     loadMath().then((render) => { if (live) setHtml(render(source)); }, () => undefined);
     return () => { live = false; };
   }, [source]);
+  if (html === null && quiet) return null;
   if (html === null) return <code className="note-math" data-testid="note-math">{source}</code>;
   // KaTeX escapes everything it's given and, with trust off, produces only maths markup.
-  return <span className="note-math" data-testid="note-math" dangerouslySetInnerHTML={{ __html: html }} />;
+  return <span className="note-math" data-testid="note-math" dangerouslySetInnerHTML={{ __html: html ?? '' }} />;
 }

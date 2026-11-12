@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { applyFormat, applyToBox, NoteToolbar } from '../components/NoteToolbar';
 import { continueList } from '../data/noteFormat';
+import { equationInsertPoint } from '../data/equationTemplates';
+
+// The calculator loads only when it's opened, so notes stay quick.
+const CalculatorPanel = lazy(() => import('../components/CalculatorPanel'));
 import { NoteView } from '../components/NoteView';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useStillHere } from '../components/useStillHere';
@@ -47,6 +51,7 @@ export function NoteEditor({ id, start, panel = false, onDeleted }: {
   onDeleted: (where: { courseId: string | null }) => void;
 }) {
   const [previewing, setPreviewing] = useState(false);
+  const [calculating, setCalculating] = useState(false);
   const bodyBox = useRef<HTMLTextAreaElement>(null);
   const stillHere = useStillHere();
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -220,9 +225,10 @@ export function NoteEditor({ id, start, panel = false, onDeleted }: {
       <div className="note-mode" role="group" aria-label="View">
         <button type="button" className="button" aria-pressed={!previewing} onClick={() => setPreviewing(false)}>Write</button>
         <button type="button" className="button" aria-pressed={previewing} onClick={() => setPreviewing(true)}>Preview</button>
-        {!previewing && <NoteToolbar box={bodyBox} onChange={(body) => change({ body })} />}
+        {!previewing && <NoteToolbar box={bodyBox} onChange={(body) => change({ body })} onCalculator={() => setCalculating((now) => !now)} calculatorOpen={calculating} />}
       </div>
       {previewing && <NoteView body={draft.body} />}
+      <div className={calculating && !previewing ? 'note-with-calc' : 'note-alone'}>
       <label className="note-body-label" hidden={previewing}>Your note
         <textarea ref={bodyBox} onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey && !event.nativeEvent.isComposing) {
@@ -242,6 +248,22 @@ export function NoteEditor({ id, start, panel = false, onDeleted }: {
           }
         }} autoFocus={!hasRecord} className="note-body" value={draft.body} onChange={(event) => change({ body: event.target.value })} />
       </label>
+      {calculating && !previewing && (
+        <Suspense fallback={<p className="muted">Opening the calculator…</p>}>
+          <CalculatorPanel
+            onClose={() => setCalculating(false)}
+            onInsert={(tex) => {
+              const box = bodyBox.current;
+              if (!box) return;
+              const at = equationInsertPoint(box.value, box.selectionEnd);
+              const before = box.value.slice(0, at);
+              const insert = `${before && !/\s$/.test(before) ? ' ' : ''}$${tex}$`;
+              applyToBox(box, { from: at, to: at, insert, selectionStart: at + insert.length, selectionEnd: at + insert.length }, (body) => change({ body }));
+            }}
+          />
+        </Suspense>
+      )}
+      </div>
 
       {confirmDelete && (
         <ConfirmDialog

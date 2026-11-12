@@ -74,6 +74,58 @@ test('Enter continues a list, and Enter on an empty item ends it', async () => {
   assert.deepEqual(parseNote('• a\n• b').map((block) => block.type), ['bullets']);
 });
 
+test('the Equation menu offers many kinds, each with its blank ready to type over', async () => {
+  const { templateEdit, EQUATION_GROUPS } = await import('../src/data/equationTemplates.ts');
+  const { applyEdit } = await format();
+  const pick = (text, start, end, tex) => {
+    const edit = templateEdit(text, start, end, tex);
+    const out = applyEdit(text, edit);
+    return { out, selected: out.slice(edit.selectionStart, edit.selectionEnd) };
+  };
+  assert.deepEqual(pick('Area ', 5, 5, '\\frac{¦a¦}{b}'), { out: 'Area $\\frac{a}{b}$', selected: 'a' });
+  assert.deepEqual(pick('ratio 3', 6, 7, '\\frac{¦a¦}{b}'), { out: 'ratio $\\frac{3}{b}$', selected: '3' }, 'chosen text fills the blank');
+  assert.deepEqual(pick('$x + $', 5, 5, '\\sqrt{¦x¦}'), { out: '$x + \\sqrt{x}$', selected: 'x' }, 'inside an equation it is not wrapped again');
+  assert.equal(pick('', 0, 0, '\\pm').out, '$\\pm$');
+  const { equationInsertPoint } = await import('../src/data/equationTemplates.ts');
+  assert.equal(equationInsertPoint('a $x^2$ b', 4), 7, 'never inside another equation');
+  assert.equal(equationInsertPoint('a $x^2$ b', 9), 9);
+  const kinds = EQUATION_GROUPS.flatMap((group) => group.items);
+  assert.ok(kinds.length >= 40, 'many kinds, not just one');
+  for (const name of ['Fraction', 'Square root', 'Integral', 'Limit', 'Sum', 'Matrix 2 × 2', 'System of equations', 'Quadratic formula', 'Mean', 'Reaction']) {
+    assert.ok(kinds.some((item) => item.label === name), name);
+  }
+});
+
+test('the calculator works like a school calculator', async () => {
+  const { Calculator, plotSegments, STANDARD_VIEW, valueTable } = await import('../src/data/calculatorRules.ts');
+  const calc = new Calculator('deg');
+  assert.equal(calc.run('sin(30)').answer, '0.5');
+  assert.equal(calc.run('2+3×4').answer, '14');
+  assert.equal(calc.run('log(1000)').answer, '3', 'log is base 10');
+  assert.equal(calc.run('ln(e)').answer, '1');
+  assert.equal(calc.run('√16').answer, '4');
+  assert.equal(calc.run('5!').answer, '120');
+  assert.equal(calc.run('Ans÷4').answer, '30', 'Ans is the last answer');
+  assert.equal(calc.run('asin(0.5)').answer, '30');
+  assert.match(calc.run('sin(30)').tex, /\\sin.*= 0\.5.*degrees/);
+  assert.match(calc.run('log(100)').tex, /\\log_\{10\}/);
+  calc.run('f(x)=x^2+1');
+  assert.equal(calc.run('f(3)').answer, '10');
+  assert.throws(() => calc.run('import({}, {})'), /isn’t available/);
+  assert.throws(() => calc.run('sin('), /missing at the end/);
+  assert.throws(() => calc.run('banana+1'), /isn’t a number or function/);
+  calc.showAs = 'fraction';
+  assert.equal(calc.run('1/3+1/4').answer, '7/12');
+  assert.equal(calc.run('1/3').tex, '\\frac{1}{3} = \\frac{1}{3}');
+  calc.setMode('rad');
+  assert.equal(calc.run('sin(pi/2)').answer, '1');
+  const tan = calc.graph('y = tan(x)');
+  assert.ok(plotSegments(tan.fn, STANDARD_VIEW, 400).length >= 6, 'tan breaks at its gaps rather than drawing false lines');
+  assert.deepEqual(valueTable(calc.graph('x^2').fn, STANDARD_VIEW, 3), [{ x: -2, y: 4 }, { x: 0, y: 0 }, { x: 2, y: 4 }]);
+  assert.match(calc.graph('y = 2x+').error, /missing/);
+  assert.equal(calc.lineTex('y = x^2'), 'y = {x}^{2}');
+});
+
 test('search needs every word, ignoring capitals and accents', async () => {
   const { matches, searchTerms, highlight, snippet, runSearch } = await search();
   assert.deepEqual(searchTerms('  Café  cafe  '), ['cafe']);
@@ -179,6 +231,68 @@ test('Preview shows the formatting, and nothing in a note can run', async () => 
   assert.equal(await body().isVisible(), true);
   await page.reload();
   assert.match(await body().inputValue(), /\*\*Mitochondria\*\*/, 'it was saved');
+});
+
+test('in a note, the Equation menu and the calculator put equations in, with a notes-only warning', async () => {
+  await nav('Notes');
+  await page.getByRole('button', { name: 'New note' }).first().click();
+  await page.getByLabel('Title').fill('Equations');
+  await body().fill('Formula: ');
+  await body().evaluate((box) => box.setSelectionRange(box.value.length, box.value.length));
+  await page.getByRole('button', { name: 'Equation', exact: true }).click();
+  const menu = page.getByTestId('equation-menu');
+  await menu.waitFor();
+  await menu.locator('.katex').first().waitFor();
+  await page.screenshot({ path: path.join(shots, 'equation-menu.png') });
+  await menu.getByRole('button', { name: 'Fraction', exact: true }).click();
+  assert.equal(await menu.count(), 0, 'the menu closes after choosing');
+  assert.equal(await body().inputValue(), 'Formula: $\\frac{a}{b}$');
+  assert.equal(await body().evaluate((box) => box.value.slice(box.selectionStart, box.selectionEnd)), 'a', 'the blank is selected');
+  await page.keyboard.type('x');
+  assert.equal(await body().inputValue(), 'Formula: $\\frac{x}{b}$');
+  await page.getByRole('button', { name: 'Equation', exact: true }).click();
+  await page.keyboard.press('Escape');
+  assert.equal(await menu.count(), 0, 'Escape closes it');
+
+  await page.getByRole('button', { name: 'Calculator', exact: true }).click();
+  const calc = page.getByTestId('calculator');
+  await calc.waitFor();
+  assert.match(await calc.getByTestId('calc-warning').innerText(), /For writing notes only\..*quiz, test or exam/s);
+  await calc.getByLabel('Expression').fill('2sin(30)+');
+  await calc.getByRole('button', { name: 'square root' }).click();
+  await calc.getByRole('button', { name: '9', exact: true }).click();
+  await calc.getByRole('button', { name: 'close bracket' }).click();
+  await calc.getByRole('button', { name: 'Work it out' }).click();
+  assert.equal(await calc.getByTestId('calc-answer').first().innerText(), '= 4');
+  await calc.getByRole('button', { name: /^Put 2sin\(30\)\+√\(9\) = 4 in the note$/ }).click();
+  assert.match(await body().inputValue(), /\$\\frac\{x\}\{b\}\$ \$.*\\sin.*= 4.*degrees.*\$$/);
+  await calc.getByRole('button', { name: 'Fraction' }).click();
+  await calc.getByLabel('Expression').fill('1/3 + 1/4');
+  await page.keyboard.press('Enter');
+  assert.equal(await calc.getByTestId('calc-answer').first().innerText(), '= 7/12');
+  await page.screenshot({ path: path.join(shots, 'calculator.png') });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await calc.scrollIntoViewIfNeeded();
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= 390), 'no sideways scroll on a phone');
+  await page.screenshot({ path: path.join(shots, 'calculator-phone.png') });
+  await page.getByRole('button', { name: 'Equation', exact: true }).click();
+  await page.getByTestId('equation-menu').locator('.katex').first().waitFor();
+  await page.screenshot({ path: path.join(shots, 'equation-menu-phone.png') });
+  await page.keyboard.press('Escape');
+  await page.setViewportSize({ width: 1280, height: 800 });
+
+  await calc.getByRole('tab', { name: 'Graph' }).click();
+  await calc.getByLabel('Line 1: y =').fill('x^2 - 2');
+  await calc.getByRole('button', { name: 'Draw' }).click();
+  assert.match(await calc.getByTestId('calc-canvas').getAttribute('aria-label'), /first line y = x\^2 - 2/);
+  await calc.getByText('Table of values for line 1').click();
+  assert.match(await calc.getByTestId('calc-table').innerText(), /0\s+-2/);
+  await calc.getByRole('button', { name: 'Zoom in' }).click();
+  assert.match(await calc.getByTestId('calc-canvas').getAttribute('aria-label'), /x from -5 to 5/);
+  await page.screenshot({ path: path.join(shots, 'calculator-graph.png') });
+  await calc.getByRole('button', { name: 'Close calculator' }).click();
+  assert.equal(await page.getByTestId('calculator').count(), 0);
+  await page.getByTestId('save-status').getByText(/saved/i).waitFor();
 });
 
 test('search finds notes, flashcards, practice, and the planner, and highlights the words', async () => {
