@@ -173,7 +173,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/record',
     target: ['[data-tour="record-source"]', '#content .page'],
     title: 'Record lectures',
-    body: 'Choose In person to record the room with your microphone, or Virtual to record your screen and the lecture\'s sound. Virtual works best in Chrome or Edge on a computer. While it records, a Lecture notes box sits right beside it, so you can take notes at the same time. They save as you type and are attached to the recording when you stop.',
+    body: 'Choose In person to record the room with your microphone, or Virtual to record your screen and the lecture\'s sound. Virtual works best in Chrome or Edge on a computer. While it records, a live transcript appears beside it, made on your device about half a minute behind the speaker. Select any words and tap Add note, tap + Note beside a passage, or tap Note this moment, and write while the recording and transcript keep going. Return to live jumps back to the newest words. Afterwards, open the recording and tap a note to hear that exact moment, or tap a passage to see its notes. You can download your notes with their timestamps, or print them as a PDF.',
   },
   {
     id: 'record-safe',

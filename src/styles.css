@@ -1385,3 +1385,31 @@ code.note-math { font-family: ui-monospace, monospace; }
 .lecture-notes { border: 1px solid var(--line); border-radius: 12px; padding: .75rem 1rem; min-width: 0; }
 .lecture-notes h2 { margin: 0 0 .25rem; font-size: 1.15rem; }
 @media (max-width: 900px) { .lecture-layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* Genio-style notes at moments. */
+.transcript-live { position: relative; }
+.transcript-scroll { max-height: 22rem; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; padding: .5rem .75rem; background: var(--raised); }
+.transcript-segment { margin: .35rem 0; line-height: 1.55; border-radius: 6px; padding: .1rem .25rem; }
+.transcript-segment[data-annotated='true'] { border-left: 3px solid var(--accent); padding-left: .4rem; }
+.transcript-segment[data-highlight='true'] { background: var(--status-doing-fill); color: var(--status-doing-text); }
+.segment-stamp, .moment-stamp { font: inherit; font-size: .8rem; font-weight: 700; font-variant-numeric: tabular-nums; border: 1px solid var(--line-strong, var(--line)); border-radius: 999px; padding: .05rem .5rem; background: transparent; color: var(--paper); cursor: pointer; min-height: 28px; }
+.segment-note { font-size: .8rem; }
+.picked-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: .5rem; padding: .5rem .75rem; border: 1px solid var(--accent); border-radius: 10px; background: var(--raised); }
+.return-live { position: absolute; right: .75rem; bottom: .75rem; box-shadow: var(--shadow, 0 4px 12px rgba(0,0,0,.2)); }
+.moment-list { display: grid; gap: .6rem; margin: .75rem 0; }
+.moment-card { border: 1px solid var(--line); border-radius: 10px; padding: .6rem .75rem; display: grid; gap: .4rem; }
+.moment-card[data-active='true'] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.moment-head { display: flex; justify-content: space-between; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.moment-quote { margin: 0; padding-left: .6rem; border-left: 3px solid var(--line-strong, var(--line)); color: var(--muted); font-size: .92rem; }
+.moment-card textarea { width: 100%; min-height: 4.5rem; }
+.general-notes summary { cursor: pointer; font-weight: 600; margin: .5rem 0; }
+.review-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; margin-top: .75rem; }
+.small-heading { font-size: 1rem; margin: 0 0 .4rem; }
+.live-choice { margin: .5rem 0; }
+@media (max-width: 900px) { .review-layout { grid-template-columns: minmax(0, 1fr); } .transcript-scroll { max-height: 16rem; } }
+@media print {
+  html.printing-notes body * { visibility: hidden; }
+  html.printing-notes [data-testid=recording-notes], html.printing-notes [data-testid=recording-notes] * { visibility: visible; }
+  html.printing-notes [data-testid=recording-notes] { position: absolute; inset: 0; }
+  html.printing-notes [data-testid=recording-notes] button, html.printing-notes .transcript-scroll { display: none; }
+}

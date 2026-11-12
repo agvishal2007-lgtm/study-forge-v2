@@ -95,6 +95,16 @@ export interface Note {
   materialId: string | null;
   createdAt: number;
   updatedAt: number;
+  /** A note pinned to a moment in a recording: where it is, in milliseconds from the start. */
+  atMs?: number | null;
+  /** The words of the transcript the student chose, kept as written then, so the note never loses
+   *  its context even if the transcript is made again. */
+  quote?: string;
+  /** The transcript passage it was attached to, when there was one. */
+  segmentId?: string | null;
+  /** While the lecture is still being recorded, the recording it belongs to. Replaced by
+   *  materialId once the recording is saved. */
+  recordingId?: string | null;
 }
 
 /** A recording in progress, or one a crash left unfinished. Its audio is saved in small pieces. */
@@ -464,9 +474,19 @@ export interface ExamResult {
 }
 
 /** A recording turned into text on the device. Kept with its recording, which lives on this device. */
+/** One passage of a transcript, with where it falls in the recording. */
+export interface TranscriptSegment {
+  id: string;
+  startMs: number;
+  endMs: number;
+  text: string;
+}
+
 export interface Transcript {
   materialId: string;
   text: string;
+  /** The same words in timed passages. Older transcripts don't have these. */
+  segments?: TranscriptSegment[];
   /** Which speech model made it. */
   model: string;
   createdAt: number;

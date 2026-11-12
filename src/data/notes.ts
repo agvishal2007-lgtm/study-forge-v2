@@ -46,3 +46,40 @@ export function noteLabel(note: Pick<Note, 'title' | 'body'>): string {
   const firstLine = note.body.split('\n').find((line) => line.trim());
   return note.title.trim() || firstLine?.trim().slice(0, 80) || 'Untitled note';
 }
+
+/** A note pinned to a moment of a recording. */
+export async function addMomentNote(where: { materialId?: string | null; recordingId?: string | null; courseId: string | null; topicId: string | null }, atMs: number, quote = '', segmentId: string | null = null): Promise<Note> {
+  const now = Date.now();
+  const note: Note = {
+    id: crypto.randomUUID(),
+    title: '',
+    body: '',
+    courseId: where.courseId,
+    topicId: where.topicId,
+    materialId: where.materialId ?? null,
+    recordingId: where.recordingId ?? null,
+    atMs: Math.max(0, Math.round(atMs)),
+    quote,
+    segmentId,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await (await getDb()).put('notes', note);
+  notifyChanged();
+  return note;
+}
+
+/** When a recording is saved, its moment notes move over to it, keeping their times. */
+export async function attachMomentNotes(recordingId: string, materialId: string): Promise<number> {
+  const db = await getDb();
+  const tx = db.transaction('notes', 'readwrite');
+  let moved = 0;
+  for (const note of await tx.store.getAll()) {
+    if (note.recordingId !== recordingId) continue;
+    await tx.store.put({ ...note, materialId, recordingId: null, updatedAt: Math.max(Date.now(), note.updatedAt + 1) });
+    moved += 1;
+  }
+  await tx.done;
+  if (moved) notifyChanged();
+  return moved;
+}

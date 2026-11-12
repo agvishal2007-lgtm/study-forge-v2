@@ -1,3 +1,8 @@
+import { LiveTranscriber, type LiveStatus } from '../data/liveTranscriber';
+import { TRANSCRIBE_MODEL, textOf } from '../data/transcribe';
+import { saveTranscript } from '../data/transcripts';
+import { attachMomentNotes } from '../data/notes';
+import type { TranscriptSegment } from '../data/types';
 import { getNote, saveNote } from '../data/notes';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -31,6 +36,8 @@ interface StartOptions {
   name: string;
   courseId: string | null;
   topicId: string | null;
+  /** Read the lecture into text as it goes, on the device. */
+  liveTranscript?: boolean;
 }
 
 interface Recorder {
@@ -55,6 +62,11 @@ interface Recorder {
   lectureNote: { id: string; courseId: string | null; topicId: string | null } | null;
   /** The note that was attached to the last saved recording, if any was written. */
   savedNoteId: string | null;
+  /** The recording in progress, so notes pinned to its moments can find it. */
+  recordingId: string | null;
+  liveSegments: TranscriptSegment[];
+  liveStatus: LiveStatus | 'off';
+  liveMessage: string;
   getElapsed: () => number;
   start: (options: StartOptions) => Promise<void>;
   pause: () => void;
@@ -112,6 +124,11 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
   const [savedNoteId, setSavedNoteId] = useState<string | null>(null);
   const lectureNoteRef = useRef(lectureNote);
   lectureNoteRef.current = lectureNote;
+  const [recordingId, setRecordingId] = useState<string | null>(null);
+  const [liveSegments, setLiveSegments] = useState<TranscriptSegment[]>([]);
+  const [liveStatus, setLiveStatus] = useState<LiveStatus | 'off'>('off');
+  const [liveMessage, setLiveMessage] = useState('');
+  const transcriber = useRef<LiveTranscriber | null>(null);
   const [phase, setPhase] = useState<RecorderPhase>('idle');
   const [name, setName] = useState('');
   const [bytes, setBytes] = useState(0);
@@ -135,8 +152,11 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
     return banked + (since === null ? 0 : Date.now() - since);
   }, []);
 
-  const start = useCallback(async ({ source: chosen, withMicrophone, name: title, courseId, topicId }: StartOptions) => {
+  const start = useCallback(async ({ source: chosen, withMicrophone, name: title, courseId, topicId, liveTranscript = true }: StartOptions) => {
     if (recorderRef.current) return;
+    setLiveSegments([]);
+    setLiveStatus('off');
+    setLiveMessage('');
     setLectureNote({ id: crypto.randomUUID(), courseId, topicId });
     setSavedNoteId(null);
     setError('');
@@ -205,10 +225,24 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
         analyser = audioContext.createAnalyser();
         analyser.fftSize = 1024;
         const mix = audioSources.length > 1 ? audioContext.createMediaStreamDestination() : null;
+        const sourceNodes: AudioNode[] = [];
         for (const item of audioSources) {
           const node = audioContext.createMediaStreamSource(item);
           node.connect(analyser);
           if (mix) node.connect(mix);
+          sourceNodes.push(node);
+        }
+        // The same sound goes to the live transcript, which never holds the recording up.
+        if (liveTranscript) {
+          try {
+            transcriber.current = new LiveTranscriber(audioContext, sourceNodes, {
+              onSegment: (segment) => setLiveSegments((current) => [...current, segment]),
+              onStatus: (status, message) => { setLiveStatus(status); setLiveMessage(message); },
+            });
+          } catch {
+            setLiveStatus('unavailable');
+            setLiveMessage("This browser can't make a live transcript. The recording carries on, and you can still pin notes to moments.");
+          }
         }
         tracks = [...tracks, ...(mix ? mix.stream.getAudioTracks() : audioSources[0].getAudioTracks())];
       }
@@ -231,6 +265,7 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
         ...(isScreen ? { videoBitsPerSecond: SCREEN_VIDEO_BITRATE } : {}),
       });
       const id = crypto.randomUUID();
+      setRecordingId(id);
       await createSession({
         id,
         name: title,
@@ -305,8 +340,19 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
         setPhase('saving');
         await writes;
         try {
+          const live = transcriber.current;
+          transcriber.current = null;
           const material = await finishSession(id);
           setSaved(material);
+          if (material) {
+            // Notes pinned to moments while recording now belong to the saved recording.
+            await attachMomentNotes(id, material.id);
+            // The live transcript becomes the recording's transcript, timed passages and all.
+            const segments = live ? await live.finish().catch(() => []) : [];
+            if (segments.length > 0) await saveTranscript(material.id, textOf(segments), `${TRANSCRIBE_MODEL} (live)`, segments);
+          } else {
+            void live?.finish().catch(() => undefined);
+          }
           // Notes written during the lecture belong with it. An empty one is simply never kept.
           const noteId = lectureNoteRef.current?.id;
           if (material && noteId) {
@@ -361,11 +407,12 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
   }, [getElapsed]);
 
   const value = useMemo<Recorder>(() => ({
-    phase, name, bytes, level, muted, source, hasAudio, micIncluded, silent, warning, error, notice, saved, lectureNote, savedNoteId, getElapsed, start,
+    phase, name, bytes, level, muted, source, hasAudio, micIncluded, silent, warning, error, notice, saved, lectureNote, savedNoteId, recordingId, liveSegments, liveStatus, liveMessage, getElapsed, start,
     pause() {
       const recorder = recorderRef.current;
       if (recorder?.state !== 'recording') return;
       recorder.pause();
+      transcriber.current?.pause();
       clock.current = { banked: getElapsed(), since: null };
       setPhase('paused');
     },
@@ -373,6 +420,7 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
       const recorder = recorderRef.current;
       if (recorder?.state !== 'paused') return;
       recorder.resume();
+      transcriber.current?.resume();
       clock.current = { banked: clock.current.banked, since: Date.now() };
       setPhase('recording');
     },
@@ -387,7 +435,7 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
       setError('');
       setWarning('');
     },
-  }), [phase, name, bytes, level, muted, source, hasAudio, micIncluded, silent, warning, error, notice, saved, lectureNote, savedNoteId, getElapsed, start]);
+  }), [phase, name, bytes, level, muted, source, hasAudio, micIncluded, silent, warning, error, notice, saved, lectureNote, savedNoteId, recordingId, liveSegments, liveStatus, liveMessage, getElapsed, start]);
 
   return <RecorderContext.Provider value={value}>{children}</RecorderContext.Provider>;
 }

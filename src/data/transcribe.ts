@@ -1,3 +1,4 @@
+import type { TranscriptSegment } from './types';
 /**
  * Turns a recording into text, entirely on the device. The speech model downloads the first time it's
  * used and is then cached, so nothing is ever uploaded. It's slower and rougher than paid services,
@@ -15,10 +16,11 @@ export interface TranscribeProgress {
   percent: number;
 }
 export class TranscribeError extends Error {}
+export const SAMPLE_RATE_HZ = SAMPLE_RATE;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 /** Turns the recording's sound into 16kHz mono samples, which is what the model expects. */
 async function decodeAudio(blob: Blob): Promise<Float32Array> {
   const AudioCtx: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
@@ -43,8 +45,66 @@ async function decodeAudio(blob: Blob): Promise<Float32Array> {
   return (await offline.startRendering()).getChannelData(0).slice();
 }
 
-/** Reads the recording aloud into text, reporting progress. isActive lets the page stop it by leaving. */
-export async function transcribe(blob: Blob, onProgress: (progress: TranscribeProgress) => void, isActive: () => boolean): Promise<string> {
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type Recognizer = (samples: Float32Array) => Promise<string>;
+let recognizerPromise: Promise<Recognizer> | null = null;
+
+/** Loads the speech model once, and reuses it for every transcript, live or afterwards. */
+export function loadRecognizer(onProgress: (progress: TranscribeProgress) => void): Promise<Recognizer> {
+  if (TEST_BUILD) {
+    let count = 0;
+    return Promise.resolve(async () => {
+      await wait(30);
+      count += 1;
+      const canned = (window as any).__testLiveTranscript as string[] | undefined;
+      if ((window as any).__testTranscriberBroken) throw new TranscribeError('broken');
+      return canned?.[(count - 1) % canned.length] ?? `Spoken passage number ${count}.`;
+    });
+  }
+  recognizerPromise ??= (async () => {
+    // Loaded from a CDN at run time, so the heavy speech library never ships in the site or its build.
+    let transformers: any;
+    try {
+      const url = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1';
+      transformers = await import(/* @vite-ignore */ url);
+    } catch {
+      throw new TranscribeError(navigator.onLine ? "The transcriber couldn't start." : 'Making a transcript the first time needs internet. Connect, then try again.');
+    }
+    const { pipeline, env } = transformers;
+    // Only ever use the public model; never look for a local one.
+    env.allowLocalModels = false;
+    let recognizer: any;
+    try {
+      recognizer = await pipeline('automatic-speech-recognition', TRANSCRIBE_MODEL, {
+        progress_callback: (event: any) => {
+          if (event?.status === 'progress' && event.total) onProgress({ stage: 'downloading', percent: Math.min(100, Math.round((event.loaded / event.total) * 100)) });
+        },
+      });
+    } catch {
+      throw new TranscribeError(navigator.onLine ? "The transcriber couldn't load. Try again in a moment." : 'Making a transcript the first time needs internet. Connect, then try again.');
+    }
+    return async (samples: Float32Array) => {
+      const result = await recognizer(samples, { chunk_length_s: 30, stride_length_s: 5 });
+      const text = Array.isArray(result) ? result.map((item: any) => item.text).join(' ') : result?.text;
+      return String(text ?? '').replace(/\s+/g, ' ').trim();
+    };
+  })().catch((error) => {
+    recognizerPromise = null;
+    throw error;
+  });
+  return recognizerPromise;
+}
+
+export interface TranscriptResult {
+  text: string;
+  segments: TranscriptSegment[];
+}
+
+/** Joins passages into one readable text. */
+export const textOf = (segments: TranscriptSegment[]) => segments.map((segment) => segment.text).join(' ').replace(/\s+/g, ' ').trim();
+
+/** Reads the recording aloud into timed passages, reporting progress. isActive lets the page stop it by leaving. */
+export async function transcribe(blob: Blob, onProgress: (progress: TranscribeProgress) => void, isActive: () => boolean): Promise<TranscriptResult> {
   if (TEST_BUILD) {
     onProgress({ stage: 'preparing', percent: 0 });
     await wait(20);
@@ -53,52 +113,35 @@ export async function transcribe(blob: Blob, onProgress: (progress: TranscribePr
     onProgress({ stage: 'listening', percent: 100 });
     const canned = (window as any).__testTranscript;
     if (typeof canned === 'string' && canned.startsWith('ERROR:')) throw new TranscribeError(canned.slice(6));
-    return typeof canned === 'string' ? canned : 'This is a sample transcript used only in testing.';
+    const text = typeof canned === 'string' ? canned : 'This is a sample transcript used only in testing.';
+    // One passage per sentence, five seconds each, so timing can be tested without the model.
+    const sentences = text.match(/[^.!?]+[.!?]*/g)?.map((part: string) => part.trim()).filter(Boolean) ?? [text];
+    const segments = sentences.map((sentence: string, index: number) => ({ id: `s${index}`, startMs: index * 5000, endMs: (index + 1) * 5000, text: sentence }));
+    return { text: textOf(segments), segments };
   }
 
   onProgress({ stage: 'preparing', percent: 0 });
   const audio = await decodeAudio(blob);
   if (!isActive()) throw new TranscribeError('Stopped.');
   if (audio.length < SAMPLE_RATE / 2) throw new TranscribeError('This recording is too short, or has no sound.');
-
-  // Loaded from a CDN at run time, so the heavy speech library never ships in the site or its build.
-  let transformers: any;
-  try {
-    const url = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1';
-    transformers = await import(/* @vite-ignore */ url);
-  } catch {
-    throw new TranscribeError(navigator.onLine ? "The transcriber couldn't start." : 'Making a transcript the first time needs internet. Connect, then try again.');
-  }
-  const { pipeline, env } = transformers;
-  // Only ever use the public model; never look for a local one.
-  env.allowLocalModels = false;
-  let recognizer: any;
-  try {
-    recognizer = await pipeline('automatic-speech-recognition', TRANSCRIBE_MODEL, {
-      progress_callback: (event: any) => {
-        if (event?.status === 'progress' && event.total) onProgress({ stage: 'downloading', percent: Math.min(100, Math.round((event.loaded / event.total) * 100)) });
-      },
-    });
-  } catch {
-    throw new TranscribeError(navigator.onLine ? "The transcriber couldn't load. Try again in a moment." : 'Making a transcript the first time needs internet. Connect, then try again.');
-  }
+  const recognize = await loadRecognizer(onProgress);
   if (!isActive()) throw new TranscribeError('Stopped.');
 
-  // Reading in windows gives real progress and keeps memory in check on long lectures.
+  // Reading in windows gives real progress, timed passages, and keeps memory in check on long lectures.
   const windowSize = CHUNK_SECONDS * SAMPLE_RATE;
-  const parts: string[] = [];
+  const segments: TranscriptSegment[] = [];
   for (let start = 0; start < audio.length; start += windowSize) {
     if (!isActive()) throw new TranscribeError('Stopped.');
     onProgress({ stage: 'listening', percent: Math.min(99, Math.round((start / audio.length) * 100)) });
-    const slice = audio.subarray(start, Math.min(audio.length, start + windowSize));
+    const end = Math.min(audio.length, start + windowSize);
+    let text = '';
     try {
-      const result = await recognizer(slice, { chunk_length_s: 30, stride_length_s: 5 });
-      const text = Array.isArray(result) ? result.map((item: any) => item.text).join(' ') : result?.text;
-      if (text) parts.push(String(text).trim());
+      text = await recognize(audio.subarray(start, end));
     } catch {
       throw new TranscribeError('The recording could not be read all the way through. The transcript may be incomplete.');
     }
+    if (text) segments.push({ id: `s${Math.round((start / SAMPLE_RATE) * 1000)}`, startMs: Math.round((start / SAMPLE_RATE) * 1000), endMs: Math.round((end / SAMPLE_RATE) * 1000), text });
   }
   onProgress({ stage: 'listening', percent: 100 });
-  return parts.join(' ').replace(/\s+/g, ' ').trim();
+  return { text: textOf(segments), segments };
 }

@@ -1,3 +1,6 @@
+import { MomentNoteCard, TranscriptView } from '../components/MomentNotes';
+import { byMoment, isMomentNote } from '../data/momentRules';
+import { addMomentNote, attachMomentNotes, listNotes } from '../data/notes';
 import { NoteEditor } from './NoteEditorPage';
 import { formatWhen } from '../data/dateFormat';
 import { useEffect, useState } from 'react';
@@ -39,7 +42,9 @@ function Interrupted() {
                   setBusy(session.id);
                   setFailure('');
                   try {
-                    await finishSession(session.id);
+                    const material = await finishSession(session.id);
+                    // Notes pinned to its moments before the crash come with it.
+                    if (material) await attachMomentNotes(session.id, material.id);
                   } catch (error) {
                     setFailure(`The recording wasn't saved, but it's still here. ${(error as Error).message}`);
                   } finally {
@@ -116,6 +121,52 @@ function Recording() {
   );
 }
 
+/** While recording: the live transcript, notes pinned to moments, and general notes, all at once. */
+function LectureWorkspace({ lectureNote }: { lectureNote: { id: string; courseId: string | null; topicId: string | null } }) {
+  const { recordingId, liveSegments, liveStatus, liveMessage, getElapsed } = useRecorder();
+  const { data: allNotes } = useLive(listNotes);
+  const [fresh, setFresh] = useState<string | null>(null);
+  const moments = byMoment((allNotes ?? []).filter(isMomentNote).filter((note) => note.recordingId === recordingId));
+  const pin = async (atMs: number, quote = '', segmentId: string | null = null) => {
+    if (!recordingId) return;
+    const note = await addMomentNote({ recordingId, courseId: lectureNote.courseId, topicId: lectureNote.topicId }, atMs, quote, segmentId);
+    setFresh(note.id);
+  };
+  const statusText = liveStatus === 'listening' ? 'Listening. Words appear about half a minute behind, made on this device.'
+    : liveStatus === 'downloading' || liveStatus === 'starting' ? (liveMessage || 'Getting the live transcript ready…')
+      : liveStatus === 'unavailable' ? liveMessage : '';
+  return (
+    <div className="lecture-layout" data-testid="lecture-workspace">
+      <section className="lecture-notes" aria-labelledby="live-heading" data-testid="live-transcript">
+        <h2 id="live-heading">Live transcript</h2>
+        {statusText && <p className={liveStatus === 'unavailable' ? 'notice small' : 'muted small'} role="status" data-testid="live-status" data-status={liveStatus}>{statusText}</p>}
+        {liveStatus !== 'off' && liveStatus !== 'unavailable' && (
+          <TranscriptView
+            live
+            segments={liveSegments}
+            notes={moments}
+            onAddNote={(atMs, quote, segmentId) => void pin(atMs, quote, segmentId)}
+            emptyText="The first words appear here shortly after the lecture starts."
+          />
+        )}
+        <p className="muted small">Select any words, then Add note, or tap + Note beside a passage. The recording and transcript keep going while you write.</p>
+      </section>
+      <section className="lecture-notes" aria-labelledby="lecture-notes-heading" data-testid="lecture-notes">
+        <h2 id="lecture-notes-heading">Lecture notes</h2>
+        <button type="button" className="button primary" onClick={() => void pin(getElapsed())} data-testid="note-now">Note this moment</button>
+        <ul className="plain-list moment-list" data-testid="moment-notes">
+          {moments.map((note) => <MomentNoteCard key={note.id} note={note} segments={liveSegments} focus={note.id === fresh} />)}
+        </ul>
+        <details className="general-notes" open={moments.length === 0}>
+          <summary>General notes for this lecture</summary>
+          <p className="muted small">Anything not tied to one moment. It saves as you type and is attached to the recording when you stop.</p>
+          <NoteEditor id={lectureNote.id} start={{ courseId: lectureNote.courseId, topicId: lectureNote.topicId, materialId: null }} panel onDeleted={() => undefined} />
+        </details>
+      </section>
+    </div>
+  );
+}
+
 export function RecordPage() {
   const { phase, error, notice, saved, savedNoteId, lectureNote, start, clearResult } = useRecorder();
   const [params] = useSearchParams();
@@ -125,6 +176,12 @@ export function RecordPage() {
   const [topicId, setTopicId] = useState(params.get('topic') ?? '');
   const [source, setSource] = useState<RecordingSource>('microphone');
   const [withMicrophone, setWithMicrophone] = useState(false);
+  const [liveTranscript, setLiveTranscript] = useState(() => {
+    try { return localStorage.getItem('study-forge-live-transcript') !== 'off'; } catch { return true; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('study-forge-live-transcript', liveTranscript ? 'on' : 'off'); } catch { /* not kept */ }
+  }, [liveTranscript]);
   const screenAvailable = canRecordScreen();
   const { data: courses } = useLive(listCourses);
   const { data: topics } = useLive(() => (courseId ? listTopics(courseId) : Promise.resolve([])), [courseId]);
@@ -145,13 +202,7 @@ export function RecordPage() {
       {running ? (
         <div className="lecture-layout">
           <Recording />
-          {lectureNote && (
-            <section className="lecture-notes" aria-labelledby="lecture-notes-heading" data-testid="lecture-notes">
-              <h2 id="lecture-notes-heading">Lecture notes</h2>
-              <p className="muted small">Type while it records. Your notes save as you go and are attached to the recording when you stop.</p>
-              <NoteEditor id={lectureNote.id} start={{ courseId: lectureNote.courseId, topicId: lectureNote.topicId, materialId: null }} panel onDeleted={() => undefined} />
-            </section>
-          )}
+          {lectureNote && <LectureWorkspace lectureNote={lectureNote} />}
         </div>
       ) : (
         <section className="studio" aria-label="Set up a recording">
@@ -198,11 +249,15 @@ export function RecordPage() {
               <p className="muted">Use Chrome or Edge for sound. Safari and Firefox may record only the picture. Uses about 500 MB per hour of this device's space.</p>
             </div>
           )}
+          <label className="check live-choice">
+            <input type="checkbox" checked={liveTranscript} onChange={(event) => setLiveTranscript(event.target.checked)} />
+            <span>Live transcript while it records <span className="muted">(made on this device, nothing is uploaded; the first time downloads a speech model)</span></span>
+          </label>
           <button
             data-tour="record-start"
             className="button primary record-button"
             disabled={phase !== 'idle'}
-            onClick={() => void start({ source, withMicrophone, name: title.trim() || defaultName(), courseId: courseId || null, topicId: topicId || null })}
+            onClick={() => void start({ source, withMicrophone, liveTranscript, name: title.trim() || defaultName(), courseId: courseId || null, topicId: topicId || null })}
           >
             {phase === 'starting' ? (source === 'screen' ? 'Waiting for you to choose what to share…' : 'Waiting for microphone…') : phase === 'saving' ? 'Saving recording…' : source === 'screen' ? 'Choose screen and start' : 'Start recording'}
           </button>

@@ -123,7 +123,7 @@ export function BackupSection() {
   return (
     <section aria-labelledby="backup-heading" data-tour="backup">
       <h2 id="backup-heading">Backup</h2>
-      <p>Save everything to one .zip file, then keep it somewhere safe, like Google Drive or a USB drive. You can also open it on any computer to get your files and notes.</p>
+      <p>Save everything to one .zip file, then keep it somewhere safe, like Google Drive or a USB drive. It holds your original files and recordings exactly as you added them, byte for byte, plus your courses, topics, notes, planner, calendar, flashcards, practice, lessons, progress, links and transcripts, in folders you can open on any computer. Settings like light or dark mode aren't included. Restoring only adds what's missing and never replaces anything.</p>
       {summary && <p className="muted" data-testid="backup-summary">
         {plural(summary.courses, 'course')}, {plural(summary.files, 'file')} ({formatBytes(summary.bytes)}), {plural(summary.notes, 'note')}, and {plural(summary.lessons, 'lesson')}. {data?.last ? `Last backup: ${formatDate(data.last)}.` : 'You haven\'t made a backup yet.'}
       </p>}

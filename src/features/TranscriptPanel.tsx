@@ -25,13 +25,13 @@ export function TranscriptPanel({ material, blob }: { material: Material; blob: 
     setProblem('');
     setProgress({ stage: 'preparing', percent: 0 });
     transcribe(blob, (next) => { if (active.current) setProgress(next); }, () => active.current)
-      .then(async (text) => {
+      .then(async ({ text, segments }) => {
         if (!active.current) return;
         if (!text) {
           setProblem('No words were found in this recording.');
           return;
         }
-        await saveTranscript(material.id, text, TRANSCRIBE_MODEL);
+        await saveTranscript(material.id, text, TRANSCRIBE_MODEL, segments);
       })
       .catch((error: unknown) => {
         if (active.current) setProblem(error instanceof TranscribeError ? error.message : `The transcript couldn't be made. ${(error as Error).message}`);
@@ -61,7 +61,9 @@ export function TranscriptPanel({ material, blob }: { material: Material; blob: 
       {transcript && !working && (
         <div data-testid="transcript-text">
           <p className="muted file-meta">This transcript is searchable. It was made on your device and can have mistakes, so check anything important against the recording.</p>
-          <div className="transcript-body">{transcript.text}</div>
+          {transcript.segments?.length
+            ? <p className="muted small">The timed version, with your notes, is shown under Notes at moments above.</p>
+            : <div className="transcript-body">{transcript.text}</div>}
           <div className="row-actions">
             <button className="button" onClick={async () => {
               try {

@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useRef, useState, type SyntheticEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type RefObject, type SyntheticEvent } from 'react';
+import { RecordingNotes } from '../components/RecordingNotes';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { NewNoteButton, NoteList } from '../components/NoteList';
 import { NoteEditor } from './NoteEditorPage';
@@ -172,6 +173,7 @@ export default function ViewerPage() {
   };
   const navigate = useNavigate();
   const stage = useRef<HTMLDivElement>(null);
+  const media = useRef<HTMLMediaElement | null>(null);
   const stillHere = useStillHere();
   const [failure, setFailure] = useState('');
   const [viewFailure, setViewFailure] = useState('');
@@ -280,8 +282,8 @@ export default function ViewerPage() {
   else if (kind === 'code') body = <TextView blob={blob} />;
   else if (!url) body = kind === 'text' ? <TextView blob={blob} /> : <p className="muted">Opening file…</p>;
   else if (kind === 'image') body = <ImageView url={url} name={material.name} />;
-  else if (kind === 'audio') body = <audio controls src={url} data-testid="audio-player" onLoadedMetadata={measureLength} onError={() => fail('audio')} />;
-  else if (kind === 'video') body = <video controls playsInline src={url} data-testid="video-player" onLoadedMetadata={measureLength} onError={() => fail('video')} />;
+  else if (kind === 'audio') body = <audio ref={media as RefObject<HTMLAudioElement>} controls src={url} data-testid="audio-player" onLoadedMetadata={measureLength} onError={() => fail('audio')} />;
+  else if (kind === 'video') body = <video ref={media as RefObject<HTMLVideoElement>} controls playsInline src={url} data-testid="video-player" onLoadedMetadata={measureLength} onError={() => fail('video')} />;
   else if (kind === 'text') body = <TextView blob={blob} />;
   else if (olderOfficeAdvice(material.name)) body = fallback(olderOfficeAdvice(material.name));
   else body = fallback("Study Forge can't display this file type yet, but the original is safe. You can download it and open it in another app.");
@@ -353,6 +355,7 @@ export default function ViewerPage() {
         )}
       </div>
       {failure && <p className="error" role="alert">{failure}</p>}
+      {(kind === 'audio' || kind === 'video') && blob && <RecordingNotes material={material} media={media} />}
       {(kind === 'audio' || kind === 'video') && blob && <TranscriptPanel material={material} blob={blob} />}
       <section className="file-notes" aria-labelledby="file-notes-heading">
         <h2 id="file-notes-heading">Notes on this file</h2>
