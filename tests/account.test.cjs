@@ -886,7 +886,8 @@ test('after signing in with Google, that calendar connects in one tap, and other
   assert.match(scopes, /calendar\.events\.readonly/);
   // The Planner is the plainest check that the Canvas deadline came in.
   await nav(page, 'Planner');
-  await page.getByRole('link', { name: 'Quiz 1' }).waitFor();
+  await page.getByRole('heading', { name: 'Planner', exact: true }).waitFor();
+  await page.getByRole('link', { name: 'Quiz 1', exact: true }).first().waitFor();
   await nav(page, 'Calendar');
   await page.getByRole('tab', { name: 'Plan Calendar' }).click();
   await page.locator(`[data-date="${soon}"]`).getByText('ECO 231').waitFor();

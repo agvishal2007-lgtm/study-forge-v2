@@ -32,6 +32,11 @@ import { listUnfinished } from '../data/recordings';
 import { getStorageStatus, listCourses, listMaterials, requestKeepFiles } from '../data/store';
 import type { Course, PlannerItem } from '../data/types';
 import { useLive } from '../data/useLive';
+import { MissedStudy, StartStudying, WeekLookBack, WeekWorkload } from '../components/WeekPlan';
+import { lastWeek, missedStudyBlocks, startStudying, weekWorkload } from '../data/workloadRules';
+import { loadPracticeSession } from '../data/practice';
+import { loadReviewSession, REVIEW_RESUME_MS } from '../data/flashcards';
+import { totalsByDay } from '../data/progressRules';
 
 const BACKUP_REMINDER_MS = 14 * 24 * 60 * 60 * 1000;
 const SHOWN_ROWS = 8;
@@ -79,12 +84,13 @@ export function TodayPage() {
     const [decks, cards, cardProgress] = await Promise.all([listDecks(), listCards(), listCardProgress()]);
     const [practiceSets, practiceQuestions, practiceAttempts, topics] = await Promise.all([listPracticeSets(), listPracticeQuestions(), listPracticeAttempts(), listAllTopics()]);
     const [calendarEvents, studyDays, examResults, studyTime] = await Promise.all([listCalendarEvents(), listStudyDays(), listExamResults(), listStudyTime()]);
-    return { gradeCategories, calendarEvents, studyDays, examResults, studyTime, practiceSets, practiceQuestions, practiceAttempts, topics, courses, materials, storage, unfinished, notes, lastBackup, plannerItems, decks, cards, cardProgress, progress, next: recommendNext(lessons, checkpoints, progress) };
+    const [practiceSession, reviewSession] = await Promise.all([loadPracticeSession(), loadReviewSession()]);
+    return { practiceSession, reviewSession, gradeCategories, calendarEvents, studyDays, examResults, studyTime, practiceSets, practiceQuestions, practiceAttempts, topics, courses, materials, storage, unfinished, notes, lastBackup, plannerItems, decks, cards, cardProgress, progress, next: recommendNext(lessons, checkpoints, progress) };
   }, [askedToKeep]);
 
   if (error) return <div className="page"><h1>Today</h1><p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { gradeCategories, courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress, practiceSets, practiceQuestions, practiceAttempts, topics, calendarEvents, studyDays, examResults, studyTime } = data;
+  const { practiceSession, reviewSession, gradeCategories, courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress, practiceSets, practiceQuestions, practiceAttempts, topics, calendarEvents, studyDays, examResults, studyTime } = data;
   const backupDue = (materials.length > 0 || notes.length > 0) && (lastBackup === null || Date.now() - lastBackup > BACKUP_REMINDER_MS);
 
   if (courses.length === 0 && materials.length === 0 && unfinished.length === 0 && notes.length === 0 && plannerItems.length === 0 && cards.length === 0 && decks.length === 0 && practiceSets.length === 0 && calendarEvents.length === 0) {
@@ -129,6 +135,33 @@ export function TodayPage() {
   ]);
   const streak = streaksFrom(studied, now.date);
   const secondsToday = secondsByDate(studyTime).get(now.date) ?? 0;
+  // Prompt 8: the same ranking as the Planner, over all open dated work, for the week and Start Studying.
+  const openDated = sorted.filter((item) => item.dueDate && groupOf(item, now) !== 'done');
+  const rankedOpen = order === 'due'
+    ? openDated
+    : rankWork(openDated, { mode: order, today: now.date, weights: savedWeights(), pinned: savedPinned(), categories: gradeCategories }).ranked.map((entry) => entry.item);
+  const week = weekWorkload(rankedOpen, calendarEvents, now.date);
+  const missed = missedStudyBlocks(calendarEvents, now);
+  const firstWork = overdue.length > 0 ? rankedOpen.find((item) => groupOf(item, now) === 'overdue') : dueSoon[0];
+  const choice = startStudying({
+    practice: practiceSession ? { url: practiceSession.url, position: practiceSession.position, total: practiceSession.questionIds.length, endedEarly: practiceSession.endedEarly } : null,
+    review: reviewSession ? { url: reviewSession.url, left: reviewSession.cardIds.length, savedAt: reviewSession.savedAt } : null,
+    reviewResumeMs: REVIEW_RESUME_MS,
+    nowMs: Date.now(),
+    cardsDue: dueCards.length,
+    topWork: firstWork ? { id: firstWork.id, title: firstWork.title, isTest: firstWork.type === 'Exam' || firstWork.type === 'Quiz', group: groupOf(firstWork, now) } : null,
+    nextCheckpoint: next ? { id: next.checkpoint.id, title: next.checkpoint.title } : null,
+    hasPracticeQuestions: practiceQuestions.length > 0,
+  });
+  const look = lastWeek({
+    today: now.date,
+    studiedDays: studied,
+    cardReviewsByDay: new Map([...totalsByDay(studyDays)].map(([date, totals]) => [date, totals.cards])),
+    attempts: practiceAttempts.map((attempt) => ({ at: dayOf(attempt.at), result: attempt.result })),
+    plannerItems,
+    secondsByDay: secondsByDate(studyTime),
+  });
+  const reviewedToday = [...cardProgress.values()].filter((entry) => entry.lastReviewedAt && dayOf(entry.lastReviewedAt) === now.date).length;
   const [year, month, day] = now.date.split('-').map(Number);
   const dateWords = formatWhen(new Date(year, month - 1, day), { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -175,6 +208,8 @@ export function TodayPage() {
           {askedToKeep && <span> The browser didn't agree yet. It may need you to use the site more or install it.</span>}
         </p>
       )}
+
+      <StartStudying choice={choice} />
 
       <div className="dash-tiles">
         {tiles.map((tile) => (
@@ -231,6 +266,9 @@ export function TodayPage() {
             </p>
           )}
         </section>
+
+        <WeekWorkload days={week} today={now.date} courses={courses} />
+        <MissedStudy blocks={missed} today={now.date} />
 
         <section className="dash-card" aria-labelledby="cards-heading" data-testid="today-cards">
           <div className="section-head">
@@ -302,6 +340,8 @@ export function TodayPage() {
             <NoteList notes={notes.slice(0, 4)} courses={courses} />
           </section>
         )}
+
+        <WeekLookBack look={look} cardsToday={{ reviewed: reviewedToday, due: dueCards.length }} />
 
         <RecentActivity />
 

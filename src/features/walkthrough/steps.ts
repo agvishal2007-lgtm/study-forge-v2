@@ -59,7 +59,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/',
     target: ['#content .page'],
     title: 'Today',
-    body: 'Your starting point. Today is your dashboard. It counts what needs attention, then lists what is due, your flashcards, what to study next and why, and your recent work.',
+    body: 'Your starting point. Start studying picks up an unfinished practice or flashcard review, or else the most useful thing to do next, and says why. Below it: the next 7 days in your own priority order, study blocks you missed (which you can move, though class deadlines never move), and an honest look at your last 7 days, where every bar says what it counts.',
   },
   {
     id: 'courses',

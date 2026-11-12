@@ -43,6 +43,20 @@ export async function setEventCompleted(id: string, completed: boolean): Promise
   notifyChanged();
 }
 
+/**
+ * Moves one of the student's own missed study blocks to another day, keeping its times. Classes,
+ * appointments, anything from Google or a school schedule, and deadlines are never moved here.
+ */
+export async function moveStudyBlock(id: string, date: string): Promise<void> {
+  const tx = (await getDb()).transaction('calendarEvents', 'readwrite');
+  const event = await tx.store.get(id);
+  if (!event) throw new Error('This study block no longer exists.');
+  if (event.kind !== 'Study block' || event.source !== 'manual') throw new Error('Only your own study blocks can be moved here.');
+  await tx.store.put({ ...event, date, completed: false, updatedAt: later(event.updatedAt) });
+  await tx.done;
+  notifyChanged();
+}
+
 /** Something from Google is hidden rather than deleted, or getting the latest would bring it right back. */
 export async function removeCalendarEvents(ids: string[]): Promise<void> {
   const tx = (await getDb()).transaction('calendarEvents', 'readwrite');
