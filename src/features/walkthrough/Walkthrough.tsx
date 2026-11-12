@@ -178,7 +178,10 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
   const { pathname } = useLocation();
   const card = useRef<HTMLDivElement>(null);
   const primary = useRef<HTMLButtonElement>(null);
-  const [box, setBox] = useState<Box | null>(null);
+  // The box belongs to the step it was measured for, so the last step's box never shows on this one.
+  const [measured, setMeasured] = useState<{ step: number; box: Box } | null>(null);
+  const box = measured && measured.step === step ? measured.box : null;
+  const setBox = useCallback((next: Box | null) => setMeasured(next ? { step, box: next } : null), [step]);
   const [notFound, setNotFound] = useState(false);
   const [cardPosition, setCardPosition] = useState<CardPlace | null>(null);
 

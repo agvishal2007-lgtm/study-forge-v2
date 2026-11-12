@@ -277,7 +277,7 @@ test('Start over returns to the beginning at 0%', async () => {
 
 test('finishing reaches the last step, cleans up, and does not repeat', async () => {
   for (let i = 1; i < TOTAL; i++) await next();
-  await page.getByRole('heading', { name: "You're ready" }).waitFor();
+  await page.getByRole('heading', { name: /^You.re ready$/ }).waitFor();
   await settle();
   await page.screenshot({ path: path.join(shots, 'tour-finish.png') });
   assert.equal(await page.getByRole('button', { name: 'Close walkthrough' }).count(), 1, 'the X is on every step');
