@@ -89,7 +89,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/library',
     target: ['#content .files', '#content .page h1'],
     title: 'Open your files',
-    body: 'Every file you save is listed here. Open one to read, watch or listen right in Study Forge, with your notes beside it. You can always download the original, and anything you delete waits in the Trash, with Undo right after a change.',
+    body: 'Every file you save is listed here, and the Personal library keeps things worth saving beyond one course on shelves you name. Open a file to read, watch or listen right here, with your notes beside it. Anything you delete waits in the Trash.',
   },
   {
     id: 'planner',

@@ -304,6 +304,18 @@ export async function setPinned(id: string, pinned: boolean): Promise<void> {
   });
 }
 
+/** Puts a file or link on a personal library shelf, or takes it off. Its courses and topics stay as they are. */
+export async function setShelf(id: string, shelf: string | null): Promise<void> {
+  const db = await getDb();
+  const material = await db.get('materials', id);
+  const next = (shelf ?? '').trim().slice(0, 60);
+  if (!material || (material.shelf ?? '') === next) return;
+  await undoable(next ? `Put ${material.name} on ${next}` : `Took ${material.name} off its shelf`, 'materials', [id], async () => {
+    await db.put('materials', { ...material, shelf: next, updatedAt: Math.max(Date.now(), (material.updatedAt ?? 0) + 1) });
+    notifyChanged();
+  });
+}
+
 /** Everything sitting in the bin, newest first, so it can be restored or removed for good. */
 export async function listTrash(): Promise<{ courses: Course[]; topics: Topic[]; materials: Material[] }> {
   const db = await getDb();

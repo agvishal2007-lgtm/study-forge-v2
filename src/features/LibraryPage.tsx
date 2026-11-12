@@ -5,6 +5,7 @@ import { MaterialList } from '../components/MaterialList';
 import { SaveLinkForm } from '../components/SaveLinkForm';
 import { report, runBulk, type BulkAction } from '../data/bulk';
 import { listAllCourses, listMaterials, listTopics } from '../data/store';
+import { looseItems, shelfChoices, shelvesOf } from '../data/shelfRules';
 import type { Material } from '../data/types';
 import { useLive } from '../data/useLive';
 
@@ -22,6 +23,8 @@ export function LibraryPage() {
   const [outcome, setOutcome] = useState<{ text: string; partial: boolean } | null>(null);
   const [moveCourse, setMoveCourse] = useState('');
   const [moveTopic, setMoveTopic] = useState('');
+  const [view, setView] = useState<'all' | 'personal'>('all');
+  const [shelfName, setShelfName] = useState('');
   const { data, error } = useLive(async () => {
     const [courses, materials, archived] = await Promise.all([listAllCourses(), listMaterials(), listMaterials('archived')]);
     return { courses, materials, archived };
@@ -30,7 +33,8 @@ export function LibraryPage() {
 
   const needle = query.trim().toLowerCase();
   const shown = useMemo(() => pinnedFirst(data?.materials.filter((material) =>
-    material.name.toLowerCase().includes(needle) || material.url.toLowerCase().includes(needle)) ?? []), [data, needle]);
+    (view === 'all' || (material.shelf ?? '').trim() || !material.courseId)
+    && (material.name.toLowerCase().includes(needle) || material.url.toLowerCase().includes(needle) || (material.shelf ?? '').toLowerCase().includes(needle))) ?? []), [data, needle, view]);
   // Only what is on screen can be selected, so a search never acts on things the student can't see.
   const picked = shown.filter((item) => selected.has(item.id));
   const allShownPicked = shown.length > 0 && picked.length === shown.length;
@@ -62,7 +66,13 @@ export function LibraryPage() {
   return (
     <div className="page">
       <h1>Library</h1>
-      <p className="muted">Every file and saved link, across all your courses.</p>
+      <div className="calc-tabs library-views" role="tablist" aria-label="Library view">
+        <button type="button" role="tab" className="button" aria-selected={view === 'all'} onClick={() => setView('all')}>Everything</button>
+        <button type="button" role="tab" className="button" aria-selected={view === 'personal'} onClick={() => setView('personal')}>Personal library</button>
+      </div>
+      <p className="muted">{view === 'all'
+        ? 'Every file and saved link, across all your courses.'
+        : 'Things worth keeping beyond one course, on shelves you name: research papers, career information, writing guides, references. Shelving never copies or moves anything; a shelved item stays in its courses too.'}</p>
       <AddFiles />
       <details className="link-adder">
         <summary>Save a link instead</summary>
@@ -103,6 +113,12 @@ export function LibraryPage() {
                 )}
                 <button className="button" disabled={busy} onClick={() => void run(moveAction(), picked)}>Move</button>
               </span>
+              <span className="bulk-move">
+                <input aria-label="Shelf name" list="shelf-choices" value={shelfName} onChange={(event) => setShelfName(event.target.value)} placeholder="Shelf, e.g. Research papers" maxLength={60} />
+                <datalist id="shelf-choices">{shelfChoices(data.materials).map((name) => <option key={name} value={name} />)}</datalist>
+                <button className="button" disabled={busy || !shelfName.trim()} onClick={() => void run({ kind: 'shelf', shelf: shelfName.trim() }, picked)}>Put on shelf</button>
+                {picked.some((item) => item.shelf) && <button className="button" disabled={busy} onClick={() => void run({ kind: 'shelf', shelf: null }, picked)}>Take off shelf</button>}
+              </span>
               <button className="button" disabled={busy} onClick={() => setConfirming({ kind: 'archive' })}>Put away</button>
               <button className="button danger" disabled={busy} onClick={() => setConfirming({ kind: 'trash' })}>Move to bin</button>
               <button className="text-button" onClick={() => setSelected(new Set())}>Clear</button>
@@ -112,9 +128,29 @@ export function LibraryPage() {
       )}
       {outcome && <p className={outcome.partial ? 'error' : 'notice'} role={outcome.partial ? 'alert' : 'status'}>{outcome.text}</p>}
 
-      {data && (shown.length > 0
+      {data && view === 'all' && (shown.length > 0
         ? <MaterialList materials={shown} courses={data.courses} selected={selected} onToggle={toggle} />
         : <p className="muted">{data.materials.length ? 'Nothing matches that search.' : 'Nothing here yet. Add a file or save a link above.'}</p>)}
+
+      {data && view === 'personal' && (
+        <div data-testid="personal-library">
+          {shelvesOf(shown).map((shelf) => (
+            <section key={shelf.name} className="shelf-group" aria-label={shelf.name}>
+              <h2>{shelf.name} <span className="muted small">({shelf.items.length})</span></h2>
+              <MaterialList materials={shelf.items} courses={data.courses} selected={selected} onToggle={toggle} />
+            </section>
+          ))}
+          {looseItems(shown).length > 0 && (
+            <section className="shelf-group" aria-label="Not in a course or on a shelf">
+              <h2>Not in a course or on a shelf <span className="muted small">({looseItems(shown).length})</span></h2>
+              <MaterialList materials={looseItems(shown)} courses={data.courses} selected={selected} onToggle={toggle} />
+            </section>
+          )}
+          {shown.length === 0 && (
+            <p className="muted">{needle ? 'Nothing on your shelves matches that search.' : 'No shelves yet. Tick files or links (in Everything or here), type a shelf name such as “Research papers”, and press Put on shelf.'}</p>
+          )}
+        </div>
+      )}
 
       {data && data.archived.length > 0 && (
         <details className="put-away">

@@ -1,5 +1,5 @@
 import { asOneUndo } from './undo';
-import { fileMaterial, setMaterialStatus, setPinned } from './store';
+import { fileMaterial, setMaterialStatus, setPinned, setShelf } from './store';
 import type { Material } from './types';
 
 export type BulkAction =
@@ -8,7 +8,8 @@ export type BulkAction =
   | { kind: 'archive' }
   | { kind: 'restore' }
   | { kind: 'trash' }
-  | { kind: 'move'; courseId: string | null; topicId: string | null; place: string };
+  | { kind: 'move'; courseId: string | null; topicId: string | null; place: string }
+  | { kind: 'shelf'; shelf: string | null };
 
 export interface BulkResult {
   done: number;
@@ -27,6 +28,7 @@ export function describe(action: BulkAction, count: number): string {
     case 'restore': return `Put back ${things(count)}`;
     case 'trash': return `Moved ${things(count)} to the bin`;
     case 'move': return `Moved ${things(count)} to ${action.place}`;
+    case 'shelf': return action.shelf ? `Put ${things(count)} on ${action.shelf}` : `Took ${things(count)} off their shelf`;
   }
 }
 
@@ -45,6 +47,7 @@ export async function runBulk(items: Material[], action: BulkAction): Promise<Bu
         else if (action.kind === 'archive') await setMaterialStatus(item.id, 'archived');
         else if (action.kind === 'restore') await setMaterialStatus(item.id, 'active');
         else if (action.kind === 'trash') await setMaterialStatus(item.id, 'trashed');
+        else if (action.kind === 'shelf') await setShelf(item.id, action.shelf);
         else await fileMaterial(item.id, action.courseId, action.topicId);
         result.done += 1;
       } catch (error) {

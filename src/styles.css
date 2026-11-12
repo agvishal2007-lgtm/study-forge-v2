@@ -1676,3 +1676,5 @@ main :where(*) { scroll-margin-top: 14px; }
 .semester-block h3 { margin: 0 0 .4rem; }
 .semester-new li { align-items: end; border-bottom: 1px solid var(--line); padding: .5rem 0; }
 .success-note { font-weight: 600; }
+.library-views { margin: .25rem 0 .5rem; }
+.shelf-group h2 { font-size: 1.1rem; margin: 1.25rem 0 .4rem; }

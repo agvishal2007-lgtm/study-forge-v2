@@ -31,8 +31,8 @@ export function MaterialList({ materials, courses, selected, onToggle }: Props) 
             <Link to={`/files/${material.id}`}>{material.pinnedAt ? <span className="pin-mark">Pinned · </span> : null}{material.name}</Link>
             <span className="muted file-meta">
               {(material.kind === 'link'
-                ? ['Link', LINK_CATEGORY_LABEL[material.category], siteOf(material.url), formatDate(material.createdAt), courses && (course?.name ?? 'No course')]
-                : [KIND_LABEL[kindOf(material)], formatBytes(material.size), formatDate(material.createdAt), courses && (course?.name ?? 'No course')]
+                ? ['Link', LINK_CATEGORY_LABEL[material.category], siteOf(material.url), formatDate(material.createdAt), courses && (course?.name ?? 'No course'), material.shelf ? `Shelf: ${material.shelf}` : null]
+                : [KIND_LABEL[kindOf(material)], formatBytes(material.size), formatDate(material.createdAt), courses && (course?.name ?? 'No course'), material.shelf ? `Shelf: ${material.shelf}` : null]
               ).filter(Boolean).join(', ')}
             </span>
             </span>

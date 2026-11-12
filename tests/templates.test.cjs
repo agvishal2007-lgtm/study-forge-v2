@@ -185,3 +185,34 @@ test('the New semester assistant changes nothing until the student confirms the 
   await page.getByRole('heading', { name: 'Lab 3', exact: true, level: 4 }).waitFor();
   assert.deepEqual(pageErrors, []);
 });
+
+test('personal library shelves group things beyond one course, without copying or moving them', async () => {
+  const { shelvesOf, shelfChoices, looseItems } = await import('../src/data/shelfRules.ts');
+  const m = (id, shelf, courseId = null, createdAt = 0) => ({ id, name: id, shelf, courseId, createdAt });
+  const items = [m('a', 'Career', 'c1', 1), m('b', 'career', null, 2), m('c', '', null), m('d', ' Research papers ', 'c1'), m('e', undefined, 'c2')];
+  assert.deepEqual(shelvesOf(items).map((s) => [s.name, s.items.map((i) => i.id)]), [['Career', ['b', 'a']], ['Research papers', ['d']]]);
+  assert.deepEqual(looseItems(items).map((i) => i.id), ['c']);
+  assert.ok(shelfChoices(items).includes('Writing and citation'));
+  assert.equal(shelfChoices(items).filter((name) => name.toLowerCase() === 'research papers').length, 1, 'no repeats');
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`${URL_BASE}#/library`);
+  await page.getByText('Save a link instead').click();
+  await page.getByLabel('Web address').fill('https://owl.purdue.edu/owl/research_and_citation/apa_style/apa_formatting_and_style_guide/general_format.html');
+  await page.getByLabel('Name it (optional)').fill('APA guide');
+  await page.getByRole('button', { name: 'Save link' }).click();
+  await page.getByRole('link', { name: 'APA guide' }).waitFor();
+  await page.getByLabel('Select APA guide').check();
+  await page.getByLabel('Shelf name').fill('Writing and citation');
+  await page.getByRole('button', { name: 'Put on shelf' }).click();
+  await page.getByRole('status').getByText('Put 1 item on Writing and citation.').first().waitFor();
+  assert.match(await page.locator('.files li', { hasText: 'APA guide' }).innerText(), /Shelf: Writing and citation/);
+  await page.getByRole('tab', { name: 'Personal library' }).click();
+  const personal = page.getByTestId('personal-library');
+  await personal.getByRole('heading', { name: /Writing and citation/ }).waitFor();
+  assert.match(await personal.locator('section', { hasText: 'Writing and citation' }).innerText(), /APA guide/);
+  // Undo puts it back off the shelf.
+  await page.locator('.undo-bar').getByRole('button', { name: 'Undo' }).click();
+  await personal.getByRole('heading', { name: 'Not in a course or on a shelf (1)' }).waitFor();
+  assert.deepEqual(pageErrors, []);
+});

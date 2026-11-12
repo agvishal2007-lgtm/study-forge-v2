@@ -78,6 +78,9 @@ export interface Material {
   statusAt: number;
   /** When the student pinned it, so pinned things lead their lists. Missing means not pinned. */
   pinnedAt?: number | null;
+  /** A shelf in the student's personal library, such as "Research" or "Career", for things worth
+   *  keeping beyond one course. Empty or missing means it's not on a shelf. It can still belong to a course. */
+  shelf?: string;
   createdAt: number;
   /** When it was last renamed, moved, pinned or binned, so two devices' changes can be ordered. */
   updatedAt?: number;

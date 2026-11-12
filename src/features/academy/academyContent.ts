@@ -90,6 +90,7 @@ export const ACADEMY: AcademyTopic[] = [
       'Press Add files (or drag files in), choose the course and topic, and wait for each file’s progress bar.',
       'Open a file to read, view or play it. Notes beside it lets you write while you read.',
       'Tick several files to pin, move, put away or bin them together.',
+      'Personal library: tick files or links worth keeping beyond one course (research papers, career information, writing guides, references), type a shelf name, and press Put on shelf. The Personal library tab shows your shelves, plus anything that isn’t in a course yet.',
       'Download gives you the original, byte for byte.',
     ],
     result: 'A file only says Saved once every byte is safely on this device and has been checked. If a save fails or you cancel, Try again picks the same file.',
@@ -101,7 +102,7 @@ export const ACADEMY: AcademyTopic[] = [
       'Without Google Drive sync, files live only on this device. Make backups.',
       'Nothing in a file is ever run: no macros or scripts.',
     ],
-    connections: 'Files can be attached to topics and assignments, searched (including words inside PDFs, Office files and scans), synced through your Google Drive, and included in backups.',
+    connections: 'Shelving never copies or moves a file: it stays in its courses too, and Undo takes it off again. Files can be attached to topics and assignments, searched (including words inside PDFs, Office files and scans), synced through your Google Drive, and included in backups.',
   },
   {
     id: 'calendar',
