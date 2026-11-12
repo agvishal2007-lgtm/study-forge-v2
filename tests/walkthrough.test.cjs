@@ -162,6 +162,7 @@ const EXPECTED = [
   ['backup', '#/settings', '[data-tour=backup]'],
   ['sync-files', '#/settings', '[data-tour=sync-files]'],
   ['offline', '#/settings', '[data-tour=offline]'],
+  ['appearance', '#/settings', '[aria-labelledby=appearance-heading]'],
   ['permissions', '#/settings', '[data-testid=permissions]'],
   ['search', '#/search', '[data-tour=search-box]'],
 ];

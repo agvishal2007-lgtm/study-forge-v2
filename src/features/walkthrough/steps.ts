@@ -204,6 +204,13 @@ export const TOUR_STEPS: TourStep[] = [
     body: 'After your first visit, Study Forge opens with no internet, and your work on this device keeps saving. You can also install it on your phone or computer like an app.',
   },
   {
+    id: 'appearance',
+    route: '/settings',
+    target: ['[aria-labelledby="appearance-heading"]'],
+    title: 'Light, dark, or automatic',
+    body: 'The sun or moon button at the top switches straight between light and dark, in one tap. Here in Settings you choose the preference: Light, Dark, Match Device, or Sunrise/Sunset, which is light by day and dark at night for the city you pick. If you tap the button while an automatic option is on, your choice stays until you pick an option here again. Text size, motion and spacing are here too.',
+  },
+  {
     id: 'permissions',
     route: '/settings',
     target: ['[data-testid=permissions]'],

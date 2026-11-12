@@ -934,7 +934,6 @@ label input, label select { margin-top: .35rem; }
   [data-testid='today-plan'] .dash-done { grid-column: 2; grid-row: 1 / span 2; }
 }
 @media (max-width: 480px) {
-  .theme-button { display: none; }
 }
 .topbar, .site-notice, .recording-bar { flex: none; }
 

@@ -1,5 +1,5 @@
 import { getDb, notifyChanged } from './db';
-import { getThemeChoice, setThemeChoice, type ThemeChoice } from './theme';
+import { getThemeChoice, getThemeOverride, getThemePlace, restoreTheme, type Look, type Place, type ThemeChoice } from './theme';
 import { getDisplayPrefs, setDisplayPref, type DisplayPrefs } from './displayPrefs';
 import { saveMode, savePinned, saveWeights, savedMode, savedPinned, savedWeights } from './priorityChoice';
 
@@ -11,10 +11,11 @@ import { saveMode, savePinned, saveWeights, savedMode, savedPinned, savedWeights
  */
 export const SETTING_CHANGED = 'study-forge-setting-changed';
 
-interface Appearance extends DisplayPrefs { theme: ThemeChoice }
+interface Appearance extends DisplayPrefs { theme: ThemeChoice; themeOverride: Look | null; themePlace: Place | null }
 interface Priorities { mode: string; weights: unknown; pinned: string[] }
 
-const appearanceNow = (): Appearance => ({ theme: getThemeChoice(), ...getDisplayPrefs() });
+// The city only matters, and only syncs, once Sunrise/Sunset is chosen.
+const appearanceNow = (): Appearance => ({ theme: getThemeChoice(), themeOverride: getThemeOverride(), themePlace: getThemeChoice() === 'sun' ? getThemePlace() : null, ...getDisplayPrefs() });
 const prioritiesNow = (): Priorities => ({ mode: savedMode(), weights: savedWeights(), pinned: savedPinned() });
 
 /** Saves a setting only when it really changed, so two devices never bounce the same value back and forth. */
@@ -54,7 +55,10 @@ export async function applySyncedSettings(): Promise<void> {
   try {
     if (appearance) {
       const value = appearance.value as Partial<Appearance>;
-      if (value.theme && value.theme !== getThemeChoice()) setThemeChoice(value.theme);
+      const before = appearanceNow();
+      if (value.theme && (value.theme !== before.theme || (value.themeOverride ?? null) !== before.themeOverride || JSON.stringify(value.themePlace ?? null) !== JSON.stringify(before.themePlace))) {
+        restoreTheme({ theme: value.theme, themeOverride: value.themeOverride ?? null, themePlace: value.themePlace ?? null });
+      }
       const now = getDisplayPrefs();
       for (const key of ['text', 'motion', 'density'] as const) {
         if (value[key] && value[key] !== now[key]) setDisplayPref(key, value[key] as never);

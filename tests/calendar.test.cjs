@@ -617,7 +617,7 @@ test('light is the default, and dark can be chosen and is remembered', async () 
   await page.reload();
   assert.equal(await theme(), 'dark', 'it stays after reopening');
   assert.equal(await page.getByRole('radio', { name: 'Dark' }).isChecked(), true);
-  await page.getByText('Match my device').click();
+  await page.getByText('Match Device').click();
   await page.emulateMedia({ colorScheme: 'light' });
   await page.waitForFunction(() => document.documentElement.dataset.theme === 'light');
   await page.emulateMedia({ colorScheme: 'dark' });

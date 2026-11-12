@@ -4,14 +4,14 @@ import { SmartAdd } from './SmartAdd';
 import { SyncBadge } from './SyncBadge';
 import { WalkthroughButton } from '../features/walkthrough/Walkthrough';
 import { getActiveAccount, switchAccount } from '../data/account';
-import { setThemeChoice, useIsDark } from '../data/theme';
+import { toggleLook, useIsDark } from '../data/theme';
 import { getSyncState, loadBackend, signOutOfAccount, subscribeSync, syncNow } from '../data/sync';
 
-/** One tap between light and dark. On small phones this lives in Settings, because the bar is full. */
+/** One tap between light and dark, and nothing else. Automatic options live only in Settings. */
 function ThemeButton() {
   const dark = useIsDark();
   return (
-    <button className="icon-button theme-button" onClick={() => setThemeChoice(dark ? 'light' : 'dark')} aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'} title={dark ? 'Switch to light mode' : 'Switch to dark mode'}>
+    <button className="icon-button theme-button" data-testid="theme-toggle" data-shows={dark ? 'sun' : 'moon'} onClick={toggleLook} aria-label={dark ? 'Switch to Light Mode' : 'Switch to Dark Mode'} title={dark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         {dark
           ? <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>
