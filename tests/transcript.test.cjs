@@ -12,6 +12,8 @@ const PORT = 4198;
 const URL_BASE = `http://localhost:${PORT}/`;
 let server; let context; let page; let work;
 const pageErrors = [];
+// A timed transcript is read beside the notes at moments; the panel keeps its controls.
+const transcriptWords = (pattern) => page.getByTestId('transcript-view').getByText(pattern).first();
 const nav = (name) => page.getByRole('navigation', { name: name === 'Settings' ? 'Account' : 'Main' }).getByRole('link', { name, exact: true }).click();
 
 // A tiny, valid silent WAV so the browser treats it as real audio.
@@ -58,10 +60,12 @@ test('a recording can be turned into a transcript, which is then searchable', as
   await addAudio();
   await page.evaluate(() => { window.__testTranscript = 'Today we covered how photosynthesis happens in the chloroplast.'; });
   await page.getByTestId('make-transcript').click();
-  await page.getByTestId('transcript-text').getByText(/photosynthesis happens in the chloroplast/).waitFor();
+  await page.getByTestId('transcript-text').waitFor();
+  await transcriptWords(/photosynthesis happens in the chloroplast/).waitFor();
   // It survives a reload (it was saved).
   await page.reload();
-  await page.getByTestId('transcript-text').getByText(/chloroplast/).waitFor();
+  await page.getByTestId('transcript-text').waitFor();
+  await transcriptWords(/chloroplast/).waitFor();
 
   await page.goto(`${URL_BASE}#/search`);
   await page.getByLabel('Search everything').fill('chloroplast');
@@ -89,7 +93,8 @@ test('a transcript is kept in a backup and comes back on restore', async () => {
   await page.getByRole('link', { name: 'lecture.wav', exact: true }).click();
   await page.evaluate(() => { window.__testTranscript = 'Elasticity measures how demand responds to price.'; });
   await page.getByTestId('make-transcript').click();
-  await page.getByTestId('transcript-text').getByText(/Elasticity/).waitFor();
+  await page.getByTestId('transcript-text').waitFor();
+  await transcriptWords(/Elasticity/).waitFor();
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     (async () => { await page.goto(`${URL_BASE}#/settings`); await page.getByRole('button', { name: 'Create backup' }).click(); })(),
