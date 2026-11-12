@@ -8,6 +8,7 @@ const THINGS = [
 ];
 
 const NOTIFY_LABEL: Record<DeviceAccess, string> = { granted: 'Allowed', denied: 'Blocked', prompt: 'Not yet enabled', unknown: 'Unsupported' };
+const APPLE_LABEL = 'Add to Home Screen first';
 
 /** Where this browser keeps the switch, once it has been blocked. A site can't flip it back itself. */
 function unblockSteps(): string {
@@ -17,6 +18,13 @@ function unblockSteps(): string {
   if (/Firefox/.test(agent)) return 'Click the icon at the left of the address bar, find Send notifications, and remove the Blocked setting. Then tap this again.';
   if (/Safari/.test(agent) && !/Chrome|Edg/.test(agent)) return 'In Safari, open Settings, Websites, Notifications, and set this site to Allow. Then come back here.';
   return 'Click the icon at the left of the address bar, then turn Notifications on (or choose Reset permission). Then come back here.';
+}
+
+/** iPhone or iPad in an ordinary browser tab, where Apple only allows notifications from the Home Screen. */
+function appleTab(): boolean {
+  const apple = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const fromHomeScreen = window.matchMedia?.('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  return apple && !fromHomeScreen;
 }
 
 /** The status is the control: tapping it asks the browser, or shows how to unblock. */
@@ -50,7 +58,9 @@ function NotificationControl({ state, onChange }: { state: DeviceAccess; onChang
   };
   const words = shown === 'granted' ? 'Your browser allows notifications from Study Forge.'
     : shown === 'denied' ? 'Your browser is blocking notifications for this site. Tap Blocked to see how to turn them on.'
-      : shown === 'prompt' ? 'Tap Not yet enabled and your browser will ask.' : "This browser doesn't support notifications for websites.";
+      : shown === 'prompt' ? 'Tap Not yet enabled and your browser will ask.'
+        : appleTab() ? 'On iPhone and iPad, websites can only send notifications once added to the Home Screen. In Safari, tap Share, then Add to Home Screen, then open Study Forge from that icon and come back here.'
+          : "This browser doesn't support notifications for websites.";
   return (
     <>
       <button
@@ -60,10 +70,10 @@ function NotificationControl({ state, onChange }: { state: DeviceAccess; onChang
         data-state={shown}
         data-status={shown === 'granted' ? 'done' : shown === 'denied' ? 'overdue' : shown === 'prompt' ? 'todo' : 'none'}
         disabled={!supported}
-        aria-label={`Notifications: ${NOTIFY_LABEL[shown]}${shown === 'prompt' ? '. Tap to turn on' : shown === 'denied' ? '. Tap to see how to turn on' : ''}`}
+        aria-label={`Notifications: ${shown === 'unknown' && appleTab() ? APPLE_LABEL : NOTIFY_LABEL[shown]}${shown === 'prompt' ? '. Tap to turn on' : shown === 'denied' ? '. Tap to see how to turn on' : ''}`}
         onClick={() => void press()}
       >
-        <span aria-hidden="true">{shown === 'granted' ? '✓' : shown === 'denied' ? '✕' : shown === 'prompt' ? '○' : '–'}</span>{NOTIFY_LABEL[shown]}
+        <span aria-hidden="true">{shown === 'granted' ? '✓' : shown === 'denied' ? '✕' : shown === 'prompt' ? '○' : '–'}</span>{shown === 'unknown' && appleTab() ? APPLE_LABEL : NOTIFY_LABEL[shown]}
       </button>
       <span className="muted small permission-wide">{words}</span>
       {help && <span className="notice permission-wide" role="status" data-testid="notification-help">{help}</span>}

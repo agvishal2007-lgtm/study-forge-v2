@@ -215,7 +215,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/settings',
     target: ['[data-testid=permissions]'],
     title: 'Permissions and notifications',
-    body: 'This shows what your browser allows: microphone, camera and notifications. Study Forge asks only when you start something that needs one, and never nags. To turn on notifications, tap the Notifications status itself. Your browser asks, and the status changes to Allowed. If it says Blocked, tapping it shows how to unblock it in your browser.',
+    body: 'This shows what your browser allows: microphone, camera and notifications. Study Forge asks only when you start something that needs one, and never nags. To turn on notifications, tap the Notifications status itself. Your browser asks, and the status changes to Allowed. If it says Blocked, tapping it shows how to unblock it in your browser. On iPhone and iPad, notifications only work after you add Study Forge to your Home Screen (in Safari: Share, then Add to Home Screen) and open it from there.',
   },
   {
     id: 'search',

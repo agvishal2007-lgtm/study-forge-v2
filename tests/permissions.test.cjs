@@ -155,6 +155,23 @@ test('a blocked Notifications status explains how to unblock, and never asks aga
   assert.ok(box.height >= 36 && box.x >= 0 && box.x + box.width <= 390);
 });
 
+test('on an iPhone tab, the Notifications status explains the Home Screen step instead of a dead end', async () => {
+  const browser = await chromium.launch();
+  const phone = await browser.newContext({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/131.0 Mobile/15E148 Safari/604.1', viewport: { width: 390, height: 844 } });
+  const tab = await phone.newPage();
+  try {
+  await tab.addInitScript(() => { delete window.Notification; localStorage.setItem('study-forge-seen-welcome', '1'); });
+  await tab.goto(`${URL_BASE}#/settings`);
+  await tab.reload();
+  const control = tab.getByTestId('notification-control');
+  await control.waitFor();
+  assert.match(await control.innerText(), /Add to Home Screen first/);
+  await tab.getByTestId('permission-notifications').getByText(/tap Share, then Add to Home Screen/).waitFor();
+  } finally {
+    await browser.close();
+  }
+});
+
 test('nothing threw', () => {
   assert.deepEqual(pageErrors, []);
 });
