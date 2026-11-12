@@ -69,7 +69,7 @@ export function AccountSection() {
           <li>School Google accounts work if your school allows it. If yours blocks it, you'll see a message and can keep using Study Forge without signing in.</li>
           <li>Other students can't read your work. It's stored in Google's Firebase service, and whoever runs this site could technically view it, so don't save anything highly sensitive.</li>
         </ul>
-        <p className="muted">Use Sign in or Sign up at the top right. <Link to="/privacy">Privacy</Link></p>
+        <p className="muted">Use Sign in or Sign up at the top right. <Link to="/privacy">Privacy Policy</Link> · <Link to="/terms">Terms of Use</Link></p>
       </section>
     );
   }

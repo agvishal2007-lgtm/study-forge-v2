@@ -164,7 +164,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/notes',
     target: ['[data-tour="new-note"]'],
     title: 'Notes',
-    body: 'Notes save as you type. The buttons above a note add headings, lists, checklists and equations, and open a calculator for working things out. File notes under a course or topic, or attach them to a file or recording.',
+    body: 'Notes save as you type. The buttons above a note add headings, lists, checklists and equations. Calculator opens a scientific or TI-84-style graphing calculator beside your note; it’s a study tool, not an exam calculator. File notes under a course or topic, or attach them to a file or recording.',
     action: {
       isDone: hasAny('notes'),
       instruction: 'Try it: press New note and type anything. It saves by itself.',
@@ -232,6 +232,6 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'finish',
     route: '/',
     title: 'You’re ready',
-    body: 'A good first step is to add a course, then try the sample lesson in Study. You can reopen this tour anytime with the question mark at the top.',
+    body: 'A good first step is to add a course, then try the sample lesson in Study. You can reopen this tour anytime with the question mark at the top. The Terms of Use and Privacy Policy are linked at the bottom of Settings.',
   },
 ];

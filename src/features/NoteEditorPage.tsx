@@ -1,11 +1,10 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { applyFormat, applyToBox, NoteToolbar } from '../components/NoteToolbar';
 import { continueList } from '../data/noteFormat';
 import { equationInsertPoint } from '../data/equationTemplates';
+import { useCalculator } from '../components/calculator/CalculatorWindow';
 
-// The calculator loads only when it's opened, so notes stay quick.
-const CalculatorPanel = lazy(() => import('../components/CalculatorPanel'));
 import { NoteView } from '../components/NoteView';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useStillHere } from '../components/useStillHere';
@@ -51,7 +50,21 @@ export function NoteEditor({ id, start, panel = false, onDeleted }: {
   onDeleted: (where: { courseId: string | null }) => void;
 }) {
   const [previewing, setPreviewing] = useState(false);
-  const [calculating, setCalculating] = useState(false);
+  const calculator = useCalculator();
+  const { setInsertTarget } = calculator;
+  const changeRef = useRef<(patch: { body: string }) => void>(() => undefined);
+  // While this note is open, the calculator's Put in note adds answers here, after any equation the cursor is in.
+  useEffect(() => {
+    setInsertTarget((tex) => {
+      const box = bodyBox.current;
+      if (!box) return;
+      const at = equationInsertPoint(box.value, box.selectionEnd);
+      const before = box.value.slice(0, at);
+      const insert = `${before && !/\s$/.test(before) ? ' ' : ''}$${tex}$`;
+      applyToBox(box, { from: at, to: at, insert, selectionStart: at + insert.length, selectionEnd: at + insert.length }, (body) => changeRef.current({ body }));
+    });
+    return () => setInsertTarget(null);
+  }, [setInsertTarget]);
   const bodyBox = useRef<HTMLTextAreaElement>(null);
   const stillHere = useStillHere();
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -151,6 +164,7 @@ export function NoteEditor({ id, start, panel = false, onDeleted }: {
     clearTimeout(timer.current);
     timer.current = setTimeout(() => void flush(), SAVE_DELAY_MS);
   };
+  changeRef.current = change;
 
   const { data: courses } = useLive(listCourses);
   const { data: topics } = useLive(() => (draft?.courseId ? listTopics(draft.courseId) : Promise.resolve([])), [draft?.courseId]);
@@ -225,10 +239,9 @@ export function NoteEditor({ id, start, panel = false, onDeleted }: {
       <div className="note-mode" role="group" aria-label="View">
         <button type="button" className="button" aria-pressed={!previewing} onClick={() => setPreviewing(false)}>Write</button>
         <button type="button" className="button" aria-pressed={previewing} onClick={() => setPreviewing(true)}>Preview</button>
-        {!previewing && <NoteToolbar box={bodyBox} onChange={(body) => change({ body })} onCalculator={() => setCalculating((now) => !now)} calculatorOpen={calculating} />}
+        {!previewing && <NoteToolbar box={bodyBox} onChange={(body) => change({ body })} onCalculator={calculator.toggle} calculatorOpen={calculator.isOpen} />}
       </div>
       {previewing && <NoteView body={draft.body} />}
-      <div className={calculating && !previewing ? 'note-with-calc' : 'note-alone'}>
       <label className="note-body-label" hidden={previewing}>Your note
         <textarea ref={bodyBox} onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey && !event.nativeEvent.isComposing) {
@@ -248,22 +261,6 @@ export function NoteEditor({ id, start, panel = false, onDeleted }: {
           }
         }} autoFocus={!hasRecord} className="note-body" value={draft.body} onChange={(event) => change({ body: event.target.value })} />
       </label>
-      {calculating && !previewing && (
-        <Suspense fallback={<p className="muted">Opening the calculator…</p>}>
-          <CalculatorPanel
-            onClose={() => setCalculating(false)}
-            onInsert={(tex) => {
-              const box = bodyBox.current;
-              if (!box) return;
-              const at = equationInsertPoint(box.value, box.selectionEnd);
-              const before = box.value.slice(0, at);
-              const insert = `${before && !/\s$/.test(before) ? ' ' : ''}$${tex}$`;
-              applyToBox(box, { from: at, to: at, insert, selectionStart: at + insert.length, selectionEnd: at + insert.length }, (body) => change({ body }));
-            }}
-          />
-        </Suspense>
-      )}
-      </div>
 
       {confirmDelete && (
         <ConfirmDialog

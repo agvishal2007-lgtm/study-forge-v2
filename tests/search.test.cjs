@@ -257,7 +257,7 @@ test('in a note, the Equation menu and the calculator put equations in, with a n
   await page.getByRole('button', { name: 'Calculator', exact: true }).click();
   const calc = page.getByTestId('calculator');
   await calc.waitFor();
-  assert.match(await calc.getByTestId('calc-warning').innerText(), /For writing notes only\..*quiz, test or exam/s);
+  assert.match(await calc.getByTestId('calc-warning').innerText(), /study tool and is not an officially approved examination calculator/);
   await calc.getByLabel('Expression').fill('2sin(30)+');
   await calc.getByRole('button', { name: 'square root' }).click();
   await calc.getByRole('button', { name: '9', exact: true }).click();
@@ -271,27 +271,15 @@ test('in a note, the Equation menu and the calculator put equations in, with a n
   await page.keyboard.press('Enter');
   assert.equal(await calc.getByTestId('calc-answer').first().innerText(), '= 7/12');
   await page.screenshot({ path: path.join(shots, 'calculator.png') });
+  await calc.getByRole('button', { name: 'Close calculator' }).click();
+  assert.equal(await page.getByTestId('calc-window').isVisible(), false, 'Close hides it');
   await page.setViewportSize({ width: 390, height: 844 });
-  await calc.scrollIntoViewIfNeeded();
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= 390), 'no sideways scroll on a phone');
-  await page.screenshot({ path: path.join(shots, 'calculator-phone.png') });
   await page.getByRole('button', { name: 'Equation', exact: true }).click();
   await page.getByTestId('equation-menu').locator('.katex').first().waitFor();
   await page.screenshot({ path: path.join(shots, 'equation-menu-phone.png') });
   await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 1280, height: 800 });
-
-  await calc.getByRole('tab', { name: 'Graph' }).click();
-  await calc.getByLabel('Line 1: y =').fill('x^2 - 2');
-  await calc.getByRole('button', { name: 'Draw' }).click();
-  assert.match(await calc.getByTestId('calc-canvas').getAttribute('aria-label'), /first line y = x\^2 - 2/);
-  await calc.getByText('Table of values for line 1').click();
-  assert.match(await calc.getByTestId('calc-table').innerText(), /0\s+-2/);
-  await calc.getByRole('button', { name: 'Zoom in' }).click();
-  assert.match(await calc.getByTestId('calc-canvas').getAttribute('aria-label'), /x from -5 to 5/);
-  await page.screenshot({ path: path.join(shots, 'calculator-graph.png') });
-  await calc.getByRole('button', { name: 'Close calculator' }).click();
-  assert.equal(await page.getByTestId('calculator').count(), 0);
   await page.getByTestId('save-status').getByText(/saved/i).waitFor();
 });
 

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { AccountSection } from './AccountSection';
 import { AppearanceSection } from './AppearanceSection';
@@ -39,6 +40,7 @@ export function SettingsPage() {
           </>
         )}
       </section>
+      <p className="muted settings-legal"><Link to="/terms">Terms of Use</Link> · <Link to="/privacy">Privacy Policy</Link></p>
     </div>
   );
 }

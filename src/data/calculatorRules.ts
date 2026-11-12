@@ -21,6 +21,7 @@ export interface CalcResult {
 /** Turns calculator symbols into what math.js reads. */
 export function normalize(input: string): string {
   return input
+    .replace(/³√\(/g, 'cbrt(')
     .replace(/[×·]/g, '*')
     .replace(/÷/g, '/')
     .replace(/[−–]/g, '-')
@@ -30,6 +31,15 @@ export function normalize(input: string): string {
     .replace(/²/g, '^2')
     .replace(/³/g, '^3')
     .replace(/\bAns\b/g, 'ans')
+    .replace(/\b(sin|cos|tan)⁻¹\(/g, 'a$1(')
+    .replace(/(\d+(?:\.\d+)?|[A-Za-z])\s*nCr\s*(\d+(?:\.\d+)?|[A-Za-z])/g, 'combinations($1,$2)')
+    .replace(/(\d+(?:\.\d+)?|[A-Za-z])\s*nPr\s*(\d+(?:\.\d+)?|[A-Za-z])/g, 'permutations($1,$2)')
+    .replace(/⁻¹/g, '^(-1)')
+    .replace(/(\d|\.)ᴇ/g, '$1e')
+    .replace(/ᴇ/g, '1e')
+    // On a graphing calculator each capital letter is its own variable, so XY means X times Y.
+    .replace(/(?<![a-zA-Z])[A-Zθ]{2,}(?![a-z])/g, (run) => [...run].join('*'))
+    .replace(/θ/g, 'theta')
     .trim();
 }
 
@@ -45,6 +55,8 @@ function makeMath(mode: AngleMode) {
     // School calculators: log is base 10 unless a base is given, ln is natural.
     log: (x: number, b?: number) => (b === undefined ? base.log10(x) : base.log(x, b)),
     ln: (x: number) => base.log(x),
+    // root(8, 3) is the cube root of 8.
+    root: (x: number, n: number) => base.nthRoot(x, n),
   };
   for (const name of TRIG) extra[name] = (x: unknown) => (base[name] as (v: unknown) => unknown)(toRad(x));
   for (const name of INVERSE) extra[name] = (x: unknown) => fromRad((base[name] as (v: unknown) => unknown)(x));
@@ -62,7 +74,7 @@ export function friendlyError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   if (/Undefined symbol (\w+)/.test(message)) return `“${message.match(/Undefined symbol (\w+)/)![1]}” isn’t a number or function the calculator knows.`;
   if (/Unexpected end of expression|Parenthesis \) expected/.test(message)) return 'Something is missing at the end. Check the brackets.';
-  if (/Unexpected/.test(message)) return 'Something is in the wrong place. Check the signs and brackets.';
+  if (/Unexpected|Value expected/.test(message)) return 'Something is in the wrong place. Check the signs and brackets.';
   if (/isn’t available/.test(message)) return message;
   return 'That couldn’t be worked out. Check the expression.';
 }
@@ -77,6 +89,7 @@ export class Calculator {
     this.mode = mode;
     this.tools = makeMath(mode);
     this.scope.set('ans', 0);
+    this.scope.set('X', 0);
   }
 
   setMode(mode: AngleMode) {
@@ -103,8 +116,25 @@ export class Calculator {
 
   /** Works out one line, saving the answer as Ans. Throws a plain-words Error when it can't. */
   run(input: string): CalcResult {
-    const expression = normalize(input);
+    let source = input.trim();
+    // ▶Frac or ▶Dec at the end changes how this one answer is shown, as on a graphing calculator.
+    const showOnce = /▶Frac$/.test(source) ? 'fraction' : /▶Dec$/.test(source) ? 'decimal' : null;
+    source = source.replace(/▶(Frac|Dec)$/, '');
+    // "5→A" stores 5 in A.
+    const store = source.match(/^(.*)→\s*([A-Za-zθ])\s*$/);
+    if (store) source = `${store[2]}=(${store[1] || 'ans'})`;
+    const expression = normalize(source);
     if (!expression) throw new Error('Type something to work out first.');
+    const before = this.showAs;
+    if (showOnce) this.showAs = showOnce;
+    try {
+      return this.work(input, expression);
+    } finally {
+      this.showAs = before;
+    }
+  }
+
+  private work(input: string, expression: string): CalcResult {
     let value: unknown;
     try {
       value = this.tools.evaluate(expression, this.scope);
@@ -127,6 +157,11 @@ export class Calculator {
   /** A graph line as an equation for a note, like y = x^{2}. */
   lineTex(line: string): string {
     return `y = ${this.texOf(normalize(line).replace(/^(y|f\s*\(\s*x\s*\))\s*=\s*/i, ''))}`;
+  }
+
+  /** Anything typed on a calculator screen, as an equation for a note. */
+  texFor(text: string): string {
+    return this.texOf(normalize(text.replace(/▶(Frac|Dec)$/, '').replace(/^(.*)→\s*([A-Za-zθ])$/, '$2=$1')));
   }
 
   /** An expression as an equation. log means base 10 here, as on a school calculator. */
@@ -157,6 +192,7 @@ export class Calculator {
       const scope = new Map(this.scope);
       const fn = (x: number) => {
         scope.set('x', x);
+        scope.set('X', x);
         const y = code.evaluate(scope);
         return typeof y === 'number' ? y : Number.NaN;
       };

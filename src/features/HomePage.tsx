@@ -96,7 +96,8 @@ export function HomePage() {
       </main>
 
       <footer className="home-foot">
-        <Link to="/privacy">Privacy</Link>
+        <Link to="/privacy">Privacy Policy</Link>
+        <Link to="/terms">Terms of Use</Link>
         <span className="muted">Built for students. No adverts, no tracking, no selling anything.</span>
       </footer>
     </div>

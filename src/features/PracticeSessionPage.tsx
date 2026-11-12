@@ -9,6 +9,7 @@ import { feedbackFor, mistakesIn } from '../data/practiceRules';
 import { useStudyClock } from '../data/studyClock';
 import { CONFIDENCE_LEVELS, DIFFICULTY_LEVELS, PRACTICE_KIND_LABEL, type Confidence, type PracticeAttempt, type PracticeKind, type PracticeQuestion, type PracticeResult } from '../data/types';
 import { topicLabeler } from './PracticePage';
+import { CalculatorButton } from '../components/calculator/CalculatorWindow';
 
 const newId = () => crypto.randomUUID();
 /** Practical session lengths. A longer list is offered as these, or all of it. */
@@ -281,6 +282,7 @@ export function PracticeSessionPage() {
           </fieldset>
           <div className="session-actions">
             <button className="button primary" type="submit" disabled={!ready}>Submit answer</button>
+            <CalculatorButton />
           </div>
         </form>
       )}

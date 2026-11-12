@@ -4,6 +4,10 @@ import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { AccountMenu } from './components/AccountMenu';
 import { NAV_ICONS } from './components/NavIcons';
 import { WalkthroughProvider } from './features/walkthrough/Walkthrough';
+import { CalculatorProvider } from './components/calculator/CalculatorWindow';
+import { TermsPage } from './features/TermsPage';
+import { AgreementPage } from './features/AgreementPage';
+import { agreedNow, subscribeAgreement } from './data/agreement';
 import { RecorderProvider, RecordingBar } from './components/Recorder';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { CalendarOffer } from './components/CalendarOffer';
@@ -91,6 +95,7 @@ export function App() {
     window.addEventListener(WELCOME_SEEN_EVENT, started);
     return () => { active = false; window.removeEventListener(WELCOME_SEEN_EVENT, started); };
   }, []);
+  const agreed = useSyncExternalStore(subscribeAgreement, agreedNow);
   const [updateBlocked, setUpdateBlocked] = useState(false);
   useEffect(() => {
     // On a phone the bar slides, so the current section is kept in view.
@@ -107,6 +112,16 @@ export function App() {
   // A new visitor meets the welcome page first; everyone else goes straight to their own work.
   if (pathname === '/' && newVisitor === null) return <p className="page muted">Loading…</p>;
   if (pathname === '/' && newVisitor) return <HomePage />;
+
+  // Nobody uses Study Forge, signed in or not, until they've opened and agreed to the Terms of Use
+  // and the Privacy Policy. Both documents can still be read on their own.
+  if (!agreed) {
+    return (
+      <AuthShell>
+        {pathname === '/terms' ? <TermsPage /> : pathname === '/privacy' ? <PrivacyPage /> : <AgreementPage />}
+      </AuthShell>
+    );
+  }
 
   if (AUTH_ROUTES.includes(pathname)) {
     return (
@@ -134,6 +149,7 @@ export function App() {
     <SaveProvider>
     <RecorderProvider>
     <WalkthroughProvider>
+    <CalculatorProvider>
       <div className="shell">
         <a className="skip" href="#content" onClick={(event) => {
           event.preventDefault();
@@ -178,6 +194,7 @@ export function App() {
                 <Route path="/cards/review" element={<ReviewPage />} />
                 <Route path="/cards/:id" element={<DeckPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
                 <Route path="/practice" element={<PracticePage />} />
                 <Route path="/practice/session" element={<PracticeSessionPage />} />
                 <Route path="/practice/:id" element={<PracticeSetPage />} />
@@ -204,6 +221,7 @@ export function App() {
         <UndoBar />
         <SavePanel />
       </div>
+    </CalculatorProvider>
     </WalkthroughProvider>
     </RecorderProvider>
     </SaveProvider>

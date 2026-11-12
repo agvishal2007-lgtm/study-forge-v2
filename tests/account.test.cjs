@@ -557,9 +557,11 @@ test('forgot email shows shortened hints from this browser, which can be removed
 test('privacy is one tap from signing in and says what is kept', async () => {
   const page = await device('emailer', null);
   await signInButton(page).click();
-  await page.getByRole('main').getByRole('link', { name: 'Privacy' }).click();
+  await page.getByRole('main').getByRole('link', { name: 'Privacy Policy' }).click();
   const text = await page.getByTestId('privacy').innerText();
-  for (const words of ['Files and recordings aren\'t saved online', 'Removing your data', 'no ads']) assert.ok(text.includes(words), words);
+  for (const words of ['Files and recordings themselves aren\'t saved online by Study Forge', 'your own Google Drive', 'Removing your data', 'no ads', 'tracking cookies']) assert.ok(text.includes(words), words);
+  await page.getByRole('link', { name: 'Terms of Use' }).first().click();
+  await page.getByTestId('terms').getByRole('heading', { name: 'Use it honestly' }).waitFor();
   await close('emailer');
 });
 

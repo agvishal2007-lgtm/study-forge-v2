@@ -1532,3 +1532,101 @@ code.note-math { font-family: ui-monospace, monospace; }
 /* Leaves a little room above anything the walkthrough scrolls to the top. */
 main :where(*) { scroll-margin-top: 14px; }
 @media (max-height: 480px) { .tour-card { font-size: .92rem; } .tour-count { font-size: .8rem; } }
+
+/* The calculator window: floats above the page, always fully on screen, one at a time. */
+.calc-window { position: fixed; z-index: 900; right: 16px; bottom: 16px; width: min(420px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; border-radius: 18px; box-shadow: 0 18px 48px rgba(10, 12, 20, .32); background: var(--raised); }
+.calc-window[hidden] { display: none; }
+.calc-window .calc-panel { border: 1px solid var(--line-strong); border-radius: 18px; }
+.calc-window .calc-head { position: sticky; top: -.85rem; z-index: 2; background: var(--raised); margin: -.85rem -.85rem 0; padding: .7rem .85rem .5rem; border-radius: 18px 18px 0 0; }
+.calc-close { margin-left: auto; }
+.calc-loading, .calc-load-failed { padding: 1rem; margin: 0; }
+.calc-window .calc-warning { font-size: .82rem; }
+.calc-graphing .calc-segment[aria-label="Angles"] { display: none; }
+@media (max-width: 640px) {
+  .calc-window { left: 0; right: 0; bottom: 0; width: 100%; max-height: 88dvh; border-radius: 18px 18px 0 0; }
+  .calc-window .calc-panel { border-radius: 18px 18px 0 0; border-bottom: 0; }
+}
+
+/* TI-84-style graphing calculator. The body stays dark in both themes, like the handheld. */
+.ti { --ti-body: #23252b; --ti-ink: #f3f4f6; --ti-second: #8ec5ff; --ti-alpha: #6ee7a0; background: var(--ti-body); color: var(--ti-ink); border-radius: 22px 22px 34px 34px; padding: .8rem .7rem 1rem; }
+.ti-screen-wrap { background: #111318; padding: .45rem; border-radius: 12px; margin-bottom: .7rem; }
+.ti-screen { --lcd-dark: 0; position: relative; height: 196px; overflow: hidden; background: #f4f7ee; color: #111827; border-radius: 6px; font: 600 .86rem/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding: .3rem .45rem; outline: none; }
+.ti-screen:focus-visible { box-shadow: 0 0 0 3px var(--ti-second); }
+:root[data-theme="dark"] .ti-screen { --lcd-dark: 1; background: #0d1117; color: #e5e7eb; }
+.lcd-status { display: flex; justify-content: space-between; font-size: .68rem; opacity: .75; border-bottom: 1px solid currentColor; margin-bottom: .2rem; }
+.lcd-shift { font-weight: 800; color: #1d4ed8; }
+:root[data-theme="dark"] .lcd-shift { color: #93c5fd; }
+.lcd-text { overflow: hidden; }
+.lcd-home { display: flex; flex-direction: column; justify-content: flex-end; height: calc(100% - 1.1rem); }
+.lcd-in { white-space: pre-wrap; overflow-wrap: anywhere; }
+.lcd-out { text-align: right; }
+.lcd-row { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 .15rem; }
+.lcd-selected { background: rgba(37, 99, 235, .16); border-radius: 3px; }
+.lcd-title { font-weight: 800; }
+.lcd-on { background: #111827; color: #f4f7ee; padding: 0 .15rem; }
+:root[data-theme="dark"] .lcd-on { background: #e5e7eb; color: #0d1117; }
+.lcd-dim { opacity: .7; font-weight: 500; font-size: .74rem; }
+.lcd-error { font-weight: 800; color: #b91c1c; }
+:root[data-theme="dark"] .lcd-error { color: #fca5a5; }
+.lcd-cursor { animation: lcd-blink 1s steps(1) infinite; }
+@keyframes lcd-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .lcd-cursor { animation: none; } }
+.lcd-graph { position: absolute; inset: 1.35rem .2rem .2rem; }
+.lcd-canvas { width: 100%; height: 100%; display: block; }
+.lcd-top { position: absolute; top: 0; left: .2rem; font-size: .74rem; background: inherit; }
+.lcd-bottom { position: absolute; bottom: 0; left: .2rem; right: .2rem; font-size: .74rem; }
+.lcd-gap { display: inline-block; width: 1.2rem; }
+.lcd-table { width: 100%; border-collapse: collapse; font-size: .78rem; }
+.lcd-table th, .lcd-table td { border: 1px solid currentColor; padding: 0 .3rem; text-align: right; }
+.ti-insert { width: 100%; margin: 0 0 .6rem; }
+.ti-keys { display: grid; gap: .35rem; }
+.ti-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: .1rem .35rem; align-items: end; }
+.ti-nav { display: grid; grid-template-columns: 3fr 2fr; gap: .35rem; align-items: stretch; }
+.ti-nav-keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: .1rem .35rem; }
+.ti-cell { display: flex; flex-direction: column; min-width: 0; }
+.ti-labels { display: flex; justify-content: space-between; min-height: .95rem; font: 700 .62rem/1 system-ui, sans-serif; padding: 0 .1rem; }
+.ti-second { color: var(--ti-second); }
+.ti-alpha { color: var(--ti-alpha); }
+.ti-key { min-height: 40px; border: 0; border-radius: 9px; font: 700 .82rem/1 system-ui, sans-serif; cursor: pointer; color: var(--ti-ink); background: #3a3d45; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .35); padding: 0 .2rem; }
+.ti-key:active { transform: translateY(1px); box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .35); }
+.ti-key:focus-visible { outline: 3px solid var(--ti-second); outline-offset: 1px; }
+.ti-num { background: #e7e8ec; color: #111827; font-size: 1rem; }
+.ti-graph { background: #4b4f59; font-size: .7rem; }
+.ti-shift2 { background: #2f6fda; color: #fff; }
+.ti-key.ti-alpha { background: #1f8f4e; color: #fff; }
+.ti-enter, .ti-clear { background: #5b5f6a; }
+.ti-armed { box-shadow: 0 0 0 3px #fff, inset 0 -3px 0 rgba(0, 0, 0, .35); }
+.ti-arrows { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: .15rem; padding-top: .95rem; }
+.ti-arrow { min-height: 0; border-radius: 10px; font-size: .75rem; }
+.ti-up { grid-column: 2; grid-row: 1; }
+.ti-left { grid-column: 1; grid-row: 2; }
+.ti-right { grid-column: 3; grid-row: 2; }
+.ti-down { grid-column: 2; grid-row: 3; }
+.ti .calc-help { color: var(--ti-ink); margin-top: .7rem; font-size: .82rem; }
+.ti .calc-help summary { cursor: pointer; }
+@media (max-width: 640px) { .ti-key { min-height: 44px; } .ti-screen { height: 180px; } }
+/* The screen stays in view while the keys scroll beneath it on short windows. */
+.calc-window .ti { position: relative; }
+.calc-window .ti-screen-wrap { position: sticky; top: 3.1rem; z-index: 1; box-shadow: 0 6px 10px -6px rgba(0, 0, 0, .6); }
+@media (min-width: 1100px) {
+  body.calc-docked .workspace { margin-right: 436px; }
+  body.calc-docked .calc-window { top: 16px; }
+}
+.legal-page { max-width: 46rem; }
+.legal-page h2 { margin-top: 1.6rem; }
+.settings-legal { text-align: center; margin-top: 1.5rem; }
+.home-foot a + a { margin-left: .75rem; }
+.agreement-page .agree-list { display: grid; gap: 1rem; margin: 1.25rem 0; }
+.agree-row { display: grid; gap: .5rem; padding: .85rem 1rem; border: 1px solid var(--line); border-radius: 14px; }
+.agree-row .button { justify-self: start; }
+.agree-check { display: flex; gap: .6rem; align-items: center; min-height: 44px; font-weight: 600; }
+.agree-check input { width: 1.3rem; height: 1.3rem; flex: none; }
+.agree-locked { opacity: .55; }
+.legal-dialog { width: min(46rem, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; display: flex; flex-direction: column; }
+.legal-dialog:not([open]) { display: none; }
+.legal-dialog-head { display: flex; align-items: center; justify-content: space-between; padding: .85rem 1.1rem; border-bottom: 1px solid var(--line); }
+.legal-dialog-head h2 { margin: 0; }
+.legal-dialog-body { overflow-y: auto; padding: 0 1.1rem 1rem; min-height: 0; }
+.legal-dialog .session-actions { padding: .75rem 1.1rem; border-top: 1px solid var(--line); margin: 0; }
+.calc-warning { display: block; }
+@media (max-width: 640px) { .ti-screen { height: 150px; } .ti-key { min-height: 42px; } .ti-labels { min-height: .85rem; } }

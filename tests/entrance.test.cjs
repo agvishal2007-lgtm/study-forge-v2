@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
 const path = require('node:path');
 const { chromium } = require('playwright');
+const { AGREEMENT_VERSION } = require('./returningStudent.cjs');
 
 const PORT = 4213;
 const URL_BASE = `http://localhost:${PORT}/`;
@@ -14,7 +15,7 @@ let server;
 let browser;
 const pageErrors = [];
 
-const open = async (viewport, theme, firstVisit = false) => {
+const open = async (viewport, theme, firstVisit = false, agreed = !firstVisit) => {
   const page = await browser.newPage({ viewport, deviceScaleFactor: 1 });
   page.setDefaultTimeout(15000);
   page.on('pageerror', (error) => pageErrors.push(error.message));
@@ -23,6 +24,11 @@ const open = async (viewport, theme, firstVisit = false) => {
     await page.addInitScript(() => {
       try { localStorage.setItem('study-forge-seen-welcome', 'yes'); } catch { /* private window */ }
     });
+  }
+  if (agreed) {
+    await page.addInitScript((version) => {
+      try { localStorage.setItem('study-forge-agreed', JSON.stringify({ version })); } catch { /* private window */ }
+    }, AGREEMENT_VERSION);
   }
   if (theme) {
     await page.addInitScript((value) => {
@@ -143,6 +149,81 @@ test('no uncaught errors happened during the whole run', () => {
 
 /* ---- The third experience: the public welcome page. ---- */
 
+/** Opens both documents, ticks both boxes, and continues. */
+async function agree(page) {
+  await page.getByTestId('agreement').waitFor();
+  for (const doc of ['terms', 'privacy']) {
+    await page.getByTestId(`open-${doc}`).click();
+    await page.getByTestId(`read-${doc}`).getByRole('button', { name: 'Done reading' }).click();
+  }
+  await page.getByLabel('I have read and agree to the Terms of Use').check();
+  await page.getByLabel('I have read and agree to the Privacy Policy').check();
+  await page.getByRole('button', { name: 'Continue' }).click();
+}
+
+test('nobody uses Study Forge until they open and agree to the Terms of Use and Privacy Policy', async () => {
+  const page = await open({ width: 1280, height: 900 }, null, false, false);
+  for (const route of ['/', '/notes', '/settings', '/login']) {
+    await page.goto(`${URL_BASE}#${route}`);
+    await page.getByTestId('agreement').waitFor();
+    assert.equal(await page.getByRole('navigation', { name: 'Main' }).count(), 0, `${route} is usable without agreeing`);
+    assert.equal(await page.getByRole('button', { name: /^Continue with/ }).count(), 0, `${route}: signing in is possible without agreeing`);
+  }
+  const terms = page.getByLabel('I have read and agree to the Terms of Use');
+  const privacy = page.getByLabel('I have read and agree to the Privacy Policy');
+  const go = page.getByRole('button', { name: 'Continue' });
+  assert.equal(await terms.isDisabled(), true, 'the Terms box is locked until the Terms are opened');
+  assert.equal(await privacy.isDisabled(), true, 'the Privacy box is locked until the policy is opened');
+  assert.equal(await go.isDisabled(), true);
+  await page.getByTestId('open-terms').click();
+  const reader = page.getByTestId('read-terms');
+  await reader.getByRole('heading', { name: 'Use it honestly' }).waitFor();
+  assert.match(await reader.innerText(), /not responsible for how anyone uses it, including any use that breaks an academic-integrity, exam or school rule, such as cheating/);
+  await page.keyboard.press('Escape');
+  assert.equal(await terms.isDisabled(), false, 'opening the Terms unlocks its box');
+  await terms.check();
+  assert.equal(await go.isDisabled(), true, 'both are needed');
+  assert.equal(await privacy.isDisabled(), true);
+  await page.getByTestId('open-privacy').click();
+  await page.getByTestId('read-privacy').getByRole('heading', { name: 'Cookies and storage in your browser' }).waitFor();
+  await page.getByTestId('read-privacy').getByRole('button', { name: 'Done reading' }).click();
+  await privacy.check();
+  await go.click();
+  await page.getByRole('navigation', { name: 'Main' }).waitFor();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('study-forge-agreed')));
+  assert.equal(saved.version, AGREEMENT_VERSION);
+  assert.ok(saved.at, 'when they agreed is kept');
+  await page.reload();
+  await page.getByRole('navigation', { name: 'Main' }).waitFor();
+  assert.equal(await page.getByTestId('agreement').count(), 0, 'it is asked once per device');
+  // A new version of the documents asks again.
+  await page.evaluate(() => localStorage.setItem('study-forge-agreed', JSON.stringify({ version: 'older' })));
+  await page.reload();
+  await page.getByTestId('agreement').waitFor();
+  await page.close();
+});
+
+test('the documents can be read on their own, and the agreement fits a phone', async () => {
+  const page = await open({ width: 390, height: 844 }, 'dark', false, false);
+  await page.goto(`${URL_BASE}#/terms`);
+  await page.getByRole('heading', { name: 'Terms of Use', level: 1 }).waitFor();
+  await page.goto(`${URL_BASE}#/privacy`);
+  await page.getByRole('heading', { name: 'Privacy Policy', level: 1 }).waitFor();
+  await page.goto(URL_BASE + '#/notes');
+  await page.getByTestId('agreement').waitFor();
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, 'no sideways scroll');
+  await page.getByTestId('open-terms').click();
+  const box = await page.getByTestId('read-terms').boundingBox();
+  assert.ok(box.x >= 0 && box.y >= 0 && box.x + box.width <= 390 && box.y + box.height <= 844, 'the document window fits the phone');
+  await page.getByTestId('read-terms').getByRole('button', { name: 'Done reading' }).click();
+  for (const label of ['I have read and agree to the Terms of Use']) {
+    const check = await page.getByLabel(label).locator('xpath=..').boundingBox();
+    assert.ok(check.height >= 44, 'the tick box line is easy to tap');
+  }
+  await page.screenshot({ path: path.join(__dirname, '..', 'test-output', 'agreement-phone-dark.png') });
+  await page.close();
+});
+
 test('a brand-new visitor is met by the welcome page, with no dashboard around it', async () => {
   const page = await open({ width: 1280, height: 900 }, null, true);
   await page.goto(URL_BASE);
@@ -162,6 +243,7 @@ test('choosing to start goes to the dashboard, and the welcome page stops taking
   const page = await open({ width: 1280, height: 900 }, null, true);
   await page.goto(URL_BASE);
   await page.getByRole('button', { name: 'Start using it' }).first().click();
+  await agree(page);
   // Straight into their own work, with the dashboard back.
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Today', exact: true }).waitFor();
   // And it does not come back in front of them next time.
@@ -175,7 +257,7 @@ test('choosing to start goes to the dashboard, and the welcome page stops taking
 });
 
 test('a student who already has work never sees it, account or no account', async () => {
-  const page = await open({ width: 1280, height: 900 }, null, true);
+  const page = await open({ width: 1280, height: 900 }, null, true, true);
   await page.goto(`${URL_BASE}#/courses`);
   await page.getByLabel('Course name').fill('Biology');
   await page.getByRole('button', { name: 'Create course' }).click();

@@ -145,7 +145,7 @@ export function AuthPage({ mode }: { mode: 'sign-in' | 'sign-up' }) {
           : <li>New here? <Link to="/signup">Create an account</Link></li>}
         <li><Link to="/forgot-password">Forgot your password?</Link></li>
         <li><Link to="/account-recovery">Forgot which email you used?</Link></li>
-        <li><Link to="/privacy">Privacy</Link></li>
+        <li><Link to="/privacy">Privacy Policy</Link> · <Link to="/terms">Terms of Use</Link></li>
       </ul>
     </div>
   );
@@ -239,29 +239,42 @@ export function ForgotEmailPage() {
 
 export function PrivacyPage() {
   return (
-    <div className="page auth-page" data-testid="privacy">
-      <h1>Privacy</h1>
-      <p className="muted">What Study Forge keeps, where it's kept, and how to remove it.</p>
+    <div className="page auth-page legal-page" data-testid="privacy">
+      <h1>Privacy Policy</h1>
+      <PrivacyContent />
+      <p><Link to="/terms">Terms of Use</Link> · <Link to="/">Go to Today</Link></p>
+    </div>
+  );
+}
+
+/** The policy itself, shown on its own page and in the agreement window. */
+export function PrivacyContent() {
+  return (
+    <>
+      <p className="muted">What Study Forge keeps, where it's kept, and how to remove it. Last updated 12 November 2026.</p>
       <h2>Without an account</h2>
       <p>Everything stays in your browser on your device. Nothing is sent to Study Forge.</p>
       <h2>With an account</h2>
       <ul className="plain-list">
         <li>Your email address, plus your name and picture if you sign in with Google, Microsoft or Yahoo, are used to sign you in.</li>
-        <li>The text you create is saved online so it can follow you: courses, topics, notes, lessons, planner items, calendar items, flashcards, practice questions, and your progress.</li>
-        <li>Files and recordings aren't saved online. They stay on your device.</li>
+        <li>What you create is saved online so it can follow you to your other devices: courses, topics, notes, lessons, planner items, calendar items, flashcards, practice questions, your progress and study in progress, transcripts, the names and places of your files, and settings such as light or dark mode.</li>
+        <li>Files and recordings themselves aren't saved online by Study Forge. If you turn on Sync files with my Google Drive, they're copied to a Study Forge folder in your own Google Drive, which only you control. Study Forge can only see the files it put there.</li>
         <li>This is stored in Google's Firebase service. Other students can't read it, but whoever runs this site could technically view it, so don't save anything you wouldn't want seen.</li>
       </ul>
       <h2>Files from Google Drive or Dropbox</h2>
-      <p>Study Forge only gets the files you pick. They're copied to your device, and aren't saved online by Study Forge. Screens where you add files load a small piece of code from those services, so the button is ready when you tap it.</p>
+      <p>Study Forge only gets the files you pick. They're copied to your device. Screens where you add files load a small piece of code from those services, so the button is ready when you tap it.</p>
+      <h2>Lecture transcripts and the calculator</h2>
+      <p>Transcripts are made on your device by a speech model downloaded once from the internet. Your recordings aren't uploaded to make them. The calculator also works entirely on your device.</p>
       <h2>Pictures of your schedule</h2>
       <p>A picture of your schedule is read on your device and isn't uploaded or saved. Only the classes you choose to save are kept.</p>
       <h2>Google Calendar</h2>
       <p>If you connect Google Calendar, Study Forge can only read it, and never adds, changes, or deletes anything there. It reads your main calendar and school calendars, or the ones you choose, when you connect it, press Get the latest, or open Calendar shortly after that. Items you keep are saved in Study Forge. With an account, they're also saved online with the rest of your text, and Delete my online copy removes them. Google's permission is kept only while the page is open. You can disconnect in Calendar, or remove Study Forge in your Google account settings.</p>
+      <h2>Cookies and storage in your browser</h2>
+      <p>Study Forge doesn't use advertising or tracking cookies, and doesn't use analytics. It stores your work and your settings, such as light or dark mode, in your own browser so they're there next time. When you sign in, Google's Firebase keeps you signed in the same way. Clearing your browser's data for this site removes what's stored on this device.</p>
       <h2>Advertising and selling data</h2>
       <p>Study Forge has no ads and doesn't sell your information.</p>
       <h2>Removing your data</h2>
-      <p>While signed in, open Settings and use Delete my online copy in the Account section. That also covers anything from signing in with Microsoft or Google. To stop those companies sharing your details, remove Study Forge in your account settings with them.</p>
-      <p><Link to="/">Go to Today</Link></p>
-    </div>
+      <p>While signed in, open Settings and use Delete my online copy in the Account section. That also covers anything from signing in with Google, Microsoft or Yahoo. Copies in your own Google Drive stay there until you delete them in Drive. To stop those companies sharing your details, remove Study Forge in your account settings with them.</p>
+    </>
   );
 }
