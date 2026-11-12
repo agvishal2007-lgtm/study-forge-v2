@@ -13,7 +13,7 @@ export function SettingsPage() {
   const [asked, setAsked] = useState(false);
   const { data } = useLive(getStorageStatus, [asked]);
   return (
-    <div className="page">
+    <div className="page settings-page">
       <h1>Settings</h1>
       <AccountSection />
       <AppearanceSection />
@@ -24,9 +24,9 @@ export function SettingsPage() {
       <section aria-labelledby="storage-heading">
         <h2 id="storage-heading">Storage on this device</h2>
         <p>{getActiveAccount()
-          ? 'Your files and recordings are saved only in this browser on this device. They don\'t sync to your other devices.'
-          : 'Your courses and files are saved only in this browser on this device. They don\'t sync to your other devices.'}</p>
-        <p>Clearing this browser's site data or losing this device removes them, so create a backup regularly.</p>
+          ? 'Everything is kept in this browser on this device, and syncs to your account. Files and recordings sync too once you turn on Google Drive syncing above.'
+          : 'Everything is kept only in this browser on this device. Sign in to sync it to your other devices.'}</p>
+        <p>Clearing this browser's site data or losing this device removes anything that isn't synced, so create a backup regularly.</p>
         {data?.usage != null && data.quota != null && (
           <p>Using {formatBytes(data.usage)} of about {formatBytes(data.quota)} that this browser allows.</p>
         )}

@@ -1413,3 +1413,34 @@ code.note-math { font-family: ui-monospace, monospace; }
   html.printing-notes [data-testid=recording-notes] { position: absolute; inset: 0; }
   html.printing-notes [data-testid=recording-notes] button, html.printing-notes .transcript-scroll { display: none; }
 }
+
+/* Settings: each part in its own card, with room to breathe. */
+.settings-page > h1 { margin-bottom: 1.75rem; }
+.settings-page > section { background: var(--raised); border: 1px solid var(--line); border-radius: 18px; padding: 1.75rem 2rem; margin: 0 0 1.75rem; max-width: 54rem; box-shadow: var(--shadow-sm, none); }
+.settings-page > section > h2 { margin: 0 0 1rem; }
+.settings-page > section p { margin: 0 0 1rem; line-height: 1.6; }
+.settings-page > section p:last-child { margin-bottom: 0; }
+.settings-page > section ul:not(.permission-list):not(.plain-list) { margin: 0 0 1.25rem; padding-left: 1.25rem; display: grid; gap: .6rem; line-height: 1.6; }
+.settings-page > section h3 { margin: 2rem 0 .75rem; font-size: 1.05rem; }
+.settings-page > section > section, .settings-page .pref-row { margin-top: 1.75rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+.settings-page .pref-row h3:first-child { margin-top: 0; }
+.settings-page .segmented { background: var(--ground); margin-bottom: .75rem; gap: .35rem; padding: .3rem; }
+.settings-page .segment { padding: .55rem 1.15rem; }
+.settings-page .segment:has(.segment-sample) { flex-direction: column; align-items: flex-start; border-radius: 14px; line-height: 1.25; padding: .55rem 1rem; }
+.segment-sample { font-size: .8rem; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
+.settings-page .segmented:has(.segment-sample) { border-radius: 18px; }
+.settings-page .button + .button, .settings-page .row-actions { gap: .75rem; }
+.settings-page .row-actions { margin-top: 1rem; }
+.settings-page .permission-list { margin: 1.25rem 0; }
+.settings-page .permission-list li { gap: .45rem; padding: 1.1rem 0; }
+.settings-page .permission-head { align-items: center; gap: .75rem; }
+.settings-page .permission-list .status-tag { padding: .2rem .75rem; }
+@media (max-width: 720px) {
+  .settings-page > section { padding: 1.25rem 1.1rem; border-radius: 14px; margin-bottom: 1.25rem; }
+  .settings-page .segmented { display: flex; }
+}
+.settings-page > section ul:not(.permission-list):not(.plain-list) { list-style: disc; padding-left: 1.4rem; }
+.settings-page .permission-list { padding-left: 0; list-style: none; }
+.settings-page .permission-list .small { font-size: .92rem; }
+.status-button { display: inline-flex; align-items: center; gap: .3rem; min-height: 32px; line-height: 1.2; }
+@media (max-width: 720px) { .settings-page .segmented { border-radius: 18px; } }

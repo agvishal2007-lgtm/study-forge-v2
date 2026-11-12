@@ -70,7 +70,7 @@ function DateTimeChoices() {
         {ORDERS.map((option) => (
           <label key={option.value} className="segment" data-chosen={order === option.value ? 'true' : undefined}>
             <input className="sr-only" type="radio" name="date-order" checked={order === option.value} onChange={() => setDateFormat({ order: option.value })} />
-            {option.label} <span className="muted small">({sampleDate(option.value)})</span>
+            <span className="segment-label">{option.label}</span><span className="segment-sample">{sampleDate(option.value)}</span>
           </label>
         ))}
       </div>
@@ -79,7 +79,7 @@ function DateTimeChoices() {
         {CLOCKS.map((option) => (
           <label key={option.value} className="segment" data-chosen={clock === option.value ? 'true' : undefined}>
             <input className="sr-only" type="radio" name="clock" checked={clock === option.value} onChange={() => setDateFormat({ clock: option.value })} />
-            {option.label} <span className="muted small">({sampleTime(option.value)})</span>
+            <span className="segment-label">{option.label}</span><span className="segment-sample">{sampleTime(option.value)}</span>
           </label>
         ))}
       </div>
