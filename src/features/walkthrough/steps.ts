@@ -89,7 +89,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/library',
     target: ['#content .files', '#content .page h1'],
     title: 'Open your files',
-    body: 'Every file you save is listed here. Open one to read, watch or listen right in Study Forge, with your notes beside it. You can always download the original.',
+    body: 'Every file you save is listed here. Open one to read, watch or listen right in Study Forge, with your notes beside it. You can always download the original, and anything you delete waits in the Trash, with Undo right after a change.',
   },
   {
     id: 'planner',
@@ -136,7 +136,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/practice',
     target: ['[data-tour="new-practice"]'],
     title: 'Practice',
-    body: 'Write your own questions, answer them without your notes, and check your work. Study Forge keeps track of what you miss and shows your weak topics.',
+    body: 'Write your own questions, answer them without your notes, and check your work. Study Forge keeps track of what you miss and shows your weak topics. The calculator is here when a question needs working out.',
   },
   {
     id: 'exams',
@@ -155,7 +155,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'progress',
     route: '/progress',
-    target: ['[data-tour="progress-streak"]'],
+    target: ['[data-tour="progress-streak"] > :first-child', '[data-tour="progress-streak"]'],
     title: 'See your progress',
     body: 'Your study streak, the days you studied and how each course is going, all counted from work you’ve saved. It never guesses a grade.',
   },
@@ -164,7 +164,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/notes',
     target: ['[data-tour="new-note"]'],
     title: 'Notes',
-    body: 'Notes save as you type. The buttons above a note add headings, lists, checklists and equations. Calculator opens a scientific or TI-84-style graphing calculator beside your note; it’s a study tool, not an exam calculator. File notes under a course or topic, or attach them to a file or recording.',
+    body: 'Notes save as you type. The buttons above a note add headings, lists that continue when you press Enter, checklists, and equations picked from a menu. Calculator opens a scientific or TI-84-style graphing calculator; it’s a study tool, not an exam calculator.',
     action: {
       isDone: hasAny('notes'),
       instruction: 'Try it: press New note and type anything. It saves by itself.',
@@ -203,7 +203,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'offline',
     route: '/settings',
-    target: ['[data-tour="offline"]'],
+    target: ['[data-testid=offline-status]', '[data-tour="offline"]'],
     title: 'Study without internet',
     body: 'After your first visit, Study Forge opens without internet and keeps saving your work. You can also install it like an app.',
   },

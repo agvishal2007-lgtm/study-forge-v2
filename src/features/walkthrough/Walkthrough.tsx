@@ -207,6 +207,13 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
   // Only the highlighted part can be used, and only while the student is trying it.
   const trying = !!definition.action && actionDone === false;
 
+  // Extra room under the page while the tour runs, so on a short screen even a part near the end
+  // of a short page can scroll up and leave space for the explanation below it.
+  useEffect(() => {
+    document.body.classList.add('tour-active');
+    return () => document.body.classList.remove('tour-active');
+  }, []);
+
   // Otherwise the rest of the app can't be clicked, tabbed to, or read out while this is open.
   useEffect(() => {
     const root = document.getElementById('root');
@@ -249,7 +256,7 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
           const tall = panel && element.getBoundingClientRect().height > panel.clientHeight * 0.8;
           // On a short screen, such as a phone on its side, the part goes near the top so the
           // explanation has room under it instead of covering it.
-          const short = window.innerHeight < 640;
+          const short = window.innerHeight < 720;
           element.scrollIntoView({ block: tall || short ? 'start' : 'center', inline: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
         }
         const next = visibleBox(element);

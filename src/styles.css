@@ -1630,3 +1630,4 @@ main :where(*) { scroll-margin-top: 14px; }
 .legal-dialog .session-actions { padding: .75rem 1.1rem; border-top: 1px solid var(--line); margin: 0; }
 .calc-warning { display: block; }
 @media (max-width: 640px) { .ti-screen { height: 150px; } .ti-key { min-height: 42px; } .ti-labels { min-height: .85rem; } }
+@media (max-height: 720px) { body.tour-active main#content { padding-bottom: 75vh; } }

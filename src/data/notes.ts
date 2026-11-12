@@ -1,5 +1,6 @@
 import { getDb, notifyChanged } from './db';
 import type { Note } from './types';
+import { plainNote } from './noteFormat';
 
 /** Thrown when another tab changed a note, so neither version is silently lost. */
 export class NoteConflict extends Error {
@@ -43,7 +44,8 @@ export async function deleteNote(id: string): Promise<void> {
 
 /** The text a list shows when a note has no title yet. */
 export function noteLabel(note: Pick<Note, 'title' | 'body'>): string {
-  const firstLine = note.body.split('\n').find((line) => line.trim());
+  // The first line's words, without marks like "# ", "• " or $...$.
+  const firstLine = plainNote(note.body).split('\n').find((line) => line.trim());
   return note.title.trim() || firstLine?.trim().slice(0, 80) || 'Untitled note';
 }
 
