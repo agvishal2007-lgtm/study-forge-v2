@@ -1,8 +1,10 @@
 import { parseNote, type Inline } from '../data/noteFormat';
+import { MathText } from './MathText';
 
 const Text = ({ parts }: { parts: Inline[] }) => (
   <>
     {parts.map((part, index) => {
+      if (part.math) return <MathText key={index} source={part.text} />;
       if (part.bold) return <strong key={index}>{part.text}</strong>;
       if (part.italic) return <em key={index}>{part.text}</em>;
       return <span key={index}>{part.text}</span>;
@@ -10,7 +12,8 @@ const Text = ({ parts }: { parts: Inline[] }) => (
   </>
 );
 
-/** Shows a note's formatting. It's built from plain React text, so a note can't run code. */
+/** Shows a note's formatting. It's built from plain React text, so a note can't run code. Equations
+ *  are drawn by KaTeX, which only ever makes maths. */
 export function NoteView({ body }: { body: string }) {
   const blocks = parseNote(body);
   if (blocks.length === 0) return <p className="muted">Nothing written yet.</p>;

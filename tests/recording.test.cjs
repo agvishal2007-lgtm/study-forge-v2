@@ -181,6 +181,61 @@ test('record across screens, pause, stop, and replay in the right course', async
   await page.locator('.topic', { hasText: 'Cells' }).getByRole('link', { name: /Cell biology lecture/ }).waitFor();
 });
 
+test('notes typed during a lecture save as you go and come attached to the recording', async () => {
+  await nav('Record');
+  await page.getByLabel('Recording name').fill('Mitosis lecture');
+  await page.getByRole('button', { name: 'Start recording' }).click();
+  await page.getByRole('button', { name: 'Stop and save' }).waitFor();
+  // The notes sit right beside the recording controls, ready to type in.
+  const notes = page.getByTestId('lecture-notes');
+  await notes.waitFor();
+  await notes.getByLabel('Your note').fill('Prophase: chromosomes condense\n- spindle forms\nArea: $\\pi r^2$');
+  await waitForPieces(1);
+  assert.equal(await page.getByRole('button', { name: 'Stop and save' }).isVisible(), true, 'still recording while typing');
+  await page.getByRole('button', { name: 'Stop and save' }).click();
+  await page.getByText(/Saved “Mitosis lecture.*Your notes are attached to it/).waitFor();
+  await page.getByRole('link', { name: 'Open it with your notes' }).click();
+  await assertPlays();
+  // The recording and its notes open together.
+  const body = page.getByLabel('Your note');
+  await body.waitFor();
+  assert.match(await body.inputValue(), /Prophase: chromosomes condense/);
+  // The equation is drawn as maths in the preview.
+  await page.getByRole('button', { name: 'Preview' }).click();
+  await page.locator('[data-testid=note-math] .katex').waitFor();
+  // A lecture with nothing typed leaves no empty note behind.
+  const before = await page.evaluate(() => new Promise((resolve) => {
+    const request = indexedDB.open('study-forge');
+    request.onsuccess = () => { const count = request.result.transaction('notes').objectStore('notes').count(); count.onsuccess = () => { request.result.close(); resolve(count.result); }; };
+  }));
+  await nav('Record');
+  await page.getByLabel('Recording name').fill('Quiet lecture');
+  await page.getByRole('button', { name: 'Start recording' }).click();
+  await waitForPieces(1);
+  await page.getByRole('button', { name: 'Stop and save' }).click();
+  await page.getByRole('link', { name: 'Play it' }).waitFor();
+  const after = await page.evaluate(() => new Promise((resolve) => {
+    const request = indexedDB.open('study-forge');
+    request.onsuccess = () => { const count = request.result.transaction('notes').objectStore('notes').count(); count.onsuccess = () => { request.result.close(); resolve(count.result); }; };
+  }));
+  assert.equal(after, before);
+});
+
+test('recording and notes stack on a phone', async () => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await nav('Record');
+  await page.getByRole('button', { name: 'Start recording' }).click();
+  const notes = page.getByTestId('lecture-notes');
+  await notes.waitFor();
+  const controls = await page.getByRole('button', { name: 'Stop and save' }).boundingBox();
+  const box = await notes.boundingBox();
+  assert.ok(box.y > controls.y, 'notes sit under the controls');
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false);
+  await page.getByRole('button', { name: 'Stop and save' }).click();
+  await page.getByRole('link', { name: 'Play it' }).waitFor();
+  await page.setViewportSize({ width: 1280, height: 900 });
+});
+
 test('closing the browser during a recording keeps the audio', async () => {
   await nav('Record');
   await page.getByLabel('Recording name').fill('Crash test lecture');

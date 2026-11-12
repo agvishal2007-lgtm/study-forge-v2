@@ -1,3 +1,4 @@
+import { getNote, saveNote } from '../data/notes';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { formatBytes, formatDuration } from '../data/format';
@@ -50,6 +51,10 @@ interface Recorder {
   error: string;
   notice: string;
   saved: Material | null;
+  /** Notes typed during this lecture. They're attached to the recording when it's saved. */
+  lectureNote: { id: string; courseId: string | null; topicId: string | null } | null;
+  /** The note that was attached to the last saved recording, if any was written. */
+  savedNoteId: string | null;
   getElapsed: () => number;
   start: (options: StartOptions) => Promise<void>;
   pause: () => void;
@@ -103,6 +108,10 @@ const warnBeforeLeaving = (event: BeforeUnloadEvent) => event.preventDefault();
 
 /** Lives above every screen, so recording continues while the student reads their slides. */
 export function RecorderProvider({ children }: { children: ReactNode }) {
+  const [lectureNote, setLectureNote] = useState<Recorder['lectureNote']>(null);
+  const [savedNoteId, setSavedNoteId] = useState<string | null>(null);
+  const lectureNoteRef = useRef(lectureNote);
+  lectureNoteRef.current = lectureNote;
   const [phase, setPhase] = useState<RecorderPhase>('idle');
   const [name, setName] = useState('');
   const [bytes, setBytes] = useState(0);
@@ -128,6 +137,8 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
 
   const start = useCallback(async ({ source: chosen, withMicrophone, name: title, courseId, topicId }: StartOptions) => {
     if (recorderRef.current) return;
+    setLectureNote({ id: crypto.randomUUID(), courseId, topicId });
+    setSavedNoteId(null);
     setError('');
     setNotice('');
     setSaved(null);
@@ -296,6 +307,15 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
         try {
           const material = await finishSession(id);
           setSaved(material);
+          // Notes written during the lecture belong with it. An empty one is simply never kept.
+          const noteId = lectureNoteRef.current?.id;
+          if (material && noteId) {
+            const note = await getNote(noteId);
+            if (note && (note.body.trim() || note.title.trim())) {
+              await saveNote({ ...note, materialId: material.id }, 'force');
+              setSavedNoteId(noteId);
+            }
+          }
           if (!material) setNotice('Nothing was captured, so no file was saved.');
           else if (stopReason) setNotice(`${stopReason} Everything captured up to that point was saved.`);
           void requestKeepFiles();
@@ -341,7 +361,7 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
   }, [getElapsed]);
 
   const value = useMemo<Recorder>(() => ({
-    phase, name, bytes, level, muted, source, hasAudio, micIncluded, silent, warning, error, notice, saved, getElapsed, start,
+    phase, name, bytes, level, muted, source, hasAudio, micIncluded, silent, warning, error, notice, saved, lectureNote, savedNoteId, getElapsed, start,
     pause() {
       const recorder = recorderRef.current;
       if (recorder?.state !== 'recording') return;
@@ -362,11 +382,12 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
     },
     clearResult() {
       setSaved(null);
+      setSavedNoteId(null);
       setNotice('');
       setError('');
       setWarning('');
     },
-  }), [phase, name, bytes, level, muted, source, hasAudio, micIncluded, silent, warning, error, notice, saved, getElapsed, start]);
+  }), [phase, name, bytes, level, muted, source, hasAudio, micIncluded, silent, warning, error, notice, saved, lectureNote, savedNoteId, getElapsed, start]);
 
   return <RecorderContext.Provider value={value}>{children}</RecorderContext.Provider>;
 }

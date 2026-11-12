@@ -118,7 +118,7 @@ test('a note can be formatted with the toolbar and keys, and it saves', async ()
   await body().evaluate((box) => box.setSelectionRange(box.value.length, box.value.length));
   await page.keyboard.type('\nline one\nline two');
   await body().evaluate((box) => { const at = box.value.indexOf('line one'); box.setSelectionRange(at, box.value.length); });
-  await page.getByRole('button', { name: 'Bullet list' }).click();
+  await page.getByRole('button', { name: 'Bullet points' }).click();
   await body().evaluate((box) => box.setSelectionRange(box.value.length, box.value.length));
   await page.keyboard.type('\n\nword');
   await body().evaluate((box) => box.setSelectionRange(box.value.length - 4, box.value.length));

@@ -160,7 +160,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/notes',
     target: ['[data-tour="new-note"]'],
     title: 'Notes',
-    body: 'Notes save as you type, with bold, headings, lists, and checklists. You can file them under a course or topic, and attach them to a file or recording.',
+    body: 'Notes save as you type. The buttons above a note add Bold, Italic, a Heading (a section title), Bullets, Numbering, a Checklist, or an Equation, which you type like x^2 or \\frac{a}{b} and see drawn properly in Preview. You can file them under a course or topic, and attach them to a file or recording.',
     action: {
       isDone: hasAny('notes'),
       instruction: 'Try it: press New note and type anything. It saves by itself.',
@@ -173,7 +173,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/record',
     target: ['[data-tour="record-source"]', '#content .page'],
     title: 'Record lectures',
-    body: 'Choose In person to record the room with your microphone, or Virtual to record your screen and the lecture\'s sound. Virtual works best in Chrome or Edge on a computer.',
+    body: 'Choose In person to record the room with your microphone, or Virtual to record your screen and the lecture\'s sound. Virtual works best in Chrome or Edge on a computer. While it records, a Lecture notes box sits right beside it, so you can take notes at the same time. They save as you type and are attached to the recording when you stop.',
   },
   {
     id: 'record-safe',

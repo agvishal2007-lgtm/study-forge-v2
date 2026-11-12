@@ -3,7 +3,7 @@
  * them readable anywhere, keeps saving online simple, and leaves every existing note as it is.
  * Nothing here produces HTML, so a note can never run code on the site. This file only calculates.
  */
-export type Inline = { text: string; bold?: boolean; italic?: boolean };
+export type Inline = { text: string; bold?: boolean; italic?: boolean; math?: boolean };
 export type Block =
   | { type: 'heading'; level: 1 | 2 | 3; inline: Inline[] }
   | { type: 'bullets'; items: Inline[][] }
@@ -13,12 +13,14 @@ export type Block =
 
 export function parseInline(text: string): Inline[] {
   const parts: Inline[] = [];
-  const pattern = /\*\*(?=\S)(.+?)(?<=\S)\*\*|\*(?=[^\s*])([^*]+?)(?<=\S)\*/g;
+  // $...$ is an equation, written the usual LaTeX way. A lone $ (like a price) stays as text.
+  const pattern = /\$(?=\S)([^$\n]+?)(?<=\S)\$|\*\*(?=\S)(.+?)(?<=\S)\*\*|\*(?=[^\s*])([^*]+?)(?<=\S)\*/g;
   let at = 0;
   for (const match of text.matchAll(pattern)) {
     if (match.index > at) parts.push({ text: text.slice(at, match.index) });
-    if (match[1] !== undefined) parts.push({ text: match[1], bold: true });
-    else parts.push({ text: match[2], italic: true });
+    if (match[1] !== undefined) parts.push({ text: match[1], math: true });
+    else if (match[2] !== undefined) parts.push({ text: match[2], bold: true });
+    else parts.push({ text: match[3], italic: true });
     at = match.index + match[0].length;
   }
   if (at < text.length) parts.push({ text: text.slice(at) });
@@ -63,7 +65,7 @@ export const plainNote = (text: string) => text.split('\n')
   .map((line) => parseInline(line.replace(/^(#{1,3} +|\s*- \[[ xX]\] +|\s*[-•] +|\s*\d+\. +)/, '')).map((part) => part.text).join(''))
   .join('\n');
 
-export type FormatKind = 'bold' | 'italic' | 'heading' | 'bullet' | 'number' | 'check';
+export type FormatKind = 'bold' | 'italic' | 'math' | 'heading' | 'bullet' | 'number' | 'check';
 
 export interface FormatEdit {
   from: number;
@@ -82,6 +84,13 @@ const LINE_MARK: Record<'heading' | 'bullet' | 'number' | 'check', RegExp> = {
 
 /** Says what to change for a toolbar press. Pressing it again on marked text takes the mark off. */
 export function formatEdit(text: string, start: number, end: number, kind: FormatKind): FormatEdit {
+  if (kind === 'math') {
+    // Wraps the chosen text as an equation, or starts an empty one with the cursor inside.
+    const chosen = text.slice(start, end);
+    if (text[start - 1] === '$' && text[end] === '$') return { from: start - 1, to: end + 1, insert: chosen, selectionStart: start - 1, selectionEnd: end - 1 };
+    const body = chosen || 'x^2';
+    return { from: start, to: end, insert: `$${body}$`, selectionStart: start + 1, selectionEnd: start + 1 + body.length };
+  }
   if (kind === 'bold' || kind === 'italic') {
     const mark = kind === 'bold' ? '**' : '*';
     const chosen = text.slice(start, end);

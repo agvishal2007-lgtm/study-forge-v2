@@ -1,3 +1,4 @@
+import { NoteEditor } from './NoteEditorPage';
 import { formatWhen } from '../data/dateFormat';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -116,7 +117,7 @@ function Recording() {
 }
 
 export function RecordPage() {
-  const { phase, error, notice, saved, start, clearResult } = useRecorder();
+  const { phase, error, notice, saved, savedNoteId, lectureNote, start, clearResult } = useRecorder();
   const [params] = useSearchParams();
   const [title, setTitle] = useState(defaultName);
   const [courseId, setCourseId] = useState(params.get('course') ?? '');
@@ -136,11 +137,23 @@ export function RecordPage() {
       {notice && <p className="notice" role="status">{notice}</p>}
       {saved && (
         <p className="notice" role="status">
-          Saved “{saved.name}”. <Link to={`/files/${saved.id}`} onClick={clearResult}>Play it</Link>
+          Saved “{saved.name}”.{savedNoteId ? ' Your notes are attached to it.' : ''}{' '}
+          <Link to={savedNoteId ? `/files/${saved.id}?note=${savedNoteId}` : `/files/${saved.id}`} onClick={clearResult}>{savedNoteId ? 'Open it with your notes' : 'Play it'}</Link>
         </p>
       )}
 
-      {running ? <Recording /> : (
+      {running ? (
+        <div className="lecture-layout">
+          <Recording />
+          {lectureNote && (
+            <section className="lecture-notes" aria-labelledby="lecture-notes-heading" data-testid="lecture-notes">
+              <h2 id="lecture-notes-heading">Lecture notes</h2>
+              <p className="muted small">Type while it records. Your notes save as you go and are attached to the recording when you stop.</p>
+              <NoteEditor id={lectureNote.id} start={{ courseId: lectureNote.courseId, topicId: lectureNote.topicId, materialId: null }} panel onDeleted={() => undefined} />
+            </section>
+          )}
+        </div>
+      ) : (
         <section className="studio" aria-label="Set up a recording">
           <fieldset className="source-choice" data-tour="record-source">
             <legend>Where is the lecture?</legend>

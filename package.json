@@ -22,6 +22,7 @@
     "firebase": "13.0.0",
     "hash-wasm": "^4.12.0",
     "idb": "^8.0.4",
+    "katex": "0.16.47",
     "mammoth": "^1.13.0",
     "mediabunny": "1.62.1",
     "pdfjs-dist": "^6.5.438",
