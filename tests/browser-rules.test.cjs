@@ -38,3 +38,13 @@ test('the steps to unblock notifications name each browser\'s own menus', async 
   assert.match(unblockNotificationSteps('ios', false, false), /Home Screen/);
   assert.doesNotMatch(unblockNotificationSteps('chrome', false, false), /System Settings/, 'Mac advice only on a Mac');
 });
+
+test('a quietly closed question and an extension block each get their own steps', async () => {
+  const { quietPromptSteps, extensionBlockSteps } = await import('../src/data/browserRules.ts');
+  const quiet = quietPromptSteps('arc', 'https://example.github.io');
+  assert.match(quiet, /bell in the address bar/);
+  assert.match(quiet, /arc:\/\/settings\/content\/notifications[\s\S]*paste https:\/\/example\.github\.io/);
+  assert.doesNotMatch(quietPromptSteps('firefox', 'https://x.io'), /settings\/content/, 'only where such a page exists');
+  assert.match(extensionBlockSteps('arc'), /arc:\/\/extensions/);
+  assert.match(extensionBlockSteps('arc'), /Pop-up blockers, ad blockers and security extensions/);
+});

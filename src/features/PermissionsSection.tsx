@@ -1,5 +1,5 @@
 import { currentBrowser } from '../data/browser';
-import { unblockNotificationSteps } from '../data/browserRules';
+import { extensionBlockSteps, quietPromptSteps, unblockNotificationSteps } from '../data/browserRules';
 import { useEffect, useState } from 'react';
 import { ACCESS_LABEL, describeAccess, readAccess, watchAccess, type DeviceAccess } from '../data/permissions';
 
@@ -14,7 +14,9 @@ const APPLE_LABEL = 'Add to Home Screen first';
 
 /** Where this browser keeps the switch, once it has been blocked. A site can't flip it back itself. */
 function unblockSteps(): string {
-  return unblockNotificationSteps(currentBrowser(), /Android/.test(navigator.userAgent), /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints <= 1);
+  const browser = currentBrowser();
+  const steps = unblockNotificationSteps(browser, /Android/.test(navigator.userAgent), /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints <= 1);
+  return browser === 'ios' || browser === 'safari' ? steps : `${steps} ${extensionBlockSteps(browser)}`;
 }
 
 /** iPhone or iPad in an ordinary browser tab, where Apple only allows notifications from the Home Screen. */
@@ -44,7 +46,7 @@ function NotificationControl({ state, onChange }: { state: DeviceAccess; onChang
       try { await Notification.requestPermission(); } catch { /* the browser declined to ask */ }
       const next = read();
       onChange(next);
-      setHelp(next === 'granted' ? '' : next === 'denied' ? unblockSteps() : 'Your browser closed the question without an answer. Tap again to be asked.');
+      setHelp(next === 'granted' ? '' : next === 'denied' ? unblockSteps() : quietPromptSteps(currentBrowser(), location.origin));
     } else if (now === 'denied') {
       onChange('denied');
       setHelp(help ? '' : unblockSteps());

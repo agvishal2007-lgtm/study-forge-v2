@@ -70,3 +70,28 @@ export function unblockNotificationSteps(browser: BrowserName, android: boolean,
         : `Click the icon at the left of the address bar, then turn Notifications on for this site. Then come back here.${macTip}`;
   }
 }
+
+/** The settings page for notifications, in browsers that have one you can type in. */
+export function notificationSettingsPage(browser: BrowserName): string | null {
+  const scheme: Partial<Record<BrowserName, string>> = { arc: 'arc', brave: 'brave', edge: 'edge', opera: 'opera', vivaldi: 'vivaldi', chrome: 'chrome' };
+  return scheme[browser] ? `${scheme[browser]}://settings/content/notifications` : null;
+}
+
+/**
+ * When the browser closes its question without an answer. Chrome-based browsers do this on
+ * purpose after a site's question was dismissed a few times: they ask quietly with a bell in the
+ * address bar, or not at all for a while. Allowing the site directly always works.
+ */
+export function quietPromptSteps(browser: BrowserName, origin: string): string {
+  const page = notificationSettingsPage(browser);
+  const direct = page
+    ? ` Or allow it directly: type ${page} in the address bar, click Add next to Allowed to send notifications, paste ${origin}, and click Add.`
+    : '';
+  return `Your browser closed the question without showing it. Look for a small bell in the address bar and choose Allow, or tap again to be asked.${direct}`;
+}
+
+/** When an extension has taken over the notification setting, so neither the browser nor this site can change it. */
+export function extensionBlockSteps(browser: BrowserName): string {
+  const page = browser === 'arc' ? 'arc://extensions' : browser === 'edge' ? 'edge://extensions' : browser === 'brave' ? 'brave://extensions' : 'your browser\'s extensions page';
+  return `If your browser says this setting is controlled by an extension, one of your extensions is blocking notifications. Pop-up blockers, ad blockers and security extensions are the usual cause. Open ${page}, switch them off one at a time (restarting the browser after each), and when notifications work, look in that extension\'s settings for an option like block notification requests.`;
+}

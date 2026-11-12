@@ -185,6 +185,7 @@ test('in Arc, a blocked Notifications status gives Arc\'s own steps, and Allowed
   await page.reload();
   await page.getByTestId('notification-control').click();
   assert.match(await page.getByTestId('notification-help').innerText(), /In Arc[\s\S]*arc:\/\/settings\/content\/notifications/);
+  assert.match(await page.getByTestId('notification-help').innerText(), /controlled by an extension[\s\S]*arc:\/\/extensions/);
   // Once the student allows it in Arc and comes back, a test notification checks it really shows.
   await page.evaluate(() => { window.Notification.permission = 'granted'; window.dispatchEvent(new Event('focus')); });
   await page.getByTestId('notification-test').click();
