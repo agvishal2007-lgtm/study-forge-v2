@@ -45,7 +45,8 @@ const openCourse = async () => {
 const dateIn = (days) => {
   const when = new Date();
   when.setDate(when.getDate() + days);
-  return when.toISOString().slice(0, 10);
+  // The date on the student's own clock, not the UTC one, which differs in the evening.
+  return `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, '0')}-${String(when.getDate()).padStart(2, '0')}`;
 };
 
 test('a student sets up a course for the semester', async () => {
