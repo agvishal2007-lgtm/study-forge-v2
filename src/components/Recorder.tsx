@@ -347,9 +347,14 @@ export function RecorderProvider({ children }: { children: ReactNode }) {
           if (material) {
             // Notes pinned to moments while recording now belong to the saved recording.
             await attachMomentNotes(id, material.id);
-            // The live transcript becomes the recording's transcript, timed passages and all.
-            const segments = live ? await live.finish().catch(() => []) : [];
-            if (segments.length > 0) await saveTranscript(material.id, textOf(segments), `${TRANSCRIBE_MODEL} (live)`, segments);
+            // The live transcript becomes the recording's transcript, timed passages and all. Its last
+            // stretch is read in the background, so saving the recording never waits for it.
+            if (live) {
+              const materialId = material.id;
+              void live.finish()
+                .then((segments) => (segments.length > 0 ? saveTranscript(materialId, textOf(segments), `${TRANSCRIBE_MODEL} (live)`, segments) : undefined))
+                .catch(() => undefined);
+            }
           } else {
             void live?.finish().catch(() => undefined);
           }
