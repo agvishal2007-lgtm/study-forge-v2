@@ -361,16 +361,38 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
     return () => document.removeEventListener('keydown', onKey);
   }, [onPause]);
 
+  /*
+   * A tap meant for the highlighted part can land on the dimmed area for a moment, for example
+   * while a phone's keyboard closes and the page moves. When the tap is really on the highlighted
+   * part, it's passed through, so one tap is always enough. Taps anywhere else are still caught.
+   */
+  const passThrough = (event: React.MouseEvent) => {
+    const element = trackedElement.current;
+    if (!element || !trying) return;
+    const { clientX: x, clientY: y } = event;
+    const rect = element.getBoundingClientRect();
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return;
+    const walls = [...document.querySelectorAll<HTMLElement>('.tour-blocker')];
+    walls.forEach((wall) => { wall.style.pointerEvents = 'none'; });
+    const below = document.elementFromPoint(x, y);
+    walls.forEach((wall) => { wall.style.pointerEvents = ''; });
+    if (!below || !element.contains(below)) return;
+    const control = below.closest<HTMLElement>('button, a[href], input, select, textarea, summary, label, [role=button], [role=menuitem]');
+    if (!control || !element.contains(control) || (control as HTMLButtonElement).disabled) return;
+    control.focus();
+    if (!control.matches('input:not([type=checkbox]):not([type=radio]), select, textarea')) control.click();
+  };
+
   return createPortal(
     <div className="tour">
       {/* Catches every click outside the explanation. */}
       {trying && ring ? (
         // Four walls around the box, so only the highlighted part can be used.
         <>
-          <div className="tour-blocker" data-testid="tour-blocker" style={{ bottom: `calc(100% - ${ring.top}px)` }} />
-          <div className="tour-blocker" style={{ top: ring.top + ring.height }} />
-          <div className="tour-blocker" style={{ top: ring.top, height: ring.height, right: `calc(100% - ${ring.left}px)` }} />
-          <div className="tour-blocker" style={{ top: ring.top, height: ring.height, left: ring.left + ring.width }} />
+          <div className="tour-blocker" data-testid="tour-blocker" onClick={passThrough} style={{ bottom: `calc(100% - ${ring.top}px)` }} />
+          <div className="tour-blocker" onClick={passThrough} style={{ top: ring.top + ring.height }} />
+          <div className="tour-blocker" onClick={passThrough} style={{ top: ring.top, height: ring.height, right: `calc(100% - ${ring.left}px)` }} />
+          <div className="tour-blocker" onClick={passThrough} style={{ top: ring.top, height: ring.height, left: ring.left + ring.width }} />
         </>
       ) : <div className="tour-blocker" data-testid="tour-blocker" />}
       {ring && !(definition.action && actionDone === true && !findTarget(definition.target))

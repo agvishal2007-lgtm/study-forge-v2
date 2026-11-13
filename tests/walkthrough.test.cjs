@@ -484,6 +484,29 @@ test('work already done is not asked for again', async () => {
   await closeTour();
 });
 
+test('one tap on Create course always works, even if it lands on the dimmed area while the page moves', async () => {
+  for (const [viewport, mobile] of [[{ width: 1280, height: 800 }, false], [{ width: 390, height: 844 }, true]]) {
+    await open(`one-tap-${mobile ? 'phone' : 'desk'}`, { viewport, mobile });
+    for (let i = 1; i < numberOf('courses'); i++) await next();
+    await page.getByTestId('tour-try').waitFor();
+    await page.getByLabel('Course name').fill('One tap class');
+    const button = page.getByRole('button', { name: 'Create course' });
+    const box = await button.boundingBox();
+    // The tap arrives on the dimmed area, as it can on a phone while the keyboard closes.
+    await page.evaluate(({ x, y }) => {
+      document.querySelector('[data-testid=tour-blocker]').dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: x, clientY: y }));
+    }, { x: box.x + box.width / 2, y: box.y + box.height / 2 });
+    await page.getByTestId('tour-done').waitFor({ timeout: 5000 });
+    // A tap on the dimmed area away from the highlighted part still does nothing.
+    await page.evaluate(() => document.querySelector('[data-testid=tour-blocker]').dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 5, clientY: 5 })));
+    const courses = await page.evaluate(async () => {
+      const name = (await indexedDB.databases()).map((d) => d.name).find((n) => n.startsWith('study-forge'));
+      return new Promise((done) => { const r = indexedDB.open(name); r.onsuccess = () => { const q = r.result.transaction('courses').objectStore('courses').getAll(); q.onsuccess = () => done(q.result.filter((c) => c.name === 'One tap class').length); }; });
+    });
+    assert.equal(courses, 1, 'exactly one course, no duplicates');
+  }
+});
+
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });
