@@ -1381,6 +1381,7 @@ html[data-motion="reduce"] .sync-badge .sync-dot { animation: none; }
 
 /* While the saving card shows, the page can scroll its last buttons up above it. */
 html.save-panel-open main > :last-child { padding-bottom: min(50vh, 18rem); }
+html.save-panel-open main { scroll-padding-bottom: min(50vh, 18rem); }
 .status-button { cursor: pointer; font-family: inherit; min-height: 36px; padding: .2rem .8rem; }
 .status-button[data-status='none'] { background: var(--ground); color: var(--muted); border-color: var(--line); cursor: default; }
 .permission-wide { flex-basis: 100%; }

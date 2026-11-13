@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { SaveCancelled } from '../data/blobs';
 import { formatBytes } from '../data/format';
 import { fileMaterial, findByHash, getStorageStatus, hashFile, requestKeepFiles, storeMaterial } from '../data/store';
@@ -165,6 +165,10 @@ export const FINISHED_CLEAR_MS = 12_000;
 export function SavePanel() {
   const { items, cancel, retry, dismiss, moveExisting, clearFinished } = useSaveQueue();
   const [held, setHeld] = useState(false);
+  // Going to another screen lets go of the card, so it can't stay up forever because a button in it
+  // still had focus or the pointer was resting on it.
+  const { pathname } = useLocation();
+  useEffect(() => setHeld(false), [pathname]);
   const allFinished = items.length > 0 && items.every((item) => item.phase === 'saved' || item.phase === 'cancelled');
   // Once everything is saved, the card clears itself so it stops covering buttons. It waits while
   // the student is pointing at it or using it. Problems (failures, duplicates) stay until handled.
@@ -224,7 +228,7 @@ export function SavePanel() {
                   <div className="save-status" role="status">
                     <span>{PHASE_LABEL[item.phase]}{active ? ` ${percent}%` : ''}</span>
                     {item.phase === 'saved' && item.material && (
-                      <Link className="text-button" to={`/files/${item.material.id}`}>Open</Link>
+                      <Link className="text-button" to={`/files/${item.material.id}`} onClick={() => dismiss(item.key)}>Open</Link>
                     )}
                     {(active || item.phase === 'waiting') && (
                       <button className="text-button" onClick={() => cancel(item.key)}>Cancel</button>

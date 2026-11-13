@@ -359,6 +359,25 @@ test('phone layout has no sideways scrolling and keeps every destination', async
   await page.setViewportSize({ width: 1280, height: 800 });
 });
 
+test('the saving card never gets stuck covering the page', async () => {
+  const back = `${URL_BASE}#/library`;
+  await page.goto(back);
+  // Opening a saved file from the card takes that file off the card.
+  await addFiles([fixture('panel-open.txt', 'Opened from the saving card.\n')]);
+  await saved('panel-open.txt').waitFor({ timeout: 20000 });
+  await page.locator('.save-panel li', { hasText: 'panel-open.txt' }).getByRole('link', { name: 'Open' }).click();
+  await page.locator('.save-panel').waitFor({ state: 'detached' });
+  // A button in the card that still has focus (or a resting pointer) doesn't keep it up after moving on.
+  await page.goto(back);
+  await addFiles([fixture('panel-focus.txt', 'Focus left on the saving card.\n')]);
+  await saved('panel-focus.txt').waitFor({ timeout: 20000 });
+  await page.locator('.save-panel').getByRole('button', { name: 'Clear finished' }).focus();
+  await page.locator('.save-panel').hover();
+  await page.evaluate(() => { location.hash = '#/planner'; });
+  await page.locator('.save-panel').waitFor({ state: 'detached', timeout: 20000 });
+  await page.goto(back);
+});
+
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });
