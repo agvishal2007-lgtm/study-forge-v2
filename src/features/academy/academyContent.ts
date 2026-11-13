@@ -181,6 +181,7 @@ export const ACADEMY: AcademyTopic[] = [
     why: 'Your notes sit with the course, file or recording they’re about.',
     where: 'Notes in the main menu, Notes beside an open file, or the notes area while recording.',
     steps: [
+      'Opened a new note by accident? Press Cancel and nothing is saved. Once you’ve typed something, press Done to save and go back.',
       'Press New note and type. It saves by itself.',
       'Use the buttons above it: Bold, Italic, Heading, Bullets, Numbering, Checklist.',
       'On an empty line, Bullets or Numbering starts the list. Enter adds the next item, and Enter on an empty item ends the list.',

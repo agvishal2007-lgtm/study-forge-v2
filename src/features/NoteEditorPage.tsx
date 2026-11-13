@@ -44,12 +44,14 @@ export interface NoteStart {
  * The note editor, on its own page or in a panel beside a file. Both use this one component, so
  * saving as you type, the other-tab conflict check and the save on leaving behave identically.
  */
-export function NoteEditor({ id, start, panel = false, onDeleted }: {
+export function NoteEditor({ id, start, panel = false, onDeleted, onClose }: {
   id: string;
   start: NoteStart;
   /** Beside a file: no page padding, and no line pointing back at the file already on screen. */
   panel?: boolean;
   onDeleted: (where: { courseId: string | null }) => void;
+  /** Leaves the note: Cancel when nothing was typed (nothing is saved), Done otherwise (saved first). */
+  onClose?: () => void;
 }) {
   const [previewing, setPreviewing] = useState(false);
   const calculator = useCalculator();
@@ -186,6 +188,11 @@ export function NoteEditor({ id, start, panel = false, onDeleted }: {
         <div className="row-actions">
           <span className="muted" role="status" data-testid="save-status">{STATUS_TEXT[status]}</span>
           {hasRecord && <button className="text-button danger-text" onClick={() => setConfirmDelete(true)}>Delete note</button>}
+          {onClose && (!hasRecord && !draft.title.trim() && !draft.body.trim()
+            ? <button className="button" type="button" onClick={onClose} data-testid="note-cancel">Cancel</button>
+            : <button className="button" type="button" data-testid="note-done" onClick={() => {
+              void flush().then(() => { if (!dirty.current) onClose(); });
+            }}>Done</button>)}
         </div>
       </header>
 
@@ -302,6 +309,11 @@ export function NoteEditorPage() {
       id={id}
       start={{ courseId: params.get('course'), topicId: params.get('topic'), materialId: params.get('file') }}
       onDeleted={({ courseId }) => navigate(courseId ? `/courses/${courseId}` : '/notes', { replace: true })}
+      onClose={() => {
+        // Back to wherever the note was opened from; straight to Notes if it was opened directly.
+        if (window.history.state && window.history.state.idx > 0) navigate(-1);
+        else navigate('/notes', { replace: true });
+      }}
     />
   );
 }

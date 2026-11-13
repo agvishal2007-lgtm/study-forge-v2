@@ -241,6 +241,24 @@ test('phone layout keeps every destination with no sideways scrolling', async ()
   await page.setViewportSize({ width: 1280, height: 800 });
 });
 
+test('a note opened by accident can be cancelled, and Done saves and leaves', async () => {
+  await page.goto(`${URL_BASE}#/notes`);
+  await page.getByRole('button', { name: 'New note' }).waitFor();
+  await page.waitForTimeout(500);
+  const before = await page.locator('main a[href*="#/notes/"]').count();
+  await page.getByRole('button', { name: 'New note' }).click();
+  await page.getByTestId('note-cancel').click();
+  await page.getByRole('heading', { name: 'Notes', exact: true }).waitFor();
+  await page.waitForTimeout(500);
+  assert.equal(await page.locator('main a[href*="#/notes/"]').count(), before, 'cancelling saved nothing');
+  await page.getByRole('button', { name: 'New note' }).click();
+  await page.getByLabel('Title').fill('Quick thought');
+  assert.equal(await page.getByTestId('note-cancel').count(), 0, 'once something is typed, it offers Done instead');
+  await page.getByTestId('note-done').click();
+  await page.getByRole('heading', { name: 'Notes', exact: true }).waitFor();
+  await page.locator('main').getByRole('link', { name: /Quick thought/ }).first().waitFor();
+});
+
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });
