@@ -196,7 +196,7 @@ export function App() {
                 <Route path="/files/:id" element={<ViewerPage />} />
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/calendar/schedule" element={<SchedulePage />} />
-                <Route path="/calendar/google" element={<GoogleCalendarPage />} />
+                <Route path="/calendar/google" element={school.age === "under13" ? <div className="page"><h1>Local-only mode</h1><p>Google Calendar connections are unavailable for students under 13.</p><NavLink to="/calendar">Back to Calendar</NavLink></div> : <GoogleCalendarPage />} />
                 <Route path="/calendar/event/:id" element={<CalendarEventPage />} />
                 <Route path="/progress" element={<ProgressPage />} />
                 <Route path="/trash" element={<TrashPage />} />
