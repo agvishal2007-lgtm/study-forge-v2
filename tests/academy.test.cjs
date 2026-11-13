@@ -145,11 +145,11 @@ test('wrong answers get a helpful nudge, and choices need an explicit Submit wit
 test('every lesson can be finished by doing it, and progress is kept after reloading', async () => {
   const ids = await page.evaluate(async () => [...document.querySelectorAll('a')].length >= 0);
   await page.goto(`${URL_BASE}#/help`);
-  const links = await page.locator('.academy-lesson-list a').evaluateAll((all) => all.map((a) => a.getAttribute('href').split('/').pop()));
-  assert.equal(links.length, 40);
-  for (const id of links) {
+  const lessons = await page.locator('.academy-lesson-list a').evaluateAll((all) => all.map((a) => ({ id: a.getAttribute('href').split('/').pop(), title: a.textContent.trim() })));
+  assert.equal(lessons.length, 40);
+  for (const { id, title } of lessons) {
     await page.goto(`${URL_BASE}#/help/lessons/${id}`);
-    await card().getByRole('heading', { name: /What it is|Your turn/ }).waitFor();
+    await page.getByRole('heading', { name: title, level: 1 }).waitFor();
     if (await card().getByRole('button', { name: 'Show me where' }).count()) { await next('Show me where'); await next('Now you try'); }
     else if (await card().getByRole('button', { name: 'Try it' }).count()) await next('Try it');
     await doActivity(id);
