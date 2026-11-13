@@ -1879,3 +1879,20 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
 .school-setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .65rem; }
 .school-setup-panel input[type='checkbox'], .school-setup-panel input[type='radio'] { flex: none; }
 .school-setup-panel .session-actions { display: flex; flex-wrap: wrap; gap: .65rem; }
+
+
+/* A guided walkthrough focuses on existing course controls; first-use setup must not
+   push the highlighted Create Course control outside the viewport or cover it. */
+body.tour-active .school-setup-panel { display: none; }
+body.tour-active .school-setup:has(.school-setup-panel) { display: none; }
+
+/* Fieldset legends and flex labels may otherwise impose their intrinsic widths on phones. */
+.school-setup, .school-setup-panel, .school-setup-panel > *,
+.school-setup-panel fieldset, .school-setup-grid, .school-setup-ages { min-width: 0; max-width: 100%; }
+.school-setup-panel { width: 100%; overflow-wrap: anywhere; }
+.school-setup-panel fieldset { width: 100%; }
+.school-setup-panel fieldset legend { max-width: 100%; white-space: normal; }
+.school-setup-ages { display: block; }
+.school-setup-ages label { display: inline-flex; flex-wrap: wrap; margin: .25rem 1rem .25rem 0; }
+.school-setup-panel select { max-width: 100%; width: 100%; }
+.school-setup-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); }
