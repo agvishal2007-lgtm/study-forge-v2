@@ -219,7 +219,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/settings',
     target: ['[data-testid=permission-notifications]', '[data-testid=permissions]'],
     title: 'Permissions and notifications',
-    body: 'Study Forge asks for your microphone, camera or notifications only when you need them. Tap the Notifications status to turn them on. If they’re blocked, it shows the steps for your browser.',
+    body: 'Study Forge asks for your microphone, camera or notifications only when you need them. After the tour, tap the Notifications status to turn them on. If they’re blocked, it shows the steps for your browser.',
   },
   {
     id: 'search',

@@ -196,7 +196,7 @@ test('every step opens the real screen and puts a box around the real section', 
         // margin, and never empty. A row with one button in it gets a ring around the button.
         surrounds: box.width > 20 && box.height > 20 && box.left + box.width / 2 >= left && box.left + box.width / 2 <= right
           && box.top + box.height / 2 >= top - 2 && box.top + box.height / 2 <= bottom + 2,
-        close: box.top >= top - 12 && box.bottom <= bottom + 12 && box.left >= left - 12 && box.right <= right + 12,
+        close: box.top >= top - 16 && box.bottom <= bottom + 16 && box.left >= left - 16 && box.right <= right + 16,
         visible: bottom - top,
         debug: JSON.stringify({ box: [box.left, box.top, box.width, box.height], el: [left, top, right, bottom] }),
         cardOnScreen: c.top >= 0 && c.left >= 0 && c.bottom <= innerHeight && c.right <= innerWidth,
@@ -368,7 +368,7 @@ test('the ring fits the control it points at, in the control\'s own shape', asyn
     const button = document.querySelector('[data-tour=smart-add]').getBoundingClientRect();
     return { extraW: b.width - button.width, extraH: b.height - button.height, radius: parseFloat(box.style.borderRadius), height: b.height };
   });
-  assert.ok(plus.extraW <= 14 && plus.extraH <= 14, `the + ring is snug (${plus.extraW} by ${plus.extraH} px around it)`);
+  assert.ok(plus.extraW <= 18 && plus.extraH <= 18, `the + ring is snug (${plus.extraW} by ${plus.extraH} px around it)`);
   assert.ok(plus.radius >= plus.height / 2 - 1, 'a round button gets a round ring');
   assert.equal(await page.locator('#tour-title').textContent(), 'Create or Add Something');
   assert.match(await page.locator('#tour-body').textContent(), /^Use the \+ button to add study materials/);
@@ -379,7 +379,7 @@ test('the ring fits the control it points at, in the control\'s own shape', asyn
     const button = document.querySelector('[data-tour=add-planner] button').getBoundingClientRect();
     return { extraW: b.width - button.width };
   });
-  assert.ok(planner.extraW <= 14, 'a full-width row with one button gets a ring around the button, not the row');
+  assert.ok(planner.extraW <= 18, 'a full-width row with one button gets a ring around the button, not the row');
   await closeTour();
 });
 
@@ -461,7 +461,11 @@ test('during a hands-on step, only the highlighted part works', async () => {
   await page.getByLabel('Course name').fill('Biology');
   await page.getByRole('button', { name: 'Create course' }).click();
   await page.getByTestId('tour-done').waitFor();
-  assert.equal(await page.evaluate(() => document.getElementById('root').hasAttribute('inert')), true, 'everything is locked again');
+  // The highlighted form stays usable, but everything around it is still blocked.
+  const before = page.url();
+  await page.getByTestId('tour-blocker').click({ position: { x: 5, y: 5 }, force: true });
+  assert.equal(page.url(), before, 'a tap outside the highlighted part does nothing');
+  assert.equal(await card().getAttribute('data-step'), 'courses');
   await next();
   // Their work is real and stays.
   await closeTour();
@@ -481,6 +485,13 @@ test('work already done is not asked for again', async () => {
   await page.getByTestId('tour-done').waitFor();
   assert.equal(await page.getByTestId('tour-try').count(), 0);
   assert.equal(await card().getByRole('button', { name: 'Next', exact: true }).isDisabled(), false);
+  // The highlighted form still works: tap into it, type, and add another course, without leaving.
+  await page.getByLabel('Course name').click();
+  await page.keyboard.type('Second class');
+  assert.equal(await page.getByLabel('Course name').inputValue(), 'Second class');
+  await page.getByRole('button', { name: 'Create course' }).click();
+  await page.getByRole('heading', { name: 'Second class' }).waitFor();
+  assert.equal(await card().getAttribute('data-step'), 'courses', 'the walkthrough carries on from the same step');
   await closeTour();
 });
 
@@ -505,6 +516,50 @@ test('one tap on Create course always works, even if it lands on the dimmed area
     });
     assert.equal(courses, 1, 'exactly one course, no duplicates');
   }
+});
+
+test('on a phone with toolbars, a student with courses sees the whole Add a course form, Create course included', async () => {
+  await open('phone-has-courses', { auto: false, viewport: { width: 393, height: 700 }, mobile: true });
+  for (const name of ['Financial Accounting', 'Biology 101', 'History of Art']) {
+    await page.goto(`${URL_BASE}#/courses`);
+    await page.getByLabel('Course name').fill(name);
+    await page.getByRole('button', { name: 'Create course' }).click();
+    await page.getByRole('heading', { name }).waitFor();
+  }
+  await page.goto(URL_BASE);
+  await page.getByRole('button', { name: 'Help', exact: true }).click(); await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
+  for (let i = 1; i < numberOf('courses'); i++) await next();
+  await page.getByTestId('tour-done').waitFor();
+  await settle();
+  await page.waitForTimeout(700);
+  await settle();
+  const fit = await page.evaluate(() => {
+    const button = [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Create course').getBoundingClientRect();
+    const field = document.querySelector('input[placeholder="Financial Accounting"]').getBoundingClientRect();
+    const main = document.querySelector('main').getBoundingClientRect();
+    const cardBox = document.querySelector('[data-testid=tour-card]').getBoundingClientRect();
+    return { buttonBottom: button.bottom, mainBottom: main.bottom, fieldTop: field.top, cardTop: cardBox.top, cardBottom: cardBox.bottom };
+  });
+  assert.ok(fit.buttonBottom <= fit.mainBottom - 4, `Create course is above the bottom bar (${JSON.stringify(fit)})`);
+  assert.ok(fit.fieldTop >= fit.cardBottom || fit.buttonBottom <= fit.cardTop, `the explanation covers none of the form (${JSON.stringify(fit)})`);
+  // And it can be used straight away.
+  await page.getByLabel('Course name').click();
+  await page.keyboard.type('Chemistry');
+  await page.getByRole('button', { name: 'Create course' }).click();
+  await page.getByRole('heading', { name: 'Chemistry' }).waitFor();
+  await closeTour();
+});
+
+test('on a step that is only for looking, tapping the highlighted part says why nothing happened', async () => {
+  await open('look-only', { viewport: { width: 1280, height: 800 } });
+  for (let i = 1; i < numberOf('add'); i++) await next();
+  await settle();
+  const ring = await page.getByTestId('tour-box').boundingBox();
+  await page.mouse.click(ring.x + ring.width / 2, ring.y + ring.height / 2);
+  await page.getByTestId('tour-look').filter({ hasText: 'This step is just for looking' }).waitFor();
+  await press('Next');
+  assert.equal(await page.getByTestId('tour-look').count(), 0, 'the note goes away on the next step');
+  await closeTour();
 });
 
 test('no uncaught errors happened during the whole run', () => {

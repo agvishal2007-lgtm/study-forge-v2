@@ -89,8 +89,9 @@ function fittedRect(element: Element, depth = 0): { rect: DOMRect; radius: numbe
 /** The ring around the part: a small, even margin, the part's own shape, kept on screen. */
 function visibleBox(element: Element): Box {
   const { rect, radius } = fittedRect(element);
-  // Small controls get a snug ring; bigger areas get a little more room so the ring doesn't touch.
-  const pad = Math.min(rect.width, rect.height) <= 64 ? 6 : 8;
+  // Small controls get a close ring; bigger areas get more room, so nothing inside touches the ring.
+  // On a phone held sideways space is tight, so big areas keep the smaller margin there.
+  const pad = Math.min(rect.width, rect.height) <= 64 || window.innerHeight < 480 ? 8 : 14;
   let top = rect.top - pad;
   let left = rect.left - pad;
   let right = rect.right + pad;
@@ -204,8 +205,11 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
     };
   }, [definition]);
 
-  // Only the highlighted part can be used, and only while the student is trying it.
+  // Next waits until a hands-on step is done.
   const trying = !!definition.action && actionDone === false;
+  // The highlighted part of a hands-on step can always be used, even when it's already done (a
+  // student who has courses can still add another), so it never looks usable while it's locked.
+  const handsOn = !!definition.action;
 
   // Extra room under the page while the tour runs, so on a short screen even a part near the end
   // of a short page can scroll up and leave space for the explanation below it.
@@ -217,12 +221,15 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
   // Otherwise the rest of the app can't be clicked, tabbed to, or read out while this is open.
   useEffect(() => {
     const root = document.getElementById('root');
-    if (trying) root?.removeAttribute('inert');
+    if (handsOn) root?.removeAttribute('inert');
     else root?.setAttribute('inert', '');
     return () => root?.removeAttribute('inert');
-  }, [trying]);
+  }, [handsOn]);
 
   const trackedElement = useRef<Element | null>(null);
+  // On a step that's only for looking, a tap on the highlighted part explains why nothing happened.
+  const [lookOnly, setLookOnly] = useState(false);
+  useEffect(() => { setLookOnly(false); }, [step]);
 
   useEffect(() => {
     if (definition.route && definition.route !== pathname) navigate(definition.route);
@@ -258,6 +265,17 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
           // explanation has room under it instead of covering it.
           const short = window.innerHeight < 720;
           element.scrollIntoView({ block: tall || short ? 'start' : 'center', inline: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+          // Once the scroll has settled, make sure the bottom of the part (where its buttons usually
+          // are) isn't hidden under the bottom bar. Done once, so it never fights the student's scrolling.
+          const settleFor = element;
+          window.setTimeout(() => {
+            if (trackedElement.current !== settleFor || !panel) return;
+            const part = settleFor.getBoundingClientRect();
+            const area = panel.getBoundingClientRect();
+            const overflow = part.bottom + 18 - area.bottom;
+            // Not on a phone held sideways, where the explanation sits beside the part instead.
+            if (overflow > 0 && window.innerWidth <= window.innerHeight && part.height + 36 < area.height) panel.scrollBy({ top: overflow, behavior: reduce ? 'auto' : 'smooth' });
+          }, reduce ? 50 : 500);
         }
         const next = visibleBox(element);
         if (!sameBox(last, next)) {
@@ -328,7 +346,7 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
   }, [step, waiting, nextLocked]);
 
   const actionFinishedRef = useRef(true);
-  actionFinishedRef.current = !trying;
+  actionFinishedRef.current = !handsOn;
 
   // Keys work even if focus has landed nowhere, and Tab can't leave the walkthrough.
   useEffect(() => {
@@ -368,7 +386,7 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
    */
   const passThrough = (event: React.MouseEvent) => {
     const element = trackedElement.current;
-    if (!element || !trying) return;
+    if (!element || !handsOn) return;
     const { clientX: x, clientY: y } = event;
     const rect = element.getBoundingClientRect();
     if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return;
@@ -386,7 +404,7 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
   return createPortal(
     <div className="tour">
       {/* Catches every click outside the explanation. */}
-      {trying && ring ? (
+      {handsOn && ring ? (
         // Four walls around the box, so only the highlighted part can be used.
         <>
           <div className="tour-blocker" data-testid="tour-blocker" onClick={passThrough} style={{ bottom: `calc(100% - ${ring.top}px)` }} />
@@ -394,7 +412,13 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
           <div className="tour-blocker" onClick={passThrough} style={{ top: ring.top, height: ring.height, right: `calc(100% - ${ring.left}px)` }} />
           <div className="tour-blocker" onClick={passThrough} style={{ top: ring.top, height: ring.height, left: ring.left + ring.width }} />
         </>
-      ) : <div className="tour-blocker" data-testid="tour-blocker" />}
+      ) : (
+        <div className="tour-blocker" data-testid="tour-blocker" onClick={(event) => {
+          if (!ring) return;
+          const { clientX: x, clientY: y } = event;
+          if (x >= ring.left && x <= ring.left + ring.width && y >= ring.top && y <= ring.top + ring.height) setLookOnly(true);
+        }} />
+      )}
       {ring && !(definition.action && actionDone === true && !findTarget(definition.target))
         ? <div className="tour-box" data-testid="tour-box" style={{ top: ring.top, left: ring.left, width: ring.width, height: ring.height, borderRadius: Math.min(ring.radius, ring.height / 2) }} />
         : <div className="tour-dark" />}
@@ -409,6 +433,7 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
         data-step={definition.id}
         data-action-pending={nextLocked}
         data-trying={trying && !notFound}
+        data-hands-on={handsOn && !notFound}
         style={cardPosition ? { top: cardPosition.top, left: cardPosition.left, width: cardPosition.width } : { visibility: 'hidden', top: 0, left: 0 }}
       >
         <button className="tour-close" aria-label="Close walkthrough" title="Close walkthrough" onClick={onPause}>
@@ -425,6 +450,7 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
         <p id="tour-body">{definition.body}</p>
         {trying && !notFound && <p className="tour-try" data-testid="tour-try">{definition.action?.instruction}</p>}
         {definition.action && actionDone === true && <p className="tour-done" data-testid="tour-done" role="status">{definition.action.doneMessage}</p>}
+        {lookOnly && !handsOn && <p className="tour-look" data-testid="tour-look" role="status">This step is just for looking. Press Next to keep going; you can use it once the tour is over.</p>}
         {notFound && !(definition.action && actionDone === true) && <p className="muted" data-testid="tour-missing">This part isn't on the screen right now, so there's nothing to highlight. You can keep going.</p>}
         </div>
         <div className="tour-actions">
