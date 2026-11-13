@@ -23,31 +23,33 @@ export interface TrashEntry {
   courseId: string | null;
   deletedAt: number;
   /** Everything that was taken out, in the order to put it back. */
-  records: { store: Store; value: Record<string, unknown> & { id: string } }[];
+  records: { store: Store; key: string; value: Record<string, unknown> }[];
 }
 
 const PREFIX = 'trash-';
 type Tx = ReturnType<Awaited<ReturnType<typeof getDb>>['transaction']>;
 
 async function gather(tx: Tx, kind: TrashKind, id: string): Promise<TrashEntry['records']> {
+  // Progress records are filed under the card or step they belong to, so each record keeps its own key.
+  const keyOf = (store: Store, value: Record<string, unknown>) => String(value[tx.objectStore(store as never).keyPath as string]);
   const one = async (store: Store, key: string) => {
-    const value = await tx.objectStore(store as never).get(key as never);
-    return value ? [{ store, value: value as TrashEntry['records'][number]['value'] }] : [];
+    const value = (await tx.objectStore(store as never).get(key as never)) as Record<string, unknown> | undefined;
+    return value ? [{ store, key: keyOf(store, value), value }] : [];
   };
   const children = async (store: Store, index: string, parent: string) =>
-    ((await tx.objectStore(store as never).index(index as never).getAll(parent as never)) as TrashEntry['records'][number]['value'][]).map((value) => ({ store, value }));
+    ((await tx.objectStore(store as never).index(index as never).getAll(parent as never)) as Record<string, unknown>[]).map((value) => ({ store, key: keyOf(store, value), value }));
   if (kind === 'note') return one('notes', id);
   if (kind === 'plannerItem') return one('plannerItems', id);
   if (kind === 'deck') {
     const cards = await children('cards', 'deckId', id);
-    const progress = (await Promise.all(cards.map((card) => one('cardProgress', card.value.id)))).flat();
+    const progress = (await Promise.all(cards.map((card) => one('cardProgress', card.key)))).flat();
     return [...(await one('decks', id)), ...cards, ...progress];
   }
   if (kind === 'practiceSet') {
     return [...(await one('practiceSets', id)), ...(await children('practiceQuestions', 'setId', id)), ...(await children('practiceAttempts', 'setId', id))];
   }
   const checkpoints = await children('checkpoints', 'lessonId', id);
-  const progress = (await Promise.all(checkpoints.map((checkpoint) => one('checkpointProgress', checkpoint.value.id)))).flat();
+  const progress = (await Promise.all(checkpoints.map((checkpoint) => one('checkpointProgress', checkpoint.key)))).flat();
   return [...(await one('lessons', id)), ...checkpoints, ...progress];
 }
 
@@ -72,7 +74,7 @@ export async function moveToTrash(kind: TrashKind, id: string): Promise<void> {
     records,
   };
   await tx.objectStore('studyState' as never).put({ id: entry.id, value: entry, updatedAt: entry.deletedAt } as never);
-  for (const { store, value } of [...records].reverse()) await tx.objectStore(store as never).delete(value.id as never);
+  for (const { store, key } of [...records].reverse()) await tx.objectStore(store as never).delete(key as never);
   await tx.done;
   notifyChanged();
 }
@@ -97,9 +99,9 @@ export async function restoreFromTrash(entryId: string): Promise<string> {
   if (!record) { await tx.done; return 'It was already restored or deleted.'; }
   const entry = record.value;
   let courseGone = false;
-  for (const { store, value } of entry.records) {
-    if (await tx.objectStore(store as never).get(value.id as never)) continue;
-    const next: Record<string, unknown> = { ...value, updatedAt: Math.max(Date.now(), Number(value.updatedAt ?? 0) + 1) };
+  for (const { store, key, value } of entry.records) {
+    if (await tx.objectStore(store as never).get(key as never)) continue;
+    const next: Record<string, unknown> = 'updatedAt' in value ? { ...value, updatedAt: Math.max(Date.now(), Number(value.updatedAt ?? 0) + 1) } : { ...value };
     if (typeof next.courseId === 'string' && !(await tx.objectStore('courses' as never).get(next.courseId as never))) {
       next.courseId = null;
       if ('topicId' in next) next.topicId = null;
@@ -110,7 +112,7 @@ export async function restoreFromTrash(entryId: string): Promise<string> {
     await tx.objectStore(store as never).put(next as never);
   }
   // A calendar item removed earlier is no longer kept away from the next calendar update.
-  if (entry.kind === 'plannerItem') await tx.objectStore('calendarEvents' as never).delete(`removed-${entry.records[0].value.id}` as never);
+  if (entry.kind === 'plannerItem') await tx.objectStore('calendarEvents' as never).delete(`removed-${entry.records[0].key}` as never);
   await tx.objectStore('studyState' as never).delete(entryId as never);
   await tx.done;
   notifyChanged();
