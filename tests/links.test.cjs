@@ -85,7 +85,7 @@ const saveLink = async (url, name) => {
   await page.getByTestId('save-link').getByLabel('Web address').fill(url);
   if (name) await page.getByTestId('save-link').getByLabel('Name it (optional)').fill(name);
   await page.getByRole('button', { name: 'Save link' }).click();
-  await page.getByRole('status').waitFor();
+  await page.getByRole('status').filter({ hasText: /^Saved / }).first().waitFor();
 };
 
 test('a research link is saved and listed as a link', async () => {
