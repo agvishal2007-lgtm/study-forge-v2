@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSchoolProfile } from '../data/schoolProfile';
 import { getActiveAccount } from '../data/account';
 import { CLOUD_LABEL, CloudError, cloudSources, pickFromCloud, prepareCloud, type CloudSource } from '../data/cloudImport';
 import { useSaveQueue } from './SaveQueue';
 
 /** Choose or drag files, or pick them from another service. Saving keeps running while the student moves between screens. */
 export function AddFiles({ courseId = null, topicId = null }: { courseId?: string | null; topicId?: string | null }) {
+  useSchoolProfile(); // Recalculate available cloud sources when child mode changes.
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState<CloudSource | null>(null);
