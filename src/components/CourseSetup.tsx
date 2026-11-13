@@ -51,7 +51,7 @@ export function CourseSetup({ hasCourses }: { hasCourses: boolean }) {
             <label><input type="radio" checked={age === '13plus'} onChange={() => setAge('13plus')} /> 13 or older</label>
             <label><input type="radio" checked={age === 'under13'} onChange={() => setAge('under13')} /> Under 13</label>
           </fieldset>
-          {age === 'under13' && <p className="notice" role="note">Under-13 mode is intended for use on this device without an account. Sign-in and cloud features are restricted. This is not a substitute for a complete child-privacy review.</p>}
+          {age === 'under13' && <p className="notice" role="note">Under-13 mode keeps study work on this device and blocks account sign-in and cloud integrations. This mode is undergoing a child-privacy review and is not yet certified for children's use.</p>}
           <fieldset className="school-setup-subjects">
             <legend>Starting subjects (optional)</legend>
             <div className="school-setup-grid">
