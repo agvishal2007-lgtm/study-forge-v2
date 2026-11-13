@@ -1783,3 +1783,61 @@ form label + label, .form-row { margin-top: .25rem; }
 .trash-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; padding: .9rem 0; border-bottom: 1px solid var(--line); margin: 0; }
 .trash-what { display: grid; gap: .2rem; min-width: 0; }
 .trash-name { overflow-wrap: anywhere; }
+
+/* Academy: module cards, lessons in short parts, and practice screens. */
+.academy-overall { max-width: 28rem; margin: 1rem 0 1.75rem; }
+.academy-modules { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); gap: 1.25rem; }
+.page .academy-module { margin: 0; padding: 1.35rem 1.4rem; border: 1px solid var(--line); border-radius: 16px; background: var(--raised); display: flex; flex-direction: column; gap: .5rem; }
+.academy-module h2 { margin: 0; font-size: var(--fs-h3card); }
+.academy-module p { margin: 0; }
+.academy-module .button { align-self: flex-start; margin-top: .5rem; }
+.academy-module-head { display: flex; align-items: center; gap: .75rem; }
+.academy-icon { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 12px; background: var(--accent-soft); color: var(--accent); flex: none; }
+.academy-icon svg { width: 22px; height: 22px; }
+.academy-lesson-list { margin: .35rem 0 0; padding-left: 1.2rem; display: grid; gap: .35rem; }
+.academy-tick { color: var(--accent); font-weight: 700; }
+.academy-more { margin-top: 2rem; }
+.lesson-parts { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; padding: 0; margin: .75rem 0 1.25rem; }
+.lesson-parts li { padding: .3rem .75rem; border-radius: 999px; border: 1px solid var(--line); font-size: var(--fs-sm); color: var(--muted); }
+.lesson-parts li.current { border-color: var(--accent); color: var(--paper); font-weight: 650; background: var(--accent-soft); }
+.lesson-parts li.past { color: var(--paper); }
+.lesson-parts li.past::before { content: '✓ '; color: var(--accent); }
+.page .lesson-card { margin: 0; max-width: 46rem; padding: 1.5rem; border: 1px solid var(--line); border-radius: 16px; background: var(--raised); display: grid; gap: 1rem; }
+.lesson-card h2 { margin: 0; font-size: var(--fs-h3card); }
+.lesson-card h2:focus { outline: none; }
+.lesson-card .button { justify-self: start; }
+.lesson-lead { font-size: var(--fs-lg); margin: 0; }
+.lesson-nav { margin-top: 1rem; }
+.academy-task { font-weight: 600; margin: 0 0 .75rem; }
+.academy-feedback { margin: .75rem 0 0; padding: .7rem .9rem; border-radius: 10px; border: 1px solid var(--line); }
+.academy-feedback.good { border-color: var(--accent); background: var(--accent-soft); }
+.academy-feedback.try { background: var(--ground); }
+.academy-choice { border: 0; padding: 0; margin: 0 0 .75rem; display: grid; gap: .5rem; }
+.academy-choice legend { font-weight: 600; margin-bottom: .5rem; }
+.academy-sandbox { margin: .75rem 0 0; padding-left: 1.2rem; }
+.academy-sandbox-card { border: 1px dashed var(--line-strong, var(--line)); border-radius: 12px; padding: 1rem 1.1rem; display: grid; gap: .6rem; background: var(--ground); }
+.academy-sandbox-card ul, .academy-sandbox-card ol { margin: 0; }
+.academy-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 1rem; }
+.academy-confirm { border: 1px solid var(--line); border-radius: 10px; padding: .75rem; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.academy-confirm p { margin: 0; flex-basis: 100%; }
+.academy-flashcard { min-height: 6rem; display: grid; place-items: center; text-align: center; padding: 1rem; border: 1px solid var(--line); border-radius: 14px; font-size: var(--fs-xl); background: var(--ground); margin-bottom: .75rem; }
+.academy-card-form { display: grid; gap: .6rem; }
+.mock-app { display: grid; grid-template-columns: minmax(6.5rem, 9rem) 1fr; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--ground); font-size: var(--fs-sm); }
+.mock-nav { display: grid; align-content: start; gap: .15rem; padding: .5rem; background: var(--raised); border-right: 1px solid var(--line); }
+.mock-body { padding: .6rem .8rem 1rem; display: grid; gap: .6rem; align-content: start; min-width: 0; }
+.mock-top { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .35rem; }
+.mock-title { margin: 0; font-weight: 700; font-size: var(--fs-lg); }
+.mock-buttons { display: flex; flex-wrap: wrap; gap: .5rem; }
+.mock-nav-item, .mock-top-item, .mock-button { display: inline-flex; align-items: center; min-height: 40px; padding: .35rem .65rem; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--paper); font: inherit; text-align: left; }
+.mock-button, .mock-top-item { border-color: var(--line); background: var(--raised); }
+.mock-nav-item.current { background: var(--ground); font-weight: 650; }
+button.mock-nav-item, button.mock-top-item, button.mock-button { cursor: pointer; }
+button.mock-nav-item:hover, button.mock-top-item:hover, button.mock-button:hover { border-color: var(--accent); }
+.mock-app .lit { outline: 3px solid var(--accent); outline-offset: 2px; }
+.mock-app .picked { border-color: var(--accent); }
+@media (max-width: 520px) {
+  .mock-app { grid-template-columns: 1fr; }
+  .mock-nav { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+}
+@media (prefers-reduced-motion: no-preference) { .academy-feedback { animation: academy-in .2s ease-out; } }
+@keyframes academy-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }

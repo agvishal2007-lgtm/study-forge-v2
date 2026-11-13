@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useWalkthrough } from '../walkthrough/Walkthrough';
 import { ACADEMY, type AcademyTopic } from './academyContent';
 
@@ -8,16 +8,20 @@ const matches = (topic: AcademyTopic, words: string[]) => {
   return words.every((word) => text.includes(word));
 };
 
-/** Study Forge Academy: the detailed guide. The walkthrough is the short tour. */
-export function AcademyPage() {
+/** The Academy's reference guide: the full details behind each lesson, searchable. Lessons are the main way to learn. */
+export function AcademyGuide() {
   const { start } = useWalkthrough();
   const [query, setQuery] = useState('');
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   const shown = useMemo(() => (words.length ? ACADEMY.filter((topic) => matches(topic, words)) : ACADEMY), [query]);
+  // A lesson's "Learn more" opens the guide at its section.
+  const wanted = new URLSearchParams(useLocation().search).get('topic');
+  useEffect(() => { if (wanted) document.getElementById(`academy-${wanted}`)?.scrollIntoView({ block: 'start' }); }, [wanted]);
   return (
     <div className="page academy" data-testid="academy">
-      <h1>Study Forge Academy</h1>
-      <p className="muted">How every part of Study Forge works: what it does, why it helps, where to find it, how to use it, and its limits. Everything here is live and tested.</p>
+      <p className="small"><Link to="/help">← Academy lessons</Link></p>
+      <h1>Academy reference guide</h1>
+      <p className="muted">The full details behind the lessons: what each part does, why it helps, where to find it, how to use it, and its limits. Everything here is live and tested.</p>
       <div className="academy-tools">
         <button type="button" className="button" onClick={start}>Take the short walkthrough</button>
         <label className="search academy-search">Search the Academy
@@ -25,7 +29,7 @@ export function AcademyPage() {
         </label>
       </div>
       <nav aria-label="Academy topics" className="academy-toc">
-        <ul>{shown.map((topic) => <li key={topic.id}><a href={`#/help`} onClick={(event) => { event.preventDefault(); document.getElementById(`academy-${topic.id}`)?.scrollIntoView({ block: 'start' }); }}>{topic.title}</a></li>)}</ul>
+        <ul>{shown.map((topic) => <li key={topic.id}><a href={`#/help/guide`} onClick={(event) => { event.preventDefault(); document.getElementById(`academy-${topic.id}`)?.scrollIntoView({ block: 'start' }); }}>{topic.title}</a></li>)}</ul>
       </nav>
       {shown.length === 0 && <p className="muted" role="status">Nothing in the Academy matches that. Try another word.</p>}
       {shown.map((topic) => (

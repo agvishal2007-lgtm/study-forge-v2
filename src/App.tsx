@@ -6,7 +6,9 @@ import { NAV_ICONS } from './components/NavIcons';
 import { WalkthroughProvider } from './features/walkthrough/Walkthrough';
 import { CalculatorProvider } from './components/calculator/CalculatorWindow';
 import { TermsPage } from './features/TermsPage';
-import { AcademyPage } from './features/academy/AcademyPage';
+import { AcademyHome } from './features/academy/AcademyHome';
+import { AcademyGuide } from './features/academy/AcademyGuide';
+import { LessonPage as AcademyLesson } from './features/academy/LessonPage';
 import { SemesterPage } from './features/SemesterPage';
 import { AgreementPage } from './features/AgreementPage';
 import { agreedNow, subscribeAgreement } from './data/agreement';
@@ -201,8 +203,10 @@ export function App() {
                 <Route path="/cards/:id" element={<DeckPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
-                <Route path="/help" element={<AcademyPage />} />
-                <Route path="/academy" element={<AcademyPage />} />
+                <Route path="/help" element={<AcademyHome />} />
+                <Route path="/academy" element={<AcademyHome />} />
+                <Route path="/help/lessons/:id" element={<AcademyLesson />} />
+                <Route path="/help/guide" element={<AcademyGuide />} />
                 <Route path="/practice" element={<PracticePage />} />
                 <Route path="/practice/session" element={<PracticeSessionPage />} />
                 <Route path="/practice/:id" element={<PracticeSetPage />} />

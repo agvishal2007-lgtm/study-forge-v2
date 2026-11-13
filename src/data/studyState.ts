@@ -5,7 +5,7 @@ import { getDb, notifyChanged } from './db';
  * later. Each is one small record that syncs, so a session started on a laptop can be finished on
  * a phone. Removing one is a deletion that syncs too.
  */
-export type StudyStateId = 'practiceSession' | 'reviewSession' | 'practiceSaved' | `reading-${string}` | `book-${string}`;
+export type StudyStateId = 'practiceSession' | 'reviewSession' | 'practiceSaved' | 'academyProgress' | `reading-${string}` | `book-${string}`;
 
 export async function readStudyState<T>(id: StudyStateId): Promise<T | undefined> {
   const record = await (await getDb()).get('studyState', id);

@@ -516,6 +516,9 @@ test('Study Forge Academy explains every feature in the same order of questions,
   await page.goto(`${URL_BASE}#/settings`);
   await page.getByRole('link', { name: 'Study Forge Academy' }).click();
   await page.getByRole('heading', { name: 'Study Forge Academy', level: 1 }).waitFor();
+  // Lessons come first; the full details are one tap away in the reference guide.
+  await page.getByRole('link', { name: 'Open the reference guide' }).click();
+  await page.getByRole('heading', { name: 'Academy reference guide', level: 1 }).waitFor();
   const topics = page.locator('.academy-topic');
   assert.ok(await topics.count() >= 15, 'every major feature has a section');
   for (const title of ['Getting started', 'Research links, portals and online textbooks', 'Files and reading them inside Study Forge', 'Study Forge Calendar', 'Assignments, grades and priorities', 'The calculator', 'Adding, organizing, Undo and Trash', 'Permissions and notifications']) {
@@ -535,6 +538,7 @@ test('Study Forge Academy explains every feature in the same order of questions,
   await page.getByLabel('Search the Academy').fill('zzzz nothing');
   await page.getByText('Nothing in the Academy matches that').waitFor();
   await page.getByLabel('Search the Academy').fill('');
+  await page.getByRole('link', { name: '← Academy lessons' }).click();
   await page.getByRole('button', { name: 'Take the short walkthrough' }).click();
   await card().waitFor();
   await closeTour();
