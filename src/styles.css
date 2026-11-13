@@ -1706,3 +1706,5 @@ main :where(*) { scroll-margin-top: 14px; }
 .suggestion-list { display: grid; gap: .5rem; margin: .5rem 0; }
 .suggestion-row { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; }
 .suggestion-why { display: block; }
+.link-kind { display: inline-flex; align-items: center; gap: .4rem; font-size: .9rem; }
+.link-kind select { width: auto; }

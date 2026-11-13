@@ -70,7 +70,7 @@ export const ACADEMY: AcademyTopic[] = [
       'Open Save a link instead and paste the address.',
       'Give it a name, choose the course and topic, and save. Study Forge suggests a category (research, portal, video, reference and so on).',
       'Open it any time from the Library or the course. It opens in a new tab.',
-      'For an online textbook, open its page in Study Forge and use Your place in this book. Type where you are (like “Chapter 4, 4.2, page 112”), save spots such as “Homework 5” with an optional direct address, and link it to assignments under Related assignments.',
+      'For an online textbook, open its page in Study Forge and use Your place in this book. Type where you are (like “Chapter 4, 4.2, page 112”), save spots such as “Homework 5” with an optional direct address, and link it to assignments under Related assignments. If a site isn’t recognised, set Kind to Online textbook on the link’s page.',
     ],
     result: 'The link is listed with your files, searchable by its name.',
     limits: [

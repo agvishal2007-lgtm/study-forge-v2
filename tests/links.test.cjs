@@ -31,7 +31,7 @@ test('a link is sorted by what it points at', async () => {
   assert.equal(categorize('https://pubmed.ncbi.nlm.nih.gov/123'), 'research');
   assert.equal(categorize('https://en.wikipedia.org/wiki/Accounting'), 'reference');
   assert.equal(categorize('https://example.com/thing'), 'other');
-  for (const book of ['https://connect.mheducation.com/class/x', 'https://mlm.pearson.com/home', 'https://www.webassign.net/web/Student', 'https://ng.cengage.com/static/nb/ui/evo/index.html', 'https://bookshelf.vitalsource.com/books/123', 'https://www.wileyplus.com/', 'https://education.wiley.com/', 'https://openstax.org/books/biology-2e/pages/1-introduction']) {
+  for (const book of ['https://connect.mheducation.com/class/x', 'https://mlm.pearson.com/home', 'https://www.webassign.net/web/Student', 'https://ng.cengage.com/static/nb/ui/evo/index.html', 'https://bookshelf.vitalsource.com/books/123', 'https://www.wileyplus.com/', 'https://education.wiley.com/', 'https://openstax.org/books/biology-2e/pages/1-introduction', 'https://www.cengagenow.com/ilrn/', 'https://www.aplia.com/']) {
     assert.equal(categorize(book), 'textbook', book);
   }
   assert.equal(categorize('https://onlinelibrary.wiley.com/doi/1'), 'research', 'Wiley research papers are still research');
@@ -184,6 +184,19 @@ test('an online textbook link keeps your place and saved spots, without ever see
   await page.getByTestId('online-book').getByTestId('book-spot').filter({ hasText: 'Chapter 5, problems 1–20' }).waitFor();
   await page.getByTestId('related-assignments').waitFor();
   assert.equal(await page.locator('iframe').count(), 0, 'the paid site is never framed inside Study Forge');
+});
+
+test('any link can be changed to an online textbook on its page, and gets the book tools', async () => {
+  await saveLink('https://homework.myschoolbooks.example.edu/acct101', 'Accounting homework site');
+  await page.goto(`${URL_BASE}#/library`);
+  await page.getByRole('link', { name: 'Accounting homework site' }).click();
+  await page.getByTestId('link-notice').waitFor();
+  assert.equal(await page.getByTestId('online-book').count(), 0);
+  await page.getByLabel('Kind').selectOption({ label: 'Online textbook' });
+  await page.getByTestId('online-book').waitFor();
+  await page.reload();
+  await page.getByTestId('online-book').waitFor();
+  assert.equal(await page.getByLabel('Kind').inputValue(), 'textbook');
 });
 
 test('no uncaught errors happened during the whole run', () => {

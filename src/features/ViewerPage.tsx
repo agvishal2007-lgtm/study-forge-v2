@@ -14,8 +14,8 @@ import { RelatedAssignments } from '../components/RelatedWork';
 import { OnlineBookTools } from '../components/OnlineBookTools';
 import { formatBytes, KIND_LABEL, kindOf, olderOfficeAdvice } from '../data/format';
 import { Breadcrumbs } from '../components/Breadcrumbs';
-import { LINK_CATEGORY_LABEL, siteOf } from '../data/linkRules';
-import { addResourceLink, fileMaterial, getCourse, getMaterial, listAllCourses, listResourceLinks, listTopics, removeResourceLink, setMaterialStatus, setPinned } from '../data/store';
+import { categorize, LINK_CATEGORIES, LINK_CATEGORY_LABEL, siteOf, type LinkCategory } from '../data/linkRules';
+import { addResourceLink, fileMaterial, getCourse, getMaterial, listAllCourses, listResourceLinks, listTopics, removeResourceLink, setMaterialStatus, setPinned, updateLink } from '../data/store';
 import type { Material } from '../data/types';
 import { TranscriptPanel } from './TranscriptPanel';
 import { useLive } from '../data/useLive';
@@ -254,6 +254,11 @@ export default function ViewerPage() {
           <div>
             <h1>{material.name}</h1>
             <p className="muted">{LINK_CATEGORY_LABEL[material.category]}{siteOf(material.url) && ` · ${siteOf(material.url)}`}</p>
+            <label className="link-kind">Kind
+              <select value={material.category} onChange={(event) => { void updateLink(material.id, { category: event.target.value as LinkCategory }).catch((error: Error) => setFailure(`That wasn't saved. ${error.message}`)); }}>
+                {LINK_CATEGORIES.map((option) => <option key={option} value={option}>{LINK_CATEGORY_LABEL[option]}</option>)}
+              </select>
+            </label>
           </div>
           <div className="row-actions">
             <a className="button" href={material.url} target="_blank" rel="noopener noreferrer">Open in a new tab</a>
@@ -267,7 +272,7 @@ export default function ViewerPage() {
           original.
         </p>
         <p className="link-address"><a href={material.url} target="_blank" rel="noopener noreferrer">{material.url}</a></p>
-        {material.category === 'textbook' && <OnlineBookTools materialId={material.id} url={material.url} />}
+        {(material.category === 'textbook' || (material.category === 'other' && categorize(material.url) === 'textbook')) && <OnlineBookTools materialId={material.id} url={material.url} />}
         <Filing material={material} />
         <section className="file-notes" aria-labelledby="file-notes-heading">
           <h2 id="file-notes-heading">Notes on this link</h2>
