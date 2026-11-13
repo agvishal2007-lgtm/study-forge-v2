@@ -562,6 +562,32 @@ test('on a step that is only for looking, tapping the highlighted part says why 
   await closeTour();
 });
 
+test('on an iPhone, the outline never touches what it surrounds, and it stays lined up while scrolling', async () => {
+  await open('iphone-ring', { viewport: { width: 393, height: 700 }, mobile: true });
+  const room = async (selector) => page.evaluate((sel) => {
+    const ring = document.querySelector('[data-testid=tour-box]').getBoundingClientRect();
+    const part = document.querySelector(sel).getBoundingClientRect();
+    const border = 3;
+    return Math.min(part.top - (ring.top + border), (ring.bottom - border) - part.bottom, part.left - (ring.left + border), (ring.right - border) - part.right);
+  }, selector);
+  for (let i = 1; i < numberOf('add'); i++) await next();
+  await settle();
+  assert.ok(await room('[data-tour="smart-add"]') >= 3, 'room all around the + button');
+  await next();
+  await settle();
+  assert.ok(await room('[data-tour="account"]') >= 3, 'room all around the account button');
+  // Scrolling the page: the outline moves with the part in the same frame, never trailing behind.
+  for (let i = numberOf('account'); i < numberOf('courses'); i++) await next();
+  await settle();
+  // Compared at the bottom edge, since the top of the part may scroll out of view on purpose.
+  const before = await page.evaluate(() => document.querySelector('[data-testid=tour-box]').getBoundingClientRect().bottom - document.querySelector('[data-tour="add-course"]').getBoundingClientRect().bottom);
+  await page.evaluate(() => { document.querySelector('main').scrollBy(0, 120); });
+  await page.waitForTimeout(80);
+  const after = await page.evaluate(() => document.querySelector('[data-testid=tour-box]').getBoundingClientRect().bottom - document.querySelector('[data-tour="add-course"]').getBoundingClientRect().bottom);
+  assert.ok(Math.abs(after - before) <= 2, `the outline kept its place on the part (${before} then ${after})`);
+  await closeTour();
+});
+
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });

@@ -1850,3 +1850,9 @@ button.mock-nav-item:hover, button.mock-top-item:hover, button.mock-button:hover
   .tour-card[data-hands-on='true'][data-trying='false'] { padding: .8rem 1rem; }
 }
 .tour-look { margin-top: .75rem !important; padding: .6rem .85rem; border-radius: 14px; background: var(--ground); border: 1px solid var(--line); }
+
+/* Walkthrough outline audit (13 Nov): the ring moves with the page instantly, so it never trails
+   behind while scrolling, and the top bar gets room above and below its buttons so a ring around
+   the + button or the account picture never sits on them. */
+.tour-box { transition: none !important; }
+body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-right: max(16px, env(safe-area-inset-right)); }

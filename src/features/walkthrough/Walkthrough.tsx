@@ -86,31 +86,68 @@ function fittedRect(element: Element, depth = 0): { rect: DOMRect; radius: numbe
   return { rect: new DOMRect(left, top, right - left, bottom - top), radius: fitted.length === 1 ? fitted[0].radius : 12 };
 }
 
-/** The ring around the part: a small, even margin, the part's own shape, kept on screen. */
-function visibleBox(element: Element): Box {
-  const { rect, radius } = fittedRect(element);
-  // Small controls get a close ring; bigger areas get more room, so nothing inside touches the ring.
-  // On a phone held sideways space is tight, so big areas keep the smaller margin there.
-  const pad = Math.min(rect.width, rect.height) <= 64 || window.innerHeight < 480 ? 8 : 14;
-  let top = rect.top - pad;
-  let left = rect.left - pad;
-  let right = rect.right + pad;
-  let bottom = rect.bottom + pad;
-  const panel = element.closest('main');
-  if (panel) {
-    const limit = panel.getBoundingClientRect();
-    top = Math.max(top, limit.top);
-    left = Math.max(left, limit.left);
-    right = Math.min(right, limit.right);
-    bottom = Math.min(bottom, limit.bottom);
+/** Pictures and icons can stick out past the button they sit in, so the ring takes them in too. */
+function withOverflow(element: Element, rect: DOMRect): DOMRect {
+  let { left, top, right, bottom } = rect;
+  for (const child of element.querySelectorAll('img, svg, video, canvas')) {
+    const box = child.getBoundingClientRect();
+    if (box.width === 0 || box.height === 0 || getComputedStyle(child).visibility === 'hidden') continue;
+    left = Math.min(left, box.left); top = Math.min(top, box.top); right = Math.max(right, box.right); bottom = Math.max(bottom, box.bottom);
   }
-  top = Math.max(top, 3);
-  left = Math.max(left, 3);
-  right = Math.min(right, window.innerWidth - 3);
-  bottom = Math.min(bottom, window.innerHeight - 3);
+  return new DOMRect(left, top, right - left, bottom - top);
+}
+
+/** What's inside a part, ignoring its own background, for a part that runs right to the screen's edge. */
+function contentRect(element: Element): DOMRect | null {
+  const parts = [...element.children].filter((child) => child.getClientRects().length > 0 && getComputedStyle(child).visibility !== 'hidden');
+  if (parts.length === 0) return null;
+  const rects = parts.map((child) => withOverflow(child, fittedRect(child, 1).rect));
+  const left = Math.min(...rects.map((r) => r.left));
+  const top = Math.min(...rects.map((r) => r.top));
+  const right = Math.max(...rects.map((r) => r.right));
+  const bottom = Math.max(...rects.map((r) => r.bottom));
+  return new DOMRect(left, top, right - left, bottom - top);
+}
+
+/**
+ * The ring around the part: an even margin, the part's own shape, kept on screen. Near an edge of
+ * the screen the margin on that side shrinks to the room there is, instead of the ring being pushed
+ * onto the part, so it never cuts through a picture or a label.
+ */
+function visibleBox(element: Element): Box {
+  const fitted = fittedRect(element);
+  const radius = fitted.radius;
+  let rect = withOverflow(element, fitted.rect);
+  const screenW = window.innerWidth;
+  const screenH = window.innerHeight;
+  const EDGE = 3;
+  // A bar that runs to the edge of the screen (the bottom menu on a phone) is ringed around what's in it.
+  const touches = rect.top < EDGE + 2 || rect.left < EDGE + 2 || rect.right > screenW - EDGE - 2 || rect.bottom > screenH - EDGE - 2;
+  if (touches) {
+    const inner = contentRect(element);
+    if (inner && inner.width > 0 && inner.height > 0) rect = inner;
+  }
+  // Small controls get a close ring; bigger areas get more room. On a phone held sideways space is
+  // tight, so big areas keep the smaller margin there.
+  const pad = Math.min(rect.width, rect.height) <= 64 || screenH < 480 ? 8 : 14;
+  const panel = element.closest('main');
+  const limit = panel ? panel.getBoundingClientRect() : null;
+  const minTop = Math.max(EDGE, limit && rect.top >= limit.top ? limit.top : EDGE);
+  const maxBottom = Math.min(screenH - EDGE, limit && rect.bottom <= limit.bottom ? limit.bottom : screenH - EDGE);
+  // Each side gets the margin it has room for.
+  let top = Math.max(rect.top - pad, minTop);
+  let bottom = Math.min(rect.bottom + pad, maxBottom);
+  let left = Math.max(rect.left - pad, EDGE);
+  let right = Math.min(rect.right + pad, screenW - EDGE);
+  // A part that's partly scrolled out of its panel is ringed only where it shows.
+  if (limit) {
+    top = Math.max(top, Math.min(limit.top, rect.bottom));
+    bottom = Math.min(bottom, Math.max(limit.bottom, rect.top));
+  }
   const width = Math.max(0, right - left);
   const height = Math.max(0, bottom - top);
-  return { top, left, width, height, radius: Math.min(radius + pad, height / 2, width / 2) };
+  const smallest = Math.min(rect.top - top, bottom - rect.bottom, rect.left - left, right - rect.right, pad);
+  return { top, left, width, height, radius: Math.min(radius + Math.max(0, smallest), height / 2, width / 2) };
 }
 
 const sameBox = (a: Box | null, b: Box | null) =>
