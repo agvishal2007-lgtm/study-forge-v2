@@ -1865,3 +1865,17 @@ button.mock-nav-item:hover, button.mock-top-item:hover, button.mock-button:hover
    the + button or the account picture never sits on them. */
 .tour-box { transition: none !important; }
 body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-right: max(16px, env(safe-area-inset-right)); }
+
+
+/* Optional Courses first-run setup; stays within the page and never blocks navigation. */
+.school-setup { margin: 1rem 0 1.5rem; }
+.school-setup-panel { border: 1px solid var(--line); border-radius: 1rem; background: var(--raised); padding: clamp(1rem, 2vw, 1.75rem); display: grid; gap: 1rem; }
+.school-setup-panel > p { max-width: 75ch; }
+.school-setup-panel label { display: flex; align-items: center; gap: .5rem; }
+.school-setup-panel > label { display: grid; gap: .35rem; max-width: 22rem; }
+.school-setup-panel fieldset { border: 1px solid var(--line); border-radius: .75rem; padding: .8rem 1rem; min-width: 0; }
+.school-setup-panel legend { font-weight: 600; padding: 0 .3rem; }
+.school-setup-ages { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; }
+.school-setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .65rem; }
+.school-setup-panel input[type='checkbox'], .school-setup-panel input[type='radio'] { flex: none; }
+.school-setup-panel .session-actions { display: flex; flex-wrap: wrap; gap: .65rem; }
