@@ -253,9 +253,11 @@ export function PrivacyPage() {
 export function PrivacyContent() {
   return (
     <>
-      <p className="muted">What Study Forge keeps, where it's kept, and how to remove it. Last updated 12 November 2026.</p>
+      <p className="muted">What Study Forge keeps, where it's kept, and how to remove it. Last updated 13 November 2026.</p>
       <h2>Without an account</h2>
-      <p>Everything stays in your browser on your device. Nothing is sent to Study Forge.</p>
+      <p>Your courses, notes, uploaded files and other study work are primarily stored in this browser. Merely visiting the site still makes requests to its GitHub Pages host, which may process technical information such as an IP address. Some optional features load code from other providers, including Google, when used. Without an account, Study Forge does not automatically upload your study content to its Firebase database.</p>
+      <h2>Children under 13</h2>
+      <p>Study Forge is developing a restricted local-only experience for children under 13. In this mode, account sign-in, Google Calendar, Google Drive imports and cloud backup are disabled. The school-level selection does not determine a student's age. The current restrictions have not undergone a complete independent children's privacy assessment; parents and guardians should not assume the service is COPPA-compliant. Use of the site can still involve requests to its hosting provider and other infrastructure.</p>
       <h2>With an account</h2>
       <ul className="plain-list">
         <li>Your email address, plus your name and picture if you sign in with Google, Microsoft or Yahoo, are used to sign you in.</li>
