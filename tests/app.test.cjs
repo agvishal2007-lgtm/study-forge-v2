@@ -333,7 +333,7 @@ test('deleting a course keeps its files in the Library', async () => {
   await page.getByRole('button', { name: /^Permanently delete Financial Accounting$/ }).click();
   await page.getByRole('dialog').getByText('Its files stay in your Library').waitFor();
   await page.getByRole('dialog').getByRole('button', { name: 'Permanently delete' }).click();
-  await page.getByRole('heading', { name: 'Courses' }).waitFor();
+  await page.getByTestId('trash-message').filter({ hasText: 'Permanently deleted “Financial Accounting”.' }).waitFor();
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Library' }).click();
   await page.getByRole('link', { name: 'accounting-notes.pdf' }).waitFor();
   assert.equal(await page.locator('.files li').count(), 7);
