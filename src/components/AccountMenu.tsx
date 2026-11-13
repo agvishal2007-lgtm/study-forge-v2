@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { SmartAdd } from './SmartAdd';
 import { SyncBadge } from './SyncBadge';
 import { WalkthroughButton } from '../features/walkthrough/Walkthrough';
+import { isChildMode, useSchoolProfile } from '../data/schoolProfile';
 import { getActiveAccount, switchAccount } from '../data/account';
 import { toggleLook, useIsDark } from '../data/theme';
 import { getSyncState, loadBackend, signOutOfAccount, subscribeSync, syncNow } from '../data/sync';
@@ -42,11 +43,11 @@ function Avatar({ photoURL, email }: { photoURL?: string; email: string }) {
 
 function SignedOut() {
   // Getting this ready early means the sign-in window can open as soon as it's tapped.
-  useEffect(() => { void loadBackend().catch(() => undefined); }, []);
+  useEffect(() => { if (!isChildMode()) void loadBackend().catch(() => undefined); }, []);
   return (
     <>
       <Link className="icon-button" to="/settings" aria-label="Settings" title="Settings"><GearIcon /></Link>
-      <Link className="button primary" to="/auth" data-tour="account">Log In / Sign Up</Link>
+      {!isChildMode() && <Link className="button primary" to="/auth" data-tour="account">Log In / Sign Up</Link>}
     </>
   );
 }
@@ -132,6 +133,7 @@ function SignedIn() {
 
 /** The top-right corner on every screen. */
 export function AccountMenu() {
+  useSchoolProfile();
   return (
     <nav className="topbar" aria-label="Account">
       <SmartAdd />
