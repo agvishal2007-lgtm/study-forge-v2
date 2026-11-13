@@ -129,6 +129,9 @@ export function App() {
     );
   }
 
+  if (AUTH_ROUTES.includes(pathname) && school.age === 'under13') {
+    return <AuthShell><div className="page auth-page"><h1>Local-only mode</h1><p>Sign-in is disabled for students under 13. Continue studying without an account on this device.</p><NavLink to="/courses">Go to Courses</NavLink></div></AuthShell>;
+  }
   if (AUTH_ROUTES.includes(pathname)) {
     return (
       <AuthShell>
