@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getPlannerItem, savePlannerSteps, setPlannerStatus } from '../data/planner';
 import { isDone, localNow } from '../data/plannerRules';
 import { addStep, addSuggested, cleanSteps, describeProgress, moveStep, spreadTargets, stepProgress, STEP_LIMITS } from '../data/stepRules';
@@ -16,22 +16,32 @@ export function AssignmentSteps({ itemId }: { itemId: string }) {
   const { data: item } = useLive(() => getPlannerItem(itemId), [itemId]);
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  // Shown straight away while the save finishes, so a tick never flickers back.
-  const [pending, setPending] = useState<PlannerStep[] | null>(null);
-  const latest = useRef(0);
+  // The list as the student last left it. Each change builds on this, never on a stored copy that
+  // may not have caught up yet, so two quick ticks can't undo each other. It hands back to the stored
+  // list once every save has finished and the stored list has changed (another device, for example).
+  const [local, setLocal] = useState<PlannerStep[] | null>(null);
+  const saving = useRef(0);
+  const current = useRef<PlannerStep[]>([]);
+  const updatedAt = item?.updatedAt;
+  useEffect(() => {
+    if (saving.current === 0) setLocal(null);
+  }, [updatedAt]);
   if (!item) return null;
-  const steps = pending ?? cleanSteps(item.steps);
+  const steps = local ?? cleanSteps(item.steps);
+  // The newest list, even before React has redrawn, so changes made in quick succession all build on each other.
+  current.current = steps;
   const today = localNow().date;
   const progress = stepProgress(steps, today);
   const save = (next: PlannerStep[], note = '') => {
     setMessage(note);
-    setPending(next);
-    const mine = ++latest.current;
+    current.current = next;
+    setLocal(next);
+    saving.current++;
     void savePlannerSteps(itemId, next)
-      .catch((error: Error) => setMessage(`That wasn't saved. ${error.message}`))
-      .finally(() => { if (latest.current === mine) setPending(null); });
+      .catch((error: Error) => { setMessage(`That wasn't saved. ${error.message}`); setLocal(null); })
+      .finally(() => { saving.current--; });
   };
-  const change = (id: string, patch: Partial<PlannerStep>) => save(steps.map((step) => (step.id === id ? { ...step, ...patch } : step)));
+  const change = (id: string, patch: Partial<PlannerStep>) => save(current.current.map((step) => (step.id === id ? { ...step, ...patch } : step)));
   const allDone = progress !== null && progress.done === progress.total;
 
   return (
