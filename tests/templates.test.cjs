@@ -333,8 +333,8 @@ test('school-level setup is optional, age and school level are separate, and sta
     await setup.getByRole('button', { name: 'Save setup' }).click();
     await student.getByText('Reading', { exact: true }).first().waitFor();
     await student.reload();
+    await student.getByRole('heading', { name: 'Add a subject' }).waitFor();
     assert.equal(await student.getByRole('heading', { name: 'Set up your courses' }).count(), 0);
-    assert.equal(await student.getByRole('heading', { name: 'Add a subject' }).count(), 1);
     assert.equal(await student.getByText('Writing', { exact: true }).count(), 0, 'unselected subjects are not created');
     await student.goto(`${URL_BASE}#/settings`);
     assert.equal(await student.getByLabel('Choose your school level').inputValue(), 'elementary');
@@ -357,6 +357,8 @@ test('under-13 setup cannot sign into a Study Forge account', async () => {
     await setup.getByLabel('Under 13').check();
     await setup.getByRole('button', { name: 'Save setup' }).click();
     await student.reload();
+    await student.getByRole('heading', { name: 'Courses', exact: true }).waitFor();
+    await student.getByTestId('school-setup').waitFor();
     await student.getByRole('button', { name: /From Google Drive/ }).waitFor({ state: 'detached' });
     assert.equal(await student.getByRole('link', { name: 'Log In / Sign Up' }).count(), 0);
     await student.goto(`${URL_BASE}#/calendar/google`);
