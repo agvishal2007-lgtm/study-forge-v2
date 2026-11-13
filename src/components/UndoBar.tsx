@@ -31,6 +31,13 @@ export function UndoBar() {
     setBusy(false);
   };
 
+  const visible = !!message || (!!action && action.id !== dismissed);
+  // Leave room at the bottom of the page while it shows, so nothing underneath is out of reach.
+  useEffect(() => {
+    document.documentElement.classList.toggle('undo-bar-open', visible);
+    return () => document.documentElement.classList.remove('undo-bar-open');
+  }, [visible]);
+
   if (!action || action.id === dismissed) {
     return message ? <p className="undo-bar" role="status">{message}</p> : null;
   }

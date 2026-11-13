@@ -158,6 +158,38 @@ test('undo refuses when the thing is gone, and says so instead of half-working',
   assert.equal(await page.getByRole('link', { name: /Chemistry/ }).count(), 0);
 });
 
+test('the Undo bar never hides the side menu, the end of a page, or the saving card', async () => {
+  await addCourse('Physics');
+  await page.getByRole('button', { name: 'Move to Trash' }).click();
+  await page.getByRole('heading', { name: 'Courses', level: 1 }).waitFor();
+  const bar = page.locator('.undo-bar');
+  await bar.getByText('Moved Physics to Trash').waitFor();
+  const overlap = (a, b) => a && b && a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  // The end of the page scrolls up clear of the bar.
+  const lastClear = async () => {
+    await page.evaluate(() => { const main = document.querySelector('main'); main.scrollTop = main.scrollHeight; });
+    const last = page.locator('main').locator('button, a[href], input, select, textarea').last();
+    return !overlap(await last.boundingBox(), await bar.boundingBox());
+  };
+  // On a computer it stays off the side menu, where Trash is.
+  const trashLink = page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Trash' });
+  assert.ok(!overlap(await trashLink.boundingBox(), await bar.boundingBox()), 'the Undo bar covers Trash in the side menu');
+  assert.ok(await lastClear(), 'the Undo bar covers the end of the page on a computer');
+  await page.setViewportSize({ width: 375, height: 700 });
+  try {
+    assert.ok(!overlap(await page.getByRole('navigation', { name: 'Main' }).boundingBox(), await bar.boundingBox()), 'the Undo bar covers the bottom bar');
+    assert.ok(await lastClear(), 'the Undo bar covers the end of the page on a phone');
+    // A file saving at the same time: the two cards stack instead of covering each other.
+    await page.goto(`${URL_BASE}#/library`);
+    await page.getByTestId('file-input').first().setInputFiles({ name: 'stack-check.txt', mimeType: 'text/plain', buffer: Buffer.from('Saving while Undo shows.\n') });
+    await page.locator('.save-panel').waitFor();
+    await page.waitForTimeout(300);
+    assert.ok(!overlap(await page.locator('.save-panel').boundingBox(), await bar.boundingBox()), 'the Undo bar covers the saving card');
+  } finally {
+    await page.setViewportSize({ width: 1280, height: 900 });
+  }
+});
+
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });

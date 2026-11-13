@@ -182,11 +182,25 @@ export function SavePanel() {
     document.documentElement.classList.toggle('save-panel-open', items.length > 0);
     return () => document.documentElement.classList.remove('save-panel-open');
   }, [items.length]);
+  // Its height is shared, so the Undo bar can sit above it instead of on top of it.
+  const showing = items.length > 0;
+  const panel = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const element = panel.current;
+    const root = document.documentElement.style;
+    if (!element) { root.removeProperty('--save-panel-h'); return; }
+    const measure = () => root.setProperty('--save-panel-h', `${Math.ceil(element.getBoundingClientRect().height)}px`);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => { observer.disconnect(); root.removeProperty('--save-panel-h'); };
+  }, [showing]);
   if (items.length === 0) return null;
   const canClear = items.some((item) => item.phase === 'saved' || item.phase === 'cancelled');
   return (
     <section
       className="save-panel"
+      ref={panel}
       aria-label="Files being saved"
       onPointerEnter={() => setHeld(true)}
       onPointerLeave={() => setHeld(false)}

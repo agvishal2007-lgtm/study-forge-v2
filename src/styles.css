@@ -1155,7 +1155,15 @@ h1 + .muted, h1 + .dash-lead { margin-top: .5rem; }
 }
 .undo-bar span { overflow-wrap: anywhere; }
 .undo-bar .icon-button { font-size: 1.2rem; line-height: 1; }
-@media (max-width: 760px) {
+/* On a computer it sits over the page, not over the side menu (where Trash is). */
+@media (min-width: 721px) { .undo-bar { left: calc(248px + 1.25rem); max-width: min(26rem, calc(100vw - 248px - 2.5rem)); } }
+/* While it shows, the end of the page can scroll up above it, and fields being typed in stay clear of it. */
+html.undo-bar-open main > :last-child { padding-bottom: 6.5rem; }
+/* When the saving card is showing too, Undo sits just above it rather than on top of it. */
+html.save-panel-open .undo-bar { bottom: calc(1rem + var(--save-panel-h, 0px) + .5rem); }
+@media (max-width: 720px) { html.save-panel-open .undo-bar { bottom: calc(4.25rem + var(--save-panel-h, 0px) + .5rem + env(safe-area-inset-bottom)); } }
+html.undo-bar-open main { scroll-padding-bottom: 6.5rem; }
+@media (max-width: 720px) {
   /* The sections bar sits along the bottom on a phone, so Undo sits above it. */
   .undo-bar { bottom: calc(4.5rem + env(safe-area-inset-bottom)); left: .75rem; right: .75rem; max-width: none; }
 }
