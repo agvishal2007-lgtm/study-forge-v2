@@ -57,9 +57,17 @@ async function doActivity(id) {
     }
     throw new Error(`${id}: no right answer`);
   };
-  const finds = { today: 'Start studying', navigation: 'Planner', 'record-lecture': 'Virtual', calendar: 'Add to calendar' };
-  if (finds[id]) return find(finds[id]);
-  if (['practice-answer', 'calculator', 'transcripts', 'reminders', 'sync-status', 'devices-offline'].includes(id)) return choose();
+  if (await c.getByRole('radio').count()) return choose();
+  const practice = c.getByRole('group', { name: /^Practice screen/ });
+  if (await practice.count()) {
+    // Like a student working it out: try parts until the right one says so.
+    const parts = practice.getByRole('button');
+    for (let i = 0; i < await parts.count(); i++) {
+      await parts.nth(i).click();
+      if (await c.locator('.academy-feedback.good').count()) return;
+    }
+    throw new Error(`${id}: no right part`);
+  }
   if (id === 'create-course') { await c.getByLabel('Course name (practice)').fill('Financial Accounting'); return c.getByRole('button', { name: 'Create course' }).click(); }
   if (id === 'add-topic') { await c.getByLabel('New topic').fill('Chapter 2: Cells'); return c.getByRole('button', { name: 'Add topic' }).click(); }
   if (id === 'flashcards') {
@@ -83,12 +91,12 @@ async function doActivity(id) {
 test('the Academy home shows modules with progress, not a long article', async () => {
   await page.goto(`${URL_BASE}#/help`);
   await page.getByRole('heading', { name: 'Study Forge Academy', level: 1 }).waitFor();
-  assert.equal(await page.getByTestId('academy-module').count(), 6);
-  assert.match(await page.getByTestId('academy-overall').innerText(), /^0 of 17 lessons finished$/);
+  assert.equal(await page.getByTestId('academy-module').count(), 7);
+  assert.match(await page.getByTestId('academy-overall').innerText(), /^0 of 40 lessons finished$/);
   const text = await page.getByTestId('academy').innerText();
   assert.ok(!text.includes('What it does.'), 'the reference text is not on the home page');
-  assert.ok(text.split(/\s+/).length < 450, 'short enough to scan');
-  assert.equal(await page.getByRole('link', { name: 'Start' }).count(), 6);
+  assert.ok(text.split(/\s+/).length < 900, 'short enough to scan');
+  assert.equal(await page.getByRole('link', { name: 'Start', exact: true }).count(), 7);
 });
 
 test('a lesson goes in short parts, the activity is required, and nothing real is changed', async () => {
@@ -105,7 +113,7 @@ test('a lesson goes in short parts, the activity is required, and nothing real i
   await card().getByTestId('activity-feedback').filter({ hasText: 'Type a course name first' }).waitFor();
   // Leaving and coming back resumes at the activity, still not finished.
   await page.goto(`${URL_BASE}#/help`);
-  assert.match(await page.getByTestId('academy-overall').innerText(), /^0 of 17/, 'opening a lesson does not finish it');
+  assert.match(await page.getByTestId('academy-overall').innerText(), /^0 of 40/, 'opening a lesson does not finish it');
   await page.getByTestId('academy-module').first().getByRole('link', { name: 'Create a course' }).click();
   await card().getByRole('heading', { name: 'Your turn' }).waitFor();
   await doActivity('create-course');
@@ -115,7 +123,7 @@ test('a lesson goes in short parts, the activity is required, and nothing real i
   await page.getByRole('heading', { name: 'Courses', level: 1 }).waitFor();
   assert.equal(await page.getByText('Financial Accounting').count(), 0, 'the practice course is not a real course');
   await page.goto(`${URL_BASE}#/help`);
-  await page.getByTestId('academy-overall').filter({ hasText: /^1 of 17/ }).waitFor();
+  await page.getByTestId('academy-overall').filter({ hasText: /^1 of 40/ }).waitFor();
 });
 
 test('wrong answers get a helpful nudge, and choices need an explicit Submit with nothing preselected', async () => {
@@ -138,7 +146,7 @@ test('every lesson can be finished by doing it, and progress is kept after reloa
   const ids = await page.evaluate(async () => [...document.querySelectorAll('a')].length >= 0);
   await page.goto(`${URL_BASE}#/help`);
   const links = await page.locator('.academy-lesson-list a').evaluateAll((all) => all.map((a) => a.getAttribute('href').split('/').pop()));
-  assert.equal(links.length, 17);
+  assert.equal(links.length, 40);
   for (const id of links) {
     await page.goto(`${URL_BASE}#/help/lessons/${id}`);
     await card().getByRole('heading', { name: /What it is|Your turn/ }).waitFor();
@@ -150,17 +158,23 @@ test('every lesson can be finished by doing it, and progress is kept after reloa
   }
   await page.reload();
   await page.goto(`${URL_BASE}#/help`);
-  await page.getByTestId('academy-overall').filter({ hasText: '17 of 17 lessons finished' }).waitFor();
-  assert.equal(await page.getByText('✓ All done').count(), 6);
+  await page.getByTestId('academy-overall').filter({ hasText: '40 of 40 lessons finished' }).waitFor();
+  assert.equal(await page.getByText('✓ All done').count(), 7);
   assert.ok(ids);
 });
 
-test('the reference guide is still there, searchable, and each lesson links to its part', async () => {
-  await page.goto(`${URL_BASE}#/help/lessons/trash`);
-  await page.getByRole('link', { name: 'Learn more in the reference guide' }).click();
-  await page.getByRole('heading', { name: 'Academy reference guide', level: 1 }).waitFor();
-  await page.getByLabel('Search the Academy').fill('intersect');
-  assert.equal(await page.locator('.academy-topic').count(), 1);
+test('there are no long articles: the old guide address leads to the lessons, and limits are short tips', async () => {
+  await page.goto(`${URL_BASE}#/help/guide`);
+  await page.getByRole('heading', { name: 'Study Forge Academy', level: 1 }).waitFor();
+  assert.match(page.url(), /#\/help$/);
+  assert.equal(await page.getByText(/reference guide/i).count(), 0);
+  await page.goto(`${URL_BASE}#/help/lessons/search`);
+  await next('Try it');
+  await doActivity('search');
+  await finish();
+  const tip = await page.getByTestId('lesson-tip').innerText();
+  assert.match(tip, /^Good to know: Files over 300 MB/);
+  assert.ok(tip.split(/\s+/).length < 40, 'a tip is a line, not an article');
 });
 
 test('the Academy fits a phone and works in dark mode, with no sideways scrolling', async () => {

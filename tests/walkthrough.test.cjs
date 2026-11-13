@@ -511,34 +511,26 @@ test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });
 
-test('Study Forge Academy explains every feature in the same order of questions, and can be searched', async () => {
+test('Study Forge Academy teaches every major feature with hands-on lessons, and keeps the honest limits short', async () => {
   await open('academy', { auto: false });
   await page.goto(`${URL_BASE}#/settings`);
   await page.getByRole('link', { name: 'Study Forge Academy' }).click();
   await page.getByRole('heading', { name: 'Study Forge Academy', level: 1 }).waitFor();
-  // Lessons come first; the full details are one tap away in the reference guide.
-  await page.getByRole('link', { name: 'Open the reference guide' }).click();
-  await page.getByRole('heading', { name: 'Academy reference guide', level: 1 }).waitFor();
-  const topics = page.locator('.academy-topic');
-  assert.ok(await topics.count() >= 15, 'every major feature has a section');
-  for (const title of ['Getting started', 'Research links, portals and online textbooks', 'Files and reading them inside Study Forge', 'Study Forge Calendar', 'Assignments, grades and priorities', 'The calculator', 'Adding, organizing, Undo and Trash', 'Permissions and notifications']) {
-    const section = page.locator('.academy-topic', { has: page.getByRole('heading', { name: title, exact: true }) });
-    const text = await section.innerText();
-    for (const part of ['What it does.', 'Why it helps.', 'Where to find it.', 'How to use it', 'What you’ll see.', 'Good to know', 'Works with.']) assert.ok(text.includes(part), `${title}: ${part}`);
-  }
-  // Honest about limits, and never the old wording.
-  const all = await page.getByTestId('academy').innerText();
-  assert.match(all, /Save Link is not the same as Preview or Import/);
-  assert.match(all, /not an officially approved examination calculator/);
-  assert.match(all, /older \.doc, \.xls and \.ppt/);
+  const home = await page.getByTestId('academy').innerText();
+  for (const title of ['Getting started', 'Files, links and textbooks', 'Study tools', 'Recording and transcripts', 'Planning', 'Organizing', 'Account, sync and privacy']) assert.ok(home.includes(title), title);
+  // The limits the old articles held now live in lessons, a sentence at a time.
+  const { ALL_LESSONS } = await import('../src/features/academy/lessons.ts');
+  const all = JSON.stringify(ALL_LESSONS);
+  assert.match(all, /not an officially approved exam calculator/);
+  assert.match(all, /Older \.doc, \.xls and \.ppt files are kept/);
+  assert.match(all, /A saved link is just a shortcut/);
+  assert.match(all, /Google Calendar is read-only/);
+  assert.match(all, /Work not yet graded never counts as a zero/);
   assert.doesNotMatch(all, /gray calendar/i);
-  await page.getByLabel('Search the Academy').fill('intersect');
-  assert.equal(await topics.count(), 1);
-  assert.match(await topics.first().innerText(), /The calculator/);
-  await page.getByLabel('Search the Academy').fill('zzzz nothing');
-  await page.getByText('Nothing in the Academy matches that').waitFor();
-  await page.getByLabel('Search the Academy').fill('');
-  await page.getByRole('link', { name: '← Academy lessons' }).click();
+  for (const lesson of ALL_LESSONS) {
+    assert.ok(lesson.intro.split(/\s+/).length <= 40, `${lesson.id}: a short introduction`);
+    if (lesson.tip) assert.ok(lesson.tip.split(/\s+/).length <= 40, `${lesson.id}: a short tip`);
+  }
   await page.getByRole('button', { name: 'Take the short walkthrough' }).click();
   await card().waitFor();
   await closeTour();

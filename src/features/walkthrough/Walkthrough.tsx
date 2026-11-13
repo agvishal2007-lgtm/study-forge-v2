@@ -566,7 +566,7 @@ export function WalkthroughButton() {
           </button>
           <button type="button" role="menuitem" onClick={() => choose(() => navigate('/help'))}>
             <b>Study Forge Academy</b>
-            <span className="muted small">Step-by-step help for every feature</span>
+            <span className="muted small">Hands-on lessons for every feature</span>
           </button>
         </div>
       )}

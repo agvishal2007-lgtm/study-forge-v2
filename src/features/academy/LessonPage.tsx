@@ -18,17 +18,21 @@ export function LessonPage() {
   const [activityDone, setActivityDone] = useState(false);
   const [finishedBefore, setFinishedBefore] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
+  // Once the student moves on, a late-arriving saved position must not pull them back.
+  const moved = useRef(false);
 
   // Pick up where the student stopped, but never past the activity: it has to be done again to see the result.
   useEffect(() => {
     let active = true;
     setActivityDone(false);
     setStage(0);
+    moved.current = false;
     void getAcademyProgress().then((all) => {
       if (!active || !lesson) return;
       const saved = all[lesson.id];
       setFinishedBefore(Boolean(saved?.done));
-      setStage(Math.min(saved?.stage ?? 0, parts.indexOf('try')));
+      // A finished lesson opens at the start, ready to do again; an unfinished one where it was left.
+      if (!moved.current) setStage(saved?.done ? 0 : Math.min(saved?.stage ?? 0, parts.indexOf('try')));
     });
     return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -38,7 +42,7 @@ export function LessonPage() {
   if (!lesson) return <div className="page"><h1>Lesson not found</h1><Link to="/help">Back to the Academy</Link></div>;
   const module = MODULES.find((item) => item.lessons.some((other) => other.id === lesson.id))!;
   const part = parts[stage];
-  const go = (next: number) => { setStage(next); void saveLessonStage(lesson.id, next); };
+  const go = (next: number) => { moved.current = true; setStage(next); void saveLessonStage(lesson.id, next); };
   const index = ALL_LESSONS.findIndex((other) => other.id === lesson.id);
   const following = ALL_LESSONS[index + 1];
   const titles = { intro: 'What it is', demo: 'Where it is', try: 'Your turn', done: 'Done' } as const;
@@ -81,6 +85,7 @@ export function LessonPage() {
           <>
             <p className="academy-feedback good" data-testid="lesson-done">✓ Lesson finished.</p>
             <p>{lesson.feedback}</p>
+            {lesson.tip && <p className="lesson-tip" data-testid="lesson-tip"><b>Good to know:</b> {lesson.tip}</p>}
             <div className="session-actions">
               {following && <button className="button primary" type="button" onClick={() => navigate(`/help/lessons/${following.id}`)}>Next lesson: {following.title}</button>}
               <button className="button" type="button" onClick={() => { setActivityDone(false); go(0); }}>Do it again</button>
@@ -91,7 +96,6 @@ export function LessonPage() {
       </section>
       <div className="session-actions lesson-nav">
         {stage > 0 && part !== 'done' && <button className="text-button" type="button" onClick={() => go(stage - 1)}>Back</button>}
-        <Link className="text-button" to={`/help/guide?topic=${lesson.learnMore}`}>Learn more in the reference guide</Link>
       </div>
     </div>
   );

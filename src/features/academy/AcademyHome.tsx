@@ -50,11 +50,10 @@ export function AcademyHome() {
         })}
       </div>
       <section className="academy-more" aria-labelledby="academy-more">
-        <h2 id="academy-more">More help</h2>
-        <p className="muted">The short walkthrough shows where everything is. The reference guide has the full details and limits of every feature.</p>
+        <h2 id="academy-more">Want the quick tour instead?</h2>
+        <p className="muted">The walkthrough points out where everything is in about two minutes.</p>
         <div className="session-actions">
           <button type="button" className="button" onClick={start}>Take the short walkthrough</button>
-          <Link className="button" to="/help/guide">Open the reference guide</Link>
         </div>
       </section>
     </div>
