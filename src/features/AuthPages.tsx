@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { isChildMode } from '../data/schoolProfile';
 import { getActiveAccount, switchAccount } from '../data/account';
 import type { AccountBackend, AccountUser, LoginProvider } from '../data/accountBackend';
 import { describeAuthFailure, looksLikeEmail, signUpProblems } from '../data/authMessages';
@@ -79,6 +80,7 @@ export function AuthPage({ mode }: { mode: 'sign-in' | 'sign-up' }) {
 
   useEffect(() => { setProblems([]); setPassword(''); setConfirm(''); }, [mode]);
   if (getActiveAccount()) return <Navigate to="/" replace />;
+  if (isChildMode()) return <div className="page auth-page"><h1>Local-only student mode</h1><p>Sign-in is unavailable while under-13 mode is selected. Study Forge can be used on this device without an account.</p><p><Link to="/courses">Go to Courses</Link></p></div>;
 
   const fail = (error: unknown, provider?: string) => {
     const message = describeAuthFailure(error, provider);
