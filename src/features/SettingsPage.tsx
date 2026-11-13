@@ -43,7 +43,7 @@ export function SettingsPage() {
         <h2 id="storage-heading">Storage on this device</h2>
         <p>{getActiveAccount()
           ? 'Everything is kept in this browser on this device, and syncs to your account. Files and recordings sync too once you turn on Google Drive syncing above.'
-          : 'Everything is kept only in this browser on this device. Sign in to sync it to your other devices.'}</p>
+          : school.age === 'under13' ? 'Everything is kept only in this browser on this device. Account and cloud syncing are unavailable in local-only mode.' : 'Everything is kept only in this browser on this device. Sign in to sync it to your other devices.'}</p>
         <p>Clearing this browser's site data or losing this device removes anything that isn't synced, so create a backup regularly.</p>
         {data?.usage != null && data.quota != null && (
           <p>Using {formatBytes(data.usage)} of about {formatBytes(data.quota)} that this browser allows.</p>
