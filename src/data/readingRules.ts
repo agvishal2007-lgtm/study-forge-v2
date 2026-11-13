@@ -50,3 +50,26 @@ export function currentSection(outline: OutlineEntry[], page: number): OutlineEn
   for (const entry of outline) if (entry.page !== null && entry.page <= page && (!found || entry.page >= (found.page ?? 0))) found = entry;
   return found;
 }
+
+/*
+ * Online textbooks (a paid publisher site such as Connect, MyLab, MindTap or VitalSource) can't be
+ * opened inside Study Forge: they need the student's own login. So the student keeps their place in
+ * their own words ("Chapter 4, 4.2, page 112"), with named spots and, if the site gives one, a direct
+ * address for that chapter.
+ */
+export interface BookSpot { id: string; label: string; place: string; url: string }
+export interface OnlineReading { place: string; at: number; spots: BookSpot[] }
+
+export const BOOK_LIMITS = { place: 120, label: 80, spots: 50 } as const;
+
+export function cleanOnlineReading(raw: unknown, tidy: (url: string) => string | null): OnlineReading {
+  const value = (raw && typeof raw === 'object' ? raw : {}) as Partial<OnlineReading>;
+  const text = (input: unknown, max: number) => (typeof input === 'string' ? input.trim().slice(0, max) : '');
+  const spots = Array.isArray(value.spots)
+    ? value.spots.filter((spot) => spot && typeof spot.id === 'string')
+      .map((spot) => ({ id: spot.id, label: text(spot.label, BOOK_LIMITS.label), place: text(spot.place, BOOK_LIMITS.place), url: typeof spot.url === 'string' ? tidy(spot.url) ?? '' : '' }))
+      .filter((spot) => spot.label || spot.place)
+      .slice(0, BOOK_LIMITS.spots)
+    : [];
+  return { place: text(value.place, BOOK_LIMITS.place), at: typeof value.at === 'number' ? value.at : 0, spots };
+}

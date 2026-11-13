@@ -495,7 +495,7 @@ test('Study Forge Academy explains every feature in the same order of questions,
   await page.getByRole('heading', { name: 'Study Forge Academy', level: 1 }).waitFor();
   const topics = page.locator('.academy-topic');
   assert.ok(await topics.count() >= 15, 'every major feature has a section');
-  for (const title of ['Getting started', 'Research links and portals', 'Files and reading them inside Study Forge', 'Study Forge Calendar', 'Assignments, grades and priorities', 'The calculator', 'Adding, organizing, Undo and Trash', 'Permissions and notifications']) {
+  for (const title of ['Getting started', 'Research links, portals and online textbooks', 'Files and reading them inside Study Forge', 'Study Forge Calendar', 'Assignments, grades and priorities', 'The calculator', 'Adding, organizing, Undo and Trash', 'Permissions and notifications']) {
     const section = page.locator('.academy-topic', { has: page.getByRole('heading', { name: title, exact: true }) });
     const text = await section.innerText();
     for (const part of ['What it does.', 'Why it helps.', 'Where to find it.', 'How to use it', 'What you’ll see.', 'Good to know', 'Works with.']) assert.ok(text.includes(part), `${title}: ${part}`);

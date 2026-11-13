@@ -31,6 +31,10 @@ test('a link is sorted by what it points at', async () => {
   assert.equal(categorize('https://pubmed.ncbi.nlm.nih.gov/123'), 'research');
   assert.equal(categorize('https://en.wikipedia.org/wiki/Accounting'), 'reference');
   assert.equal(categorize('https://example.com/thing'), 'other');
+  for (const book of ['https://connect.mheducation.com/class/x', 'https://mlm.pearson.com/home', 'https://www.webassign.net/web/Student', 'https://ng.cengage.com/static/nb/ui/evo/index.html', 'https://bookshelf.vitalsource.com/books/123', 'https://www.wileyplus.com/', 'https://education.wiley.com/', 'https://openstax.org/books/biology-2e/pages/1-introduction']) {
+    assert.equal(categorize(book), 'textbook', book);
+  }
+  assert.equal(categorize('https://onlinelibrary.wiley.com/doi/1'), 'research', 'Wiley research papers are still research');
 });
 
 test('a link gets a readable name from its address', async () => {
@@ -40,7 +44,7 @@ test('a link gets a readable name from its address', async () => {
   assert.equal(siteOf('https://www.jstor.org/stable/1'), 'jstor.org');
 });
 
-const PORT = 4204;
+const PORT = Number(process.env.LINKS_PORT) || 4204;
 const URL_BASE = `http://localhost:${PORT}/`;
 let server;
 let context;
@@ -146,6 +150,40 @@ test('a link goes to the bin and comes back, and the bin is honest about it', as
   await page.getByRole('button', { name: 'Restore Essay draft' }).click();
   await page.goto(`${URL_BASE}#/library`);
   await page.getByRole('link', { name: 'Essay draft' }).waitFor();
+});
+
+test('an online textbook link keeps your place and saved spots, without ever seeing the book or your login', async () => {
+  const { cleanOnlineReading } = await import('../src/data/readingRules.ts');
+  const { tidyUrl } = await rules();
+  assert.deepEqual(cleanOnlineReading({ place: '  Ch 4 ', at: 5, spots: [{ id: 'a', label: 'HW', place: '', url: 'javascript:alert(1)' }, { id: 'b', label: '', place: '' }, 'x'] }, tidyUrl),
+    { place: 'Ch 4', at: 5, spots: [{ id: 'a', label: 'HW', place: '', url: '' }] }, 'unsafe addresses and empty spots are dropped');
+  await saveLink('https://connect.mheducation.com/student/class/123', 'Biology textbook');
+  await page.goto(`${URL_BASE}#/library`);
+  await page.getByRole('link', { name: 'Biology textbook' }).click();
+  const tools = page.getByTestId('online-book');
+  await tools.waitFor();
+  assert.match(await tools.innerText(), /never\s+sees your login, payment or the book’s pages/);
+  await tools.getByLabel('Where you are').fill('Chapter 4, section 4.2, page 112');
+  await tools.getByRole('button', { name: 'Save my place' }).click();
+  await tools.getByTestId('book-place').filter({ hasText: 'Chapter 4, section 4.2, page 112' }).waitFor();
+  await tools.getByLabel('Name', { exact: true }).fill('Homework 5');
+  await tools.getByLabel('Place (optional)').fill('Chapter 5, problems 1–20');
+  await tools.getByLabel('Direct address (optional)').fill('connect.mheducation.com/assignment/5');
+  await tools.getByRole('button', { name: 'Save spot' }).click();
+  const spot = tools.getByTestId('book-spot');
+  await spot.getByRole('link', { name: 'Homework 5' }).waitFor();
+  assert.equal(await spot.getByRole('link', { name: 'Homework 5' }).getAttribute('href'), 'https://connect.mheducation.com/assignment/5');
+  assert.equal(await spot.getByRole('link', { name: 'Homework 5' }).getAttribute('target'), '_blank', 'opens on the publisher’s site');
+  await tools.getByLabel('Name', { exact: true }).fill('Bad');
+  await tools.getByLabel('Direct address (optional)').fill('javascript:alert(1)');
+  await tools.getByRole('button', { name: 'Save spot' }).click();
+  await tools.getByTestId('book-message').filter({ hasText: 'doesn’t look right' }).waitFor();
+  assert.equal(await spot.count(), 1);
+  await page.reload();
+  await page.getByTestId('online-book').getByTestId('book-place').filter({ hasText: 'page 112' }).waitFor();
+  await page.getByTestId('online-book').getByTestId('book-spot').filter({ hasText: 'Chapter 5, problems 1–20' }).waitFor();
+  await page.getByTestId('related-assignments').waitFor();
+  assert.equal(await page.locator('iframe').count(), 0, 'the paid site is never framed inside Study Forge');
 });
 
 test('no uncaught errors happened during the whole run', () => {

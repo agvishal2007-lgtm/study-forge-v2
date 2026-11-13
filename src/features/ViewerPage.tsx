@@ -11,6 +11,7 @@ import { useStillHere } from '../components/useStillHere';
 import { readBlob } from '../data/blobs';
 import { addPageNote } from '../data/reading';
 import { RelatedAssignments } from '../components/RelatedWork';
+import { OnlineBookTools } from '../components/OnlineBookTools';
 import { formatBytes, KIND_LABEL, kindOf, olderOfficeAdvice } from '../data/format';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { LINK_CATEGORY_LABEL, siteOf } from '../data/linkRules';
@@ -266,12 +267,14 @@ export default function ViewerPage() {
           original.
         </p>
         <p className="link-address"><a href={material.url} target="_blank" rel="noopener noreferrer">{material.url}</a></p>
+        {material.category === 'textbook' && <OnlineBookTools materialId={material.id} url={material.url} />}
         <Filing material={material} />
         <section className="file-notes" aria-labelledby="file-notes-heading">
           <h2 id="file-notes-heading">Notes on this link</h2>
           <NewNoteButton courseId={material.courseId} topicId={material.topicId} materialId={material.id} />
           {notes && notes.length > 0 && <NoteList notes={notes} />}
         </section>
+        <RelatedAssignments materialId={material.id} courseId={material.courseId} />
       </div>
     );
   }

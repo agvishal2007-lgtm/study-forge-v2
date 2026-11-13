@@ -1,7 +1,8 @@
 import { getDb, notifyChanged } from './db';
 import { readStudyState, writeStudyState } from './studyState';
 import type { Note, PlannerItem } from './types';
-import { cleanReading, type Reading } from './readingRules.ts';
+import { cleanOnlineReading, cleanReading, type OnlineReading, type Reading } from './readingRules.ts';
+import { tidyUrl } from './linkRules.ts';
 
 /*
  * Textbook navigation for one file: where the student stopped reading, and their page bookmarks.
@@ -36,3 +37,10 @@ export async function setAssignmentLink(itemId: string, materialId: string, link
   await db.put('plannerItems', { ...item, materialIds: [...now], updatedAt: Math.max(Date.now(), item.updatedAt + 1) });
   notifyChanged();
 }
+
+export const getOnlineReading = async (materialId: string): Promise<OnlineReading> =>
+  cleanOnlineReading(await readStudyState(`book-${materialId}`), tidyUrl);
+
+/** Saved as study in progress, so the place follows the student to their other devices. */
+export const saveOnlineReading = (materialId: string, reading: OnlineReading) =>
+  writeStudyState(`book-${materialId}`, cleanOnlineReading(reading, tidyUrl));

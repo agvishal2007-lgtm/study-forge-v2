@@ -3,10 +3,11 @@
  * to save, what kind of thing it points at, and what to call it, so the student can find it later.
  */
 
-export const LINK_CATEGORIES = ['research', 'portal', 'cloud', 'video', 'reference', 'other'] as const;
+export const LINK_CATEGORIES = ['textbook', 'research', 'portal', 'cloud', 'video', 'reference', 'other'] as const;
 export type LinkCategory = (typeof LINK_CATEGORIES)[number];
 
 export const LINK_CATEGORY_LABEL: Record<LinkCategory, string> = {
+  textbook: 'Online textbook',
   research: 'Research',
   portal: 'School portal',
   cloud: 'Cloud document',
@@ -35,6 +36,8 @@ export function tidyUrl(raw: string): string | null {
 }
 
 const HOSTS: { category: LinkCategory; match: (host: string, url: string) => boolean }[] = [
+  // Paid course textbooks and homework platforms, checked first so wiley.com research doesn't catch WileyPLUS.
+  { category: 'textbook', match: (host) => /(^|\.)(mheducation\.com|mcgrawhill\.com|aleks\.com|pearson\.com|pearsoned\.com|pearsonmylabandmastering\.com|mylabmastering\.com|masteringchemistry\.com|cengage\.com|webassign\.net|wileyplus\.com|macmillanlearning\.com|vitalsource\.com|redshelf\.com|zybooks\.com|perusall\.com|kortext\.com|openstax\.org|bartleby\.com)$/.test(host) || host === 'education.wiley.com' },
   { category: 'cloud', match: (host) => /^(docs|sheets|slides|drive)\.google\.com$/.test(host) || host.endsWith('onedrive.live.com') || host.endsWith('sharepoint.com') },
   { category: 'video', match: (host) => /(^|\.)(youtube\.com|youtu\.be|vimeo\.com|panopto\.com|echo360\.org)$/.test(host) },
   { category: 'portal', match: (host) => /(^|\.)(instructure\.com|blackboard\.com|moodle\.org|moodlecloud\.com|brightspace\.com|d2l\.com|schoology\.com)$/.test(host) || host === 'classroom.google.com' || /(^|\.)canvas\./.test(host) },
