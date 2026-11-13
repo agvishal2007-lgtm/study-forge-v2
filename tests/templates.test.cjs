@@ -359,7 +359,10 @@ test('under-13 setup cannot sign into a Study Forge account', async () => {
     await student.reload();
     await student.getByRole('heading', { name: 'Courses', exact: true }).waitFor();
     await student.getByTestId('school-setup').waitFor();
+    await student.goto(`${URL_BASE}#/library`);
     await student.getByRole('button', { name: /From Google Drive/ }).waitFor({ state: 'detached' });
+    await student.goto(`${URL_BASE}#/settings`);
+    await student.getByText('Account and cloud syncing are unavailable in local-only mode.').waitFor();
     assert.equal(await student.getByRole('link', { name: 'Log In / Sign Up' }).count(), 0);
     await student.goto(`${URL_BASE}#/calendar/google`);
     await student.getByRole('heading', { name: 'Local-only mode' }).waitFor();
