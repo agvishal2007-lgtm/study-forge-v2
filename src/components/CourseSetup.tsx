@@ -14,7 +14,7 @@ export function CourseSetup({ hasCourses }: { hasCourses: boolean }) {
   const [error, setError] = useState('');
   const choice = SCHOOL_LEVELS.find(item => item.id === level)!;
   const signedIn = Boolean(getActiveAccount());
-  const close = () => { saveSchoolProfile({ level, age, completed: true }); setOpen(false); };
+  const close = () => { saveSchoolProfile({ level, age: signedIn && age === 'under13' ? profile.age : age, completed: true }); setOpen(false); };
   const save = async () => {
     if (age === 'unanswered') { setError('Choose an age group to continue, or skip setup.'); return; }
     if (age === 'under13' && signedIn) { setError('The under-13 local-only experience needs a signed-out browser. Sign out first; no account changes are made here.'); return; }
@@ -62,7 +62,7 @@ export function CourseSetup({ hasCourses }: { hasCourses: boolean }) {
           {error && <p role="alert" className="error">{error}</p>}
           <div className="session-actions">
             <button className="button primary" type="button" disabled={busy} onClick={() => void save()}>{busy ? 'Saving…' : 'Save setup'}</button>
-            <button className="button" type="button" disabled={busy} onClick={() => { close(); }}>Skip for now</button>
+            <button className="button" type="button" disabled={busy} onClick={() => { saveSchoolProfile({ ...profile, completed: true }); setOpen(false); }}>Skip for now</button>
           </div>
         </div>
       )}
