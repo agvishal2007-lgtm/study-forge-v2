@@ -102,7 +102,7 @@ test('a course in the bin is restorable, and only "remove for good" ends it', as
   await page.goto(`${URL_BASE}#/trash`);
   await page.getByRole('button', { name: 'Permanently delete Biology' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Permanently delete' }).click();
-  await page.waitForFunction(() => document.body.innerText.includes('Trash is empty'));
+  await page.getByTestId('trash-message').filter({ hasText: 'Permanently deleted' }).waitFor();
   await page.goto(`${URL_BASE}#/courses`);
   assert.equal(await page.getByRole('link', { name: /Biology/ }).count(), 0, 'the course is gone for good');
 });

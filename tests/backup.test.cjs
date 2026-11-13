@@ -243,7 +243,7 @@ test('a deleted file comes back with its note link', async () => {
   await page.goto(`${URL_BASE}#/trash`);
   await page.getByRole('button', { name: /^Permanently delete Lecture one.*$/ }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Permanently delete' }).click();
-  await page.waitForFunction(() => document.body.innerText.includes('Trash is empty'));
+  await page.getByTestId('trash-message').filter({ hasText: 'Permanently deleted' }).waitFor();
   assert.match(await restore(backupPath), /1 file/);
   await nav('Library');
   await page.getByRole('link', { name: /Lecture one/ }).click();

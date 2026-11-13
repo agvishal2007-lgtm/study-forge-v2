@@ -149,7 +149,7 @@ test('undo refuses when the thing is gone, and says so instead of half-working',
   await page.goto(`${URL_BASE}#/trash`);
   await page.getByRole('button', { name: 'Permanently delete Chemistry' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Permanently delete' }).click();
-  await page.waitForFunction(() => document.body.innerText.includes('Trash is empty'));
+  await page.getByTestId('trash-message').filter({ hasText: 'Permanently deleted' }).waitFor();
   // The offer to undo binning it is still on screen, and must not pretend to work.
   await page.locator('.undo-bar').getByRole('button', { name: 'Undo' }).click();
   await page.getByText(/can't be undone/).waitFor();

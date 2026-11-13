@@ -288,7 +288,7 @@ test('deleting a course keeps its deck, and deleting a deck removes its cards', 
   await page.getByRole('button', { name: /^Permanently delete / }).first().click();
   await page.getByRole('dialog').getByText('any flashcards stay').waitFor();
   await page.getByRole('dialog').getByRole('button', { name: 'Permanently delete' }).click();
-  await page.waitForFunction(() => document.body.innerText.includes('Trash is empty'));
+  await page.getByTestId('trash-message').filter({ hasText: 'Permanently deleted' }).waitFor();
   await nav('Flashcards');
   await page.getByRole('link', { name: 'Chapter 1', exact: true }).click();
   await page.getByRole('button', { name: 'Delete deck' }).click();

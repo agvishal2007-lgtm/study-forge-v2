@@ -297,7 +297,7 @@ test('the bin holds a file safely, and only "remove for good" deletes it', async
 
   await page.getByRole('button', { name: 'Permanently delete large-lecture.bin' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Permanently delete' }).click();
-  await page.waitForFunction(() => document.body.innerText.includes('Trash is empty'));
+  await page.getByTestId('trash-message').filter({ hasText: 'Permanently deleted' }).waitFor();
   assert.equal(await filesOnDevice(), 7);
   // Leave the next test where it expects to start.
   await page.goto(`${URL_BASE}#/library`);

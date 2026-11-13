@@ -238,7 +238,7 @@ test('deleting asks first, and deleting a course keeps its items', async () => {
   await page.getByRole('button', { name: /^Permanently delete / }).first().click();
   await page.getByRole('dialog').getByText('any assignments stay in Planner').waitFor();
   await page.getByRole('dialog').getByRole('button', { name: 'Permanently delete' }).click();
-  await page.waitForFunction(() => document.body.innerText.includes('Trash is empty'));
+  await page.getByTestId('trash-message').filter({ hasText: 'Permanently deleted' }).waitFor();
   await nav('Planner');
   await page.getByRole('link', { name: 'Midterm exam', exact: true }).waitFor();
 });
