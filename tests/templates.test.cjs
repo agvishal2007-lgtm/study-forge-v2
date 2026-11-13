@@ -356,6 +356,11 @@ test('under-13 setup cannot sign into a Study Forge account', async () => {
     await setup.getByLabel('School level').selectOption('middle');
     await setup.getByLabel('Under 13').check();
     await setup.getByRole('button', { name: 'Save setup' }).click();
+    await student.reload();
+    await student.getByRole('button', { name: /From Google Drive/ }).waitFor({ state: 'detached' });
+    assert.equal(await student.getByRole('link', { name: 'Log In / Sign Up' }).count(), 0);
+    await student.goto(`${URL_BASE}#/calendar/google`);
+    await student.getByRole('heading', { name: 'Local-only mode' }).waitFor();
     await student.goto(`${URL_BASE}#/signup`);
     await student.getByRole('heading', { name: 'Local-only mode' }).waitFor();
     assert.equal(await student.getByRole('button', { name: 'Continue with Google' }).count(), 0);
