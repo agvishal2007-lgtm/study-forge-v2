@@ -210,9 +210,9 @@ test('deleting asks first, and deleting a course or file keeps its notes', async
 
   await nav('Library');
   await page.getByRole('link', { name: 'chapter.txt' }).click();
-  await page.getByRole('button', { name: 'Move to bin' }).click();
+  await page.getByRole('button', { name: 'Move to Trash' }).click();
   await page.getByRole('heading', { name: 'Biology' }).waitFor();
-  await page.getByRole('button', { name: 'Move to bin' }).click();
+  await page.getByRole('button', { name: 'Move to Trash' }).click();
   await page.getByRole('heading', { name: 'Courses', exact: true }).waitFor();
   await nav('Notes');
   for (const name of ['Note about the file', 'Topic note', 'Course note']) await page.getByRole('link', { name }).waitFor();

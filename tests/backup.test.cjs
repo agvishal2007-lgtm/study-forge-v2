@@ -222,7 +222,7 @@ test('restoring never overwrites newer work, and copies do not pile up', async (
   await page.getByRole('link', { name: 'Loose note' }).click();
   await page.locator('textarea.note-body').fill('Changed after the backup');
   await page.getByTestId('save-status').getByText('Saved').waitFor();
-  await page.getByRole('button', { name: 'Move to bin' }).count();
+  await page.getByRole('button', { name: 'Move to Trash' }).count();
   assert.match(await restore(backupPath), /1 note differed/);
   assert.match(await restore(backupPath), /Added 0 courses/);
   await nav('Notes');
@@ -238,12 +238,12 @@ test('restoring never overwrites newer work, and copies do not pile up', async (
 test('a deleted file comes back with its note link', async () => {
   await nav('Library');
   await page.getByRole('link', { name: /Lecture one/ }).click();
-  await page.getByRole('button', { name: 'Move to bin' }).click();
+  await page.getByRole('button', { name: 'Move to Trash' }).click();
   await page.getByRole('heading', { name: /Biology/ }).waitFor();
-  await page.goto(`${URL_BASE}#/bin`);
-  await page.getByRole('button', { name: /^Remove Lecture one.* for good$/ }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Remove for good' }).click();
-  await page.waitForFunction(() => document.body.innerText.includes('The bin is empty'));
+  await page.goto(`${URL_BASE}#/trash`);
+  await page.getByRole('button', { name: /^Permanently delete Lecture one.*$/ }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Permanently delete' }).click();
+  await page.waitForFunction(() => document.body.innerText.includes('Trash is empty'));
   assert.match(await restore(backupPath), /1 file/);
   await nav('Library');
   await page.getByRole('link', { name: /Lecture one/ }).click();

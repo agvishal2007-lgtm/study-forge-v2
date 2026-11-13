@@ -165,12 +165,12 @@ test('select all means only what the search shows, and says so', async () => {
 test('binning many asks first, names them, and one Undo brings them all back', async () => {
   const before = await page.locator('.files li').count();
   await page.locator('.bulk-all input').check();
-  await page.getByRole('button', { name: 'Move to bin' }).click();
+  await page.getByRole('button', { name: 'Move to Trash' }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByText('chapter.odt').waitFor();
-  await dialog.getByRole('button', { name: `Move ${before} to the bin` }).click();
+  await dialog.getByRole('button', { name: `Move ${before} to Trash` }).click();
   await page.waitForFunction(() => document.querySelectorAll('.files li').length === 0);
-  await page.locator('.undo-bar').getByText(`Moved ${before} items to the bin.`).waitFor();
+  await page.locator('.undo-bar').getByText(`Moved ${before} items to Trash.`).waitFor();
   await page.locator('.undo-bar').getByRole('button', { name: 'Undo' }).click();
   await page.waitForFunction((count) => document.querySelectorAll('.files li').length === count, before);
   // The pins came back with them.
@@ -209,7 +209,7 @@ test('text size, motion and spacing are remembered without being asked twice', a
 test('recent activity shows what changed and what was put back, from the same records Undo keeps', async () => {
   await page.goto(`${URL_BASE}#/`);
   const activity = page.getByTestId('recent-activity');
-  await activity.getByText(/^Undone: moved \d+ items to the bin$/).waitFor();
+  await activity.getByText(/^Undone: moved \d+ items to Trash$/).waitFor();
   await activity.getByText('Pinned 2 items').waitFor();
   await page.reload();
   await activity.getByText('Pinned 2 items').waitFor();

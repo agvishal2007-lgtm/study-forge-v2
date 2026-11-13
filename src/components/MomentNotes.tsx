@@ -64,7 +64,7 @@ export function MomentNoteCard({ note, segments, active, focus, onJump }: {
       <div className="row-actions">
         {confirming ? (
           <>
-            <span className="small">Delete this note?</span>
+            <span className="small">Move this note to Trash?</span>
             <button type="button" className="button danger" onClick={() => void deleteNote(note.id)}>Delete</button>
             <button type="button" className="button" onClick={() => setConfirming(false)}>Keep</button>
           </>

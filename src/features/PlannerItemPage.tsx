@@ -205,7 +205,7 @@ export function PlannerItemPage() {
             }
           }}
         >
-          <p>This permanently removes it from your planner. It can't be undone.</p>
+          <p>It goes to Trash, where you can restore it.</p>
         </ConfirmDialog>
       )}
     </div>

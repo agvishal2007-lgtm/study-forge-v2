@@ -47,13 +47,13 @@ export const ACADEMY: AcademyTopic[] = [
     steps: [
       'On Courses, type a name (and a code if you like). To start organized, choose a template under Start from a template: Lecture, Lab, Writing, Math or Independent study. It shows exactly which topics and grade categories it adds. Then press Create course.',
       'Open the course and add topics under Topics.',
-      'Use Arrange courses to put them in your own order. Edit course, Archive course and Move to bin are at the top of a course.',
+      'Use Arrange courses to put them in your own order. Edit course, Archive course and Move to Trash are at the top of a course.',
       'To reuse a course’s shape next term, open Edit course and press Save as template. Your templates are listed on Courses, where you can rename or delete them.',
       'At the end of a term, press Start a new semester on Courses. It shows what each course still has (unfinished work, upcoming events), lets you choose which to archive, sets up next term’s courses (blank, from a template, or with the same shape as an old course), and lists every change for you to confirm before anything happens.',
     ],
     result: 'The course appears on your shelf, with everything for it in one place.',
     limits: [
-      'Archived courses are hidden but kept. Binned courses wait in the Trash until you empty it.',
+      'Archived courses are hidden but kept. Courses moved to Trash wait there until you permanently delete them.',
       'Removing a file from one course never deletes it if another course still uses it.',
       'Templates hold topic names and grade category names only. Never deadlines, files or grades. Starter templates leave weights blank for you to set from your syllabus.',
       'Your templates sync with your account, but they aren’t part of backup files.',
@@ -80,7 +80,7 @@ export const ACADEMY: AcademyTopic[] = [
       'An online textbook always opens on the publisher’s site with the account you paid for. Study Forge can’t show its pages and never sees your login, so your place is kept in your own words. A textbook you have as a file, such as a PDF from Drive, gets the full textbook tools instead.',
       'Deleting a link never deletes the page or document it points to.',
     ],
-    connections: 'Links can be attached to a course, topic or assignment, pinned, binned and restored like files.',
+    connections: 'Links can be attached to a course, topic or assignment, pinned, moved to Trash and restored like files.',
   },
   {
     id: 'files',
@@ -91,7 +91,7 @@ export const ACADEMY: AcademyTopic[] = [
     steps: [
       'Press Add files (or drag files in), choose the course and topic, and wait for each file’s progress bar.',
       'Open a file to read, view or play it. Notes beside it lets you write while you read.',
-      'Tick several files to pin, move, put away or bin them together.',
+      'Tick several files to pin, move, put away or move them to Trash together.',
       'Personal library: tick files or links worth keeping beyond one course (research papers, career information, writing guides, references), type a shelf name, and press Put on shelf. The Personal library tab shows your shelves, plus anything that isn’t in a course yet.',
       'Download gives you the original, byte for byte.',
       'Textbooks and other PDFs: Contents lists the chapters and sections (when the PDF has them), Go to page jumps anywhere, and Bookmark page keeps your place with an optional name. Reopening a PDF picks up on the page you stopped at. Note this page writes a note tied to that page, with Go to page to jump back.',
@@ -264,12 +264,12 @@ export const ACADEMY: AcademyTopic[] = [
     title: 'Adding, organizing, Undo and Trash',
     what: 'The + button adds anything. Pins, bulk actions, Undo and the Trash keep things tidy and safe.',
     why: 'Mistakes can be taken back, and nothing is lost by accident.',
-    where: 'The + at the top. Undo appears at the bottom after a change. Trash is under Courses (Open the bin).',
+    where: 'The + at the top. Undo appears at the bottom after a change. Trash has its own place: at the foot of the menu on a computer, or in the account menu and Settings on a phone.',
     steps: [
       'Press + and choose a file, link, note, flashcards, question set, recording, topic or course. It suggests where it belongs, and you can change that.',
       'Pin files and links to keep them at the top.',
       'After renaming, moving or binning something, press Undo.',
-      'Open the bin to restore what you deleted, or empty it for good. Emptying always asks first.',
+      'Open Trash to restore anything you deleted from anywhere: courses, topics, files, links, notes, flashcard decks, practice sets, lessons and planner items. Filter by kind or search, then Restore, Permanently delete, or Empty Trash. Permanent deletion always asks first.',
     ],
     result: 'Your work stays where you put it, and deleting is never final until you empty the Trash.',
     limits: [

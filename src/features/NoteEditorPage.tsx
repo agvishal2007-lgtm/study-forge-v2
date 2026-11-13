@@ -291,7 +291,7 @@ export function NoteEditor({ id, start, panel = false, onDeleted, onClose }: {
             }
           }}
         >
-          <p>This permanently removes the note from this device. It can't be undone.</p>
+          <p>It goes to Trash, where you can restore it.</p>
         </ConfirmDialog>
       )}
     </div>

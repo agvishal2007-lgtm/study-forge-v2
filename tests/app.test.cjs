@@ -282,22 +282,22 @@ const filesOnDevice = () => page.evaluate(async () => {
 });
 
 test('the bin holds a file safely, and only "remove for good" deletes it', async () => {
-  await page.getByRole('button', { name: 'Move to bin' }).click();
+  await page.getByRole('button', { name: 'Move to Trash' }).click();
   await page.getByRole('heading', { name: 'Library' }).waitFor();
   await page.getByRole('link', { name: 'accounting-notes.pdf' }).waitFor();
   assert.match(page.url(), /#\/library$/);
   assert.equal(await page.getByRole('link', { name: 'large-lecture.bin' }).count(), 0, 'it left the Library');
   assert.equal(await filesOnDevice(), 8, 'nothing was deleted: the file is still on the device');
 
-  await page.goto(`${URL_BASE}#/bin`);
-  await page.getByTestId('bin-files').waitFor();
-  await page.getByRole('button', { name: 'Remove large-lecture.bin for good' }).click();
+  await page.goto(`${URL_BASE}#/trash`);
+  await page.getByTestId('trash-list').waitFor();
+  await page.getByRole('button', { name: 'Permanently delete large-lecture.bin' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
   assert.equal(await filesOnDevice(), 8, 'cancelling changes nothing');
 
-  await page.getByRole('button', { name: 'Remove large-lecture.bin for good' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Remove for good' }).click();
-  await page.waitForFunction(() => document.body.innerText.includes('The bin is empty'));
+  await page.getByRole('button', { name: 'Permanently delete large-lecture.bin' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Permanently delete' }).click();
+  await page.waitForFunction(() => document.body.innerText.includes('Trash is empty'));
   assert.equal(await filesOnDevice(), 7);
   // Leave the next test where it expects to start.
   await page.goto(`${URL_BASE}#/library`);
@@ -309,10 +309,10 @@ test('moving to another screen during a delete does not get overridden', async (
   await saved('extra-note.txt').waitFor();
   await clearPanel();
   await page.getByRole('link', { name: 'extra-note.txt' }).click();
-  await page.getByRole('button', { name: 'Move to bin' }).waitFor();
+  await page.getByRole('button', { name: 'Move to Trash' }).waitFor();
   await page.evaluate(() => {
     // Leave at the same moment the file is moved to the bin.
-    [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Move to bin').click();
+    [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Move to Trash').click();
     location.hash = '#/settings';
   });
   await page.getByRole('heading', { name: 'Settings' }).waitFor();
@@ -326,13 +326,13 @@ test('moving to another screen during a delete does not get overridden', async (
 test('deleting a course keeps its files in the Library', async () => {
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Courses' }).click();
   await page.getByRole('link', { name: /Financial Accounting/ }).click();
-  await page.getByRole('button', { name: 'Move to bin' }).click();
+  await page.getByRole('button', { name: 'Move to Trash' }).click();
   await page.getByRole('heading', { name: 'Courses', exact: true }).waitFor();
-  await page.goto(`${URL_BASE}#/bin`);
-  await page.getByTestId('bin-courses').waitFor();
-  await page.getByRole('button', { name: /^Remove Financial Accounting for good$/ }).click();
+  await page.goto(`${URL_BASE}#/trash`);
+  await page.getByTestId('trash-list').waitFor();
+  await page.getByRole('button', { name: /^Permanently delete Financial Accounting$/ }).click();
   await page.getByRole('dialog').getByText('Its files stay in your Library').waitFor();
-  await page.getByRole('dialog').getByRole('button', { name: 'Remove for good' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Permanently delete' }).click();
   await page.getByRole('heading', { name: 'Courses' }).waitFor();
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Library' }).click();
   await page.getByRole('link', { name: 'accounting-notes.pdf' }).waitFor();

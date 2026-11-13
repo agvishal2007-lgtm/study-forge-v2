@@ -262,7 +262,7 @@ export default function ViewerPage() {
           </div>
           <div className="row-actions">
             <a className="button" href={material.url} target="_blank" rel="noopener noreferrer">Open in a new tab</a>
-            <button className="text-button danger-text" onClick={() => void leaveForBin()}>Move to bin</button>
+            <button className="text-button danger-text" onClick={() => void leaveForBin()}>Move to Trash</button>
           </div>
         </header>
         {failure && <p className="error" role="alert">{failure}</p>}
@@ -347,7 +347,7 @@ export default function ViewerPage() {
               }
             }}
           >
-            Move to bin
+            Move to Trash
           </button>
         </div>
       </header>

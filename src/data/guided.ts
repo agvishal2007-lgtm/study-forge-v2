@@ -2,6 +2,7 @@ import { logStudy } from './studyLog';
 import { getDb, notifyChanged } from './db';
 import { applyStudyAction, newProgress, type StudyAction } from './mastery';
 import type { Checkpoint, CheckpointProgress, Lesson, Teaching } from './types';
+import { moveToTrash } from './trash';
 
 export const emptyTeaching = (): Teaching => ({ intro: '', meaning: '', why: '', parts: [], example: '', walkthrough: [], keyIdea: '' });
 
@@ -27,16 +28,7 @@ export async function saveLesson(lesson: Lesson): Promise<void> {
 }
 
 /** Removes the lesson, its checkpoints, and their progress. Only called after the student confirms. */
-export async function deleteLesson(id: string): Promise<void> {
-  const tx = (await getDb()).transaction(['lessons', 'checkpoints', 'checkpointProgress'], 'readwrite');
-  for (const checkpointId of await tx.objectStore('checkpoints').index('lessonId').getAllKeys(id)) {
-    await tx.objectStore('checkpoints').delete(checkpointId);
-    await tx.objectStore('checkpointProgress').delete(checkpointId);
-  }
-  await tx.objectStore('lessons').delete(id);
-  await tx.done;
-  notifyChanged();
-}
+export const deleteLesson = (id: string): Promise<void> => moveToTrash('lesson', id);
 
 export async function listCheckpoints(): Promise<Checkpoint[]> {
   const checkpoints = await (await getDb()).getAll('checkpoints');

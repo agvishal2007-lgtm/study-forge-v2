@@ -57,11 +57,11 @@ test('archiving a topic puts it away and keeps it, and it comes back', async () 
 });
 
 test('a topic in the bin can be restored', async () => {
-  await page.getByRole('button', { name: 'Move topic Cells to the bin' }).click();
+  await page.getByRole('button', { name: 'Move topic Cells to Trash' }).click();
   // The offer to undo names what was binned, so the check is against the page itself.
   await page.waitForFunction(() => !document.getElementById('content').innerText.includes('Cells'));
-  await page.goto(`${URL_BASE}#/bin`);
-  await page.getByTestId('bin-topics').waitFor();
+  await page.goto(`${URL_BASE}#/trash`);
+  await page.getByTestId('trash-list').waitFor();
   await page.getByRole('button', { name: 'Restore Cells' }).click();
   await page.goto(`${URL_BASE}#/courses`);
   await page.getByRole('link', { name: /Biology/ }).first().click();
@@ -88,21 +88,21 @@ test('archiving a course keeps it whole and reachable, and it comes back', async
 
 test('a course in the bin is restorable, and only "remove for good" ends it', async () => {
   await page.getByRole('link', { name: /Biology/ }).first().click();
-  await page.getByRole('button', { name: 'Move to bin' }).click();
+  await page.getByRole('button', { name: 'Move to Trash' }).click();
   await page.getByRole('heading', { name: 'Courses', level: 1 }).waitFor();
-  await page.goto(`${URL_BASE}#/bin`);
-  await page.getByTestId('bin-courses').waitFor();
+  await page.goto(`${URL_BASE}#/trash`);
+  await page.getByTestId('trash-list').waitFor();
   await page.getByRole('button', { name: 'Restore Biology' }).click();
   await page.goto(`${URL_BASE}#/courses`);
   await page.getByRole('link', { name: /Biology/ }).first().waitFor();
 
   // Now really end it.
   await page.getByRole('link', { name: /Biology/ }).first().click();
-  await page.getByRole('button', { name: 'Move to bin' }).click();
-  await page.goto(`${URL_BASE}#/bin`);
-  await page.getByRole('button', { name: 'Remove Biology for good' }).click();
-  await page.getByRole('button', { name: 'Remove for good' }).click();
-  await page.waitForFunction(() => document.body.innerText.includes('The bin is empty'));
+  await page.getByRole('button', { name: 'Move to Trash' }).click();
+  await page.goto(`${URL_BASE}#/trash`);
+  await page.getByRole('button', { name: 'Permanently delete Biology' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Permanently delete' }).click();
+  await page.waitForFunction(() => document.body.innerText.includes('Trash is empty'));
   await page.goto(`${URL_BASE}#/courses`);
   assert.equal(await page.getByRole('link', { name: /Biology/ }).count(), 0, 'the course is gone for good');
 });

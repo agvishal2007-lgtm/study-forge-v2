@@ -91,7 +91,6 @@ export function CoursesPage() {
           </ul>
         </section>
       )}
-      <p className="muted small"><Link to="/bin">Open the bin</Link> to restore anything you moved there, or remove it for good.</p>
     </div>
   );
 }

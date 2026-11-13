@@ -1,6 +1,7 @@
 import { getDb, notifyChanged } from './db';
 import { clearStudyState, readStudyState, writeStudyState } from './studyState';
 import type { PracticeAttempt, PracticeQuestion, PracticeSet, Topic } from './types';
+import { moveToTrash } from './trash';
 
 
 export const listPracticeSets = async (): Promise<PracticeSet[]> => {
@@ -32,14 +33,8 @@ export async function updatePracticeSet(id: string, changes: Pick<PracticeSet, '
   notifyChanged();
 }
 
-export async function deletePracticeSet(id: string): Promise<void> {
-  const tx = (await getDb()).transaction(['practiceSets', 'practiceQuestions', 'practiceAttempts'], 'readwrite');
-  for (const question of await tx.objectStore('practiceQuestions').index('setId').getAll(id)) await tx.objectStore('practiceQuestions').delete(question.id);
-  for (const attempt of await tx.objectStore('practiceAttempts').index('setId').getAll(id)) await tx.objectStore('practiceAttempts').delete(attempt.id);
-  await tx.objectStore('practiceSets').delete(id);
-  await tx.done;
-  notifyChanged();
-}
+/** Moves the set, its questions and its answers to Trash, where they can be restored together. */
+export const deletePracticeSet = (id: string): Promise<void> => moveToTrash('practiceSet', id);
 
 export async function savePracticeQuestion(question: Omit<PracticeQuestion, 'createdAt' | 'updatedAt'>): Promise<void> {
   const tx = (await getDb()).transaction('practiceQuestions', 'readwrite');

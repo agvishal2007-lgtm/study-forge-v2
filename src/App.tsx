@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState, useSyncExternalStore } from 'react';
 import { dateFormatVersion, subscribeDateFormat } from './data/dateFormat';
-import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { AccountMenu } from './components/AccountMenu';
 import { NAV_ICONS } from './components/NavIcons';
 import { WalkthroughProvider } from './features/walkthrough/Walkthrough';
@@ -51,7 +51,7 @@ import { CalendarEventPage } from './features/CalendarEventPage';
 import { CalendarPage } from './features/CalendarPage';
 import { GoogleCalendarPage } from './features/GoogleCalendarPage';
 import { ProgressPage } from './features/ProgressPage';
-import { BinPage } from './features/BinPage';
+import { TrashPage } from './features/TrashPage';
 import { SchedulePage } from './features/SchedulePage';
 import { SettingsPage } from './features/SettingsPage';
 import { TodayPage } from './features/TodayPage';
@@ -167,6 +167,8 @@ export function App() {
               <NavLink key={link.to} to={link.to} end={link.end}>{NAV_ICONS[link.to]}<span>{link.label}</span></NavLink>
             ))}
           </div>
+          {/* Trash is its own place, apart from the sections. On a phone it's in the account menu and Settings instead, so the bottom bar stays short. */}
+          <NavLink to="/trash" className="nav-trash" data-testid="nav-trash">{NAV_ICONS['/trash']}<span>Trash</span></NavLink>
         </nav>
         <div className="workspace">
         <AccountMenu />
@@ -190,7 +192,8 @@ export function App() {
                 <Route path="/calendar/google" element={<GoogleCalendarPage />} />
                 <Route path="/calendar/event/:id" element={<CalendarEventPage />} />
                 <Route path="/progress" element={<ProgressPage />} />
-                <Route path="/bin" element={<BinPage />} />
+                <Route path="/trash" element={<TrashPage />} />
+                <Route path="/bin" element={<Navigate to="/trash" replace />} />
                 <Route path="/planner" element={<PlannerPage />} />
                 <Route path="/planner/:id" element={<PlannerItemPage />} />
                 <Route path="/cards" element={<FlashcardsPage />} />

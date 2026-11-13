@@ -121,6 +121,7 @@ function SignedIn() {
           <p className="account-email">{account.email}</p>
           {syncLine && <p className="muted account-sync">{syncLine}</p>}
           <Link className="dropdown-item" to="/settings" onClick={() => setOpen(false)}>Settings</Link>
+          <Link className="dropdown-item" to="/trash" onClick={() => setOpen(false)}>Trash</Link>
           <button className="dropdown-item" onClick={() => void signOut()}>Sign out</button>
         </div>
       )}

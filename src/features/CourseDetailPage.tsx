@@ -73,7 +73,7 @@ export function CourseDetailPage() {
           {course.status === 'archived'
             ? <button className="button" onClick={() => void attempt(() => setCourseStatus(course.id, 'active'))}>Put back in use</button>
             : <button className="text-button" onClick={() => leave(() => setCourseStatus(course.id, 'archived'))}>Archive course</button>}
-          <button className="text-button danger-text" onClick={() => leave(() => setCourseStatus(course.id, 'trashed'))}>Move to bin</button>
+          <button className="text-button danger-text" onClick={() => leave(() => setCourseStatus(course.id, 'trashed'))}>Move to Trash</button>
         </div>
       </header>
       {failure && <p className="error" role="alert">{failure}</p>}
@@ -212,7 +212,7 @@ function TopicCard({ topic, index, last, course, materials, placeOf, notes, atte
           <button className="text-button" disabled={last} onClick={() => void attempt(() => moveTopic(topic.id, 'down'))} aria-label={`Move topic ${topic.name} down`}>Down</button>
           <button className="text-button" onClick={() => setEditing(!editing)} aria-label={`Rename topic ${topic.name}`}>{editing ? 'Close' : 'Rename'}</button>
           <button className="text-button" onClick={() => void attempt(() => setTopicStatus(topic.id, 'archived'))} aria-label={`Archive topic ${topic.name}`}>Archive</button>
-          <button className="text-button danger-text" onClick={() => void attempt(() => setTopicStatus(topic.id, 'trashed'))} aria-label={`Move topic ${topic.name} to the bin`}>Move to bin</button>
+          <button className="text-button danger-text" onClick={() => void attempt(() => setTopicStatus(topic.id, 'trashed'))} aria-label={`Move topic ${topic.name} to Trash`}>Move to Trash</button>
         </span>
       </header>
       {editing && (

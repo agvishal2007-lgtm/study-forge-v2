@@ -120,7 +120,7 @@ export function LibraryPage() {
                 {picked.some((item) => item.shelf) && <button className="button" disabled={busy} onClick={() => void run({ kind: 'shelf', shelf: null }, picked)}>Take off shelf</button>}
               </span>
               <button className="button" disabled={busy} onClick={() => setConfirming({ kind: 'archive' })}>Put away</button>
-              <button className="button danger" disabled={busy} onClick={() => setConfirming({ kind: 'trash' })}>Move to bin</button>
+              <button className="button danger" disabled={busy} onClick={() => setConfirming({ kind: 'trash' })}>Move to Trash</button>
               <button className="text-button" onClick={() => setSelected(new Set())}>Clear</button>
             </div>
           )}
@@ -169,14 +169,14 @@ export function LibraryPage() {
 
       {confirming && (
         <ConfirmDialog
-          title={confirming.kind === 'trash' ? `Move ${picked.length} to the bin?` : `Put away ${picked.length}?`}
-          confirmLabel={confirming.kind === 'trash' ? `Move ${picked.length} to the bin` : `Put away ${picked.length}`}
+          title={confirming.kind === 'trash' ? `Move ${picked.length} to Trash?` : `Put away ${picked.length}?`}
+          confirmLabel={confirming.kind === 'trash' ? `Move ${picked.length} to Trash` : `Put away ${picked.length}`}
           onCancel={() => setConfirming(null)}
           onConfirm={() => void run(confirming, picked)}
         >
           <p>
             {confirming.kind === 'trash'
-              ? 'They stay in the bin, restorable, until you remove them for good. You can also press Undo straight after.'
+              ? 'They stay in Trash, restorable, until you permanently delete them. You can also press Undo straight after.'
               : 'They are kept whole and stay searchable, just out of your Library list. You can put them back any time.'}
           </p>
           <ul className="confirm-list">

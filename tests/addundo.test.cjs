@@ -132,24 +132,24 @@ test('a rename can be undone, and the bar says what it would put back', async ()
 test('putting a course in the bin can be undone, and so can taking it out', async () => {
   await page.goto(`${URL_BASE}#/courses`);
   await page.getByRole('link', { name: /Biology/ }).first().click();
-  await page.getByRole('button', { name: 'Move to bin' }).click();
+  await page.getByRole('button', { name: 'Move to Trash' }).click();
   await page.getByRole('heading', { name: 'Courses', level: 1 }).waitFor();
-  await page.locator('.undo-bar').getByText('Moved Biology to the bin').waitFor();
+  await page.locator('.undo-bar').getByText('Moved Biology to Trash').waitFor();
   await page.locator('.undo-bar').getByRole('button', { name: 'Undo' }).click();
-  await page.getByText('Undone: moved Biology to the bin.').waitFor();
+  await page.getByText('Undone: moved Biology to Trash.').waitFor();
   await page.goto(`${URL_BASE}#/courses`);
   await page.getByRole('link', { name: /Biology/ }).first().waitFor();
 });
 
 test('undo refuses when the thing is gone, and says so instead of half-working', async () => {
   await addCourse('Chemistry');
-  await page.getByRole('button', { name: 'Move to bin' }).click();
+  await page.getByRole('button', { name: 'Move to Trash' }).click();
   await page.getByRole('heading', { name: 'Courses', level: 1 }).waitFor();
   // Removed for good, which is deliberately not undoable.
-  await page.goto(`${URL_BASE}#/bin`);
-  await page.getByRole('button', { name: 'Remove Chemistry for good' }).click();
-  await page.getByRole('button', { name: 'Remove for good' }).click();
-  await page.waitForFunction(() => document.body.innerText.includes('The bin is empty'));
+  await page.goto(`${URL_BASE}#/trash`);
+  await page.getByRole('button', { name: 'Permanently delete Chemistry' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Permanently delete' }).click();
+  await page.waitForFunction(() => document.body.innerText.includes('Trash is empty'));
   // The offer to undo binning it is still on screen, and must not pretend to work.
   await page.locator('.undo-bar').getByRole('button', { name: 'Undo' }).click();
   await page.getByText(/can't be undone/).waitFor();

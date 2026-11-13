@@ -401,14 +401,14 @@ test('backup restores lessons and progress into a fresh browser', async () => {
 test('deleting a lesson asks first, and deleting a course keeps its lessons', async () => {
   await nav('Courses');
   await page.getByRole('link', { name: /Sample: Accounting Basics/ }).click();
-  await page.getByRole('button', { name: 'Move to bin' }).click();
+  await page.getByRole('button', { name: 'Move to Trash' }).click();
   await page.getByRole('heading', { name: 'Courses', exact: true }).waitFor();
-  await page.goto(`${URL_BASE}#/bin`);
-  await page.getByTestId('bin-courses').waitFor();
-  await page.getByRole('button', { name: /for good$/ }).first().click();
+  await page.goto(`${URL_BASE}#/trash`);
+  await page.getByTestId('trash-list').waitFor();
+  await page.getByRole('button', { name: /^Permanently delete / }).first().click();
   await page.getByRole('dialog').getByText('any lessons stay in Study').waitFor();
-  await page.getByRole('dialog').getByRole('button', { name: 'Remove for good' }).click();
-  await page.waitForFunction(() => document.body.innerText.includes('The bin is empty'));
+  await page.getByRole('dialog').getByRole('button', { name: 'Permanently delete' }).click();
+  await page.waitForFunction(() => document.body.innerText.includes('Trash is empty'));
   await nav('Study');
   await page.getByRole('heading', { name: 'No course' }).waitFor();
   await page.getByRole('link', { name: 'Lesson 1: How accounting keeps score' }).click();

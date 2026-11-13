@@ -1771,3 +1771,15 @@ form label + label, .form-row { margin-top: .25rem; }
   .topbar .help-menu-wrap { position: static; }
   .topbar .help-menu { top: calc(100% + .25rem); right: .75rem; }
 }
+
+/* Trash: its own place at the foot of the sidebar, apart from the sections. */
+.nav .nav-trash { display: flex; align-items: center; gap: .7rem; margin-top: .5rem; padding-top: .85rem; border-top: 1px solid var(--line); }
+.nav-trash svg { flex: none; width: 20px; height: 20px; opacity: .9; }
+@media (max-width: 720px) { .nav .nav-trash { display: none; } }
+.trash-tools { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .75rem 1rem; margin: 1.25rem 0 1rem; }
+.trash-tools label { display: grid; gap: .3rem; }
+.trash-tools .button.danger { margin-left: auto; }
+.trash-list { padding-left: 0; list-style: none; }
+.trash-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; padding: .9rem 0; border-bottom: 1px solid var(--line); margin: 0; }
+.trash-what { display: grid; gap: .2rem; min-width: 0; }
+.trash-name { overflow-wrap: anywhere; }

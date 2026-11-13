@@ -220,7 +220,7 @@ export function DeckPage() {
             }
           }}
         >
-          <p>This permanently removes the deck, its {cards.length === 1 ? '1 card' : `${cards.length} cards`}, and their review history.</p>
+          <p>The deck, its {cards.length === 1 ? '1 card' : `${cards.length} cards`} and their review history go to Trash together. You can restore them from there.</p>
         </ConfirmDialog>
       )}
     </div>

@@ -17,5 +17,6 @@ export const NAV_ICONS: Record<string, ReactElement> = {
   '/progress': svg(<path key="a" d="M4 20V4" />, <path key="b" d="M4 20h16" />, <path key="c" d="M8 16v-3M12 16V9M16 16v-5" />),
   '/study': svg(<path key="a" d="m3 8 9-4 9 4-9 4Z" />, <path key="b" d="M7 10.5V15c0 1.1 2.2 2.5 5 2.5s5-1.4 5-2.5v-4.5" />, <path key="c" d="M21 8v4.5" />),
   '/notes': svg(<path key="a" d="M5 4h10l4 4v12a0 0 0 0 1 0 0H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />, <path key="b" d="M14 4v4h4M8 13h8M8 17h5" />),
+  '/trash': svg(<path key="a" d="M4 7h16M10 7V4.5h4V7" />, <path key="b" d="M6 7l1 12.5a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5L18 7" />, <path key="c" d="M10 11v6M14 11v6" />),
   '/record': svg(<rect key="a" x="9" y="3" width="6" height="11" rx="3" />, <path key="b" d="M6 11a6 6 0 0 0 12 0M12 17v3M9 20h6" />),
 };

@@ -96,7 +96,7 @@ export function LessonPage() {
           onCancel={() => setConfirm(null)}
           onConfirm={() => void attempt(async () => { await deleteLesson(lesson.id); if (stillHere.current) navigate('/study', { replace: true }); })}
         >
-          <p>This permanently removes the lesson, its checkpoints, and your progress in them. Your files and notes aren't affected.</p>
+          <p>The lesson, its checkpoints and your progress in them go to Trash together. You can restore them from there. Your files and notes aren't affected.</p>
         </ConfirmDialog>
       )}
       {confirm?.kind === 'checkpoint' && (

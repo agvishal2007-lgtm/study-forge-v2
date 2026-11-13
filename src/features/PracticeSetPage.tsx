@@ -251,7 +251,7 @@ export function PracticeSetPage() {
             }
           }}
         >
-          <p>This permanently removes the set, its {questions.length === 1 ? '1 question' : `${questions.length} questions`}, and your past answers.</p>
+          <p>The set, its {questions.length === 1 ? '1 question' : `${questions.length} questions`} and your past answers go to Trash together. You can restore them from there.</p>
         </ConfirmDialog>
       )}
     </div>

@@ -329,6 +329,32 @@ test('a deletion reaches other devices, but an edit made elsewhere is never lost
   assert.equal(await laptop.locator('textarea.note-body').inputValue(), 'Edited while deleted elsewhere');
 });
 
+test('Trash follows the student: something deleted on one device can be restored on another, and permanent deletion reaches both', async () => {
+  const laptop = await device('laptop');
+  const phone = await device('phone');
+  await saved(laptop);
+  await saved(phone);
+  // "Delete me" was moved to Trash on the laptop in the test above.
+  await phone.goto(phone.url().replace(/#.*$/, '#/trash'));
+  const onPhone = phone.getByTestId('trash-row').filter({ hasText: 'Delete me' });
+  await onPhone.waitFor();
+  await phone.getByRole('button', { name: 'Restore Delete me' }).click();
+  await phone.getByTestId('trash-message').waitFor();
+  await saved(phone);
+  await saved(laptop);
+  await nav(laptop, 'Notes');
+  await laptop.getByRole('link', { name: 'Delete me', exact: true }).waitFor();
+  // "Keep me" is still in Trash too (its edit on the phone brought the note back as well).
+  await laptop.goto(laptop.url().replace(/#.*$/, '#/trash'));
+  await laptop.getByRole('button', { name: 'Permanently delete Keep me' }).click();
+  await laptop.getByRole('dialog').getByRole('button', { name: 'Permanently delete' }).click();
+  await laptop.getByTestId('trash-empty').waitFor();
+  await saved(laptop);
+  await saved(phone);
+  await phone.goto(phone.url().replace(/#.*$/, '#/trash'));
+  await phone.getByTestId('trash-empty').waitFor();
+});
+
 test('study progress follows the student, and evidence from both devices combines', async () => {
   const laptop = await device('laptop');
   const phone = await device('phone');

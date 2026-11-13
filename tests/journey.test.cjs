@@ -153,9 +153,9 @@ test('the overdue midterm stays in view whatever the order', async () => {
 test('a reading can be binned and brought back without losing it', async () => {
   await page.goto(`${URL_BASE}#/library`);
   await page.getByRole('link', { name: 'Ledgers paper' }).click();
-  await page.getByRole('button', { name: 'Move to bin' }).click();
-  await page.goto(`${URL_BASE}#/bin`);
-  await page.getByTestId('bin-files').waitFor();
+  await page.getByRole('button', { name: 'Move to Trash' }).click();
+  await page.goto(`${URL_BASE}#/trash`);
+  await page.getByTestId('trash-list').waitFor();
   await page.getByRole('button', { name: 'Restore Ledgers paper' }).click();
   await page.goto(`${URL_BASE}#/library`);
   await page.getByRole('link', { name: 'Ledgers paper' }).waitFor();

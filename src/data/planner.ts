@@ -1,6 +1,7 @@
 import { getDb, notifyChanged } from './db';
 import { localNow } from './plannerRules';
 import { cleanSteps } from './stepRules';
+import { moveToTrash } from './trash';
 import type { PlannerItem, PlannerStatus, PlannerStep } from './types';
 
 export async function listPlannerItems(): Promise<PlannerItem[]> {
@@ -28,10 +29,11 @@ export async function setPlannerStatus(id: string, status: PlannerStatus): Promi
   notifyChanged();
 }
 
+/** Moves it to Trash. If it came from a connected calendar, that's remembered so an update doesn't add it back. */
 export async function deletePlannerItem(id: string): Promise<void> {
-  const tx = (await getDb()).transaction(['plannerItems', 'calendarEvents'], 'readwrite');
-  const item = await tx.objectStore('plannerItems').get(id);
-  await tx.objectStore('plannerItems').delete(id);
+  const item = await (await getDb()).get('plannerItems', id);
+  await moveToTrash('plannerItem', id);
+  const tx = (await getDb()).transaction(['calendarEvents'], 'readwrite');
   if (item?.sourceId) {
     // It came from a connected calendar, so this is remembered or the next update would add it back.
     const now = Date.now();

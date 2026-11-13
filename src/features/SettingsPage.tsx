@@ -22,6 +22,12 @@ export function SettingsPage() {
       <OfflineSection />
       <PermissionsSection />
 
+      <section aria-labelledby="trash-heading">
+        <h2 id="trash-heading">Trash</h2>
+        <p className="muted">Restore or permanently delete anything you deleted, from any part of Study Forge.</p>
+        <Link className="button" to="/trash">Open Trash</Link>
+      </section>
+
       <section aria-labelledby="storage-heading">
         <h2 id="storage-heading">Storage on this device</h2>
         <p>{getActiveAccount()

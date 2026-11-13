@@ -12,7 +12,7 @@ export async function listCourses(status: Lifecycle = 'active'): Promise<Course[
   return courses.filter((course) => course.status === status).sort(byPlace);
 }
 
-/** Every course whatever its status, for the places that need the whole picture (backup, search, the bin). */
+/** Every course whatever its status, for the places that need the whole picture (backup, search, Trash). */
 export const listAllCourses = async (): Promise<Course[]> => (await (await getDb()).getAll('courses')).sort(byPlace);
 
 
@@ -122,7 +122,7 @@ export async function listMaterials(status: Lifecycle = 'active'): Promise<Mater
   return materials.filter((material) => material.status === status).sort((a, b) => b.createdAt - a.createdAt);
 }
 
-/** Every file whatever its status, for backup and the bin. */
+/** Every file whatever its status, for backup and Trash. */
 export const listAllMaterials = async (): Promise<Material[]> =>
   (await (await getDb()).getAll('materials')).sort((a, b) => b.createdAt - a.createdAt);
 
@@ -253,7 +253,7 @@ export async function requestKeepFiles(): Promise<boolean> {
 /* ---- Lifecycle: Active, Archived, Trashed. Removing for good stays a separate, explicit step. ---- */
 
 /**
- * Moves a course between in use, put away, and the bin. Nothing inside it is touched: its topics,
+ * Moves a course between in use, put away, and Trash. Nothing inside it is touched: its topics,
  * files, notes and history stay exactly as they are, so restoring brings the whole course back.
  */
 export async function setCourseStatus(id: string, status: Lifecycle): Promise<void> {
@@ -267,7 +267,7 @@ export async function setCourseStatus(id: string, status: Lifecycle): Promise<vo
   });
 }
 
-/** Moves a topic between in use, put away, and the bin. Its files and notes stay where they are. */
+/** Moves a topic between in use, put away, and Trash. Its files and notes stay where they are. */
 export async function setTopicStatus(id: string, status: Lifecycle): Promise<void> {
   const db = await getDb();
   const topic = await db.get('topics', id);
@@ -279,7 +279,7 @@ export async function setTopicStatus(id: string, status: Lifecycle): Promise<voi
   });
 }
 
-/** Moves a file between in use, put away, and the bin. The file itself is kept until it is removed for good. */
+/** Moves a file between in use, put away, and Trash. The file itself is kept until it is removed for good. */
 export async function setMaterialStatus(id: string, status: Lifecycle): Promise<void> {
   const db = await getDb();
   const material = await db.get('materials', id);
@@ -316,7 +316,7 @@ export async function setShelf(id: string, shelf: string | null): Promise<void> 
   });
 }
 
-/** Everything sitting in the bin, newest first, so it can be restored or removed for good. */
+/** Everything sitting in Trash, newest first, so it can be restored or removed for good. */
 export async function listTrash(): Promise<{ courses: Course[]; topics: Topic[]; materials: Material[] }> {
   const db = await getDb();
   const [courses, topics, materials] = await Promise.all([db.getAll('courses'), db.getAll('topics'), db.getAll('materials')]);
@@ -338,9 +338,9 @@ async function undoable(label: string, store: UndoStore, ids: string[], change: 
     .filter((snapshot) => JSON.stringify(snapshot.before) !== JSON.stringify(snapshot.after)));
 }
 
-/** What a student would call putting something in the bin, archiving it, or taking it back out. */
+/** What a student would call putting something in Trash, archiving it, or taking it back out. */
 function statusLabel(status: Lifecycle, name: string): string {
-  if (status === 'trashed') return `Moved ${name} to the bin`;
+  if (status === 'trashed') return `Moved ${name} to Trash`;
   if (status === 'archived') return `Archived ${name}`;
   return `Restored ${name}`;
 }

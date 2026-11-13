@@ -19,14 +19,14 @@ export interface BulkResult {
 
 const things = (count: number) => (count === 1 ? '1 item' : `${count} items`);
 
-/** What the action did, in a sentence: "Moved 12 items to the bin". */
+/** What the action did, in a sentence: "Moved 12 items to Trash". */
 export function describe(action: BulkAction, count: number): string {
   switch (action.kind) {
     case 'pin': return `Pinned ${things(count)}`;
     case 'unpin': return `Unpinned ${things(count)}`;
     case 'archive': return `Put away ${things(count)}`;
     case 'restore': return `Put back ${things(count)}`;
-    case 'trash': return `Moved ${things(count)} to the bin`;
+    case 'trash': return `Moved ${things(count)} to Trash`;
     case 'move': return `Moved ${things(count)} to ${action.place}`;
     case 'shelf': return action.shelf ? `Put ${things(count)} on ${action.shelf}` : `Took ${things(count)} off their shelf`;
   }
@@ -35,7 +35,7 @@ export function describe(action: BulkAction, count: number): string {
 /**
  * Applies one action to many files and links. Every one is tried even if an earlier one fails,
  * the failures are reported by name rather than hidden in a total, and the whole batch is a
- * single Undo. Nothing here deletes a file for good; the furthest it goes is the bin.
+ * single Undo. Nothing here deletes a file for good; the furthest it goes is Trash.
  */
 export async function runBulk(items: Material[], action: BulkAction): Promise<BulkResult> {
   const result: BulkResult = { done: 0, failed: [] };

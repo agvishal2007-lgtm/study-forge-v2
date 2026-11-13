@@ -8,7 +8,7 @@ import { CURRENT_DB } from './account';
  */
 export interface Activity {
   at: number;
-  /** In the student's words: "Moved 4 items to the bin", "Undone: renamed Biology to Bio 101". */
+  /** In the student's words: "Moved 4 items to Trash", "Undone: renamed Biology to Bio 101". */
   text: string;
   /** Putting something back is called out, so a recovery is easy to spot. */
   recovery: boolean;

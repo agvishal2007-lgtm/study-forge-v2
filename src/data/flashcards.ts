@@ -4,6 +4,7 @@ import { getDb, notifyChanged } from './db';
 import { nextProgress } from './flashcardRules';
 import { localNow } from './plannerRules';
 import type { CardProgress, CardRating, Deck, Flashcard } from './types';
+import { moveToTrash } from './trash';
 
 export const MAX_CARD_SIDE = 5000;
 
@@ -37,16 +38,8 @@ export async function updateDeck(id: string, changes: Pick<Deck, 'name' | 'cours
   notifyChanged();
 }
 
-export async function deleteDeck(id: string): Promise<void> {
-  const tx = (await getDb()).transaction(['decks', 'cards', 'cardProgress'], 'readwrite');
-  for (const cardId of await tx.objectStore('cards').index('deckId').getAllKeys(id)) {
-    await tx.objectStore('cards').delete(cardId);
-    await tx.objectStore('cardProgress').delete(cardId);
-  }
-  await tx.objectStore('decks').delete(id);
-  await tx.done;
-  notifyChanged();
-}
+/** Moves the deck, its cards and their review progress to Trash, where they can be restored together. */
+export const deleteDeck = (id: string): Promise<void> => moveToTrash('deck', id);
 
 export async function addCard(deckId: string, front: string, back: string): Promise<void> {
   const db = await getDb();

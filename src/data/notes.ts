@@ -1,6 +1,7 @@
 import { getDb, notifyChanged } from './db';
 import type { Note } from './types';
 import { plainNote } from './noteFormat';
+import { moveToTrash } from './trash';
 
 /** Thrown when another tab changed a note, so neither version is silently lost. */
 export class NoteConflict extends Error {
@@ -38,10 +39,8 @@ export async function saveNote(
   return updatedAt;
 }
 
-export async function deleteNote(id: string): Promise<void> {
-  await (await getDb()).delete('notes', id);
-  notifyChanged();
-}
+/** Moves the note to Trash, where it can be restored. */
+export const deleteNote = (id: string): Promise<void> => moveToTrash('note', id);
 
 /** The text a list shows when a note has no title yet. */
 export function noteLabel(note: Pick<Note, 'title' | 'body'>): string {

@@ -142,11 +142,11 @@ test('a saved link is findable by its address', async () => {
 test('a link goes to the bin and comes back, and the bin is honest about it', async () => {
   await page.goto(`${URL_BASE}#/library`);
   await page.getByRole('link', { name: 'Essay draft' }).click();
-  await page.getByRole('button', { name: 'Move to bin' }).click();
+  await page.getByRole('button', { name: 'Move to Trash' }).click();
   await page.getByRole('heading', { name: 'Library' }).waitFor();
   assert.equal(await page.getByRole('link', { name: 'Essay draft' }).count(), 0);
-  await page.goto(`${URL_BASE}#/bin`);
-  await page.getByTestId('bin-files').waitFor();
+  await page.goto(`${URL_BASE}#/trash`);
+  await page.getByTestId('trash-list').waitFor();
   await page.getByRole('button', { name: 'Restore Essay draft' }).click();
   await page.goto(`${URL_BASE}#/library`);
   await page.getByRole('link', { name: 'Essay draft' }).waitFor();

@@ -293,11 +293,11 @@ test('a backup restores sets, questions, and answers', async () => {
 test('deleting a course keeps its sets, and deleting a set removes its questions and answers', async () => {
   await nav('Courses');
   await page.getByRole('link', { name: /Accounting/ }).click();
-  await page.getByRole('button', { name: 'Move to bin' }).click();
+  await page.getByRole('button', { name: 'Move to Trash' }).click();
   await page.getByRole('heading', { name: 'Courses', exact: true }).waitFor();
-  await page.goto(`${URL_BASE}#/bin`);
-  await page.getByTestId('bin-courses').waitFor();
-  await page.getByRole('button', { name: /for good$/ }).first().click();
+  await page.goto(`${URL_BASE}#/trash`);
+  await page.getByTestId('trash-list').waitFor();
+  await page.getByRole('button', { name: /^Permanently delete / }).first().click();
   await page.getByRole('dialog').getByText('any practice sets stay').waitFor();
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
   // Changed our mind: put the course back in use.
