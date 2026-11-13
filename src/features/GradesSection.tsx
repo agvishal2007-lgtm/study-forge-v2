@@ -4,12 +4,15 @@ import { addGradeCategory, deleteGradeCategory, listGradeCategories } from '../d
 import { courseGrade, projectGrade, round1 } from '../data/gradeRules';
 import { listPlannerItems } from '../data/planner';
 import { useLive } from '../data/useLive';
+import { SCHOOL_LEVELS, useSchoolProfile } from '../data/schoolProfile';
 
 /**
  * Where a course stands, worked out only from the student's own syllabus weights and the marks they
  * were given. Ungraded work is never counted as a zero, and a projection is always labelled as one.
  */
 export function GradesSection({ courseId }: { courseId: string }) {
+  const school = useSchoolProfile();
+  const level = SCHOOL_LEVELS.find(item => item.id === school.level)!;
   const [name, setName] = useState('');
   const [weight, setWeight] = useState('');
   const [assumed, setAssumed] = useState('85');
@@ -38,11 +41,12 @@ export function GradesSection({ courseId }: { courseId: string }) {
 
   return (
     <section aria-labelledby="grades-heading" data-testid="grades">
-      <h2 id="grades-heading">Grades</h2>
+      <h2 id="grades-heading">{school.level === "elementary" ? "Learning progress and grades" : "Grades"}</h2>
+      <p className="muted small">{level.gradeHelp}</p>
       {failure && <p className="error" role="alert">{failure}</p>}
 
       {data.categories.length === 0
-        ? <p className="muted">Copy your grading categories from the syllabus — "Exams, 40%" — and Study Forge can work out where you stand. It never guesses them.</p>
+        ? <p className="muted">{school.level === 'elementary' ? 'Track learning and completed assignments in Planner. Use percentage grades only if your school actually gives them; Study Forge never invents weights.' : school.level === 'college' ? 'Copy your grading categories from the syllabus — Exams, 40% — and Study Forge can work out where you stand. It never guesses them.' : 'Use the grading categories your teacher provides. If your school uses standards rather than percentages, track learning in Planner instead. Study Forge never guesses weights.'}</p>
         : (
           <>
             <p className="grade-now" data-testid="grade-now">

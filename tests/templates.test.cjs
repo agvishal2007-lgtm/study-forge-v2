@@ -313,3 +313,63 @@ test('a textbook PDF has contents, go to page, bookmarks, the page you stopped o
   await page.getByTestId('linked-files').getByRole('link', { name: 'Accounting textbook.pdf' }).waitFor();
   assert.deepEqual(pageErrors, []);
 });
+
+
+test('school-level setup is optional, age and school level are separate, and starting courses are chosen explicitly', async () => {
+  const isolated = await browser.newContext({ viewport: { width: 1280, height: 900 }, serviceWorkers: 'block' });
+  try {
+    await returningStudent(isolated);
+    const student = await isolated.newPage();
+    await student.goto(`${URL_BASE}#/courses`);
+    const setup = student.getByTestId('school-setup');
+    await setup.getByRole('heading', { name: 'Set up your courses' }).waitFor();
+    await setup.getByRole('button', { name: 'Skip for now' }).click();
+    await student.reload();
+    assert.equal(await student.getByRole('heading', { name: 'Set up your courses' }).count(), 0);
+    await setup.getByRole('button', { name: 'School level and course setup' }).click();
+    await setup.getByLabel('School level').selectOption('elementary');
+    await setup.getByLabel('13 or older').check();
+    await setup.getByLabel('Reading').check();
+    await setup.getByRole('button', { name: 'Save setup' }).click();
+    await student.getByText('Reading', { exact: true }).first().waitFor();
+    await student.reload();
+    await student.getByRole('heading', { name: 'Add a subject' }).waitFor();
+    assert.equal(await student.getByRole('heading', { name: 'Set up your courses' }).count(), 0);
+    assert.equal(await student.getByText('Writing', { exact: true }).count(), 0, 'unselected subjects are not created');
+    await student.goto(`${URL_BASE}#/settings`);
+    assert.equal(await student.getByLabel('Choose your school level').inputValue(), 'elementary');
+    await student.getByLabel('Choose your school level').selectOption('college');
+    await student.goto(`${URL_BASE}#/courses`);
+    await student.getByText('Reading', { exact: true }).first().waitFor();
+  } finally {
+    await isolated.close();
+  }
+});
+
+test('under-13 setup cannot sign into a Study Forge account', async () => {
+  const isolated = await browser.newContext({ viewport: { width: 1280, height: 900 }, serviceWorkers: 'block' });
+  try {
+    await returningStudent(isolated);
+    const student = await isolated.newPage();
+    await student.goto(`${URL_BASE}#/courses`);
+    const setup = student.getByTestId('school-setup');
+    await setup.getByLabel('School level').selectOption('middle');
+    await setup.getByLabel('Under 13').check();
+    await setup.getByRole('button', { name: 'Save setup' }).click();
+    await student.reload();
+    await student.getByRole('heading', { name: 'Courses', exact: true }).waitFor();
+    await student.getByTestId('school-setup').waitFor();
+    await student.goto(`${URL_BASE}#/library`);
+    await student.getByRole('button', { name: /From Google Drive/ }).waitFor({ state: 'detached' });
+    await student.goto(`${URL_BASE}#/settings`);
+    await student.getByText('Account and cloud syncing are unavailable in local-only mode.').waitFor();
+    assert.equal(await student.getByRole('link', { name: 'Log In / Sign Up' }).count(), 0);
+    await student.goto(`${URL_BASE}#/calendar/google`);
+    await student.getByRole('heading', { name: 'Local-only mode' }).waitFor();
+    await student.goto(`${URL_BASE}#/signup`);
+    await student.getByRole('heading', { name: 'Local-only mode' }).waitFor();
+    assert.equal(await student.getByRole('button', { name: 'Continue with Google' }).count(), 0);
+  } finally {
+    await isolated.close();
+  }
+});

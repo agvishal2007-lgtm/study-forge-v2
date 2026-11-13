@@ -2,7 +2,7 @@
  * Agreeing to the Terms of Use and the Privacy Policy. Everyone agrees once per device before using
  * Study Forge, and again whenever either document changes (the version below changes with them).
  */
-export const AGREEMENT_VERSION = '2026-11-12';
+export const AGREEMENT_VERSION = '2026-11-13';
 const KEY = 'study-forge-agreed';
 const EVENT = 'study-forge-agreed';
 

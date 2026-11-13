@@ -31,6 +31,7 @@ import { AuthShell, AuthTabsPage, ForgotEmailPage, ForgotPasswordPage, PrivacyPa
 import { HomePage } from './features/HomePage';
 import { isNewVisitor, WELCOME_SEEN_EVENT } from './data/firstVisit';
 import { getActiveAccount } from './data/account';
+import { useSchoolProfile } from './data/schoolProfile';
 
 /** Every way into an account. These render on their own page, outside the dashboard. */
 const AUTH_ROUTES = ['/auth', '/login', '/signup', '/sign-in', '/sign-up', '/forgot-password', '/forgot-email', '/account-recovery'];
@@ -86,6 +87,8 @@ function NotFound() {
 
 export function App() {
   const { pathname } = useLocation();
+  const school = useSchoolProfile();
+  const kid = school.level === 'elementary';
   // A new date or time format redraws every screen at once.
   useSyncExternalStore(subscribeDateFormat, dateFormatVersion);
   // Undecided until the device has been looked at. Only someone with no account and no work of
@@ -126,6 +129,9 @@ export function App() {
     );
   }
 
+  if (AUTH_ROUTES.includes(pathname) && school.age === 'under13') {
+    return <AuthShell><div className="page auth-page"><h1>Local-only mode</h1><p>Sign-in is disabled for students under 13. Continue studying without an account on this device.</p><NavLink to="/courses">Go to Courses</NavLink></div></AuthShell>;
+  }
   if (AUTH_ROUTES.includes(pathname)) {
     return (
       <AuthShell>
@@ -164,7 +170,7 @@ export function App() {
             Study Forge
           </NavLink>
           <div className="nav-links">
-            {MAIN_LINKS.map((link) => (
+            {MAIN_LINKS.filter(link => !kid || ['/', '/courses', '/library', '/planner', '/cards', '/practice', '/notes'].includes(link.to)).map((link) => (
               <NavLink key={link.to} to={link.to} end={link.end}>{NAV_ICONS[link.to]}<span>{link.label}</span></NavLink>
             ))}
           </div>
@@ -177,7 +183,7 @@ export function App() {
         <CalendarOffer />
         <main id="content" tabIndex={-1}>
           {updateBlocked && <p className="notice" role="alert">Study Forge was updated. Close its other tabs, then reload this one. Your files are safe.</p>}
-          <RecordingBar />
+          {!kid && <RecordingBar />}
           {/* Each screen fails alone. key resets the boundary after moving to another screen. */}
           <ErrorBoundary key={pathname}>
             <Suspense fallback={<p className="page muted">Loading…</p>}>
@@ -190,7 +196,7 @@ export function App() {
                 <Route path="/files/:id" element={<ViewerPage />} />
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/calendar/schedule" element={<SchedulePage />} />
-                <Route path="/calendar/google" element={<GoogleCalendarPage />} />
+                <Route path="/calendar/google" element={school.age === "under13" ? <div className="page"><h1>Local-only mode</h1><p>Google Calendar connections are unavailable for students under 13.</p><NavLink to="/calendar">Back to Calendar</NavLink></div> : <GoogleCalendarPage />} />
                 <Route path="/calendar/event/:id" element={<CalendarEventPage />} />
                 <Route path="/progress" element={<ProgressPage />} />
                 <Route path="/trash" element={<TrashPage />} />

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { CourseSetup } from '../components/CourseSetup';
+import { useSchoolProfile } from '../data/schoolProfile';
 import { NewCourseForm } from '../components/NewCourseForm';
 import { MyTemplates } from '../components/CourseTemplates';
 import { Shelf } from '../components/Shelf';
@@ -9,6 +11,7 @@ import { useLive } from '../data/useLive';
 
 export function CoursesPage() {
   const [arranging, setArranging] = useState(false);
+  const school = useSchoolProfile();
   const { data, error } = useLive(async () => {
     const [courses, archived, materials] = await Promise.all([listCourses(), listCourses('archived'), listMaterials()]);
     return { courses, archived, materials };
@@ -22,8 +25,9 @@ export function CoursesPage() {
     <div className="page">
       <div className="section-head">
         <h1>Courses</h1>
-        <Link className="button" to="/courses/new-semester" data-testid="new-semester">Start a new semester</Link>
+        {school.level !== 'elementary' && <Link className="button" to="/courses/new-semester" data-testid="new-semester">Start a new semester</Link>}
       </div>
+      {data && <CourseSetup hasCourses={data.courses.length > 0 || data.archived.length > 0} />}
       {error && <p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p>}
       {data && data.courses.length > 1 && (
         <p>
@@ -70,11 +74,11 @@ export function CoursesPage() {
       ))}
 
       <section aria-labelledby="add-course" data-tour="add-course">
-        <h2 id="add-course">Add a course</h2>
+        <h2 id="add-course">{school.level === 'elementary' ? 'Add a subject' : 'Add a course'}</h2>
         <NewCourseForm />
       </section>
 
-      <MyTemplates />
+      {school.level !== 'elementary' && <MyTemplates />}
 
       {data && data.archived.length > 0 && (
         <section aria-labelledby="archived-courses" data-testid="archived-courses">

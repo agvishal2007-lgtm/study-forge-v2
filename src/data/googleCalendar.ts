@@ -1,3 +1,4 @@
+import { isChildMode } from './schoolProfile';
 import { addDays, fromGoogleEvent, type GoogleItem } from './calendarRules';
 import { GOOGLE_DRIVE_CLIENT_ID } from './cloudSetup';
 
@@ -19,6 +20,7 @@ let ready: Promise<void> | null = null;
 
 /** Loads Google's code ahead of the tap, because a window that opens late gets blocked. */
 export function prepareGoogle(): Promise<void> {
+  if (isChildMode()) return Promise.reject(new CalendarError('Google Calendar is unavailable in local-only mode.'));
   ready ??= new Promise<void>((resolve, reject) => {
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
@@ -40,6 +42,7 @@ export const hasGoogleAccess = () => Boolean(access && access.expiresAt > Date.n
 
 /** Must be called directly from a tap, after prepareGoogle has finished. */
 export function askGoogle(hint?: string): Promise<void> {
+  if (isChildMode()) return Promise.reject(new CalendarError('Google Calendar is unavailable in local-only mode.'));
   if (hasGoogleAccess()) return Promise.resolve();
   return new Promise((resolve, reject) => {
     const client = page.google.accounts.oauth2.initTokenClient({

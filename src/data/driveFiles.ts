@@ -1,3 +1,4 @@
+import { isChildMode } from './schoolProfile';
 import { GOOGLE_DRIVE_CLIENT_ID } from './cloudSetup';
 import { CURRENT_DB } from './account';
 import { getDb, notifyChanged } from './db';
@@ -78,6 +79,7 @@ const hasAccess = () => Boolean(access && access.expiresAt > Date.now() + 60_000
 let gsi: Promise<void> | null = null;
 /** Loads Google's sign-in code ahead of the tap, because a window that opens late gets blocked. */
 export function prepareDrive(): Promise<void> {
+  if (isChildMode()) return Promise.reject(new DriveError('Cloud backup is unavailable in local-only mode.'));
   if (TEST_BUILD) return Promise.resolve();
   gsi ??= new Promise<void>((resolve, reject) => {
     if (page.google?.accounts?.oauth2) return resolve();
@@ -153,6 +155,7 @@ export const isDriveBackupOn = async () => Boolean(await (await getDb()).get('me
 
 /** Turns on Drive backup from a tap, then starts sending files. */
 export async function turnOnDriveBackup(hint?: string): Promise<void> {
+  if (isChildMode()) throw new DriveError('Cloud backup is unavailable in local-only mode.');
   await askDrive(hint);
   await (await getDb()).put('meta', true, CONNECTED_KEY);
   setState({ phase: 'idle', message: '' });
@@ -161,6 +164,7 @@ export async function turnOnDriveBackup(hint?: string): Promise<void> {
 
 /** From a tap, when Google's permission ran out. */
 export async function reconnectDrive(hint?: string): Promise<void> {
+  if (isChildMode()) throw new DriveError('Cloud backup is unavailable in local-only mode.');
   await askDrive(hint);
   setState({ phase: 'idle', message: '' });
   void backUpFiles();

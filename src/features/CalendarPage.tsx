@@ -5,6 +5,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { listCalendarEvents, getGoogleConnection, setEventCompleted } from '../data/calendar';
 import { STATUS_LABEL, STATUS_MARK, workStatus, type WorkStatus } from '../data/statusRules';
 import { compareEvents, describeTime, minutesOf, monthGrid, monthOf, noClassesOn, shiftMonth, todaysPlan, visibleEvents } from '../data/calendarRules';
+import { isChildMode } from '../data/schoolProfile';
 import { getActiveAccount } from '../data/account';
 import { CalendarError, hasGoogleAccess, prepareGoogle } from '../data/googleCalendar';
 import { getLatestFromGoogle, reportWords } from '../data/googleConnect';
@@ -225,7 +226,7 @@ export function CalendarPage() {
   }, []);
   const connected = Boolean(data?.connection);
   useEffect(() => {
-    if (!connected) return;
+    if (!connected || isChildMode()) return;
     let active = true;
     prepareGoogle().then(() => { if (active) setGoogleReady(true); }, () => undefined);
     return () => { active = false; };
@@ -233,7 +234,7 @@ export function CalendarPage() {
   // Google's permission lasts about an hour, so while it's still good the calendar updates by itself.
   const lastSync = data?.connection?.lastSync ?? 0;
   useEffect(() => {
-    if (!connected || !hasGoogleAccess() || Date.now() - lastSync < AUTO_UPDATE_MS) return;
+    if (!connected || isChildMode() || !hasGoogleAccess() || Date.now() - lastSync < AUTO_UPDATE_MS) return;
     getLatestFromGoogle().then((report) => { if (report) setUpdateNote(reportWords(report)); }, () => undefined);
   }, [connected, lastSync]);
   const getLatest = () => {

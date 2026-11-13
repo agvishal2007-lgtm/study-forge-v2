@@ -8,14 +8,25 @@ import { formatBytes } from '../data/format';
 import { getActiveAccount } from '../data/account';
 import { getStorageStatus, requestKeepFiles } from '../data/store';
 import { useLive } from '../data/useLive';
+import { SCHOOL_LEVELS, saveSchoolProfile, useSchoolProfile } from '../data/schoolProfile';
 import { PermissionsSection } from './PermissionsSection';
 
 export function SettingsPage() {
   const [asked, setAsked] = useState(false);
+  const school = useSchoolProfile();
   const { data } = useLive(getStorageStatus, [asked]);
   return (
     <div className="page settings-page">
       <h1>Settings</h1>
+      <section aria-labelledby="school-level-heading">
+        <h2 id="school-level-heading">School level</h2>
+        <label>Choose your school level
+          <select value={school.level} onChange={event => saveSchoolProfile({ ...school, level: event.target.value as typeof school.level })}>
+            {SCHOOL_LEVELS.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
+          </select>
+        </label>
+        <p className="muted small">This changes course suggestions and wording, not existing classes, marks or deadlines. Reopen setup from Courses.</p>
+      </section>
       <AccountSection />
       <AppearanceSection />
       <BackupSection />
@@ -32,7 +43,7 @@ export function SettingsPage() {
         <h2 id="storage-heading">Storage on this device</h2>
         <p>{getActiveAccount()
           ? 'Everything is kept in this browser on this device, and syncs to your account. Files and recordings sync too once you turn on Google Drive syncing above.'
-          : 'Everything is kept only in this browser on this device. Sign in to sync it to your other devices.'}</p>
+          : school.age === 'under13' ? 'Everything is kept only in this browser on this device. Account and cloud syncing are unavailable in local-only mode.' : 'Everything is kept only in this browser on this device. Sign in to sync it to your other devices.'}</p>
         <p>Clearing this browser's site data or losing this device removes anything that isn't synced, so create a backup regularly.</p>
         {data?.usage != null && data.quota != null && (
           <p>Using {formatBytes(data.usage)} of about {formatBytes(data.quota)} that this browser allows.</p>

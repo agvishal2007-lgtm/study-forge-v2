@@ -1,3 +1,4 @@
+import { isChildMode } from './schoolProfile';
 import { BackendError, itemKey, type AccountBackend, type PushItem, type RemoteItem, type SyncCollection } from './accountBackend';
 import { CURRENT_DB, getActiveAccount, switchAccount, updateAccountDetails } from './account';
 import { getDb, notifyChanged, subscribe } from './db';
@@ -318,6 +319,7 @@ function watchFrom(cursor: number) {
 
 /** Starts syncing for the signed-in account. */
 export async function startSync(): Promise<void> {
+  if (isChildMode()) return;
   const account = getActiveAccount();
   if (!account) return;
   backendInstance = await loadBackend();
@@ -352,6 +354,7 @@ export async function startSync(): Promise<void> {
 }
 
 export async function loadBackend(): Promise<AccountBackend> {
+  if (isChildMode()) throw new Error('Accounts are unavailable in local-only mode.');
   if (import.meta.env.VITE_ACCOUNT_BACKEND === 'test') return (await import('./testBackend')).backend;
   return (await import('./firebaseSetup')).backend;
 }

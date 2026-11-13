@@ -1,3 +1,4 @@
+import { isChildMode } from './schoolProfile';
 import { DROPBOX_APP_KEY, GOOGLE_DRIVE_CLIENT_ID, GOOGLE_PICKER_API_KEY, GOOGLE_PROJECT_NUMBER } from './cloudSetup';
 
 export type CloudSource = 'drive' | 'dropbox';
@@ -23,6 +24,7 @@ const TEST_BUILD = import.meta.env.VITE_ACCOUNT_BACKEND === 'test';
 const page = window as any;
 
 export function cloudSources(): CloudSource[] {
+  if (isChildMode()) return [];
   if (TEST_BUILD) return ['drive', 'dropbox'];
   return [...(GOOGLE_DRIVE_CLIENT_ID ? ['drive' as const] : []), ...(DROPBOX_APP_KEY ? ['dropbox' as const] : [])];
 }
@@ -43,6 +45,7 @@ const prepared = new Map<CloudSource, Promise<void>>();
 
 /** Loads a service's code ahead of the tap, because a window that opens late gets blocked. */
 export function prepareCloud(source: CloudSource): Promise<void> {
+  if (isChildMode()) return Promise.reject(new CloudError('failed', 'Cloud imports are unavailable in local-only mode.'));
   if (TEST_BUILD) return Promise.resolve();
   let ready = prepared.get(source);
   if (!ready) {
@@ -148,6 +151,7 @@ function pickFromDropbox(): Promise<CloudResult> {
 
 /** Must be called directly from the tap, after prepareCloud has finished. */
 export function pickFromCloud(source: CloudSource, hint?: string): Promise<CloudResult> {
+  if (isChildMode()) return Promise.reject(new CloudError('failed', 'Cloud imports are unavailable in local-only mode.'));
   if (TEST_BUILD) {
     const fake = page.__testCloudPick;
     if (typeof fake === 'string') return Promise.reject(new CloudError(fake === 'cancelled' ? 'cancelled' : 'failed', fake === 'cancelled' ? '' : fake));

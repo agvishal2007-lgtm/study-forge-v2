@@ -1,6 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { useSchoolProfile } from '../data/schoolProfile';
 import { getActiveAccount, switchAccount } from '../data/account';
 import { getGuestSummary, openGuestAsBackup, removeAccountFromDevice, removeGuestData, type GuestSummary } from '../data/accountData';
 import { restoreBackup, type RestoreReport } from '../data/backup';
@@ -21,6 +22,7 @@ const PHASE_TEXT: Record<SyncPhase, string> = {
 };
 
 export function AccountSection() {
+  const school = useSchoolProfile();
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [confirmationSent, setConfirmationSent] = useState(false);
   const [confirmationFailed, setConfirmationFailed] = useState(false);
@@ -63,13 +65,13 @@ export function AccountSection() {
     return (
       <section aria-labelledby="account-heading" data-tour="sync-files">
         <h2 id="account-heading">Account</h2>
-        <p>Sign in to keep your courses, notes, lessons, and study progress across your devices. It's optional, and everything else works without it.</p>
+        <p>{school.age === 'under13' ? 'Local-only mode is enabled. Your study work stays in this browser; account sign-in and online sync are disabled.' : "Sign in to keep your courses, notes, lessons, and study progress across your devices. It's optional, and everything else works without it."}</p>
         <ul className="plain-list">
           <li>Files and recordings can sync through your own Google Drive, if you choose. Without that, they stay on each device, so keep making backups of those.</li>
           <li>School Google accounts work if your school allows it. If yours blocks it, you'll see a message and can keep using Study Forge without signing in.</li>
           <li>Other students can't read your work. It's stored in Google's Firebase service, and whoever runs this site could technically view it, so don't save anything highly sensitive.</li>
         </ul>
-        <p className="muted">Use Log In / Sign Up at the top. <Link to="/privacy">Privacy Policy</Link> · <Link to="/terms">Terms of Use</Link></p>
+        <p className="muted">{school.age !== 'under13' && 'Use Log In / Sign Up at the top. '}<Link to="/privacy">Privacy Policy</Link> · <Link to="/terms">Terms of Use</Link></p>
       </section>
     );
   }
