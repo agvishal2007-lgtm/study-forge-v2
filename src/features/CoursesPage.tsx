@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { NewCourseForm } from '../components/NewCourseForm';
+import { CollegeCourseSetup } from '../components/CollegeCourseSetup';
 import { MyTemplates } from '../components/CourseTemplates';
 import { Shelf } from '../components/Shelf';
 import { groupCourses } from '../data/courseRules';
@@ -24,6 +25,7 @@ export function CoursesPage() {
         <h1>Courses</h1>
         <Link className="button" to="/courses/new-semester" data-testid="new-semester">Start a new semester</Link>
       </div>
+      {data && <CollegeCourseSetup hasCourses={data.courses.length > 0 || data.archived.length > 0} />}
       {error && <p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p>}
       {data && data.courses.length > 1 && (
         <p>
