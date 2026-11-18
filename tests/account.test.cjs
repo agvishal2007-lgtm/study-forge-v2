@@ -414,7 +414,7 @@ test('planner items follow the student, and the newest change wins', async () =>
   await laptop.waitForFunction(() => [...document.querySelectorAll('[data-testid=planner-row]')]
     .some((row) => row.textContent.includes('Synced homework') && row.querySelector('select')?.value === 'In Progress'));
   await laptop.waitForTimeout(30);
-  await phone.getByRole('button', { name: 'Mark Synced homework done' }).click();
+  await phone.getByTestId('planner-row').filter({ hasText: 'Synced homework' }).getByRole('checkbox', { name: 'Synced homework' }).check();
   await phone.locator('[data-testid=planner-row][data-done=true]').waitFor();
   await saved(laptop);
   await saved(phone);
