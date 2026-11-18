@@ -78,7 +78,9 @@ async function doActivity(id) {
   if (id === 'notes-lists') {
     const box = c.getByLabel('Practice note');
     await box.click(); await page.keyboard.press('End'); await page.keyboard.press('Control+End');
+    // Bullets puts the cursor after the new "• " on the next frame; typing before that misses it.
     await c.getByRole('button', { name: 'Bullets' }).click();
+    await page.waitForFunction(() => (document.getElementById('academy-note')?.value ?? '').endsWith('\u2022 '));
     await page.keyboard.type('Goggles'); await page.keyboard.press('Enter'); await page.keyboard.type('Gloves');
     return;
   }

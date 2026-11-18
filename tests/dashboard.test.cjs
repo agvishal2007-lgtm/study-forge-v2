@@ -229,6 +229,8 @@ test('the dashboard explains what its numbers mean', async () => {
 test('a lesson that needs review is counted, and study next still shows', async () => {
   await nav('Study');
   await page.getByRole('button', { name: /sample lesson/i }).click();
+  // Adding it saves, then opens it. Leaving before that lands would take us off Today again.
+  await page.waitForURL(/study\/lessons\//);
   await nav('Today');
   await page.getByTestId('next-up').getByRole('link').nth(1).waitFor();
   assert.equal(await tile('lessons'), '0', 'a lesson only counts once answers say it needs review');
