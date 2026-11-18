@@ -408,6 +408,11 @@ test('planner items follow the student, and the newest change wins', async () =>
   // Both change it before syncing. The phone's change comes later.
   await nav(laptop, 'Planner');
   await laptop.getByLabel('Status of Synced homework').selectOption('In Progress');
+  // The select only shows the new status once the change is actually written, so this is how we
+  // know the laptop changed it first. Without it a slow machine can save the laptop's change last,
+  // which would make the laptop the newest change and turn the point of this check upside down.
+  await laptop.waitForFunction(() => [...document.querySelectorAll('[data-testid=planner-row]')]
+    .some((row) => row.textContent.includes('Synced homework') && row.querySelector('select')?.value === 'In Progress'));
   await laptop.waitForTimeout(30);
   await phone.getByRole('button', { name: 'Mark Synced homework done' }).click();
   await phone.locator('[data-testid=planner-row][data-done=true]').waitFor();

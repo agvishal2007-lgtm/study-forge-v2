@@ -1,4 +1,4 @@
-import { applyGoogleItems, choiceFor, courseForCode, getGoogleConnection, saveGoogleConnection, type CalendarChoice, type GoogleReport } from './calendar';
+import { applyGoogleItems, choiceFor, courseForCode, getGoogleConnection, knownGoogleConnection, saveGoogleConnection, type CalendarChoice, type GoogleReport } from './calendar';
 import { courseTokenIn, guessDestination } from './calendarRules';
 import { getDb, notifyChanged } from './db';
 import { askGoogle, googleWindow, listGoogleCalendars, readGoogleItems, type GoogleCalendarInfo } from './googleCalendar';
@@ -56,9 +56,24 @@ export async function connectWithGuesses(email?: string): Promise<GoogleReport> 
 
 /** Must be called directly from a tap, unless Google's permission from earlier is still good. */
 export async function getLatestFromGoogle(email?: string): Promise<GoogleReport | null> {
+  /*
+   * Permission is asked for before anything is awaited, because a browser only opens Google's
+   * window while it can still see the student's tap. Reading the saved connection from storage
+   * first is enough of a pause for an installed app on a phone to blame the page instead and
+   * block the window — which is why this used to work from the Google Calendar screen, where
+   * permission is asked for straight away, and nowhere else.
+   *
+   * Nothing is asked for when we already know there's nothing connected, so a stray tap can't
+   * put a Google window in front of someone who never connected anything.
+   */
+  const permission = knownGoogleConnection() === null ? null : askGoogle(email);
   const connection = await getGoogleConnection();
-  if (!connection) return null;
-  await askGoogle(email);
+  if (!connection) {
+    // Swallow the permission we started, so a connection removed on another device is quiet.
+    void permission?.catch(() => undefined);
+    return null;
+  }
+  await (permission ?? askGoogle(email));
   const today = localNow().date;
   const items = await readGoogleItems(connection.calendars, today);
   const report = await applyGoogleItems(items, connection.choices, googleWindow(today), today, connection.calendars.map((calendar) => calendar.id));

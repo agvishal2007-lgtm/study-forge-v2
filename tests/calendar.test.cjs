@@ -542,6 +542,43 @@ test('it fits a phone, and every section stays reachable', async () => {
   await page.setViewportSize({ width: 1280, height: 900 });
 });
 
+test('Get the latest asks Google inside the tap, so an installed app does not block the window', async () => {
+  /*
+   * Safari on an iPhone, and an app installed from the home screen most of all, only lets a site
+   * open Google's window while it can still see the tap that asked for it. Reading the saved
+   * connection from storage first is enough of a pause to lose that, and the student is told to
+   * allow pop-ups instead of being signed in. This check fails if permission is ever asked for
+   * after an await again, which is what used to make this work on the Google Calendar screen and
+   * nowhere else.
+   */
+  // A fresh page, so no permission is left over from an earlier check and Google is really asked.
+  await page.goto(`${URL_BASE}#/calendar?view=plan`);
+  await page.reload();
+  await page.getByTestId('month-view').waitFor();
+  await page.waitForFunction(() => !!window.google);
+  await page.evaluate(() => {
+    window.__askedIn = 'never';
+    const oauth = window.google.accounts.oauth2;
+    const real = oauth.initTokenClient.bind(oauth);
+    oauth.initTokenClient = (config) => { window.__askedIn = window.__tapStage ?? 'outside a tap'; return real(config); };
+    document.addEventListener('click', () => {
+      window.__tapStage = 'in the tap';
+      // Anything waiting on storage lands after this, so this is how a later ask is spotted.
+      setTimeout(() => { window.__tapStage = 'after the tap'; }, 0);
+    }, { capture: true, once: true });
+  });
+  // The student closes Google's window, so this checks when permission is asked for and changes
+  // nothing: the next check still sees the calendar exactly as this one found it.
+  tokenBehavior = 'closed';
+  try {
+    await page.getByRole('button', { name: 'Get the latest' }).click();
+    await page.waitForFunction(() => window.__askedIn !== 'never', null, { timeout: 10000 });
+    assert.equal(await page.evaluate(() => window.__askedIn), 'in the tap');
+  } finally {
+    tokenBehavior = 'ok';
+  }
+});
+
 test('disconnecting keeps what came in and changes nothing in Google', async () => {
   await page.goto(`${URL_BASE}#/calendar/google`);
   await page.getByRole('button', { name: 'Disconnect' }).click();

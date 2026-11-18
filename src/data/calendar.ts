@@ -145,12 +145,29 @@ export interface GoogleConnection {
 
 const CONNECTION_KEY = 'googleCalendar';
 
-export const getGoogleConnection = async () => ((await getDb()).get('meta', CONNECTION_KEY) as Promise<GoogleConnection | undefined>);
+/*
+ * The last connection we read, kept in memory so a tap can tell whether Google is connected
+ * without waiting. Asking Google for permission has to happen inside the tap itself, and even the
+ * moment it takes to read this from storage is long enough for a browser to decide the window
+ * wasn't opened by the student and block it.
+ */
+let lastKnownConnection: GoogleConnection | null | undefined;
+
+/** What we last read, straight away and without waiting. Undefined means we haven't looked yet. */
+export const knownGoogleConnection = (): GoogleConnection | null | undefined => lastKnownConnection;
+
+export const getGoogleConnection = async () => {
+  const connection = (await (await getDb()).get('meta', CONNECTION_KEY)) as GoogleConnection | undefined;
+  lastKnownConnection = connection ?? null;
+  return connection;
+};
 export async function saveGoogleConnection(connection: GoogleConnection): Promise<void> {
+  lastKnownConnection = connection;
   await (await getDb()).put('meta', connection, CONNECTION_KEY);
   notifyChanged();
 }
 export async function clearGoogleConnection(removeEvents: boolean): Promise<number> {
+  lastKnownConnection = null;
   const db = await getDb();
   await db.delete('meta', CONNECTION_KEY);
   let removed = 0;
