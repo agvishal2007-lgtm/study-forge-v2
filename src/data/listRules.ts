@@ -64,7 +64,12 @@ const make = (id: string, name: string, kind: TodoList['kind'], items: PlannerIt
 /** The list to show, keeping the one the student had open when it still exists. */
 export function chooseList(lists: TodoList[], wanted: string | null): TodoList | null {
   if (lists.length === 0) return null;
-  return lists.find((list) => list.id === wanted) ?? lists[0];
+  const asked = lists.find((list) => list.id === wanted);
+  if (asked) return asked;
+  // Nothing chosen yet, so open somewhere predictable. Personal is the one list that is always
+  // there and isn't about a particular class, and opening on a class list instead means a task
+  // just added to Personal is nowhere to be seen — which reads as the panel having lost it.
+  return lists.find((list) => list.kind === 'personal') ?? lists[0];
 }
 
 /** Which list comes next when flipping through them, wrapping round at the end. */

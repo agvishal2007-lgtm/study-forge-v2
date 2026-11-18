@@ -48,8 +48,10 @@ test('the list that was open stays open, and a gone one falls back rather than b
   const { listsFor, chooseList } = await rules();
   const lists = listsFor([task('t1', { courseId: 'acc' }), task('t2')], [course('acc', 'Accounting', 0)]);
   assert.equal(chooseList(lists, 'personal').name, 'Personal', 'the one they had open');
-  assert.equal(chooseList(lists, 'a-class-that-was-deleted').name, 'Accounting', 'falls back to the first');
-  assert.equal(chooseList(lists, null).name, 'Accounting');
+  // Falls back to Personal rather than to whichever class happens to be first. Opening on a class
+  // list meant a task just added to Personal was nowhere on screen, which reads as a lost task.
+  assert.equal(chooseList(lists, 'a-class-that-was-deleted').name, 'Personal', 'falls back to Personal');
+  assert.equal(chooseList(lists, null).name, 'Personal');
   assert.equal(chooseList([], 'personal'), null, 'nothing at all is handled');
 });
 
@@ -94,4 +96,21 @@ test('a task taken off the list is in no list, but is not gone', async () => {
   // Putting it back brings it to its own class, not Personal.
   const back = listsFor([task('t1', { courseId: 'acc' }), task('t2', { courseId: 'acc' })], [course('acc', 'Accounting', 0)]);
   assert.deepEqual(back.find((list) => list.name === 'Accounting').items.map((item) => item.id), ['t1', 't2']);
+});
+
+test('with nothing chosen yet, the panel opens somewhere predictable', async () => {
+  const { chooseList } = await import('../src/data/listRules.ts');
+  const lists = [
+    { id: 'acc', kind: 'course', name: 'Accounting', items: [] },
+    { id: 'reading', kind: 'section', name: 'Reading', items: [] },
+    { id: 'personal', kind: 'personal', name: 'Personal', items: [] },
+  ];
+  // A remembered list still wins, which is what keeps flipping sticky.
+  assert.equal(chooseList(lists, 'reading').id, 'reading');
+  // Otherwise Personal, so a task just added to it is never invisible on first open.
+  assert.equal(chooseList(lists, null).id, 'personal');
+  assert.equal(chooseList(lists, 'a-list-that-is-gone').id, 'personal');
+  // And if there were somehow no Personal list, the first one rather than nothing.
+  assert.equal(chooseList(lists.slice(0, 2), null).id, 'acc');
+  assert.equal(chooseList([], null), null);
 });
