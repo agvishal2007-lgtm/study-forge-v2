@@ -1,3 +1,4 @@
+import { isDeviceOnly } from './schoolLevel';
 import { addDays, fromGoogleEvent, type GoogleItem } from './calendarRules';
 import { GOOGLE_DRIVE_CLIENT_ID } from './cloudSetup';
 
@@ -19,6 +20,7 @@ let ready: Promise<void> | null = null;
 
 /** Loads Google's code ahead of the tap, because a window that opens late gets blocked. */
 export function prepareGoogle(): Promise<void> {
+  if (isDeviceOnly()) return Promise.reject(new CalendarError('Study Forge is set to this device only, so Google Calendar is switched off.'));
   ready ??= new Promise<void>((resolve, reject) => {
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
@@ -40,6 +42,7 @@ export const hasGoogleAccess = () => Boolean(access && access.expiresAt > Date.n
 
 /** Must be called directly from a tap, after prepareGoogle has finished. */
 export function askGoogle(hint?: string): Promise<void> {
+  if (isDeviceOnly()) return Promise.reject(new CalendarError('Study Forge is set to this device only, so Google Calendar is switched off.'));
   if (hasGoogleAccess()) return Promise.resolve();
   return new Promise((resolve, reject) => {
     const client = page.google.accounts.oauth2.initTokenClient({

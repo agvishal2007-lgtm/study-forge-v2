@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 
 /** When these terms last changed. Update it whenever the wording changes. */
-export const TERMS_UPDATED = '12 November 2026';
+export const TERMS_UPDATED = '17 November 2026';
 
 /**
  * Terms of Use, in plain language, describing how Study Forge actually works. The owner's own words
@@ -27,7 +27,8 @@ export function TermsContent() {
       <p>Study Forge is a free study website for organizing courses, files, lectures, notes and study sessions. It’s offered as it is, for personal learning. It has no ads, and using it costs nothing.</p>
 
       <h2>Who can use it</h2>
-      <p>You must be old enough to agree to these terms where you live, or have a parent or guardian’s permission. If your school or another organization gave you an account, its rules apply to you too.</p>
+      <p>You must be old enough to agree to these terms where you live, or have a parent or guardian’s permission. Children under 13 can’t create a Study Forge account. If your school or another organization gave you an account, its rules apply to you too.</p>
+      <p>If you choose Elementary school or Middle school, Study Forge keeps everything on that device: there’s no account, no syncing, and the Google and Dropbox connections stay switched off. Study Forge never asks anyone’s age, so it can’t check one. That means this is a smaller-footprint way to use Study Forge, not a verified parental-consent system, and a parent or guardian shouldn’t take it as one. Visiting any page still reaches the service that hosts the site.</p>
 
       <h2>Your account</h2>
       <ul>

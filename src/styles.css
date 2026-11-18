@@ -1865,3 +1865,17 @@ button.mock-nav-item:hover, button.mock-top-item:hover, button.mock-button:hover
    the + button or the account picture never sits on them. */
 .tour-box { transition: none !important; }
 body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-right: max(16px, env(safe-area-inset-right)); }
+
+/* First-time setup on Courses: one short step at a time, comfortable on a phone. */
+.course-setup { display: grid; gap: .85rem; }
+.course-setup h2 { margin: 0; }
+.course-setup [data-testid='setup-step'] { margin: -.5rem 0 0; }
+.course-setup fieldset { border: 1px solid var(--line); border-radius: 12px; padding: .75rem .85rem; margin: 0; }
+.course-setup legend { padding: 0 .35rem; font-weight: 600; }
+.course-setup label > input + span { display: inline-block; }
+.course-setup textarea { width: 100%; resize: vertical; }
+/* Starter classes read as a list on a phone and share the width on a computer. */
+.setup-classes { display: grid; gap: .5rem .9rem; }
+@media (min-width: 560px) { .setup-classes { grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); } }
+.setup-classes legend { grid-column: 1 / -1; }
+.course-setup .session-actions { flex-wrap: wrap; gap: .5rem; }

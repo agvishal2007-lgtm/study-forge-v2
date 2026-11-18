@@ -4,12 +4,15 @@ import { addGradeCategory, deleteGradeCategory, listGradeCategories } from '../d
 import { courseGrade, projectGrade, round1 } from '../data/gradeRules';
 import { listPlannerItems } from '../data/planner';
 import { useLive } from '../data/useLive';
+import { LEVEL_GRADE_HELP, gradeWords, showsGpa, useSchool, useSchoolWords } from '../data/schoolLevel';
 
 /**
  * Where a course stands, worked out only from the student's own syllabus weights and the marks they
  * were given. Ungraded work is never counted as a zero, and a projection is always labelled as one.
  */
 export function GradesSection({ courseId }: { courseId: string }) {
+  const school = useSchool();
+  const words = useSchoolWords();
   const [name, setName] = useState('');
   const [weight, setWeight] = useState('');
   const [assumed, setAssumed] = useState('85');
@@ -38,22 +41,27 @@ export function GradesSection({ courseId }: { courseId: string }) {
 
   return (
     <section aria-labelledby="grades-heading" data-testid="grades">
-      <h2 id="grades-heading">Grades</h2>
+      <h2 id="grades-heading">{school.level === 'elementary' ? 'How this class is going' : 'Grades'}</h2>
+      <p className="muted small">{LEVEL_GRADE_HELP[school.level]}</p>
       {failure && <p className="error" role="alert">{failure}</p>}
 
       {data.categories.length === 0
-        ? <p className="muted">Copy your grading categories from the syllabus — "Exams, 40%" — and Study Forge can work out where you stand. It never guesses them.</p>
+        ? <p className="muted">{school.level === 'elementary'
+            ? `Nothing to work out yet. If your teacher gives percentages, add what each part is worth below. Otherwise keep track of the work you finish in Planner.`
+            : school.level === 'college'
+              ? 'Copy your grading categories from the syllabus — "Exams, 40%" — and Study Forge can work out where you stand. It never guesses them.'
+              : `Add what each part of your grade is worth, the way your ${words.teacher} gives it. Study Forge never guesses.`}</p>
         : (
           <>
             <p className="grade-now" data-testid="grade-now">
               {grade.percent === null
                 ? 'Nothing is graded yet, so there is no grade to show.'
-                : <>So far: <b>{grade.percent}%</b> <span className="muted">based on the {grade.weightCounted}% of the course that has been graded</span></>}
+                : <>So far: <b>{showsGpa(school.level) || school.level === 'elementary' ? gradeWords(school.level, grade.percent) : `${grade.percent}%`}</b> <span className="muted">based on the {grade.weightCounted}% of the {words.course} that has been graded</span></>}
             </p>
             {grade.weightTotal !== 100 && (
               <p className="notice" data-testid="weights-warning">
                 Your categories add up to {grade.weightTotal}%, not 100%. Study Forge still works out a grade from the
-                part that has been graded, but check the weights against your syllabus.
+                part that has been graded, but check the weights against {school.level === 'college' ? 'your syllabus' : `what your ${words.teacher} gave you`}.
               </p>
             )}
             {grade.unsorted > 0 && (

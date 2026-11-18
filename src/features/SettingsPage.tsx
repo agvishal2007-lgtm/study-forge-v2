@@ -9,6 +9,7 @@ import { getActiveAccount } from '../data/account';
 import { getStorageStatus, requestKeepFiles } from '../data/store';
 import { useLive } from '../data/useLive';
 import { PermissionsSection } from './PermissionsSection';
+import { SchoolSection } from './SchoolSection';
 
 export function SettingsPage() {
   const [asked, setAsked] = useState(false);
@@ -16,6 +17,7 @@ export function SettingsPage() {
   return (
     <div className="page settings-page">
       <h1>Settings</h1>
+      <SchoolSection />
       <AccountSection />
       <AppearanceSection />
       <BackupSection />

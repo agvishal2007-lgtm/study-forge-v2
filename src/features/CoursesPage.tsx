@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { NewCourseForm } from '../components/NewCourseForm';
-import { CollegeCourseSetup } from '../components/CollegeCourseSetup';
+import { CourseSetup } from '../components/CourseSetup';
 import { MyTemplates } from '../components/CourseTemplates';
 import { Shelf } from '../components/Shelf';
 import { groupCourses } from '../data/courseRules';
+import { showsTemplates, useSchool, useSchoolWords } from '../data/schoolLevel';
 import { listCourses, listMaterials, moveCourse, setCourseStatus } from '../data/store';
 import { useLive } from '../data/useLive';
 
 export function CoursesPage() {
   const [arranging, setArranging] = useState(false);
+  const school = useSchool();
+  const words = useSchoolWords();
+  const [setupOpen, setSetupOpen] = useState(false);
   const { data, error } = useLive(async () => {
     const [courses, archived, materials] = await Promise.all([listCourses(), listCourses('archived'), listMaterials()]);
     return { courses, archived, materials };
@@ -18,27 +22,32 @@ export function CoursesPage() {
   const groups = data ? groupCourses(data.courses) : [];
   // A student who never sets a term shouldn't see a heading for one.
   const showTerms = groups.length > 1 || Boolean(groups[0]?.term);
+  // Setup meets a student who has nothing yet. Nobody is asked twice, and it reopens on request.
+  const nothingYet = Boolean(data && data.courses.length === 0 && data.archived.length === 0);
+  const showSetup = setupOpen || Boolean(data && !school.setupDone && nothingYet);
 
   return (
     <div className="page">
       <div className="section-head">
-        <h1>Courses</h1>
-        <Link className="button" to="/courses/new-semester" data-testid="new-semester">Start a new semester</Link>
+        <h1>{words.Courses}</h1>
+        {school.level !== 'elementary' && <Link className="button" to="/courses/new-semester" data-testid="new-semester">Start a new {words.term}</Link>}
       </div>
-      {data && <CollegeCourseSetup hasCourses={data.courses.length > 0 || data.archived.length > 0} />}
+      {showSetup
+        ? <CourseSetup hasCourses={!nothingYet} onClose={() => setSetupOpen(false)} />
+        : data && <p className="muted small"><button className="text-button" type="button" onClick={() => setSetupOpen(true)} data-testid="reopen-setup">Change your school and {words.term} setup</button></p>}
       {error && <p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p>}
       {data && data.courses.length > 1 && (
         <p>
           <button className="text-button" onClick={() => setArranging(!arranging)} data-testid="arrange-toggle">
-            {arranging ? 'Done arranging' : 'Arrange courses'}
+            {arranging ? 'Done arranging' : `Arrange ${words.courses}`}
           </button>
-          {arranging && <span className="muted small"> Courses move within their own semester.</span>}
+          {arranging && <span className="muted small"> {words.Courses} move within their own {words.term}.</span>}
         </p>
       )}
 
       {groups.map((group) => (
-        <section key={group.term || 'no-term'} className="course-group" aria-label={group.term || 'Courses with no semester'}>
-          {showTerms && <h2>{group.term || 'No semester'}</h2>}
+        <section key={group.term || 'no-term'} className="course-group" aria-label={group.term || `${words.Courses} with no ${words.term}`}>
+          {showTerms && <h2>{group.term || `No ${words.term}`}</h2>}
           {arranging
             ? (
               <ol className="arrange-list" data-testid={`arrange-${group.term || 'no-term'}`}>
@@ -72,16 +81,16 @@ export function CoursesPage() {
       ))}
 
       <section aria-labelledby="add-course" data-tour="add-course">
-        <h2 id="add-course">Add a course</h2>
+        <h2 id="add-course">Add a {words.course}</h2>
         <NewCourseForm />
       </section>
 
-      <MyTemplates />
+      {showsTemplates(school.level) && <MyTemplates />}
 
       {data && data.archived.length > 0 && (
         <section aria-labelledby="archived-courses" data-testid="archived-courses">
-          <h2 id="archived-courses">Archived courses</h2>
-          <p className="muted">Finished courses, kept whole. Their files, notes and results are still here and still searchable.</p>
+          <h2 id="archived-courses">Archived {words.courses}</h2>
+          <p className="muted">Finished {words.courses}, kept whole. Their files, notes and results are still here and still searchable.</p>
           <ul className="plain-list">
             {data.archived.map((course) => (
               <li key={course.id}>

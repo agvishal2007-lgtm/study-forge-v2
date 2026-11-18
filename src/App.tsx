@@ -30,6 +30,7 @@ import { RecordPage } from './features/RecordPage';
 import { AuthShell, AuthTabsPage, ForgotEmailPage, ForgotPasswordPage, PrivacyPage } from './features/AuthPages';
 import { HomePage } from './features/HomePage';
 import { isNewVisitor, WELCOME_SEEN_EVENT } from './data/firstVisit';
+import { showsExamTools, useSchool, useSchoolWords } from './data/schoolLevel';
 import { getActiveAccount } from './data/account';
 
 /** Every way into an account. These render on their own page, outside the dashboard. */
@@ -99,6 +100,8 @@ export function App() {
     return () => { active = false; window.removeEventListener(WELCOME_SEEN_EVENT, started); };
   }, []);
   const agreed = useSyncExternalStore(subscribeAgreement, agreedNow);
+  const school = useSchool();
+  const words = useSchoolWords();
   const [updateBlocked, setUpdateBlocked] = useState(false);
   useEffect(() => {
     // On a phone the bar slides, so the current section is kept in view.
@@ -164,8 +167,8 @@ export function App() {
             Study Forge
           </NavLink>
           <div className="nav-links">
-            {MAIN_LINKS.map((link) => (
-              <NavLink key={link.to} to={link.to} end={link.end}>{NAV_ICONS[link.to]}<span>{link.label}</span></NavLink>
+            {MAIN_LINKS.filter((link) => showsExamTools(school.level) || link.to !== '/exams').map((link) => (
+              <NavLink key={link.to} to={link.to} end={link.end}>{NAV_ICONS[link.to]}<span>{link.to === '/courses' ? words.Courses : link.label}</span></NavLink>
             ))}
           </div>
           {/* Trash is its own place, apart from the sections. On a phone it's in the account menu and Settings instead, so the bottom bar stays short. */}

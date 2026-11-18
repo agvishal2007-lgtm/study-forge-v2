@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { LEVEL_LABEL, getLevel, isDeviceOnly } from '../data/schoolLevel';
 import { getActiveAccount, switchAccount } from '../data/account';
 import type { AccountBackend, AccountUser, LoginProvider } from '../data/accountBackend';
 import { describeAuthFailure, looksLikeEmail, signUpProblems } from '../data/authMessages';
@@ -55,6 +56,17 @@ function finish(user: AccountUser, method: string) {
  * each have their own address (/login and /signup) so a direct link opens the right one.
  */
 export function AuthTabsPage({ mode }: { mode: 'sign-in' | 'sign-up' }) {
+  // Elementary and Middle school have no accounts, so there is nothing to log in to.
+  if (isDeviceOnly()) {
+    return (
+      <div className="page auth-page" data-testid="no-accounts-here">
+        <h1>Study Forge is on this device only</h1>
+        <p>Study Forge is set to {LEVEL_LABEL[getLevel()]}, which keeps all your work on this device. There's no account to log in to, and nothing you do is sent anywhere.</p>
+        <p>Everything still works: your {getLevel() === 'elementary' ? 'classes' : 'classes'}, notes, flashcards and files are all saved here. Make a backup from Settings to keep a copy.</p>
+        <p><Link to="/courses">Go to your classes</Link> · <Link to="/settings">Settings</Link></p>
+      </div>
+    );
+  }
   return (
     <>
       <nav className="auth-tabs" aria-label="Log in or sign up">
@@ -251,9 +263,11 @@ export function PrivacyPage() {
 export function PrivacyContent() {
   return (
     <>
-      <p className="muted">What Study Forge keeps, where it's kept, and how to remove it. Last updated 12 November 2026.</p>
+      <p className="muted">What Study Forge keeps, where it's kept, and how to remove it. Last updated 17 November 2026.</p>
       <h2>Without an account</h2>
-      <p>Everything stays in your browser on your device. Nothing is sent to Study Forge.</p>
+      <p>Your courses, notes, files and everything else you make stay in your browser on your device. Study Forge doesn't upload any of it. Opening any page does still reach GitHub Pages, which hosts the site, and a host like that normally sees technical details such as your IP address and which browser you use. Screens that offer Google or Dropbox load a small piece of those companies' code when you use them.</p>
+      <h2>Elementary and Middle school</h2>
+      <p>Choosing Elementary school or Middle school keeps Study Forge on that one device. Account sign-in, syncing, Google Calendar, Google Drive and Dropbox are all switched off, so none of your work leaves the device. Study Forge never asks anyone's age, and school level isn't a statement of age — a 13-year-old can be in 8th grade. Because no age is collected or checked, this is a smaller-footprint way to use Study Forge rather than a verified parental-consent arrangement: it hasn't had an independent children's privacy review, so please don't assume it is certified for children's use. Visiting the site still reaches its host, as above.</p>
       <h2>With an account</h2>
       <ul className="plain-list">
         <li>Your email address, plus your name and picture if you sign in with Google, Microsoft or Yahoo, are used to sign you in.</li>

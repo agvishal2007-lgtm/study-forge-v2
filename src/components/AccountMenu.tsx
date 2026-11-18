@@ -6,6 +6,7 @@ import { WalkthroughButton } from '../features/walkthrough/Walkthrough';
 import { getActiveAccount, switchAccount } from '../data/account';
 import { toggleLook, useIsDark } from '../data/theme';
 import { getSyncState, loadBackend, signOutOfAccount, subscribeSync, syncNow } from '../data/sync';
+import { isDeviceOnly } from '../data/schoolLevel';
 
 /** One tap between light and dark, and nothing else. Automatic options live only in Settings. */
 function ThemeButton() {
@@ -42,11 +43,11 @@ function Avatar({ photoURL, email }: { photoURL?: string; email: string }) {
 
 function SignedOut() {
   // Getting this ready early means the sign-in window can open as soon as it's tapped.
-  useEffect(() => { void loadBackend().catch(() => undefined); }, []);
+  useEffect(() => { if (!isDeviceOnly()) void loadBackend().catch(() => undefined); }, []);
   return (
     <>
       <Link className="icon-button" to="/settings" aria-label="Settings" title="Settings"><GearIcon /></Link>
-      <Link className="button primary" to="/auth" data-tour="account">Log In / Sign Up</Link>
+      {!isDeviceOnly() && <Link className="button primary" to="/auth" data-tour="account">Log In / Sign Up</Link>}
     </>
   );
 }

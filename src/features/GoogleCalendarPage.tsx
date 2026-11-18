@@ -1,3 +1,4 @@
+import { isDeviceOnly } from '../data/schoolLevel';
 import { formatWhen } from '../data/dateFormat';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -55,6 +56,7 @@ export function GoogleCalendarPage() {
   const [googleReady, setGoogleReady] = useState(false);
   useEffect(() => {
     let active = true;
+    if (isDeviceOnly()) return;
     prepareGoogle().then(() => { if (active) setGoogleReady(true); }, (error: Error) => { if (active) setProblem(error.message); });
     return () => { active = false; };
   }, []);

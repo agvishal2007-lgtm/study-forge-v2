@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { markWelcomeSeen } from '../data/firstVisit';
+import { isDeviceOnly } from '../data/schoolLevel';
 
 /** Everything here is something Study Forge actually does today. No promises about what is coming. */
 const PROMISES = [
@@ -44,7 +45,7 @@ export function HomePage() {
           <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>
           Study Forge
         </span>
-        <Link className="button" to="/auth">Log In / Sign Up</Link>
+        {!isDeviceOnly() && <Link className="button" to="/auth">Log In / Sign Up</Link>}
       </header>
 
       <main id="content" tabIndex={-1}>
@@ -56,7 +57,7 @@ export function HomePage() {
           </p>
           <p className="home-actions">
             <button className="button primary" onClick={enter}>Start using it</button>
-            <Link className="button" to="/auth">Log In / Sign Up</Link>
+            {!isDeviceOnly() && <Link className="button" to="/auth">Log In / Sign Up</Link>}
           </p>
           <p className="muted home-note">No account required. Nothing to pay for. Nothing to install.</p>
         </section>
@@ -91,7 +92,7 @@ export function HomePage() {
           </p>
           <p className="home-actions">
             <button className="button primary" onClick={enter}>Start using it</button>
-            <Link className="button" to="/auth">Log In / Sign Up</Link>
+            {!isDeviceOnly() && <Link className="button" to="/auth">Log In / Sign Up</Link>}
           </p>
         </section>
       </main>

@@ -5,6 +5,7 @@ import { readBlob, saveBlob } from './blobs';
 import { hashFile } from './store';
 import { copyMatches, needsBackup, nextRange, receivedFrom, type DriveFileInfo } from './driveFilesRules';
 import type { Material } from './types';
+import { isDeviceOnly } from './schoolLevel';
 
 /*
  * File and recording contents travel through the student's own Google Drive, in a "Study Forge"
@@ -78,6 +79,7 @@ const hasAccess = () => Boolean(access && access.expiresAt > Date.now() + 60_000
 let gsi: Promise<void> | null = null;
 /** Loads Google's sign-in code ahead of the tap, because a window that opens late gets blocked. */
 export function prepareDrive(): Promise<void> {
+  if (isDeviceOnly()) return Promise.reject(new DriveError('Study Forge is set to this device only, so Google Drive is switched off.'));
   if (TEST_BUILD) return Promise.resolve();
   gsi ??= new Promise<void>((resolve, reject) => {
     if (page.google?.accounts?.oauth2) return resolve();
