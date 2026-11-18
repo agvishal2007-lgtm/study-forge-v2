@@ -1926,3 +1926,7 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
   .sound-row { grid-template-columns: 1fr; }
   .sound-row .sound-what { grid-column: 1; }
 }
+
+/* The letter of the day on a block schedule, beside today's date. */
+.block-day { color: var(--muted); font-weight: 500; }
+.block-setup { display: grid; gap: .75rem; margin-top: .75rem; }

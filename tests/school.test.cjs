@@ -164,6 +164,43 @@ test('elementary school gets the simpler app, in its own words', async () => {
   } finally { await context.close(); }
 });
 
+test('a block schedule says what day it is, and a day off is put right in one go', async () => {
+  await page.goto(`${URL_BASE}#/settings/school`);
+  await page.getByTestId('school-section').waitFor();
+  await page.getByTestId('school-level').selectOption('high');
+  await page.getByTestId('block-on').check();
+  await page.getByTestId('block-length').waitFor();
+
+  // It starts as a plain A/B block, and today is day A until the student says otherwise.
+  assert.equal(await page.getByTestId('block-length').inputValue(), '2');
+  const first = await page.getByTestId('block-state').innerText();
+  assert.match(first, /Today is an? [AB] day|School is closed today/);
+
+  // A longer cycle is offered for schools that run one.
+  await page.getByTestId('block-length').selectOption('6');
+  assert.equal(await page.getByTestId('block-today').locator('option').count(), 6);
+
+  // Saying what today really is puts the cycle right, and it is remembered.
+  await page.getByTestId('block-length').selectOption('2');
+  await page.getByTestId('block-today').selectOption('1');
+  assert.match(await page.getByTestId('block-state').innerText(), /Today is a B day/);
+  await page.reload();
+  await page.getByTestId('block-state').waitFor();
+  assert.match(await page.getByTestId('block-state').innerText(), /Today is a B day/, 'the cycle is remembered');
+
+  // Today says which day it is, so it is the first thing seen rather than buried in Settings.
+  await page.goto(`${URL_BASE}#/`);
+  await page.getByTestId('block-day').waitFor();
+  assert.match(await page.getByTestId('block-day').innerText(), /B day/);
+
+  // Switching it off leaves no letter anywhere.
+  await page.goto(`${URL_BASE}#/settings/school`);
+  await page.getByTestId('block-on').uncheck();
+  assert.equal(await page.getByTestId('block-length').count(), 0);
+  await page.goto(`${URL_BASE}#/`);
+  assert.equal(await page.getByTestId('block-day').count(), 0);
+});
+
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });

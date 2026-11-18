@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { getActiveAccount } from '../data/account';
 import {
-  LEVEL_GRADES, LEVEL_LABEL, SCHOOL_LEVELS, TERM_KINDS, TERM_KIND_LABEL,
-  allowsAccounts, setSchool, useSchool, wordsFor, type SchoolLevel,
+  LEVEL_GRADES, LEVEL_LABEL, ROTATION_LETTERS, ROTATION_MAX, SCHOOL_LEVELS, SCHOOL_WEEK, TERM_KINDS, TERM_KIND_LABEL,
+  allowsAccounts, reanchor, rotationDayOn, rotationLabel, setSchool, useSchool, wordsFor, type SchoolLevel,
 } from '../data/schoolLevel';
+import { localNow } from '../data/plannerRules';
 
 /**
  * Changing school level later. It only changes wording, suggestions and which tools show — never a
@@ -44,6 +45,55 @@ export function SchoolSection() {
           {LEVEL_LABEL[school.level]} keeps everything on this device. There's no account, no syncing, and Google and Dropbox stay switched off, because each of those signs in with an outside account. Study Forge never asks your age. Make a backup below to keep a copy of your work.
         </p>
       )}
+
+      <div className="pref-row">
+        <h3 id="block-heading">Block schedule</h3>
+        <p className="muted small">
+          Some schools rotate through named days — an A day, then a B day — instead of running the same {words.courses} every day. The cycle only moves on days school is open, so a weekend or a day off never pushes it on.
+        </p>
+        <label className="choice-pair">
+          <input
+            type="checkbox"
+            checked={Boolean(school.rotation)}
+            data-testid="block-on"
+            onChange={(event) => setSchool({ rotation: event.target.checked ? { length: 2, anchor: localNow().date, weekdays: SCHOOL_WEEK } : null })}
+          />
+          My school runs a block schedule
+        </label>
+        {school.rotation && (
+          <div className="block-setup">
+            <label>How many days in the cycle?
+              <select
+                value={school.rotation.length}
+                data-testid="block-length"
+                onChange={(event) => setSchool({ rotation: { ...school.rotation!, length: Number(event.target.value) } })}
+              >
+                {Array.from({ length: ROTATION_MAX - 1 }, (_, index) => index + 2).map((length) => (
+                  <option key={length} value={length}>{length} days (A to {ROTATION_LETTERS[length - 1]})</option>
+                ))}
+              </select>
+            </label>
+            <label>What is today?
+              <select
+                value={rotationDayOn(school.rotation, localNow().date) ?? ''}
+                data-testid="block-today"
+                onChange={(event) => setSchool({ rotation: reanchor(school.rotation!, localNow().date, Number(event.target.value)) })}
+              >
+                {rotationDayOn(school.rotation, localNow().date) === null && <option value="">Not a school day today</option>}
+                {Array.from({ length: school.rotation.length }, (_, day) => (
+                  <option key={day} value={day}>{rotationLabel(day)} day</option>
+                ))}
+              </select>
+            </label>
+            <p className="muted small" data-testid="block-state">
+              {rotationDayOn(school.rotation, localNow().date) === null
+                ? 'School is closed today, so there is no letter for it. Set this on a school day.'
+                : `Today is a ${rotationLabel(rotationDayOn(school.rotation, localNow().date)!)} day.`}
+              {' '}If a day off has put the cycle out, just say what today really is and every other day follows from it.
+            </p>
+          </div>
+        )}
+      </div>
 
       {pending && (
         <ConfirmDialog

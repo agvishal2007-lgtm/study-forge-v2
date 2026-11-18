@@ -1,3 +1,4 @@
+import { schoolWeek, usableRotation, type Rotation } from './rotationRules';
 import { useSyncExternalStore } from 'react';
 import { getActiveAccount } from './account';
 import {
@@ -11,6 +12,7 @@ import {
  * passed straight through from here so the rest of the app has one place to import from.
  */
 export * from './schoolLevelRules';
+export * from './rotationRules';
 
 /* ---- Remembering the choice ---- */
 
@@ -28,9 +30,14 @@ export interface SchoolChoice {
   chosen: boolean;
   /** True when the student picked the term kind themselves, so changing level leaves it alone. */
   termKindChosen: boolean;
+  /**
+   * A block schedule, for schools that rotate through named days instead of running the same
+   * classes every day. Null means an ordinary week, which is what most schools have.
+   */
+  rotation: Rotation | null;
 }
 
-const DEFAULTS: SchoolChoice = { level: 'college', termKind: 'semester', setupDone: false, chosen: false, termKindChosen: false };
+const DEFAULTS: SchoolChoice = { level: 'college', termKind: 'semester', setupDone: false, chosen: false, termKindChosen: false, rotation: null };
 
 function read(): SchoolChoice {
   try {
@@ -44,6 +51,7 @@ function read(): SchoolChoice {
       setupDone: saved.setupDone === true,
       chosen: (SCHOOL_LEVELS as string[]).includes(saved.level),
       termKindChosen: saved.termKindChosen === true,
+      rotation: usableRotation(saved.rotation) ? { ...saved.rotation, weekdays: schoolWeek(saved.rotation.weekdays) } : null,
     };
   } catch {
     return DEFAULTS;
@@ -59,7 +67,7 @@ if (typeof window !== 'undefined') {
   window.addEventListener(ACCOUNT_UPDATED, () => { current = read(); tell(); });
 }
 
-export function setSchool(choice: Partial<Pick<SchoolChoice, 'level' | 'termKind' | 'setupDone'>>, sync = true) {
+export function setSchool(choice: Partial<Pick<SchoolChoice, 'level' | 'termKind' | 'setupDone' | 'rotation'>>, sync = true) {
   const level = choice.level ?? current.level;
   const levelChanged = Boolean(choice.level && choice.level !== current.level);
   const next: SchoolChoice = {
@@ -69,6 +77,7 @@ export function setSchool(choice: Partial<Pick<SchoolChoice, 'level' | 'termKind
     setupDone: choice.setupDone ?? current.setupDone,
     chosen: current.chosen || Boolean(choice.level),
     termKindChosen: current.termKindChosen || Boolean(choice.termKind),
+    rotation: choice.rotation === undefined ? current.rotation : choice.rotation,
   };
   current = next;
   try {

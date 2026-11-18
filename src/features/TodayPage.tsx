@@ -28,6 +28,7 @@ import { formatDuration, listStudyTime, secondsByDate } from '../data/studyTime'
 import { listExamResults } from '../data/exams';
 import { listPlannerItems, setPlannerStatus } from '../data/planner';
 import { comparePlanner, describeDue, groupOf, isDone, localNow } from '../data/plannerRules';
+import { rotationDayOn, rotationLabel, useSchool } from '../data/schoolLevel';
 import { listUnfinished } from '../data/recordings';
 import { getStorageStatus, listCourses, listMaterials, requestKeepFiles } from '../data/store';
 import type { Course, PlannerItem } from '../data/types';
@@ -178,10 +179,13 @@ export function TodayPage() {
     { label: 'Studied today', value: formatDuration(secondsToday), to: '/progress', id: 'time-today' },
   ];
 
+  // On a block schedule, which day of the cycle this is — the first thing such a student checks.
+  const school = useSchool();
+  const blockDay = school.rotation ? rotationDayOn(school.rotation, localNow().date) : null;
   return (
     <div className="page dashboard">
       <header>
-        <h1>Today: {dateWords}</h1>
+        <h1>Today: {dateWords}{blockDay !== null ? <span className="block-day" data-testid="block-day"> · {rotationLabel(blockDay)} day</span> : null}</h1>
         <p className="dash-lead" data-testid="day-summary">
           {daySummary({
             overdue: overdue.length,
