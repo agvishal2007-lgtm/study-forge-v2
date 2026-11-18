@@ -20,6 +20,11 @@ export interface Course {
    * ordinary in high school. Missing or false means it belongs to its term alone.
    */
   allYear?: boolean;
+  /**
+   * On a block schedule, which days of the cycle this class meets: 0 is the first day. Missing or
+   * empty means every day, so a class is never hidden because this was never filled in.
+   */
+  meetsOn?: number[];
   /** Credit hours as the student entered them. Null or missing means not entered, never zero. */
   credits?: number | null;
   /** The final grade as the student wrote it, such as "A-" or "Pass". Empty means not entered. */

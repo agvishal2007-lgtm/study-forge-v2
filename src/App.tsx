@@ -19,6 +19,7 @@ import { OfflineNotices } from './components/OfflineNotices';
 import { SaveProvider, SavePanel } from './components/SaveQueue';
 import { UndoBar } from './components/UndoBar';
 import { TodoPanel } from './components/TodoPanel';
+import { DueReminders } from './components/DueReminders';
 import { CourseDetailPage } from './features/CourseDetailPage';
 import { CoursesPage } from './features/CoursesPage';
 import { LibraryPage } from './features/LibraryPage';
@@ -180,6 +181,7 @@ export function App() {
         <AccountMenu />
         <OfflineNotices />
         <CalendarOffer />
+        <DueReminders />
         <main id="content" tabIndex={-1}>
           {updateBlocked && <p className="notice" role="alert">Study Forge was updated. Close its other tabs, then reload this one. Your files are safe.</p>}
           <RecordingBar />

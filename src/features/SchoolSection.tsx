@@ -3,7 +3,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { getActiveAccount } from '../data/account';
 import {
   LEVEL_GRADES, LEVEL_LABEL, ROTATION_LETTERS, ROTATION_MAX, SCHOOL_LEVELS, SCHOOL_WEEK, TERM_KINDS, TERM_KIND_LABEL,
-  allowsAccounts, reanchor, rotationDayOn, rotationLabel, setSchool, useSchool, wordsFor, type SchoolLevel,
+  allowsAccounts, dayLabel, dayNames, reanchor, rotationDayOn, setSchool, useSchool, wordsFor, type DayStyle, type Rotation, type SchoolLevel,
 } from '../data/schoolLevel';
 import { localNow } from '../data/plannerRules';
 
@@ -12,6 +12,23 @@ import { localNow } from '../data/plannerRules';
  * class, a mark or a deadline. Moving to a level that works on this device only is confirmed first
  * when the student is signed in, because their device stops syncing until they move back.
  */
+/**
+ * Which naming a stored rotation is using. Worked out from the names themselves rather than kept
+ * as a fourth setting, so there is no way for the two to disagree with each other.
+ */
+function styleOf(rotation: Rotation): DayStyle {
+  if (!rotation.names) return 'letters';
+  return rotation.names.join('|') === dayNames('numbers', rotation.length).join('|') ? 'numbers' : 'custom';
+}
+
+/** Names for a cycle of this length, keeping anything already typed. */
+const resize = (rotation: Rotation, length: number): string[] | undefined => {
+  const style = styleOf(rotation);
+  if (style === 'letters') return undefined;
+  const fallback = dayNames(style, length);
+  return fallback.map((name, day) => (style === 'custom' ? (rotation.names?.[day] ?? '') : name));
+};
+
 export function SchoolSection() {
   const school = useSchool();
   const words = wordsFor(school.level, school.termKind);
@@ -66,13 +83,57 @@ export function SchoolSection() {
               <select
                 value={school.rotation.length}
                 data-testid="block-length"
-                onChange={(event) => setSchool({ rotation: { ...school.rotation!, length: Number(event.target.value) } })}
+                onChange={(event) => {
+                  const length = Number(event.target.value);
+                  setSchool({ rotation: { ...school.rotation!, length, names: resize(school.rotation!, length) } });
+                }}
               >
                 {Array.from({ length: ROTATION_MAX - 1 }, (_, index) => index + 2).map((length) => (
                   <option key={length} value={length}>{length} days (A to {ROTATION_LETTERS[length - 1]})</option>
                 ))}
               </select>
             </label>
+            <label>What does your school call its days?
+              <select
+                value={styleOf(school.rotation)}
+                data-testid="block-naming"
+                onChange={(event) => {
+                  const style = event.target.value as DayStyle;
+                  const current = Array.from({ length: school.rotation!.length }, (_, day) => dayLabel(school.rotation, day));
+                  setSchool({
+                    rotation: {
+                      ...school.rotation!,
+                      // Switching to your own names starts from what is on screen, so nothing is
+                      // wiped and you only change the ones that are wrong.
+                      names: style === 'letters' ? undefined : style === 'numbers' ? dayNames('numbers', school.rotation!.length) : current,
+                    },
+                  });
+                }}
+              >
+                <option value="letters">A day, B day, C day</option>
+                <option value="numbers">Day 1, Day 2, Day 3</option>
+                <option value="custom">My own names</option>
+              </select>
+            </label>
+            {styleOf(school.rotation) === 'custom' && (
+              <div className="block-names" data-testid="block-names">
+                {Array.from({ length: school.rotation.length }, (_, day) => (
+                  <label key={day}>
+                    Day {day + 1} is called
+                    <input
+                      value={school.rotation!.names?.[day] ?? ''}
+                      placeholder={dayNames('letters', school.rotation!.length)[day]}
+                      onChange={(event) => {
+                        const names = Array.from({ length: school.rotation!.length }, (_, index) => school.rotation!.names?.[index] ?? '');
+                        names[day] = event.target.value;
+                        setSchool({ rotation: { ...school.rotation!, names } });
+                      }}
+                    />
+                  </label>
+                ))}
+                <p className="muted small">Any you leave empty show as a letter instead, so nothing ever appears blank.</p>
+              </div>
+            )}
             <label>What is today?
               <select
                 value={rotationDayOn(school.rotation, localNow().date) ?? ''}
@@ -81,14 +142,14 @@ export function SchoolSection() {
               >
                 {rotationDayOn(school.rotation, localNow().date) === null && <option value="">Not a school day today</option>}
                 {Array.from({ length: school.rotation.length }, (_, day) => (
-                  <option key={day} value={day}>{rotationLabel(day)} day</option>
+                  <option key={day} value={day}>{dayLabel(school.rotation, day)} day</option>
                 ))}
               </select>
             </label>
             <p className="muted small" data-testid="block-state">
               {rotationDayOn(school.rotation, localNow().date) === null
                 ? 'School is closed today, so there is no letter for it. Set this on a school day.'
-                : `Today is a ${rotationLabel(rotationDayOn(school.rotation, localNow().date)!)} day.`}
+                : `Today is a ${dayLabel(school.rotation, rotationDayOn(school.rotation, localNow().date)!)} day.`}
               {' '}If a day off has put the cycle out, just say what today really is and every other day follows from it.
             </p>
           </div>

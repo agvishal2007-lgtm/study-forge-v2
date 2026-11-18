@@ -28,7 +28,7 @@ import { formatDuration, listStudyTime, secondsByDate } from '../data/studyTime'
 import { listExamResults } from '../data/exams';
 import { listPlannerItems, setPlannerStatus } from '../data/planner';
 import { comparePlanner, describeDue, groupOf, isDone, localNow } from '../data/plannerRules';
-import { rotationDayOn, rotationLabel, useSchool } from '../data/schoolLevel';
+import { classesOnDay, dayLabel, rotationDayOn, useSchool } from '../data/schoolLevel';
 import { listUnfinished } from '../data/recordings';
 import { getStorageStatus, listCourses, listMaterials, requestKeepFiles } from '../data/store';
 import type { Course, PlannerItem } from '../data/types';
@@ -185,10 +185,19 @@ export function TodayPage() {
 
   // On a block schedule, which day of the cycle this is — the first thing such a student checks.
   const blockDay = school.rotation ? rotationDayOn(school.rotation, localNow().date) : null;
+  // Which classes meet today. Shown only once the student has said which days any class meets:
+  // before that every class meets every day, and a line listing all of them would say nothing.
+  const anyDaysSet = courses.some((course) => (course.meetsOn ?? []).length > 0);
+  const meetingToday = blockDay === null || !anyDaysSet ? [] : classesOnDay(courses, blockDay);
   return (
     <div className="page dashboard">
       <header>
-        <h1>Today: {dateWords}{blockDay !== null ? <span className="block-day" data-testid="block-day"> · {rotationLabel(blockDay)} day</span> : null}</h1>
+        <h1>Today: {dateWords}{blockDay !== null ? <span className="block-day" data-testid="block-day"> · {dayLabel(school.rotation, blockDay)} day</span> : null}</h1>
+        {meetingToday.length > 0 && (
+          <p className="muted small" data-testid="classes-today">
+            Classes today: {meetingToday.map((course) => course.name).join(', ')}
+          </p>
+        )}
         <p className="dash-lead" data-testid="day-summary">
           {daySummary({
             overdue: overdue.length,

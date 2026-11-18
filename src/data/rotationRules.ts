@@ -15,6 +15,12 @@ export interface Rotation {
   anchor: string;
   /** Which weekdays school is in session. 0 is Sunday. */
   weekdays: number[];
+  /**
+   * What the school calls its days, in cycle order. Schools don't all say "A day": some count
+   * Day 1 to Day 6, some use colours like Maroon and Gold. Missing or blank falls back to letters,
+   * so a student who never touches this still gets something sensible.
+   */
+  names?: string[];
 }
 
 export const ROTATION_LETTERS = 'ABCDEFGH';
@@ -33,6 +39,48 @@ export const schoolWeek = (weekdays: number[]): number[] =>
 
 /** The letter for a cycle day: 0 is A. */
 export const rotationLabel = (day: number): string => ROTATION_LETTERS[day] ?? '?';
+
+/** The three ways schools name their days, offered so nobody has to type six names by hand. */
+export type DayStyle = 'letters' | 'numbers' | 'custom';
+
+/** Day names for a style: letters A, B, C…, numbers Day 1, Day 2…, or whatever was typed. */
+export function dayNames(style: DayStyle, length: number, typed: string[] = []): string[] {
+  const count = Math.max(2, Math.min(length, ROTATION_MAX));
+  return Array.from({ length: count }, (_, day) =>
+    style === 'numbers' ? `Day ${day + 1}` : style === 'custom' ? (typed[day] ?? '') : rotationLabel(day),
+  );
+}
+
+/**
+ * What to call a cycle day on screen. The school's own word wins; a blank one falls back to the
+ * letter rather than showing an empty space, because half-finished setup shouldn't look broken.
+ */
+export const dayLabel = (rotation: Rotation | null | undefined, day: number): string =>
+  rotation?.names?.[day]?.trim() || rotationLabel(day);
+
+/**
+ * Whether a class meets on a cycle day. A class with no days chosen meets every day, which is
+ * both the honest reading of "not set up yet" and what a class in a plain schedule does.
+ * This is also what covers rotate-and-drop schedules, where a class skips one day of the cycle:
+ * the student leaves that one day unticked and nothing else has to understand "dropping".
+ */
+export function meetsOnDay(meetsOn: number[] | undefined | null, day: number | null): boolean {
+  if (day === null) return false;
+  if (!meetsOn || meetsOn.length === 0) return true;
+  return meetsOn.includes(day);
+}
+
+/** The classes that meet on a cycle day, in the order they were given. */
+export function classesOnDay<T extends { meetsOn?: number[] }>(courses: T[], day: number | null): T[] {
+  if (day === null) return [];
+  return courses.filter((course) => meetsOnDay(course.meetsOn, day));
+}
+
+/** Tidies chosen days: real cycle days only, no repeats, in order. Every day chosen means "all". */
+export function tidyMeetsOn(days: number[] | undefined, length: number): number[] {
+  const kept = [...new Set((days ?? []).filter((day) => Number.isInteger(day) && day >= 0 && day < length))].sort((a, b) => a - b);
+  return kept.length === length ? [] : kept;
+}
 
 /** True when this rotation makes sense to use at all. */
 export function usableRotation(rotation: Rotation | null): rotation is Rotation {

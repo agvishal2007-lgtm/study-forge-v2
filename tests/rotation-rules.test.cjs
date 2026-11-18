@@ -84,3 +84,38 @@ test('a school that runs six days a week is handled the same way', async () => {
   // Weekdays are tidied: repeats and nonsense are dropped, and order does not matter.
   assert.deepEqual(schoolWeek([5, 1, 1, 9, -2, 3]), [1, 3, 5]);
 });
+
+test('days are named the way the school names them, and never show up blank', async () => {
+  const { dayNames, dayLabel } = await import('../src/data/rotationRules.ts');
+  assert.deepEqual(dayNames('letters', 4), ['A', 'B', 'C', 'D']);
+  assert.deepEqual(dayNames('numbers', 3), ['Day 1', 'Day 2', 'Day 3']);
+  assert.deepEqual(dayNames('custom', 2, ['Maroon']), ['Maroon', '']);
+  // Two days is the shortest cycle there is, whatever was asked for.
+  assert.equal(dayNames('letters', 0).length, 2);
+  const base = { length: 2, anchor: '2026-11-02', weekdays: [1, 2, 3, 4, 5] };
+  assert.equal(dayLabel({ ...base, names: ['Maroon', 'Gold'] }, 1), 'Gold');
+  // Half-finished setup falls back to the letter instead of an empty space.
+  assert.equal(dayLabel({ ...base, names: ['Maroon', '  '] }, 1), 'B');
+  assert.equal(dayLabel(null, 0), 'A');
+});
+
+test('a class meets on the days it was given, and on every day until it is told otherwise', async () => {
+  const { meetsOnDay, classesOnDay, tidyMeetsOn } = await import('../src/data/rotationRules.ts');
+  // Nothing chosen means every day: a class is never hidden because this was never filled in.
+  assert.equal(meetsOnDay(undefined, 0), true);
+  assert.equal(meetsOnDay([], 3), true);
+  assert.equal(meetsOnDay([0, 2], 2), true);
+  assert.equal(meetsOnDay([0, 2], 1), false);
+  // There is no cycle day at all on a day school is closed, so nothing meets.
+  assert.equal(meetsOnDay(undefined, null), false);
+  const courses = [{ id: 'bio', meetsOn: [0, 2] }, { id: 'chem', meetsOn: [1] }, { id: 'band' }];
+  assert.deepEqual(classesOnDay(courses, 0).map((c) => c.id), ['bio', 'band']);
+  assert.deepEqual(classesOnDay(courses, 1).map((c) => c.id), ['chem', 'band']);
+  assert.deepEqual(classesOnDay(courses, null), []);
+  // A schedule that drops one period a day: everything but the dropped day.
+  assert.deepEqual(classesOnDay([{ id: 'lunch', meetsOn: [0, 1, 3] }], 2).map((c) => c.id), []);
+  // Tidying: no repeats, no days outside the cycle, and all of them means "every day".
+  assert.deepEqual(tidyMeetsOn([2, 0, 0, 9, -1], 4), [0, 2]);
+  assert.deepEqual(tidyMeetsOn([0, 1], 2), []);
+  assert.deepEqual(tidyMeetsOn(undefined, 4), []);
+});

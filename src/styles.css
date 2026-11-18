@@ -1992,3 +1992,17 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
     margin-bottom: 4rem;
   }
 }
+
+/* Reminders: the form, the list, and the days quiet hours apply to. */
+.reminder-form { display: grid; gap: .6rem; max-width: 30rem; margin: 1rem 0; }
+.reminder-list { display: grid; gap: .5rem; margin: 1rem 0; }
+.reminder-row { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: baseline; justify-content: space-between; }
+.quiet-days { display: flex; flex-wrap: wrap; gap: .25rem .9rem; border: 0; padding: .25rem 0; margin: .5rem 0 0; }
+.quiet-days legend { padding: 0; }
+
+.reminder-due { background: var(--raised); border-bottom: 1px solid var(--line); padding: .6rem clamp(1rem, 3vw, 1.5rem); }
+.reminder-due-row { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; justify-content: space-between; }
+.meets-on { border: 1px solid var(--line); border-radius: var(--radius); padding: .6rem .75rem; }
+.meets-on legend { padding: 0 .35rem; font-size: var(--fs-sm); }
+.meets-on-days { display: flex; flex-wrap: wrap; gap: .4rem 1rem; }
+.block-names { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }

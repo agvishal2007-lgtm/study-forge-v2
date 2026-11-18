@@ -9,6 +9,7 @@ import { getActiveAccount } from '../data/account';
 import { getStorageStatus, requestKeepFiles } from '../data/store';
 import { useLive } from '../data/useLive';
 import { PermissionsSection } from './PermissionsSection';
+import { RemindersSection } from './RemindersSection';
 import { SchoolSection } from './SchoolSection';
 import { TasksSection } from './TasksSection';
 import { SETTINGS_CATEGORIES, categoryBySlug } from '../data/settingsMap';
@@ -53,7 +54,7 @@ const SECTIONS: Record<string, () => ReactElement> = {
   appearance: () => <AppearanceSection />,
   tasks: () => <TasksSection />,
   sounds: () => <FocusSoundsSection />,
-  notifications: () => <PermissionsSection />,
+  notifications: () => <><RemindersSection /><PermissionsSection /></>,
   account: () => <><AccountSection /><BackupSection /><OfflineSection /><StorageSection /></>,
 };
 

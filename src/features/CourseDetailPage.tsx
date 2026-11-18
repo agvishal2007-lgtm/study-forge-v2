@@ -13,11 +13,14 @@ import { groupTopics } from '../data/courseRules';
 import { createTopic, getCourse, listAllResourceLinks, listTopics, materialsForCourse, moveTopic, setCourseStatus, setTopicStatus, topicWithin, updateCourse, updateTopic } from '../data/store';
 import type { Material, Note, Topic } from '../data/types';
 import { useLive } from '../data/useLive';
+import { dayLabel, meetsOnDay, tidyMeetsOn, useSchool } from '../data/schoolLevel';
 
 export function CourseDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const stillHere = useStillHere();
+  // Read with the other hooks, never after a return, so the day checkboxes can't silently vanish.
+  const rotation = useSchool().rotation;
   const [topicName, setTopicName] = useState('');
   const [topicHeading, setTopicHeading] = useState('');
   const [editingCourse, setEditingCourse] = useState(false);
@@ -90,6 +93,14 @@ export function CourseDetailPage() {
                 name: String(form.get('name') ?? ''),
                 code: String(form.get('code') ?? ''),
                 term: String(form.get('term') ?? ''),
+                ...(rotation
+                  ? {
+                      meetsOn: tidyMeetsOn(
+                        Array.from({ length: rotation.length }, (_, day) => day).filter((day) => form.get(`day-${day}`) !== null),
+                        rotation.length,
+                      ),
+                    }
+                  : {}),
               });
               setEditingCourse(false);
             });
@@ -102,6 +113,23 @@ export function CourseDetailPage() {
             <input name="term" defaultValue={course.term} placeholder="Fall 2026" />
           </label>
           <p className="muted small">Leave the semester empty for an independent study. Courses are grouped by semester on the Courses page.</p>
+          {rotation && (
+            <fieldset className="meets-on" data-testid="meets-on">
+              <legend>Days this class meets</legend>
+              <div className="meets-on-days">
+                {Array.from({ length: rotation.length }, (_, day) => (
+                  <label key={day} className="check-line">
+                    <input type="checkbox" name={`day-${day}`} defaultChecked={meetsOnDay(course.meetsOn, day)} />
+                    {dayLabel(rotation, day)}
+                  </label>
+                ))}
+              </div>
+              <p className="muted small">
+                Leave every day ticked if this class meets every day. If your schedule drops a period each day, untick
+                the day this class doesn't meet.
+              </p>
+            </fieldset>
+          )}
           <button className="button" type="submit">Save course</button>
         </form>
       )}

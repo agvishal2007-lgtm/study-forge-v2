@@ -23,7 +23,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
   { slug: 'appearance', title: 'Appearance', blurb: 'Light or dark, text size, spacing, and how dates and times read.' },
   { slug: 'tasks', title: 'Tasks and checklists', blurb: 'What a ticked-off task looks like, and how your list is grouped.' },
   { slug: 'sounds', title: 'Focus sounds', blurb: 'Steady background sound to study to, made by your browser and free of words.' },
-  { slug: 'notifications', title: 'Notifications', blurb: 'What this device is allowed to show you.' },
+  { slug: 'notifications', title: 'Reminders and notifications', blurb: 'Reminders you set, quiet hours, and what this device is allowed to show you.', grouped: true },
   { slug: 'account', title: 'Account, sync and storage', blurb: 'Signing in, syncing, backups, offline use, Trash and space used.', grouped: true },
 ];
 
