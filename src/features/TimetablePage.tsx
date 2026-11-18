@@ -24,6 +24,13 @@ export function TimetablePage() {
   const cycle = rotation?.length ?? 1;
   const [saving, setSaving] = useState('');
   const [notice, setNotice] = useState('');
+  /*
+   * What is on screen leads and the save follows. Every field here is driven by stored data, and
+   * stored data arrives a moment after the write — so without this, a name being typed or a time
+   * being set springs back mid-keystroke and the edit looks lost. The same rule the Planner's tick
+   * follows.
+   */
+  const [local, setLocal] = useState<Timetable | null>(null);
   // Saving fires the app's change signal, so this reloads itself; there is no manual refresh.
   const { data, error } = useLive(async () => {
     // Nothing is assumed about the shape of a day, so there is no starter grid: until the student
@@ -35,16 +42,21 @@ export function TimetablePage() {
 
   if (error) return <div className="page"><h1>My daily schedule</h1><p className="error" role="alert">This couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { courses, table } = data;
+  const { courses, table: stored } = data;
+  // A cycle that changed while this page was open reshapes what is on screen too, rather than
+  // leaving a grid with the wrong number of columns.
+  const working = local ?? stored;
+  const table = working && working.days.length !== cycle ? resizeTimetable(working, working.periodNames.length, cycle) : working;
 
-  const keep = async (next: Timetable, message = '') => {
+  const keep = (next: Timetable, message = '') => {
     setNotice(message);
-    try {
-      await saveTimetable(next);
-      setSaving('');
-    } catch (failure) {
-      setSaving(`That wasn't saved. ${(failure as Error).message}`);
-    }
+    setLocal(next);
+    setSaving('');
+    void saveTimetable(next).catch((failure: Error) => {
+      // The screen keeps what was typed and says plainly that it isn't stored, rather than
+      // throwing the edit away or pretending it saved.
+      setSaving(`That wasn't saved, so it is only on this screen. ${failure.message}`);
+    });
   };
 
   const dayName = (day: number) => (rotation ? `${dayLabel(rotation, day)} day` : 'Every day');
@@ -72,7 +84,7 @@ export function TimetablePage() {
               setSaving(`Say how many blocks your day has, from 1 to ${MAX_PERIODS}.`);
               return;
             }
-            void keep(blankTimetable(Array.from({ length: count }, () => ''), cycle));
+            keep(blankTimetable(Array.from({ length: count }, () => ''), cycle));
           }}
         >
           <label>
@@ -118,7 +130,7 @@ export function TimetablePage() {
           type="checkbox"
           checked={table.sameTimes !== false}
           data-testid="same-times"
-          onChange={(event) => void keep({ ...table, sameTimes: event.target.checked })}
+          onChange={(event) => keep({ ...table, sameTimes: event.target.checked })}
         />
         Every day runs at the same times
       </label>
@@ -140,11 +152,11 @@ export function TimetablePage() {
             onChange={(event) => {
               const count = Number(event.target.value);
               if (!Number.isInteger(count) || count < 1 || count > MAX_PERIODS) return;
-              void keep(resizeTimetable(table, count, cycle));
+              keep(resizeTimetable(table, count, cycle));
             }}
           />
         </label>
-        <button className="button" type="button" data-testid="add-period" onClick={() => void keep(addPeriod(table))}>
+        <button className="button" type="button" data-testid="add-period" onClick={() => keep(addPeriod(table))}>
           Add a block
         </button>
       </div>
@@ -166,7 +178,7 @@ export function TimetablePage() {
                           className="text-button"
                           type="button"
                           data-testid={`same-as-${day}`}
-                          onClick={() => void keep(copyDay(table, day - 1, day), `${dayName(day)} now matches ${dayName(day - 1)}.`)}
+                          onClick={() => keep(copyDay(table, day - 1, day), `${dayName(day)} now matches ${dayName(day - 1)}.`)}
                         >
                           Same as {dayName(day - 1)}
                         </button>
@@ -174,7 +186,7 @@ export function TimetablePage() {
                           className="text-button"
                           type="button"
                           data-testid={`shift-${day}`}
-                          onClick={() => void keep(rotateDay(table, day - 1, day, 1), `${dayName(day)} is ${dayName(day - 1)} shifted one block along.`)}
+                          onClick={() => keep(rotateDay(table, day - 1, day, 1), `${dayName(day)} is ${dayName(day - 1)} shifted one block along.`)}
                         >
                           Shifted one block
                         </button>
@@ -193,7 +205,7 @@ export function TimetablePage() {
                       placeholder={`Period ${period + 1}`}
                       aria-label={`Name of block ${period + 1}`}
                       data-testid={`period-name-${period}`}
-                      onChange={(event) => void keep(renamePeriod(table, period, event.target.value))}
+                      onChange={(event) => keep(renamePeriod(table, period, event.target.value))}
                     />
                     {table.sameTimes !== false && (
                       <span className="block-times">
@@ -202,14 +214,14 @@ export function TimetablePage() {
                           value={blockTime(table, 0, period)?.start ?? ''}
                           aria-label={`${periodName(table, period)} starts at`}
                           data-testid={`start-${period}`}
-                          onChange={(event) => void keep(setBlockTime(table, 0, period, { start: event.target.value, end: blockTime(table, 0, period)?.end ?? '' }))}
+                          onChange={(event) => keep(setBlockTime(table, 0, period, { start: event.target.value, end: blockTime(table, 0, period)?.end ?? '' }))}
                         />
                         <input
                           type="time"
                           value={blockTime(table, 0, period)?.end ?? ''}
                           aria-label={`${periodName(table, period)} ends at`}
                           data-testid={`end-${period}`}
-                          onChange={(event) => void keep(setBlockTime(table, 0, period, { start: blockTime(table, 0, period)?.start ?? '', end: event.target.value }))}
+                          onChange={(event) => keep(setBlockTime(table, 0, period, { start: blockTime(table, 0, period)?.start ?? '', end: event.target.value }))}
                         />
                         {blockLength(blockTime(table, 0, period)) && (
                           <span className="muted small" data-testid={`length-${period}`}>{blockLength(blockTime(table, 0, period))}</span>
@@ -221,7 +233,7 @@ export function TimetablePage() {
                         className="text-button danger-text"
                         type="button"
                         aria-label={`Remove ${periodName(table, period)}`}
-                        onClick={() => void keep(removePeriod(table, period))}
+                        onClick={() => keep(removePeriod(table, period))}
                       >
                         Remove
                       </button>
@@ -234,7 +246,7 @@ export function TimetablePage() {
                         aria-label={`${periodName(table, period)} on ${dayName(day)}`}
                         onChange={(event) => {
                           const result = setSlot(table, day, period, event.target.value);
-                          void keep(
+                          keep(
                             result.table,
                             result.repeated ? 'That class is now in two blocks on the same day. That is allowed — a lab or a double — but check it is what you meant.' : '',
                           );
@@ -251,13 +263,13 @@ export function TimetablePage() {
                             type="time"
                             value={blockTime(table, day, period)?.start ?? ''}
                             aria-label={`${periodName(table, period)} on ${dayName(day)} starts at`}
-                            onChange={(event) => void keep(setBlockTime(table, day, period, { start: event.target.value, end: blockTime(table, day, period)?.end ?? '' }))}
+                            onChange={(event) => keep(setBlockTime(table, day, period, { start: event.target.value, end: blockTime(table, day, period)?.end ?? '' }))}
                           />
                           <input
                             type="time"
                             value={blockTime(table, day, period)?.end ?? ''}
                             aria-label={`${periodName(table, period)} on ${dayName(day)} ends at`}
-                            onChange={(event) => void keep(setBlockTime(table, day, period, { start: blockTime(table, day, period)?.start ?? '', end: event.target.value }))}
+                            onChange={(event) => keep(setBlockTime(table, day, period, { start: blockTime(table, day, period)?.start ?? '', end: event.target.value }))}
                           />
                           {blockLength(blockTime(table, day, period)) && (
                             <span className="muted small">{blockLength(blockTime(table, day, period))}</span>

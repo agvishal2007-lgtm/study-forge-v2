@@ -4,6 +4,7 @@ import {
   listSpecialDays, saveSpecialDay, usableSpecial, type Effect, type SpecialDay,
 } from '../data/specialDays';
 import { useLive } from '../data/useLive';
+import { InstantCheck } from './InstantCheck';
 
 /**
  * Days that don't run like the others.
@@ -78,29 +79,26 @@ export function SpecialDays({ blockNames, rotating }: { blockNames: string[]; ro
               <div>
                 <b>{day.date}</b> — {describeSpecial(day, blockNames)}
                 {rotating && (
-                  <label className="check-line">
-                    <input
-                      type="checkbox"
-                      checked={day.cycleMoves}
-                      aria-label={`The cycle still moves on ${day.date}`}
-                      onChange={(event) => void saveSpecialDay({ ...day, cycleMoves: event.target.checked })}
-                    />
+                  <InstantCheck
+                    checked={day.cycleMoves}
+                    label={`The cycle still moves on ${day.date}`}
+                    onSet={(value) => saveSpecialDay({ ...day, cycleMoves: value })}
+                  >
                     My rotation still moves along on this day
-                  </label>
+                  </InstantCheck>
                 )}
                 {day.effect === 'some-classes' && (
                   <div className="special-blocks">
                     <span className="muted small">Which blocks still happen?</span>
                     {blockNames.map((label, period) => (
-                      <label key={period} className="check-line">
-                        <input
-                          type="checkbox"
-                          checked={day.blocks.includes(period)}
-                          aria-label={`${label.trim() || `Period ${period + 1}`} on ${day.date}`}
-                          onChange={() => void toggleBlock(day, period)}
-                        />
+                      <InstantCheck
+                        key={period}
+                        checked={day.blocks.includes(period)}
+                        label={`${label.trim() || `Period ${period + 1}`} on ${day.date}`}
+                        onSet={() => toggleBlock(day, period)}
+                      >
                         {label.trim() || `Period ${period + 1}`}
-                      </label>
+                      </InstantCheck>
                     ))}
                   </div>
                 )}

@@ -1,5 +1,5 @@
 import { getDb, notifyChanged } from './db';
-import { blankTimetable, type Timetable } from './timetableRules';
+import { blankTimetable, blankTime, type BlockTime, type Timetable } from './timetableRules';
 
 export * from './timetableRules';
 
@@ -19,7 +19,25 @@ export async function getTimetable(): Promise<Timetable | null> {
   const days = saved.days.map((day) =>
     Array.isArray(day) ? periodNames.map((_, index) => (typeof day[index] === 'string' ? (day[index] as string) : '')) : periodNames.map(() => ''),
   );
-  return periodNames.length === 0 ? null : { periodNames, days };
+  // Times are read back the same careful way as the rest. An earlier version of this function
+  // rebuilt the record field by field and left these out, which threw away every time a student
+  // had typed the moment the page was reloaded.
+  const time = (value: unknown): BlockTime => {
+    const given = value as Partial<BlockTime> | undefined;
+    return {
+      start: typeof given?.start === 'string' ? given.start : '',
+      end: typeof given?.end === 'string' ? given.end : '',
+    };
+  };
+  const storedTimes = Array.isArray(saved.times) ? saved.times : [];
+  const times = days.map((_, day) =>
+    periodNames.map((__, period) =>
+      Array.isArray(storedTimes[day]) ? time(storedTimes[day][period]) : blankTime(),
+    ),
+  );
+  return periodNames.length === 0
+    ? null
+    : { periodNames, days, times, sameTimes: saved.sameTimes !== false };
 }
 
 export async function saveTimetable(table: Timetable): Promise<void> {
