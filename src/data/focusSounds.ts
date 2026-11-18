@@ -36,7 +36,13 @@ try {
 }
 
 function remember() {
-  mix = { layers: layers.map((layer) => ({ id: layer.id, volume: layer.volume })), master: mix.master };
+  /*
+   * Stopping everything doesn't forget what was playing. Otherwise the mix is wiped the moment
+   * the student stops, and bringing back "what you last had" could never bring back anything.
+   * The volumes are always kept; the layers are only replaced while something is actually on.
+   */
+  const playing = layers.map((layer) => ({ id: layer.id, volume: layer.volume }));
+  mix = { layers: playing.length > 0 ? playing : mix.layers, master: mix.master };
   try {
     localStorage.setItem(KEY, JSON.stringify(mix));
   } catch {

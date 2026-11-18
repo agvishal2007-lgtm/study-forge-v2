@@ -1946,3 +1946,16 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
   border-radius: 50%; background: var(--accent);
 }
 .sound-button { position: relative; }
+
+/* Top-bar buttons keep their full tap size instead of being squeezed thin when the row is full:
+   the row wraps instead. A 36px-wide button is hard to hit and fails the tap-size check. */
+.topbar .icon-button, .topbar .avatar-button, .topbar .help-menu-wrap { flex: 0 0 auto; }
+/* With sound added there are six buttons up there. On a narrow phone they go a little smaller so
+   they all fit in one row at a size that is still comfortable to tap, rather than being squeezed
+   thin or pushed off the edge. The row's own tighter gap, set further up, is left alone. */
+@media (max-width: 440px) {
+  .topbar .icon-button, .topbar .avatar-button { width: 40px; height: 40px; }
+  .topbar { padding-left: .4rem; padding-right: .4rem; }
+  /* The sign-in link takes the room it needs and no more, so the buttons keep their size. */
+  .topbar > .button { padding-left: .5rem; padding-right: .5rem; font-size: var(--fs-xs); }
+}
