@@ -5,6 +5,15 @@ import { formatClockTime, formatDay as formatDayIn } from './dateFormat.ts';
 const DONE = ['Submitted', 'Waiting for Grade', 'Completed'];
 export const isDone = (item: Pick<PlannerItem, 'status'>) => DONE.includes(item.status);
 
+/**
+ * What un-ticking a finished task sets it back to. Something that was only ticked off goes back to
+ * the start; work that had been handed in goes back to In Progress, because it plainly isn't
+ * un-started and saying so would lose what the student already knew about it.
+ */
+export function uncheckedStatus(status: PlannerItem['status']): PlannerItem['status'] {
+  return status === 'Submitted' || status === 'Waiting for Grade' ? 'In Progress' : 'Not Started';
+}
+
 const parts = (date: string) => date.split('-').map(Number);
 const dayNumber = (date: string) => {
   const [year, month, day] = parts(date);

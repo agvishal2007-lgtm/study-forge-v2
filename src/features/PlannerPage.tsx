@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { PlannerList } from '../components/PlannerList';
 import { listPlannerItems } from '../data/planner';
-import { GROUP_LABEL, groupItems, localNow } from '../data/plannerRules';
+import { GROUP_LABEL, groupItems, isDone, localNow } from '../data/plannerRules';
+import { useDisplayPrefs } from '../data/displayPrefs';
 import { listAllCourses } from '../data/store';
 import { listAllGradeCategories } from '../data/grades';
 import { useLive } from '../data/useLive';
@@ -14,6 +15,11 @@ export function PlannerPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [courseId, setCourseId] = useState(params.get('course') ?? '');
+  // Three views over the same records: what's left, what's finished, or everything. Nothing is
+  // copied or duplicated to make a view — each one is a filter over the one planner list.
+  const [show, setShow] = useState<'all' | 'todo' | 'done'>(params.get('show') === 'done' ? 'done' : 'all');
+  const [kind, setKind] = useState<'all' | 'course' | 'personal'>('all');
+  const { completed } = useDisplayPrefs();
   const [mode, setMode] = useState<PriorityMode>(savedMode);
   const [weights, setWeights] = useState(savedWeights);
   const [pinned, setPinned] = useState(savedPinned);
@@ -23,7 +29,18 @@ export function PlannerPage() {
   });
   if (error) return <div className="page"><h1>Planner</h1><p className="error" role="alert">Your planner couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const shown = data.items.filter((item) => !courseId || (courseId === 'none' ? !item.courseId : item.courseId === courseId));
+  const doneCount = data.items.filter(isDone).length;
+  const shown = data.items.filter((item) => {
+    if (courseId && (courseId === 'none' ? Boolean(item.courseId) : item.courseId !== courseId)) return false;
+    if (kind === 'course' && !item.courseId) return false;
+    if (kind === 'personal' && item.courseId) return false;
+    const finished = isDone(item);
+    if (show === 'done') return finished;
+    if (show === 'todo') return !finished;
+    // Everything: a finished task still shows unless the student asked for it to step aside, and
+    // even then it's only out of this view — it's never changed and it's always in Done.
+    return !finished || completed !== 'hidden';
+  });
   const groups = groupItems(shown, localNow());
   return (
     <div className="page">
@@ -34,6 +51,24 @@ export function PlannerPage() {
       </div>
       {data.items.length > 0 && (
         <label className="search">Show
+          <select value={show} onChange={(event) => setShow(event.target.value as typeof show)} data-testid="show-filter">
+            <option value="all">Everything</option>
+            <option value="todo">Still to do</option>
+            <option value="done">Done{doneCount > 0 ? '' : ' (nothing yet)'}</option>
+          </select>
+        </label>
+      )}
+      {data.items.length > 0 && (
+        <label className="search">Kind
+          <select value={kind} onChange={(event) => setKind(event.target.value as typeof kind)} data-testid="kind-filter">
+            <option value="all">Course work and personal</option>
+            <option value="course">Course work</option>
+            <option value="personal">Personal</option>
+          </select>
+        </label>
+      )}
+      {data.items.length > 0 && (
+        <label className="search">Course
           <select value={courseId} onChange={(event) => setCourseId(event.target.value)}>
             <option value="">All courses</option>
             {data.courses.map((course) => <option key={course.id} value={course.id}>{course.name}</option>)}
@@ -58,11 +93,24 @@ export function PlannerPage() {
         </label>
       )}
       {data.items.length === 0 && <p className="muted planner-empty">Nothing here yet. Add your first assignment or exam, or look at your <Link to="/courses">courses</Link> first.</p>}
-      {data.items.length > 0 && shown.length === 0 && <p className="muted planner-empty">Nothing here for this course.</p>}
+      {data.items.length > 0 && shown.length === 0 && (
+        <p className="muted planner-empty" data-testid="planner-none">
+          {show === 'done' ? "Nothing is ticked off yet." : show === 'todo' ? "Nothing left to do here." : 'Nothing here for this course.'}
+        </p>
+      )}
+      {show === 'all' && completed === 'hidden' && doneCount > 0 && (
+        <p className="muted small" data-testid="hidden-note">
+          {doneCount === 1 ? '1 finished task is' : `${doneCount} finished tasks are`} set aside.{' '}
+          <button className="text-button" type="button" onClick={() => setShow('done')}>See what's done</button>
+        </p>
+      )}
       {mode === 'due'
         ? groups.map(({ group, items }) => (
           <section key={group} className="planner-group" aria-labelledby={`group-${group}`} data-group={group}>
-            <h2 id={`group-${group}`} className={group === 'overdue' ? 'error' : undefined}>{GROUP_LABEL[group]} <span className="muted planner-count">({items.length})</span></h2>
+            <h2 id={`group-${group}`} className={group === 'overdue' ? 'error' : undefined}>
+              {GROUP_LABEL[group]}
+              {group !== 'done' && <span className="muted planner-count"> ({items.length})</span>}
+            </h2>
             <PlannerList items={items} courses={data.courses} />
           </section>
         ))

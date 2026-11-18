@@ -1719,7 +1719,7 @@ main :where(*) { scroll-margin-top: 14px; }
 .step-list { padding-left: 1.4rem; display: grid; gap: .35rem; }
 .step-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
 .step-row .check-label { flex: 1 1 12rem; }
-.step-title.done { text-decoration: line-through; color: var(--muted); }
+/* Replaced by the one completed-task preference; see .step-title.done-struck below. */
 .step-date { width: auto; }
 .step-summary { display: block; }
 
@@ -1879,3 +1879,20 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
 @media (min-width: 560px) { .setup-classes { grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); } }
 .setup-classes legend { grid-column: 1 / -1; }
 .course-setup .session-actions { flex-wrap: wrap; gap: .5rem; }
+
+/* Ticking a task off. The box is the save, so it's big enough to hit on a phone and sits where
+   the eye starts. Crossing out only ever happens because the student asked for it in Settings. */
+.planner-row { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: .6rem; }
+.planner-tick { width: 1.35rem; height: 1.35rem; margin: .15rem 0 0; flex: none; cursor: pointer; }
+.planner-main a.struck, .tasks-preview .struck, .struck, .step-title.done-struck { text-decoration: line-through; }
+/* Readable either way: a finished task is never faded into illegibility. */
+.step-title.done-visible, .step-title.done-hidden, .step-title.done-struck { color: inherit; }
+.planner-row[data-done='true'] .planner-main > a { color: inherit; }
+@media (max-width: 560px) {
+  .planner-row { grid-template-columns: auto 1fr; }
+  .planner-row .planner-actions { grid-column: 2; }
+}
+
+/* The Settings preview is a real task row, so it can't drift from the real thing. */
+.tasks-preview { margin: .5rem 0 0; pointer-events: none; }
+.tasks-preview .planner-row { opacity: .95; }

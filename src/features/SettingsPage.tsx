@@ -10,6 +10,7 @@ import { getStorageStatus, requestKeepFiles } from '../data/store';
 import { useLive } from '../data/useLive';
 import { PermissionsSection } from './PermissionsSection';
 import { SchoolSection } from './SchoolSection';
+import { TasksSection } from './TasksSection';
 
 export function SettingsPage() {
   const [asked, setAsked] = useState(false);
@@ -20,6 +21,7 @@ export function SettingsPage() {
       <SchoolSection />
       <AccountSection />
       <AppearanceSection />
+      <TasksSection />
       <BackupSection />
       <OfflineSection />
       <PermissionsSection />

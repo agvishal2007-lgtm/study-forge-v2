@@ -90,6 +90,16 @@ export function stepProgress(steps: PlannerStep[] | undefined, today: string): S
 }
 
 /** One line for the Planner list, such as "2 of 6 steps done. Next: Outline (target Nov 14)". */
+/**
+ * The next step to do, in the student's own words. Deliberately no "3 of 6": a personal checklist
+ * shows what's ticked, and a running score turns a list into a report card.
+ */
+export function describeNext(progress: StepProgress, formatDate: (date: string) => string): string {
+  if (!progress.next) return 'Every step is ticked.';
+  const target = progress.next.targetDate ? ` (target ${formatDate(progress.next.targetDate)})` : '';
+  return `Next: ${progress.next.title}${target}`;
+}
+
 export function describeProgress(progress: StepProgress, formatDate: (date: string) => string): string {
   const head = `${progress.done} of ${progress.total} ${progress.total === 1 ? 'step' : 'steps'} done`;
   if (!progress.next) return `${head}.`;

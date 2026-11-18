@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { getPlannerItem, savePlannerSteps, setPlannerStatus } from '../data/planner';
 import { isDone, localNow } from '../data/plannerRules';
-import { addStep, addSuggested, cleanSteps, describeProgress, moveStep, spreadTargets, stepProgress, STEP_LIMITS } from '../data/stepRules';
+import { addStep, addSuggested, cleanSteps, describeNext, moveStep, spreadTargets, stepProgress, STEP_LIMITS } from '../data/stepRules';
 import type { PlannerStep } from '../data/types';
 import { useLive } from '../data/useLive';
+import { useDisplayPrefs } from '../data/displayPrefs';
 
 export const shortDate = (date: string) => new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
@@ -26,6 +27,9 @@ export function AssignmentSteps({ itemId }: { itemId: string }) {
   useEffect(() => {
     if (saving.current === 0) setLocal(null);
   }, [updatedAt]);
+  // Every hook runs before the early return below, or React sees a different number of them
+  // once the item has loaded and the whole screen falls over.
+  const { completed } = useDisplayPrefs();
   if (!item) return null;
   const steps = local ?? cleanSteps(item.steps);
   // The newest list, even before React has redrawn, so changes made in quick succession all build on each other.
@@ -51,14 +55,14 @@ export function AssignmentSteps({ itemId }: { itemId: string }) {
         Optional. Break this into smaller pieces. Target dates are your own goals; the due date
         {item.dueDate ? ` (${shortDate(item.dueDate)})` : ''} stays the real deadline and is never changed by steps.
       </p>
-      {progress && <p data-testid="step-progress">{describeProgress(progress, shortDate)}{progress.lateTargets > 0 ? ` ${progress.lateTargets} target ${progress.lateTargets === 1 ? 'date has' : 'dates have'} passed.` : ''}</p>}
+      {progress && <p data-testid="step-progress">{describeNext(progress, shortDate)}{progress.lateTargets > 0 ? ` ${progress.lateTargets} target ${progress.lateTargets === 1 ? 'date has' : 'dates have'} passed.` : ''}</p>}
       {steps.length > 0 && (
         <ol className="step-list">
           {steps.map((step, index) => (
             <li key={step.id} className="step-row" data-done={step.done}>
               <label className="check-label">
                 <input type="checkbox" checked={step.done} onChange={(event) => change(step.id, { done: event.target.checked })} />
-                <span className={step.done ? 'step-title done' : 'step-title'}>{step.title}</span>
+                <span className={step.done ? `step-title done-${completed}` : 'step-title'}>{step.title}</span>
               </label>
               <input className="step-date" type="date" value={step.targetDate} onChange={(event) => change(step.id, { targetDate: event.target.value })} aria-label={`Target date for ${step.title}`} />
               {step.targetDate && !step.done && step.targetDate < today && <span className="error small">Target passed</span>}

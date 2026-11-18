@@ -8,19 +8,27 @@ import { useSyncExternalStore } from 'react';
 export type TextSize = 'standard' | 'large' | 'larger';
 export type Motion = 'device' | 'reduce';
 export type Density = 'comfortable' | 'compact';
+/**
+ * How a task that's been ticked off looks. Three choices and no more: it stays readable (the
+ * default), it stays but is crossed out, or it leaves the active list. Whichever is chosen, the
+ * task itself is untouched and still sits in Done, so nothing is ever lost by a display choice.
+ */
+export type CompletedLook = 'visible' | 'struck' | 'hidden';
 
 export interface DisplayPrefs {
   text: TextSize;
   motion: Motion;
   density: Density;
+  completed: CompletedLook;
 }
 
-const KEYS = { text: 'study-forge-text', motion: 'study-forge-motion', density: 'study-forge-density' } as const;
-const DEFAULTS: DisplayPrefs = { text: 'standard', motion: 'device', density: 'comfortable' };
+const KEYS = { text: 'study-forge-text', motion: 'study-forge-motion', density: 'study-forge-density', completed: 'study-forge-completed' } as const;
+const DEFAULTS: DisplayPrefs = { text: 'standard', motion: 'device', density: 'comfortable', completed: 'visible' };
 const ALLOWED = {
   text: ['standard', 'large', 'larger'],
   motion: ['device', 'reduce'],
   density: ['comfortable', 'compact'],
+  completed: ['visible', 'struck', 'hidden'],
 } as const;
 
 const listeners = new Set<() => void>();
@@ -34,7 +42,7 @@ function read(): DisplayPrefs {
       return DEFAULTS[key];
     }
   };
-  return { text: pick('text'), motion: pick('motion'), density: pick('density') };
+  return { text: pick('text'), motion: pick('motion'), density: pick('density'), completed: pick('completed') };
 }
 
 let current: DisplayPrefs = typeof window === 'undefined' ? DEFAULTS : read();
@@ -44,6 +52,7 @@ export function applyDisplayPrefs(prefs: DisplayPrefs = current) {
   root.text = prefs.text;
   root.motion = prefs.motion;
   root.density = prefs.density;
+  root.completed = prefs.completed;
 }
 
 export function setDisplayPref<K extends keyof DisplayPrefs>(key: K, value: DisplayPrefs[K]) {
