@@ -148,7 +148,7 @@ test('every lesson can be finished by doing it, and progress is kept after reloa
   const ids = await page.evaluate(async () => [...document.querySelectorAll('a')].length >= 0);
   await page.goto(`${URL_BASE}#/help`);
   const links = await page.locator('.academy-lesson-list a').evaluateAll((all) => all.map((a) => a.getAttribute('href').split('/').pop()));
-  assert.equal(links.length, 43);
+  assert.equal(links.length, 46);
   for (const id of links) {
     await page.goto(`${URL_BASE}#/help/lessons/${id}`);
     await card().getByRole('heading', { name: /What it is|Your turn/ }).waitFor();
@@ -160,7 +160,7 @@ test('every lesson can be finished by doing it, and progress is kept after reloa
   }
   await page.reload();
   await page.goto(`${URL_BASE}#/help`);
-  await page.getByTestId('academy-overall').filter({ hasText: '43 of 43 lessons finished' }).waitFor();
+  await page.getByTestId('academy-overall').filter({ hasText: '46 of 46 lessons finished' }).waitFor();
   assert.equal(await page.getByText('✓ All done').count(), 7);
   assert.ok(ids);
 });

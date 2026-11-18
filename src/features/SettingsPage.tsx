@@ -12,6 +12,7 @@ import { PermissionsSection } from './PermissionsSection';
 import { SchoolSection } from './SchoolSection';
 import { TasksSection } from './TasksSection';
 import { SETTINGS_CATEGORIES, categoryBySlug } from '../data/settingsMap';
+import { FocusSoundsSection } from './FocusSoundsSection';
 
 function StorageSection() {
   const [asked, setAsked] = useState(false);
@@ -51,6 +52,7 @@ const SECTIONS: Record<string, () => ReactElement> = {
   school: () => <SchoolSection />,
   appearance: () => <AppearanceSection />,
   tasks: () => <TasksSection />,
+  sounds: () => <FocusSoundsSection />,
   notifications: () => <PermissionsSection />,
   account: () => <><AccountSection /><BackupSection /><OfflineSection /><StorageSection /></>,
 };

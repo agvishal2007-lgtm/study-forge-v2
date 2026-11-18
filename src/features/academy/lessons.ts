@@ -160,6 +160,23 @@ export const MODULES: Module[] = [
         },
         feedback: 'Right. You are responsible for using it honestly, and Study Forge isn’t responsible for any use that breaks a school or exam rule.',
       },
+      {
+        id: 'focus-sounds',
+        title: 'Sound to study to',
+        intro: 'Settings has steady background sound: brown, pink and white noise, a fan and wind. Your browser makes each one as it plays, so none of it is downloaded and there are no words in any of it.',
+        demo: { screen: screen('Settings', ['Focus sounds', 'Play Brown noise', 'Overall volume', 'Stop after a while']), highlight: 'Play Brown noise', caption: 'Press a sound to start it. Play more than one to mix them.' },
+        activity: {
+          type: 'choice',
+          question: 'You start Brown noise, then go to your notes. What happens to the sound?',
+          options: [
+            { text: 'It keeps playing, the same one, until you stop it', correct: true, why: 'Right. Moving around Study Forge never restarts it or starts a second copy.' },
+            { text: 'It stops, because you left the page', correct: false, why: 'It carries on, so you can study while it plays.' },
+            { text: 'It starts again from the beginning', correct: false, why: 'Nothing restarts. It is one sound, playing once.' },
+          ],
+        },
+        feedback: 'Each sound has its own volume, and there is one overall volume. The timer fades out rather than cutting off.',
+        tip: 'It never starts on its own when you open Study Forge, and it comes out of your speakers, so stop it before recording a lecture.',
+      },
     ],
   },
   {
@@ -247,6 +264,39 @@ export const MODULES: Module[] = [
           ],
         },
         feedback: 'Right. For a reminder that must arrive, also put the deadline in a calendar app that alerts you.',
+      },
+      {
+        id: 'own-sections',
+        title: 'Your own sections',
+        intro: 'Your list can be grouped by when things are due, or by sections you make up yourself, like Morning routine or Wellness. Group by switches between the two.',
+        demo: { screen: screen('Planner', ['Group by', 'Morning routine', 'Wellness', 'No section']), highlight: 'Group by', caption: 'Group by swaps between due dates and your own sections.' },
+        activity: {
+          type: 'choice',
+          question: 'You tick off a task that sits in your Morning routine section. What happens to it?',
+          options: [
+            { text: 'It stays in Morning routine, ticked and still easy to read', correct: true, why: 'Right. Ticking a box never moves a task or crosses it out, unless you ask for that in Settings.' },
+            { text: 'It moves out to a finished list and leaves its section', correct: false, why: 'Only if you choose Steps aside in Settings. Normally it stays exactly where it was.' },
+            { text: 'It is copied, so it is in two places at once', correct: false, why: 'Nothing is ever copied. A task is one record however many ways you look at it.' },
+          ],
+        },
+        feedback: 'Sections are yours to name. Type a new one on any task, and it is offered on the next one.',
+        tip: 'Changing Group by never changes a task — it only changes how the same list is gathered.',
+      },
+      {
+        id: 'measurable-goal',
+        title: 'A goal you can measure',
+        intro: 'Some tasks are not just done or not done. A task can carry a goal, like 15 minutes on the walking pad, and you record what you actually did.',
+        demo: { screen: screen('Planner', ['Use the walking pad', '15 minutes goal, 30 done']), highlight: 'Use the walking pad', caption: 'The goal sits under the task in plain words.' },
+        activity: {
+          type: 'choice',
+          question: 'Your goal is 15 minutes and you did 30. How does Study Forge put it?',
+          options: [
+            { text: '15 minutes goal, 30 done', correct: true, why: 'Reaching the goal is done, and going past it is a bonus. It is never counted against you.' },
+            { text: '200% of your goal', correct: false, why: 'There are no percentages on your checklist. Plain words only.' },
+            { text: 'You went 15 minutes over your goal', correct: false, why: 'Nothing nags you about the difference. The goal is a baseline, not a limit.' },
+          ],
+        },
+        feedback: 'Goals are optional. Leave them empty and a task is an ordinary tick box.',
       },
     ],
   },

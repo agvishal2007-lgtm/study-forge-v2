@@ -1914,3 +1914,15 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
 .settings-nav a.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
 .settings-category + .settings-category { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
 .settings-category-title { font-size: var(--fs-h2); margin: 0 0 .75rem; }
+
+/* Focus sounds: one row per sound, with its own volume once it's playing. */
+.sound-list { display: grid; gap: .75rem; margin: 1rem 0; }
+.sound-row { display: grid; grid-template-columns: auto 1fr; gap: .5rem 1rem; align-items: center; }
+.sound-row .sound-what { grid-column: 2; }
+.sound-row .sound-volume { grid-column: 1 / -1; }
+.sound-volume { display: flex; align-items: center; gap: .75rem; font-size: var(--fs-sm); }
+.sound-volume input[type='range'] { flex: 1 1 10rem; max-width: 20rem; }
+@media (max-width: 560px) {
+  .sound-row { grid-template-columns: 1fr; }
+  .sound-row .sound-what { grid-column: 1; }
+}
