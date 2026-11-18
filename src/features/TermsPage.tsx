@@ -45,6 +45,8 @@ export function TermsContent() {
       <ul>
         <li><b>The calculator</b> is a study tool, not an officially approved examination calculator. Its look or features being like a familiar handheld calculator doesn’t make it allowed in any exam. Follow your instructor’s and exam provider’s calculator rules.</li>
         <li><b>Mock exams, practice and flashcards</b> are for practice. They don’t predict your real grades.</li>
+        <li><b>Your school years record</b> — your terms, credits and final grades — is only what you type in yourself. Study Forge is not a transcript, a degree audit or any kind of official record, and nothing in it comes from your school. Your school’s own records are the real ones, and they are what counts.</li>
+        <li><b>Focus sounds</b> are background sound to study to. They are made by your browser, they aren’t medical or therapeutic, and they don’t claim to improve concentration or any other outcome.</li>
         <li><b>Study Forge is not responsible</b> for how anyone uses it, including any use that breaks an academic-integrity, exam or school rule, such as cheating, or the consequences of that use.</li>
       </ul>
 

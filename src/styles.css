@@ -1930,3 +1930,11 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
 /* The letter of the day on a block schedule, beside today's date. */
 .block-day { color: var(--muted); font-weight: 500; }
 .block-setup { display: grid; gap: .75rem; margin-top: .75rem; }
+
+/* Looking back at past school years: one table per term, readable on a phone. */
+.year-term + .year-term { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+.year-table { width: 100%; border-collapse: collapse; margin: .5rem 0; }
+.year-table th, .year-table td { text-align: left; padding: .5rem .5rem .5rem 0; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+.year-table thead th { font-size: var(--fs-sm); color: var(--muted); font-weight: 600; }
+.year-input { width: 6rem; max-width: 100%; }
+@media (max-width: 560px) { .year-input { width: 4.5rem; } .year-table th, .year-table td { padding-right: .25rem; } }

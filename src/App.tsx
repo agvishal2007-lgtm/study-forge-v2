@@ -9,6 +9,7 @@ import { TermsPage } from './features/TermsPage';
 import { AcademyHome } from './features/academy/AcademyHome';
 import { LessonPage as AcademyLesson } from './features/academy/LessonPage';
 import { SemesterPage } from './features/SemesterPage';
+import { SchoolYearsPage } from './features/SchoolYearsPage';
 import { AgreementPage } from './features/AgreementPage';
 import { agreedNow, subscribeAgreement } from './data/agreement';
 import { RecorderProvider, RecordingBar } from './components/Recorder';
@@ -188,6 +189,7 @@ export function App() {
                 <Route path="/" element={<TodayPage />} />
                 <Route path="/courses" element={<CoursesPage />} />
                 <Route path="/courses/new-semester" element={<SemesterPage />} />
+                <Route path="/courses/years" element={<SchoolYearsPage />} />
                 <Route path="/courses/:id" element={<CourseDetailPage />} />
                 <Route path="/library" element={<LibraryPage />} />
                 <Route path="/files/:id" element={<ViewerPage />} />

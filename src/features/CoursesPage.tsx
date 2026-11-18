@@ -38,6 +38,7 @@ export function CoursesPage() {
       <div className="section-head">
         <h1>{words.Courses}</h1>
         {school.level !== 'elementary' && <Link className="button" to="/courses/new-semester" data-testid="new-semester">Start a new {words.term}</Link>}
+        <Link className="button" to="/courses/years" data-testid="school-years">School years</Link>
       </div>
       {showSetup
         ? <CourseSetup hasCourses={!nothingYet} onClose={() => setSetupOpen(false)} />

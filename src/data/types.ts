@@ -20,6 +20,10 @@ export interface Course {
    * ordinary in high school. Missing or false means it belongs to its term alone.
    */
   allYear?: boolean;
+  /** Credit hours as the student entered them. Null or missing means not entered, never zero. */
+  credits?: number | null;
+  /** The final grade as the student wrote it, such as "A-" or "Pass". Empty means not entered. */
+  finalGrade?: string;
   /** Where the student dragged it; lower comes first. */
   position: number;
   status: Lifecycle;

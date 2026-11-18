@@ -272,13 +272,16 @@ export function PrivacyContent() {
       <ul className="plain-list">
         <li>Your email address, plus your name and picture if you sign in with Google, Microsoft or Yahoo, are used to sign you in.</li>
         <li>What you create is saved online so it can follow you to your other devices: courses, topics, notes, lessons, planner items, calendar items, flashcards, practice questions, your progress and study in progress, transcripts, the names and places of your files, and settings such as light or dark mode.</li>
+        <li>That includes the record you keep of your school years: your terms, and any credits and final grades you type in yourself. Study Forge never works a grade out for you and never gets one from your school. It is your own record, not a transcript, and your school's records are the real ones.</li>
         <li>Files and recordings themselves aren't saved online by Study Forge. If you turn on Sync files with my Google Drive, they're copied to a Study Forge folder in your own Google Drive, which only you control. Study Forge can only see the files it put there.</li>
         <li>This is stored in Google's Firebase service. Other students can't read it, but whoever runs this site could technically view it, so don't save anything you wouldn't want seen.</li>
       </ul>
       <h2>Files from Google Drive</h2>
       <p>Study Forge only gets the files you pick (the same goes for Dropbox, where it's offered). They're copied to your device. Screens where you add files load a small piece of code from Google, so the button is ready when you tap it.</p>
       <h2>Lecture transcripts and the calculator</h2>
-      <p>Transcripts are made on your device by a speech model downloaded once from the internet. Your recordings aren't uploaded to make them. The calculator also works entirely on your device.</p>
+      <p>Transcripts are made on your device by a speech model downloaded once from the internet. Your recordings aren't uploaded to make them. The calculator also works entirely on your device. On Elementary and Middle school, where everything otherwise stays on the device, that one download is the only thing that reaches out, and Study Forge says so before you start a transcript.</p>
+      <h2>Focus sounds</h2>
+      <p>The background sounds are made by your browser as they play, from noise and filters. Nothing is downloaded, nothing is recorded, and your microphone isn't used. Which sounds you picked and how loud they were is remembered on your device, and syncs with your other settings if you have an account.</p>
       <h2>Pictures of your schedule</h2>
       <p>A picture of your schedule is read on your device and isn't uploaded or saved. Only the classes you choose to save are kept.</p>
       <h2>Google Calendar</h2>

@@ -355,7 +355,7 @@ function statusLabel(status: Lifecycle, name: string): string {
 /* ---- Editing and ordering, so a student can organize courses however they need. ---- */
 
 /** Renames a course, or changes its code or term. Empty term means no semester: an independent study. */
-export async function updateCourse(id: string, changes: { name?: string; code?: string; term?: string }): Promise<void> {
+export async function updateCourse(id: string, changes: { name?: string; code?: string; term?: string; allYear?: boolean; credits?: number | null; finalGrade?: string }): Promise<void> {
   const db = await getDb();
   const course = await db.get('courses', id);
   if (!course) return;
@@ -369,6 +369,9 @@ export async function updateCourse(id: string, changes: { name?: string; code?: 
       name,
       code: changes.code === undefined ? course.code : changes.code.trim(),
       term: changes.term === undefined ? course.term : changes.term.trim(),
+      allYear: changes.allYear === undefined ? course.allYear : changes.allYear || undefined,
+      credits: changes.credits === undefined ? course.credits : changes.credits,
+      finalGrade: changes.finalGrade === undefined ? course.finalGrade : changes.finalGrade.trim(),
       updatedAt: Math.max(now, course.updatedAt + 1),
     });
     notifyChanged();
