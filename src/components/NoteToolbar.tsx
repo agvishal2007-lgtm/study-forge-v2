@@ -42,9 +42,17 @@ export function applyToBox(box: HTMLTextAreaElement, edit: FormatEdit, onChange:
     // Set right away, because anything later could move the cursor while the student is typing.
     box.setSelectionRange(edit.selectionStart, edit.selectionEnd);
   } else {
-    // This route has to wait for the page to show the new text first.
-    onChange(applyEdit(box.value, edit));
-    requestAnimationFrame(() => box.setSelectionRange(edit.selectionStart, edit.selectionEnd));
+    // This route has to wait for the page to show the new text first. It waits on a timer rather
+    // than a screen refresh, because a browser may skip refreshes altogether when the page isn't
+    // in front — which would leave the new text in place but the cursor where it was.
+    const wanted = applyEdit(box.value, edit);
+    onChange(wanted);
+    let tries = 0;
+    const place = () => {
+      if (box.value === wanted || tries > 20) box.setSelectionRange(edit.selectionStart, edit.selectionEnd);
+      else { tries += 1; setTimeout(place, 0); }
+    };
+    setTimeout(place, 0);
   }
 }
 

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useLayoutEffect } from 'react';
 import { applyEdit, continueList, formatEdit } from '../../data/noteFormat';
 import { describeInterval, outcome } from '../../data/flashcardRules';
 import { CARD_RATINGS } from '../../data/types';
@@ -167,10 +167,24 @@ function NoteLists({ onDone }: { onDone: Done }) {
   const [text, setText] = useState('Shopping for the lab\n');
   const box = useRef<HTMLTextAreaElement>(null);
   const bullets = text.split('\n').filter((line) => line.startsWith('• ') && line.length > 2).length;
+  /*
+   * Where the cursor should sit once the new text is on screen. This used to wait for the next
+   * screen refresh, which a browser is allowed to skip or hold back when the page isn't in front —
+   * and when that happened the bullet appeared but the cursor never moved, so the next thing typed
+   * landed in the wrong place. Placing it in a layout effect happens as part of the same update.
+   */
+  const pending = useRef<[number, number] | null>(null);
   const apply = (next: string, start: number, end: number) => {
     setText(next);
-    requestAnimationFrame(() => box.current?.setSelectionRange(start, end));
+    pending.current = [start, end];
   };
+  useLayoutEffect(() => {
+    const place = pending.current;
+    if (!place || !box.current) return;
+    pending.current = null;
+    box.current.focus();
+    box.current.setSelectionRange(place[0], place[1]);
+  }, [text]);
   return (
     <div>
       <p className="academy-task">Press Bullets, type “Goggles”, press Enter, then type “Gloves”. Two bullet points finish the activity.</p>
