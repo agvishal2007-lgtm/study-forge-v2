@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { getDb, subscribe } from '../../data/db';
 import { TOUR_STEPS } from './steps';
+import { setTourRunning } from './tourRunning';
 
 const STATE_KEY = 'walkthrough';
 const FIND_TARGET_MS = 1500;
@@ -252,7 +253,8 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
   // of a short page can scroll up and leave space for the explanation below it.
   useEffect(() => {
     document.body.classList.add('tour-active');
-    return () => document.body.classList.remove('tour-active');
+    setTourRunning(true);
+    return () => { document.body.classList.remove('tour-active'); setTourRunning(false); };
   }, []);
 
   // Otherwise the rest of the app can't be clicked, tabbed to, or read out while this is open.

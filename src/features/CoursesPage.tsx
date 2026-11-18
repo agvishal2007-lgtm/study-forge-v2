@@ -6,6 +6,7 @@ import { MyTemplates } from '../components/CourseTemplates';
 import { Shelf } from '../components/Shelf';
 import { groupCourses } from '../data/courseRules';
 import { showsTemplates, useSchool, useSchoolWords } from '../data/schoolLevel';
+import { useTourRunning } from './walkthrough/tourRunning';
 import { listCourses, listMaterials, moveCourse, setCourseStatus } from '../data/store';
 import { useLive } from '../data/useLive';
 
@@ -14,6 +15,7 @@ export function CoursesPage() {
   const school = useSchool();
   const words = useSchoolWords();
   const [setupOpen, setSetupOpen] = useState(false);
+  const tourRunning = useTourRunning();
   const { data, error } = useLive(async () => {
     const [courses, archived, materials] = await Promise.all([listCourses(), listCourses('archived'), listMaterials()]);
     return { courses, archived, materials };
@@ -24,7 +26,9 @@ export function CoursesPage() {
   const showTerms = groups.length > 1 || Boolean(groups[0]?.term);
   // Setup meets a student who has nothing yet. Nobody is asked twice, and it reopens on request.
   const nothingYet = Boolean(data && data.courses.length === 0 && data.archived.length === 0);
-  const showSetup = setupOpen || Boolean(data && !school.setupDone && nothingYet);
+  // The walkthrough teaches the app one part at a time; setup waits until it's finished rather
+  // than appearing underneath it and moving what the tour is pointing at.
+  const showSetup = setupOpen || Boolean(data && !school.setupDone && nothingYet && !tourRunning);
 
   return (
     <div className="page">
