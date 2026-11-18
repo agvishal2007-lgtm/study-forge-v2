@@ -5,6 +5,7 @@ import { accuracyOf, latestAnswers, mistakesIn, weakTopics, WEAK_BELOW_PERCENT }
 import { listAllCourses } from '../data/store';
 import type { PracticeQuestion, PracticeSet, Topic } from '../data/types';
 import { useLive } from '../data/useLive';
+import { useSchool } from '../data/schoolLevel';
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
@@ -18,6 +19,8 @@ export function topicLabeler(sets: PracticeSet[], topics: Topic[]) {
 }
 
 export function PracticePage() {
+  // Read with the other hooks, above any early exit.
+  const level = useSchool().level;
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [courseId, setCourseId] = useState(params.get('course') ?? '');
@@ -59,6 +62,12 @@ export function PracticePage() {
   return (
     <div className="page">
       <h1>Practice</h1>
+      {level !== 'elementary' && (
+        <p className="muted small" data-testid="prep-link">
+          Preparing for the SAT or PSAT? <Link to="/test-prep">SAT and PSAT practice</Link> has questions
+          by topic, with the working shown, and somewhere to keep your practice test scores.
+        </p>
+      )}
       <p className="muted">Answer questions without your notes, see what you missed, and repeat your weak topics.</p>
       {unfinished && (
         <p className="session-actions">

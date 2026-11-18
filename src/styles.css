@@ -2019,3 +2019,12 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
 .special-form { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); align-items: end; }
 .special-row { display: flex; gap: 1rem; justify-content: space-between; align-items: flex-start; padding: .4rem 0; border-bottom: 1px solid var(--line); }
 .special-blocks { display: flex; flex-wrap: wrap; gap: .3rem .9rem; align-items: center; }
+.prep-runner { border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; }
+.prep-passage { background: var(--raised); border-radius: var(--radius); padding: .6rem .8rem; margin-bottom: .6rem; }
+.prep-choices li { padding: .15rem 0; }
+.prep-answer { border-top: 1px solid var(--line); margin-top: .8rem; padding-top: .8rem; }
+.prep-right { color: var(--good, inherit); }
+.prep-wrong { color: var(--bad, inherit); }
+.prep-domains { display: grid; gap: 1rem 2rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.prep-domain-row, .prep-score-row { display: flex; gap: .75rem; justify-content: space-between; align-items: center; padding: .25rem 0; }
+.prep-score-form { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); align-items: end; }

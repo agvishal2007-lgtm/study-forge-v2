@@ -11,6 +11,7 @@ import { LessonPage as AcademyLesson } from './features/academy/LessonPage';
 import { SemesterPage } from './features/SemesterPage';
 import { SchoolYearsPage } from './features/SchoolYearsPage';
 import { TimetablePage } from './features/TimetablePage';
+import { TestPrepPage } from './features/TestPrepPage';
 import { AgreementPage } from './features/AgreementPage';
 import { agreedNow, subscribeAgreement } from './data/agreement';
 import { RecorderProvider, RecordingBar } from './components/Recorder';
@@ -195,6 +196,7 @@ export function App() {
                 <Route path="/courses/new-semester" element={<SemesterPage />} />
                 <Route path="/courses/years" element={<SchoolYearsPage />} />
                 <Route path="/courses/schedule" element={<TimetablePage />} />
+                <Route path="/test-prep" element={<TestPrepPage />} />
                 <Route path="/courses/:id" element={<CourseDetailPage />} />
                 <Route path="/library" element={<LibraryPage />} />
                 <Route path="/files/:id" element={<ViewerPage />} />
