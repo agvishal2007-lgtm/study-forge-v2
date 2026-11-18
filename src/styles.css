@@ -2006,3 +2006,16 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
 .meets-on legend { padding: 0 .35rem; font-size: var(--fs-sm); }
 .meets-on-days { display: flex; flex-wrap: wrap; gap: .4rem 1rem; }
 .block-names { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.timetable { width: 100%; border-collapse: collapse; }
+.timetable th, .timetable td { border: 1px solid var(--line); padding: .35rem .4rem; text-align: left; vertical-align: top; }
+.timetable thead th { font-size: var(--fs-sm); }
+.timetable th[scope="row"] input { width: 100%; min-width: 7rem; }
+.timetable select { width: 100%; min-width: 8rem; }
+.day-tools { display: flex; flex-direction: column; align-items: flex-start; font-weight: 400; }
+.day-tools .text-button { font-size: var(--fs-xs); }
+.table-scroll { overflow-x: auto; }
+.block-times { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; font-weight: 400; }
+.block-times input { min-width: 6.5rem; }
+.special-form { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); align-items: end; }
+.special-row { display: flex; gap: 1rem; justify-content: space-between; align-items: flex-start; padding: .4rem 0; border-bottom: 1px solid var(--line); }
+.special-blocks { display: flex; flex-wrap: wrap; gap: .3rem .9rem; align-items: center; }

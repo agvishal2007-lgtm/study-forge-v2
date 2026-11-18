@@ -29,6 +29,8 @@ import { listExamResults } from '../data/exams';
 import { listPlannerItems, setPlannerStatus } from '../data/planner';
 import { comparePlanner, describeDue, groupOf, isDone, localNow } from '../data/plannerRules';
 import { classesOnDay, dayLabel, rotationDayOn, useSchool } from '../data/schoolLevel';
+import { classSlots, getTimetable, timetableUsed } from '../data/timetable';
+import { datesThatDontMoveTheCycle, describeSpecial, listSpecialDays, slotsAfterSpecial, specialOn } from '../data/specialDays';
 import { listUnfinished } from '../data/recordings';
 import { getStorageStatus, listCourses, listMaterials, requestKeepFiles } from '../data/store';
 import type { Course, PlannerItem } from '../data/types';
@@ -87,8 +89,8 @@ export function TodayPage() {
     const [decks, cards, cardProgress] = await Promise.all([listDecks(), listCards(), listCardProgress()]);
     const [practiceSets, practiceQuestions, practiceAttempts, topics] = await Promise.all([listPracticeSets(), listPracticeQuestions(), listPracticeAttempts(), listAllTopics()]);
     const [calendarEvents, studyDays, examResults, studyTime] = await Promise.all([listCalendarEvents(), listStudyDays(), listExamResults(), listStudyTime()]);
-    const [practiceSession, reviewSession, savedIds] = await Promise.all([loadPracticeSession(), loadReviewSession(), savedQuestionIds()]);
-    return { savedIds, practiceSession, reviewSession, gradeCategories, calendarEvents, studyDays, examResults, studyTime, practiceSets, practiceQuestions, practiceAttempts, topics, courses, materials, storage, unfinished, notes, lastBackup, plannerItems, decks, cards, cardProgress, progress, next: recommendNext(lessons, checkpoints, progress) };
+    const [practiceSession, reviewSession, savedIds, timetable, specialDays] = await Promise.all([loadPracticeSession(), loadReviewSession(), savedQuestionIds(), getTimetable(), listSpecialDays()]);
+    return { timetable, specialDays, savedIds, practiceSession, reviewSession, gradeCategories, calendarEvents, studyDays, examResults, studyTime, practiceSets, practiceQuestions, practiceAttempts, topics, courses, materials, storage, unfinished, notes, lastBackup, plannerItems, decks, cards, cardProgress, progress, next: recommendNext(lessons, checkpoints, progress) };
   }, [askedToKeep]);
 
   // Read with the other hooks, above the early exits: a hook after one of those would be read
@@ -97,7 +99,7 @@ export function TodayPage() {
 
   if (error) return <div className="page"><h1>Today</h1><p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { savedIds, practiceSession, reviewSession, gradeCategories, courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress, practiceSets, practiceQuestions, practiceAttempts, topics, calendarEvents, studyDays, examResults, studyTime } = data;
+  const { timetable, specialDays, savedIds, practiceSession, reviewSession, gradeCategories, courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress, practiceSets, practiceQuestions, practiceAttempts, topics, calendarEvents, studyDays, examResults, studyTime } = data;
   const backupDue = (materials.length > 0 || notes.length > 0) && (lastBackup === null || Date.now() - lastBackup > BACKUP_REMINDER_MS);
 
   if (courses.length === 0 && materials.length === 0 && unfinished.length === 0 && notes.length === 0 && plannerItems.length === 0 && cards.length === 0 && decks.length === 0 && practiceSets.length === 0 && calendarEvents.length === 0) {
@@ -184,16 +186,38 @@ export function TodayPage() {
   ];
 
   // On a block schedule, which day of the cycle this is — the first thing such a student checks.
-  const blockDay = school.rotation ? rotationDayOn(school.rotation, localNow().date) : null;
+  // A day the school didn't count is left out of the cycle's reckoning, so the letter shown is the
+  // one the school actually used rather than one that has quietly slipped along.
+  const special = specialOn(specialDays, localNow().date);
+  const blockDay = school.rotation
+    ? rotationDayOn(school.rotation, localNow().date, datesThatDontMoveTheCycle(specialDays))
+    : null;
   // Which classes meet today. Shown only once the student has said which days any class meets:
   // before that every class meets every day, and a line listing all of them would say nothing.
   const anyDaysSet = courses.some((course) => (course.meetsOn ?? []).length > 0);
   const meetingToday = blockDay === null || !anyDaysSet ? [] : classesOnDay(courses, blockDay);
+  // A filled-in schedule is the better answer and wins: it knows the order of the day, not just
+  // which classes are in it. The ticked-days version stays for anyone who hasn't filled one in.
+  const named = (id: string) => courses.find((course) => course.id === id)?.name ?? '';
+  const todaySlots = timetableUsed(timetable) && timetable
+    ? slotsAfterSpecial(classSlots(timetable, blockDay ?? 0, courses.map((course) => course.id)), special)
+    : [];
   return (
     <div className="page dashboard">
       <header>
         <h1>Today: {dateWords}{blockDay !== null ? <span className="block-day" data-testid="block-day"> · {dayLabel(school.rotation, blockDay)} day</span> : null}</h1>
-        {meetingToday.length > 0 && (
+        {special && (
+          <p className="muted small" data-testid="special-today">
+            <b>{describeSpecial(special, timetable?.periodNames ?? [])}</b>
+          </p>
+        )}
+        {todaySlots.length > 0 ? (
+          <p className="muted small" data-testid="schedule-today">
+            {todaySlots
+              .map((slot) => `${slot.name}: ${named(slot.courseId)}${slot.time?.start ? ` (${slot.time.start})` : ''}`)
+              .join(' · ')}
+          </p>
+        ) : meetingToday.length > 0 && (
           <p className="muted small" data-testid="classes-today">
             Classes today: {meetingToday.map((course) => course.name).join(', ')}
           </p>

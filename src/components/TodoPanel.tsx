@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { listCourses } from '../data/store';
 import { listPlannerItems, savePlannerItem, setPlannerStatus } from '../data/planner';
+import type { PlannerItem } from '../data/types';
 import { belongsTo, chooseList, flip, listsFor } from '../data/listRules';
 import { isDone, uncheckedStatus } from '../data/plannerRules';
 import { useDisplayPrefs } from '../data/displayPrefs';
@@ -100,22 +101,7 @@ export function TodoPanel() {
         ? <p className="muted small" data-testid="todo-empty">Nothing in {list.name} yet.</p>
         : (
           <ul className="plain-list todo-items" data-testid="todo-items">
-            {show.map((item) => {
-              const done = isDone(item);
-              return (
-                <li key={item.id} className={done && completed === 'struck' ? 'todo-item struck' : 'todo-item'}>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={done}
-                      aria-label={item.title}
-                      onChange={() => void setPlannerStatus(item.id, done ? uncheckedStatus(item.status) : 'Completed')}
-                    />
-                    <span>{item.title}</span>
-                  </label>
-                </li>
-              );
-            })}
+            {show.map((item) => <PanelTick key={item.id} item={item} struck={completed === 'struck'} />)}
           </ul>
         )}
 
@@ -129,5 +115,45 @@ export function TodoPanel() {
       </form>
       <p className="muted small"><Link to="/planner" onClick={() => setTodoPanelOpen(false)}>Open the full Planner</Link></p>
     </aside>
+  );
+}
+
+/**
+ * One task in the panel.
+ *
+ * The tick moves the instant it is tapped and the save follows, which is the same rule the Planner
+ * list follows. Saving reaches this device's database and then the student's other devices, and a
+ * box that sprang back while that happened would look exactly like a tap that was missed. If the
+ * save genuinely fails the box returns to what is really stored and says so, so nothing is quietly
+ * lost.
+ */
+function PanelTick({ item, struck }: { item: PlannerItem; struck: boolean }) {
+  const saved = isDone(item);
+  const [pending, setPending] = useState<boolean | null>(null);
+  const [failure, setFailure] = useState('');
+  const done = pending ?? saved;
+  useEffect(() => { if (pending !== null && pending === saved) setPending(null); }, [pending, saved]);
+
+  return (
+    <li className={done && struck ? 'todo-item struck' : 'todo-item'}>
+      <label>
+        <input
+          type="checkbox"
+          checked={done}
+          aria-label={item.title}
+          onChange={(event) => {
+            const wanted = event.target.checked;
+            setFailure('');
+            setPending(wanted);
+            setPlannerStatus(item.id, wanted ? 'Completed' : uncheckedStatus(item.status)).catch((error: Error) => {
+              setPending(null);
+              setFailure(`That wasn't saved, so it's back as it was. ${error.message}`);
+            });
+          }}
+        />
+        <span>{item.title}</span>
+      </label>
+      {failure && <span className="error small" role="alert">{failure}</span>}
+    </li>
   );
 }

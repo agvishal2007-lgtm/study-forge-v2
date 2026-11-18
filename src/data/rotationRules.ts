@@ -130,12 +130,23 @@ function schoolDaysBetween(from: string, to: string, weekdays: number[]): number
 }
 
 /** Which day of the cycle a date is, or null when school isn't in session that day. */
-export function rotationDayOn(rotation: Rotation, date: string): number | null {
+export function rotationDayOn(rotation: Rotation, date: string, skipDates: string[] = []): number | null {
   if (!usableRotation(rotation)) return null;
   const week = schoolWeek(rotation.weekdays);
   if (!week.includes(weekdayOf(date))) return null;
   const anchor = schoolDayOnOrAfter(rotation.anchor, week);
-  const moved = schoolDaysBetween(anchor, date, week);
+  let moved = schoolDaysBetween(anchor, date, week);
+  // Days the student said didn't move the cycle along — a field trip, an assembly schedule, a
+  // closure — are taken back out of the count, so the letter after one of them is the letter the
+  // school actually used instead of one that has quietly slipped by a day.
+  if (skipDates.length > 0) {
+    const low = anchor <= date ? anchor : date;
+    const high = anchor <= date ? date : anchor;
+    const skipped = new Set(
+      skipDates.filter((day) => day >= low && day < high && week.includes(weekdayOf(day))),
+    ).size;
+    moved += moved >= 0 ? -skipped : skipped;
+  }
   return ((moved % rotation.length) + rotation.length) % rotation.length;
 }
 

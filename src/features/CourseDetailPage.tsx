@@ -14,6 +14,7 @@ import { createTopic, getCourse, listAllResourceLinks, listTopics, materialsForC
 import type { Material, Note, Topic } from '../data/types';
 import { useLive } from '../data/useLive';
 import { dayLabel, meetsOnDay, tidyMeetsOn, useSchool } from '../data/schoolLevel';
+import { daysForCourse, getTimetable, timetableUsed } from '../data/timetable';
 
 export function CourseDetailPage() {
   const { id = '' } = useParams();
@@ -26,10 +27,11 @@ export function CourseDetailPage() {
   const [editingCourse, setEditingCourse] = useState(false);
   const [failure, setFailure] = useState('');
   const { data, error } = useLive(async () => {
-    const [course, topics, archivedTopics, materials, links, notes] = await Promise.all([
-      getCourse(id), listTopics(id), listTopics(id, 'archived'), materialsForCourse(id), listAllResourceLinks(), listNotes(),
+    const [course, topics, archivedTopics, materials, links, notes, timetable] = await Promise.all([
+      getCourse(id), listTopics(id), listTopics(id, 'archived'), materialsForCourse(id), listAllResourceLinks(), listNotes(), getTimetable(),
     ]);
     return {
+      timetable,
       course,
       topics,
       archivedTopics,
@@ -42,7 +44,7 @@ export function CourseDetailPage() {
 
   if (error) return <div className="page"><p className="error" role="alert">This course couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { course, topics, archivedTopics, materials, links, notes } = data;
+  const { timetable, course, topics, archivedTopics, materials, links, notes } = data;
   if (!course) return <div className="page"><h1>This course doesn't exist</h1><Link to="/courses">Go to Courses</Link></div>;
 
   const attempt = async (action: () => Promise<void>) => {
@@ -113,7 +115,15 @@ export function CourseDetailPage() {
             <input name="term" defaultValue={course.term} placeholder="Fall 2026" />
           </label>
           <p className="muted small">Leave the semester empty for an independent study. Courses are grouped by semester on the Courses page.</p>
-          {rotation && (
+          {rotation && timetableUsed(timetable) && timetable && (
+            <p className="muted small" data-testid="days-from-schedule">
+              Days this class meets:{' '}
+              <b>{daysForCourse(timetable, course.id).map((day) => dayLabel(rotation, day)).join(', ') || 'not in your schedule yet'}</b>.
+              {' '}This comes from <Link to="/courses/schedule">your daily schedule</Link>, so it is only
+              said in one place.
+            </p>
+          )}
+          {rotation && !timetableUsed(timetable) && (
             <fieldset className="meets-on" data-testid="meets-on">
               <legend>Days this class meets</legend>
               <div className="meets-on-days">

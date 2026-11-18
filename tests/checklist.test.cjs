@@ -250,6 +250,11 @@ test('a goal you can measure shows in plain words, and beating it is never a sho
 });
 
 test('the floating list opens from the top, follows you about, and stays until closed', async () => {
+  // An earlier test in this file switched finished tasks to "Steps aside", and a pref persists.
+  // The panel is right to hide a ticked task under that setting, so this test states the setting it
+  // actually means to check: the default, where a finished task stays put.
+  await page.goto(`${URL_BASE}#/settings`);
+  await choose('Stays put');
   await addTask('Read chapter 9');
   const panel = page.getByTestId('todo-panel');
   assert.equal(await panel.count(), 0, 'it waits to be asked for');
@@ -285,7 +290,8 @@ test('the floating list opens from the top, follows you about, and stays until c
 
 test('a task added in a list belongs to that list', async () => {
   await page.goto(`${URL_BASE}#/planner`);
-  await page.getByTestId('todo-toggle').click();
+  // Opened only if the previous test left it closed, so a failure there can't cascade into here.
+  if ((await page.getByTestId('todo-panel').count()) === 0) await page.getByTestId('todo-toggle').click();
   const panel = page.getByTestId('todo-panel');
   await panel.waitFor();
   // Personal is always there as somewhere to start.

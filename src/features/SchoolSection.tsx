@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { datesThatDontMoveTheCycle, listSpecialDays } from '../data/specialDays';
+import { useLive } from '../data/useLive';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { getActiveAccount } from '../data/account';
 import {
@@ -34,6 +36,10 @@ export function SchoolSection() {
   const words = wordsFor(school.level, school.termKind);
   const [pending, setPending] = useState<SchoolLevel | null>(null);
   const signedIn = Boolean(getActiveAccount());
+  // The same days Today leaves out of the cycle, so this screen and that one can never disagree
+  // about what day it is.
+  const { data: specials } = useLive(async () => ({ skip: datesThatDontMoveTheCycle(await listSpecialDays()) }));
+  const skip = specials?.skip ?? [];
 
   const choose = (next: SchoolLevel) => {
     if (next === school.level) return;
@@ -64,9 +70,15 @@ export function SchoolSection() {
       )}
 
       <div className="pref-row">
-        <h3 id="block-heading">Block schedule</h3>
+        <h3 id="block-heading">Does your schedule change from day to day?</h3>
         <p className="muted small">
-          Some schools rotate through named days — an A day, then a B day — instead of running the same {words.courses} every day. The cycle only moves on days school is open, so a weekend or a day off never pushes it on.
+          Plenty of schools run the same {words.courses} at the same times every day, and if yours does,
+          leave this off — nothing here is needed. Some rotate instead, through days they might call A
+          and B, Day 1 and Day 2, or something of their own, and a {words.course} can sit in a different
+          block on each of them. There is no standard version of this: it differs between schools and
+          between districts, so Study Forge asks rather than assuming, and this is offered at every
+          school level. The cycle only moves on days school is open, so a weekend or a day off never
+          pushes it on.
         </p>
         <label className="choice-pair">
           <input
@@ -75,7 +87,7 @@ export function SchoolSection() {
             data-testid="block-on"
             onChange={(event) => setSchool({ rotation: event.target.checked ? { length: 2, anchor: localNow().date, weekdays: SCHOOL_WEEK } : null })}
           />
-          My school runs a block schedule
+          My schedule rotates through more than one kind of day
         </label>
         {school.rotation && (
           <div className="block-setup">
@@ -136,20 +148,20 @@ export function SchoolSection() {
             )}
             <label>What is today?
               <select
-                value={rotationDayOn(school.rotation, localNow().date) ?? ''}
+                value={rotationDayOn(school.rotation, localNow().date, skip) ?? ''}
                 data-testid="block-today"
                 onChange={(event) => setSchool({ rotation: reanchor(school.rotation!, localNow().date, Number(event.target.value)) })}
               >
-                {rotationDayOn(school.rotation, localNow().date) === null && <option value="">Not a school day today</option>}
+                {rotationDayOn(school.rotation, localNow().date, skip) === null && <option value="">Not a school day today</option>}
                 {Array.from({ length: school.rotation.length }, (_, day) => (
                   <option key={day} value={day}>{dayLabel(school.rotation, day)} day</option>
                 ))}
               </select>
             </label>
             <p className="muted small" data-testid="block-state">
-              {rotationDayOn(school.rotation, localNow().date) === null
+              {rotationDayOn(school.rotation, localNow().date, skip) === null
                 ? 'School is closed today, so there is no letter for it. Set this on a school day.'
-                : `Today is a ${dayLabel(school.rotation, rotationDayOn(school.rotation, localNow().date)!)} day.`}
+                : `Today is a ${dayLabel(school.rotation, rotationDayOn(school.rotation, localNow().date, skip)!)} day.`}
               {' '}If a day off has put the cycle out, just say what today really is and every other day follows from it.
             </p>
           </div>

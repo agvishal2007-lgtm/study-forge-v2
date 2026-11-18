@@ -119,3 +119,25 @@ test('a class meets on the days it was given, and on every day until it is told 
   assert.deepEqual(tidyMeetsOn([0, 1], 2), []);
   assert.deepEqual(tidyMeetsOn(undefined, 4), []);
 });
+
+test('a day the school says did not move the cycle does not move it', async () => {
+  const { rotationDayOn, rotationLabel } = await import('../src/data/rotationRules.ts');
+  const AB = { length: 4, anchor: '2026-11-02', weekdays: [1, 2, 3, 4, 5] };
+  // Monday to Thursday run A, B, C, D as usual.
+  assert.deepEqual(
+    ['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05'].map((date) => rotationLabel(rotationDayOn(AB, date))),
+    ['A', 'B', 'C', 'D'],
+  );
+  // A field trip on the Tuesday that the school did not count: Wednesday is still B.
+  const skip = ['2026-11-03'];
+  assert.equal(rotationLabel(rotationDayOn(AB, '2026-11-04', skip)), 'B');
+  assert.equal(rotationLabel(rotationDayOn(AB, '2026-11-05', skip)), 'C');
+  // The skipped day itself still reports where it sat, which is what the day was called.
+  assert.equal(rotationLabel(rotationDayOn(AB, '2026-11-03', skip)), 'B');
+  // A weekend in the list changes nothing, since it was never a school day.
+  assert.equal(rotationLabel(rotationDayOn(AB, '2026-11-04', ['2026-11-01'])), 'C');
+  // The same date twice counts once.
+  assert.equal(rotationLabel(rotationDayOn(AB, '2026-11-04', ['2026-11-03', '2026-11-03'])), 'B');
+  // A date after the day being asked about is irrelevant to it.
+  assert.equal(rotationLabel(rotationDayOn(AB, '2026-11-04', ['2026-11-05'])), 'C');
+});

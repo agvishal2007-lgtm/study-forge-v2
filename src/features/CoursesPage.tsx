@@ -47,6 +47,8 @@ export function CoursesPage() {
             <button className="text-button" type="button" onClick={() => setSetupOpen(true)} data-testid="reopen-setup">Change your school and {words.term} setup</button>
             {' · '}
             <Link to="/courses/years" data-testid="school-years">School years</Link>
+            {' · '}
+            <Link to="/courses/schedule" data-testid="my-schedule">My daily schedule</Link>
           </p>
         )}
       {error && <p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p>}
