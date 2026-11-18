@@ -16,7 +16,12 @@ export async function listCourses(status: Lifecycle = 'active'): Promise<Course[
 export const listAllCourses = async (): Promise<Course[]> => (await (await getDb()).getAll('courses')).sort(byPlace);
 
 
-export async function createCourse(name: string, code: string, term = ''): Promise<Course> {
+/**
+ * Adds a course. `undoable` is for the first-time setup, which adds several at once and offers one
+ * Undo for the lot; adding one by hand doesn't record one, because the course is right there to
+ * delete and an Undo bar after every single course would be noise.
+ */
+export async function createCourse(name: string, code: string, term = '', options: { undoable?: boolean } = {}): Promise<Course> {
   const db = await getDb();
   const count = await db.count('courses');
   const now = Date.now();
@@ -32,11 +37,8 @@ export async function createCourse(name: string, code: string, term = ''): Promi
     createdAt: now,
     updatedAt: now,
   };
-  // Recorded so that creating a course can be taken back, which is what the Undo bar offers after
-  // the first-time setup adds several at once.
-  await undoable(`Added ${course.name}`, 'courses', [course.id], async () => {
-    await db.put('courses', course);
-  });
+  if (options.undoable) await undoable(`Added ${course.name}`, 'courses', [course.id], async () => { await db.put('courses', course); });
+  else await db.put('courses', course);
   notifyChanged();
   return course;
 }

@@ -67,7 +67,7 @@ export function CourseSetup({ hasCourses, onClose }: { hasCourses: boolean; onCl
       if (wanted.length) {
         await asOneUndo(`Added ${wanted.length} ${wanted.length === 1 ? words.course : words.courses}`, async () => {
           // Created with its term in one write, so a class is never briefly filed under no term.
-          for (const name of wanted) await createCourse(name, '', term);
+          for (const name of wanted) await createCourse(name, '', term, { undoable: true });
         });
       }
       onClose?.();
