@@ -4,7 +4,7 @@ import { NewCourseForm } from '../components/NewCourseForm';
 import { CourseSetup } from '../components/CourseSetup';
 import { MyTemplates } from '../components/CourseTemplates';
 import { Shelf } from '../components/Shelf';
-import { groupCourses } from '../data/courseRules';
+import { ALL_YEAR, groupCourses } from '../data/courseRules';
 import { showsTemplates, useSchool, useSchoolWords } from '../data/schoolLevel';
 import { useTourRunning } from './walkthrough/tourRunning';
 import { listCourses, listMaterials, moveCourse, setCourseStatus } from '../data/store';
@@ -22,6 +22,9 @@ export function CoursesPage() {
   });
 
   const groups = data ? groupCourses(data.courses) : [];
+  // What a group of classes is called: the term's own name, the all-year group, or no term at all.
+  const groupName = (term: string) =>
+    (term === ALL_YEAR ? `All year` : term || `No ${words.term}`);
   // A student who never sets a term shouldn't see a heading for one.
   const showTerms = groups.length > 1 || Boolean(groups[0]?.term);
   // Setup meets a student who has nothing yet. Nobody is asked twice, and it reopens on request.
@@ -50,11 +53,11 @@ export function CoursesPage() {
       )}
 
       {groups.map((group) => (
-        <section key={group.term || 'no-term'} className="course-group" aria-label={group.term || `${words.Courses} with no ${words.term}`}>
-          {showTerms && <h2>{group.term || `No ${words.term}`}</h2>}
+        <section key={group.term || 'no-term'} className="course-group" aria-label={groupName(group.term)}>
+          {(showTerms || group.term === ALL_YEAR) && <h2>{groupName(group.term)}</h2>}
           {arranging
             ? (
-              <ol className="arrange-list" data-testid={`arrange-${group.term || 'no-term'}`}>
+              <ol className="arrange-list" data-testid={`arrange-${group.term === ALL_YEAR ? 'all-year' : group.term || 'no-term'}`}>
                 {group.courses.map((course, index) => (
                   <li key={course.id}>
                     <span className="arrange-name">{course.name}</span>

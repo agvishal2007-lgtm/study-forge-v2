@@ -15,6 +15,11 @@ export interface Course {
   color: string;
   /** The semester or term this course belongs to. Empty means no term — an independent study. */
   term: string;
+  /**
+   * True for a class that runs the whole school year while others run a single term, which is
+   * ordinary in high school. Missing or false means it belongs to its term alone.
+   */
+  allYear?: boolean;
   /** Where the student dragged it; lower comes first. */
   position: number;
   status: Lifecycle;

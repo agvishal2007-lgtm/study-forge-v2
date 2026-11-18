@@ -21,7 +21,7 @@ export const listAllCourses = async (): Promise<Course[]> => (await (await getDb
  * Undo for the lot; adding one by hand doesn't record one, because the course is right there to
  * delete and an Undo bar after every single course would be noise.
  */
-export async function createCourse(name: string, code: string, term = '', options: { undoable?: boolean } = {}): Promise<Course> {
+export async function createCourse(name: string, code: string, term = '', options: { undoable?: boolean; allYear?: boolean } = {}): Promise<Course> {
   const db = await getDb();
   const count = await db.count('courses');
   const now = Date.now();
@@ -31,6 +31,7 @@ export async function createCourse(name: string, code: string, term = '', option
     code: code.trim(),
     color: SPINE_COLORS[count % SPINE_COLORS.length],
     term: term.trim(),
+    allYear: options.allYear === true ? true : undefined,
     position: count,
     status: 'active',
     statusAt: now,

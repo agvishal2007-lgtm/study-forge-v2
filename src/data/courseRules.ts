@@ -34,13 +34,23 @@ export function groupTopics(topics: Topic[]): { heading: string; topics: Topic[]
   return groups.sort((a, b) => Number(Boolean(a.heading)) - Number(Boolean(b.heading)));
 }
 
-/** Courses grouped by term, with independent study (no term) last. */
+/**
+ * Courses grouped by term, with independent study (no term) last. A class that runs the whole
+ * year sits in its own group above the terms, because it isn't one term's class and listing it
+ * under one of them would be wrong — or listing it under each would make one class look like several.
+ */
+export const ALL_YEAR = '\u0000all-year';
+
 export function groupCourses(courses: Course[]): { term: string; courses: Course[] }[] {
   const groups: { term: string; courses: Course[] }[] = [];
   for (const course of [...courses].sort(byPlace)) {
-    const group = groups.find((candidate) => candidate.term === course.term);
+    const key = course.allYear ? ALL_YEAR : course.term;
+    const group = groups.find((candidate) => candidate.term === key);
     if (group) group.courses.push(course);
-    else groups.push({ term: course.term, courses: [course] });
+    else groups.push({ term: key, courses: [course] });
   }
-  return groups.sort((a, b) => Number(!a.term) - Number(!b.term) || a.term.localeCompare(b.term));
+  return groups.sort((a, b) =>
+    Number(a.term !== ALL_YEAR) - Number(b.term !== ALL_YEAR)
+    || Number(!a.term) - Number(!b.term)
+    || a.term.localeCompare(b.term));
 }

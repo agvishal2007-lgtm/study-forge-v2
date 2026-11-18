@@ -53,6 +53,26 @@ test('courses group by semester, with independent study last', async () => {
   assert.deepEqual(groups[0].courses.map((c) => c.id), ['c', 'd']);
 });
 
+test('a class that runs all year sits above the terms, not inside one of them', async () => {
+  const { groupCourses, ALL_YEAR } = await rules();
+  const allYear = (id, name, term, position) => ({ ...course(id, name, term, position), allYear: true });
+  const groups = groupCourses([
+    course('a', 'Chemistry', 'Spring 2027', 0),
+    allYear('b', 'Band', 'Fall 2026', 1),
+    course('c', 'English', 'Fall 2026', 2),
+    course('d', 'Study hall', '', 3),
+  ]);
+  // All year first, then the terms in order, then anything with no term at all.
+  assert.deepEqual(groups.map((group) => group.term), [ALL_YEAR, 'Fall 2026', 'Spring 2027', '']);
+  assert.deepEqual(groups[0].courses.map((one) => one.id), ['b'], 'the all-year class is only here');
+  // It appears once in total. Listing it under every term would make one class look like several.
+  const seen = groups.flatMap((group) => group.courses.map((one) => one.id)).filter((id) => id === 'b');
+  assert.equal(seen.length, 1);
+  // With no all-year class, nothing changes about the old grouping.
+  const plain = groupCourses([course('a', 'A', 'Fall 2026', 0), course('b', 'B', '', 1)]);
+  assert.deepEqual(plain.map((group) => group.term), ['Fall 2026', '']);
+});
+
 const PORT = 4203;
 const URL_BASE = `http://localhost:${PORT}/`;
 let server;
