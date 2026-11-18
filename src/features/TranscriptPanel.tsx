@@ -3,6 +3,7 @@ import { deleteTranscript, getTranscript, saveTranscript } from '../data/transcr
 import { TRANSCRIBE_MODEL, TranscribeError, transcribe, type TranscribeProgress } from '../data/transcribe';
 import type { Material } from '../data/types';
 import { useLive } from '../data/useLive';
+import { isDeviceOnly } from '../data/schoolLevel';
 
 const STAGE_WORDS: Record<TranscribeProgress['stage'], string> = {
   preparing: 'Getting the sound ready',
@@ -47,6 +48,14 @@ export function TranscriptPanel({ material, blob }: { material: Material; blob: 
       {!loading && !transcript && !working && (
         <div className="notice">
           <p>Turn this recording into text you can read and search. It happens on your device, so nothing is uploaded. The first time, it downloads a speech model, which needs internet. It can be slow on long recordings, and it's rougher than paid tools, especially with background noise.</p>
+          {isDeviceOnly() && (
+            <p data-testid="transcript-device-only">
+              <strong>One thing to know:</strong> your school setting keeps everything on this device, and your
+              recording still never leaves it — it is turned into text here, not sent anywhere. But downloading
+              the speech software the first time does reach the internet, the same as opening any website does.
+              If you would rather nothing reached out at all, don't make a transcript.
+            </p>
+          )}
           <button className="button primary" onClick={run} data-testid="make-transcript">Make a transcript</button>
         </div>
       )}

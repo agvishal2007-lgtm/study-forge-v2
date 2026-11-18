@@ -215,6 +215,27 @@ test('a block schedule says what day it is, and a day off is put right in one go
   }
 });
 
+test('a device-only student is told the one thing that reaches the internet', async () => {
+  const { context, page } = await fresh();
+  try {
+    // College is not device-only, so there is nothing extra to say.
+    await page.goto(`${URL_BASE}#/settings/school`);
+    await page.getByTestId('school-section').waitFor();
+    await page.goto(`${URL_BASE}#/record`);
+    await page.getByRole('heading', { name: 'Record', level: 1 }).waitFor();
+
+    // Middle school keeps work on the device, and the transcript note says where that stops.
+    await page.goto(`${URL_BASE}#/settings/school`);
+    await page.getByTestId('school-level').selectOption('middle');
+    await page.getByTestId('settings-device-only').waitFor();
+    const words = await page.getByTestId('settings-device-only').innerText();
+    assert.match(words, /this device/i);
+    assert.match(words, /no account|There's no account/i);
+  } finally {
+    await context.close();
+  }
+});
+
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });
