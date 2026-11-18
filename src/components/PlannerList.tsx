@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { setPlannerStatus } from '../data/planner';
-import { describeDue, groupOf, isDone, localNow, uncheckedStatus } from '../data/plannerRules';
+import { describeDue, describeGoal, groupOf, isDone, localNow, uncheckedStatus } from '../data/plannerRules';
 import { describeNext, stepProgress } from '../data/stepRules';
 import { useDisplayPrefs } from '../data/displayPrefs';
 import { shortDate } from './AssignmentSteps';
@@ -31,6 +31,7 @@ export function PlannerRow({ item, course, now }: { item: PlannerItem; course?: 
   };
   const overdue = groupOf(item, now) === 'overdue';
   const progress = stepProgress(item.steps, now.date);
+  const goal = describeGoal(item.goal);
   const details = [item.type, course?.name, item.priority === 'High' ? 'High priority' : '', item.estimateHours ? `About ${item.estimateHours} ${item.estimateHours === 1 ? 'hour' : 'hours'}` : ''].filter(Boolean);
   return (
     <li className="planner-row" data-testid="planner-row" data-done={done} style={{ '--spine': course?.color ?? 'var(--line)' } as React.CSSProperties}>
@@ -46,6 +47,7 @@ export function PlannerRow({ item, course, now }: { item: PlannerItem; course?: 
         <span className={overdue ? 'planner-due overdue' : 'planner-due'}>{describeDue(item, now)}</span>
         <span className="muted file-meta">{details.join(', ')}</span>
         {progress && !done && <span className="muted small step-summary" data-testid="row-steps">{describeNext(progress, shortDate)}</span>}
+        {goal && <span className="muted small row-goal" data-testid="row-goal">{goal}</span>}
         {failure && <span className="error" role="alert">{failure}</span>}
       </div>
       <div className="planner-actions">

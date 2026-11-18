@@ -14,21 +14,25 @@ export type Density = 'comfortable' | 'compact';
  * task itself is untouched and still sits in Done, so nothing is ever lost by a display choice.
  */
 export type CompletedLook = 'visible' | 'struck' | 'hidden';
+/** Whether the checklist gathers tasks by when they're due or by the student's own sections. */
+export type Grouping = 'due' | 'section';
 
 export interface DisplayPrefs {
   text: TextSize;
   motion: Motion;
   density: Density;
   completed: CompletedLook;
+  grouping: Grouping;
 }
 
-const KEYS = { text: 'study-forge-text', motion: 'study-forge-motion', density: 'study-forge-density', completed: 'study-forge-completed' } as const;
-const DEFAULTS: DisplayPrefs = { text: 'standard', motion: 'device', density: 'comfortable', completed: 'visible' };
+const KEYS = { text: 'study-forge-text', motion: 'study-forge-motion', density: 'study-forge-density', completed: 'study-forge-completed', grouping: 'study-forge-grouping' } as const;
+const DEFAULTS: DisplayPrefs = { text: 'standard', motion: 'device', density: 'comfortable', completed: 'visible', grouping: 'due' };
 const ALLOWED = {
   text: ['standard', 'large', 'larger'],
   motion: ['device', 'reduce'],
   density: ['comfortable', 'compact'],
   completed: ['visible', 'struck', 'hidden'],
+  grouping: ['due', 'section'],
 } as const;
 
 const listeners = new Set<() => void>();
@@ -42,7 +46,7 @@ function read(): DisplayPrefs {
       return DEFAULTS[key];
     }
   };
-  return { text: pick('text'), motion: pick('motion'), density: pick('density'), completed: pick('completed') };
+  return { text: pick('text'), motion: pick('motion'), density: pick('density'), completed: pick('completed'), grouping: pick('grouping') };
 }
 
 let current: DisplayPrefs = typeof window === 'undefined' ? DEFAULTS : read();

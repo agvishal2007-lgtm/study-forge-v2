@@ -4,8 +4,8 @@ import { AssignmentSteps } from '../components/AssignmentSteps';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useStillHere } from '../components/useStillHere';
-import { deletePlannerItem, getPlannerItem, savePlannerItem } from '../data/planner';
-import { isValidDate } from '../data/plannerRules';
+import { deletePlannerItem, getPlannerItem, listPlannerItems, savePlannerItem } from '../data/planner';
+import { isValidDate, sectionsOf } from '../data/plannerRules';
 import { listCourses } from '../data/store';
 import { PLANNER_PRIORITIES, PLANNER_STATUSES, PLANNER_TYPES, type PlannerPriority, type PlannerStatus, type PlannerType } from '../data/types';
 import { useLive } from '../data/useLive';
@@ -34,10 +34,17 @@ export function PlannerItemPage() {
   const [earned, setEarned] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [details, setDetails] = useState('');
+  const [section, setSection] = useState('');
+  const [goalTarget, setGoalTarget] = useState('');
+  const [goalUnit, setGoalUnit] = useState('');
+  const [goalDone, setGoalDone] = useState('');
   const [problems, setProblems] = useState<string[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saving, setSaving] = useState(false);
   const { data: courses } = useLive(listCourses);
+  // The sections already in use, so the same one is offered rather than retyped and misspelt.
+  const { data: everyItem } = useLive(listPlannerItems);
+  const sectionNames = sectionsOf(everyItem ?? []);
   // The grading categories of whichever course this belongs to.
   const { data: categoryList } = useLive(
     () => (courseId ? listGradeCategories(courseId) : Promise.resolve([])),
@@ -65,6 +72,10 @@ export function PlannerItemPage() {
         setEarned(item.earnedPoints === null ? '' : String(item.earnedPoints));
         setCategoryId(item.categoryId ?? '');
         setDetails(item.details);
+        setSection(item.section ?? '');
+        setGoalTarget(item.goal ? String(item.goal.target) : '');
+        setGoalUnit(item.goal?.unit ?? '');
+        setGoalDone(item.goal && item.goal.done > 0 ? String(item.goal.done) : '');
         setCreatedAt(item.createdAt);
       }
       setLoaded(true);
@@ -97,6 +108,11 @@ export function PlannerItemPage() {
     if (worth !== null && (!Number.isFinite(worth) || worth < 0)) found.push('Enter points as a number of 0 or more, or leave it empty.');
     const scored = earned.trim() === '' ? null : Number(earned);
     if (scored !== null && (!Number.isFinite(scored) || scored < 0)) found.push('Enter the marks you got as a number of 0 or more, or leave it empty.');
+    const target = goalTarget.trim() === '' ? null : Number(goalTarget);
+    if (target !== null && (!Number.isFinite(target) || target <= 0)) found.push('Enter a goal as a number above 0, or leave it empty.');
+    const recorded = goalDone.trim() === '' ? null : Number(goalDone);
+    if (recorded !== null && (!Number.isFinite(recorded) || recorded < 0)) found.push('Enter what you did as a number of 0 or more, or leave it empty.');
+    if (recorded !== null && target === null) found.push('Add a goal to go with what you did.');
     setProblems(found);
     if (found.length > 0) return;
     setSaving(true);
@@ -115,6 +131,9 @@ export function PlannerItemPage() {
         earnedPoints: scored,
         categoryId: categoryId || null,
         details: details.trim(),
+        section: section.trim(),
+        // A goal only exists once there's a target; without one this is an ordinary tick-box task.
+        goal: target === null ? undefined : { target, unit: goalUnit.trim(), done: recorded ?? 0 },
         createdAt,
       });
       dirty.current = false;
@@ -174,6 +193,24 @@ export function PlannerItemPage() {
             </label>
           )}
         </div>
+        <label>Section (optional)
+          <input
+            value={section}
+            list="planner-sections"
+            placeholder="Morning routine"
+            onChange={(event) => touch(setSection)(event.target.value)}
+          />
+        </label>
+        <datalist id="planner-sections">{sectionNames.map((name) => <option key={name} value={name} />)}</datalist>
+        <fieldset className="goal-fields">
+          <legend>A goal you can measure (optional)</legend>
+          <p className="muted small">For something like time on the walking pad. Reaching the goal is done; going past it is a bonus, never a shortfall.</p>
+          <div className="field-row">
+            <label>Goal<input inputMode="decimal" value={goalTarget} placeholder="15" onChange={(event) => touch(setGoalTarget)(event.target.value)} /></label>
+            <label>In what<input value={goalUnit} placeholder="minutes" onChange={(event) => touch(setGoalUnit)(event.target.value)} /></label>
+            <label>What you did so far<input inputMode="decimal" value={goalDone} onChange={(event) => touch(setGoalDone)(event.target.value)} /></label>
+          </div>
+        </fieldset>
         <label>Details (optional)<textarea value={details} onChange={(event) => touch(setDetails)(event.target.value)} placeholder="Pages 40 to 52, odd problems only" /></label>
         {problems.length > 0 && (
           <div className="error-box" role="alert" data-testid="planner-problems">

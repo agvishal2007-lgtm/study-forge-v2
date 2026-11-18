@@ -71,7 +71,7 @@ export async function applySyncedSettings(): Promise<void> {
         setDateFormat({ order: value.dateOrder, clock: value.clock }, false);
       }
       const now = getDisplayPrefs();
-      for (const key of ['text', 'motion', 'density', 'completed'] as const) {
+      for (const key of ['text', 'motion', 'density', 'completed', 'grouping'] as const) {
         if (value[key] && value[key] !== now[key]) setDisplayPref(key, value[key] as never);
       }
     }

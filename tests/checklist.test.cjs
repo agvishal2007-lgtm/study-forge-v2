@@ -184,6 +184,71 @@ test('rapid ticking settles on what was asked for, and keyboard works', async ()
   assert.equal(await tick('Practice Excel').isChecked(), true, 'the keyboard tick saved too');
 });
 
+test("the student's own sections group the one list, and a finished task stays in its section", async () => {
+  // A list like a real morning: two sections the student made up, plus one loose task.
+  await page.goto(`${URL_BASE}#/planner/new`);
+  await page.getByLabel('Name', { exact: true }).fill('Brush my teeth');
+  await page.getByLabel('Section (optional)').fill('Morning routine');
+  await page.getByRole('button', { name: 'Save item' }).click();
+  await page.getByRole('link', { name: 'Brush my teeth', exact: true }).waitFor();
+  await page.goto(`${URL_BASE}#/planner/new`);
+  await page.getByLabel('Name', { exact: true }).fill('Eat lunch');
+  await page.getByLabel('Section (optional)').fill('Wellness');
+  await page.getByRole('button', { name: 'Save item' }).click();
+  await page.getByRole('link', { name: 'Eat lunch', exact: true }).waitFor();
+
+  await page.getByLabel('Group by').selectOption('section');
+  const headings = await page.locator('.planner-group h2').allInnerTexts();
+  assert.ok(headings.some((text) => text.startsWith('Morning routine')), `sections missing from ${headings.join(' | ')}`);
+  assert.ok(headings.some((text) => text.startsWith('Wellness')), `sections missing from ${headings.join(' | ')}`);
+  // Ticking one off leaves it exactly where it was, readable and in its own section.
+  await tick('Brush my teeth').check();
+  await page.waitForTimeout(300);
+  const morning = page.locator('[data-section="Morning routine"]');
+  await morning.getByRole('link', { name: 'Brush my teeth', exact: true }).waitFor();
+  assert.equal(await morning.locator('.struck').count(), 0, 'a ticked task is not crossed out');
+  assert.equal(await tick('Brush my teeth').isChecked(), true);
+  // The choice is remembered, and the section with it.
+  await page.reload();
+  await page.getByRole('heading', { name: 'Planner', exact: true }).waitFor();
+  assert.equal(await page.getByLabel('Group by').inputValue(), 'section', 'how it is grouped is remembered');
+  await page.locator('[data-section="Morning routine"]').getByRole('link', { name: 'Brush my teeth', exact: true }).waitFor();
+  // Back to dates, and the same one task is still there and still ticked. Nothing was copied.
+  await page.getByLabel('Group by').selectOption('due');
+  assert.equal(await page.getByRole('link', { name: 'Brush my teeth', exact: true }).count(), 1, 'one record, not two');
+  assert.equal(await tick('Brush my teeth').isChecked(), true);
+  await tick('Brush my teeth').uncheck();
+  await page.waitForTimeout(300);
+});
+
+test('a goal you can measure shows in plain words, and beating it is never a shortfall', async () => {
+  await page.goto(`${URL_BASE}#/planner/new`);
+  await page.getByLabel('Name', { exact: true }).fill('Use the walking pad');
+  await page.getByLabel('Goal', { exact: true }).fill('15');
+  await page.getByLabel('In what').fill('minutes');
+  await page.getByRole('button', { name: 'Save item' }).click();
+  await page.getByRole('link', { name: 'Use the walking pad', exact: true }).waitFor();
+  const goal = row('Use the walking pad').getByTestId('row-goal');
+  assert.equal((await goal.innerText()).trim(), '15 minutes goal');
+
+  // Recording more than the goal still just reads as done.
+  await page.getByRole('link', { name: 'Use the walking pad', exact: true }).click();
+  await page.getByLabel('What you did so far').fill('30');
+  await page.getByRole('button', { name: 'Save item' }).click();
+  await page.getByRole('link', { name: 'Use the walking pad', exact: true }).waitFor();
+  const words = (await row('Use the walking pad').getByTestId('row-goal').innerText()).trim();
+  assert.equal(words, '15 minutes goal, 30 done');
+  assert.doesNotMatch(words, /%|short|behind/i, 'nothing discouraging and no percentage');
+
+  // A goal is optional: a plain task says nothing about goals at all.
+  await addTask('Plain task with no goal');
+  assert.equal(await row('Plain task with no goal').getByTestId('row-goal').count(), 0);
+  // And what was recorded survives a reload.
+  await page.reload();
+  await page.getByRole('heading', { name: 'Planner', exact: true }).waitFor();
+  assert.equal((await row('Use the walking pad').getByTestId('row-goal').innerText()).trim(), '15 minutes goal, 30 done');
+});
+
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });

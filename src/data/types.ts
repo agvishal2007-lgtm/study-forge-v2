@@ -301,6 +301,13 @@ export interface PlannerItem {
   materialIds?: string[];
   /** Optional steps the student broke this work into. The item's own due date stays the real deadline. */
   steps?: PlannerStep[];
+  /** A section the student made, such as "Morning routine". Empty or missing means no section. */
+  section?: string;
+  /**
+   * An optional measurable goal, such as 15 minutes on the walking pad. The target is what counts
+   * as done; anything past it is a bonus, never a shortfall. Missing means a plain tick-box task.
+   */
+  goal?: { target: number; unit: string; done: number };
 }
 
 /* Calendar */

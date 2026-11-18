@@ -226,6 +226,7 @@ export function App() {
                 <Route path="/notes/:id" element={<NoteEditorPage />} />
                 <Route path="/record" element={<RecordPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/settings/:category" element={<SettingsPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

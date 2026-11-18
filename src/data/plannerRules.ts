@@ -89,6 +89,41 @@ export function groupItems(items: PlannerItem[], now: { date: string; time: stri
     .filter((entry) => entry.items.length > 0);
 }
 
+/** The sections the student has made, in the order they first made them, with no-section last. */
+export function sectionsOf(items: PlannerItem[]): string[] {
+  const seen = new Map<string, number>();
+  for (const item of items) {
+    const section = (item.section ?? '').trim();
+    if (!section) continue;
+    const first = seen.get(section);
+    if (first === undefined || item.createdAt < first) seen.set(section, item.createdAt);
+  }
+  return [...seen.entries()].sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0])).map(([section]) => section);
+}
+
+/**
+ * The same one list, grouped by the student's own sections instead of by when things are due.
+ * A finished task stays in its section, because leaving it where it was is the whole point.
+ */
+export function groupBySection(items: PlannerItem[]): { section: string; items: PlannerItem[] }[] {
+  const order = [...sectionsOf(items), ''];
+  return order
+    .map((section) => ({
+      section,
+      items: items.filter((item) => (item.section ?? '').trim() === section).sort(comparePlanner),
+    }))
+    .filter((entry) => entry.items.length > 0);
+}
+
+/** How a goal reads, such as "15 min goal, 20 done". Never a percentage and never a shortfall. */
+export function describeGoal(goal: PlannerItem['goal']): string {
+  if (!goal || !(goal.target > 0)) return '';
+  const unit = goal.unit.trim();
+  const target = `${goal.target}${unit ? ` ${unit}` : ''} goal`;
+  if (!(goal.done > 0)) return target;
+  return goal.done >= goal.target ? `${target}, ${goal.done} done` : `${target}, ${goal.done} so far`;
+}
+
 const formatTime = (time: string) => formatClockTime(time);
 
 const formatDay = (date: string) => formatDayIn(date, { weekday: 'short', month: 'short', day: 'numeric' });

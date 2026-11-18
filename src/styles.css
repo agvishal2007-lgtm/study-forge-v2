@@ -1896,3 +1896,21 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
 /* The Settings preview is a real task row, so it can't drift from the real thing. */
 .tasks-preview { margin: .5rem 0 0; pointer-events: none; }
 .tasks-preview .planner-row { opacity: .95; }
+
+/* A measurable goal on a task, and the fields that set one. Plain numbers, never a bar or a percentage. */
+.goal-fields { border: 1px solid var(--line); border-radius: 10px; padding: .75rem 1rem 1rem; margin: 0; }
+.goal-fields legend { padding: 0 .4rem; font-weight: 600; }
+.goal-fields .field-row { display: flex; flex-wrap: wrap; gap: .75rem; }
+.goal-fields .field-row label { flex: 1 1 8rem; min-width: 0; }
+.row-goal { display: block; }
+
+/* Settings by category: a row of tabs that wraps on a phone, and a clear title per group. */
+.settings-nav { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1.25rem; }
+.settings-nav a {
+  display: inline-block; padding: .45rem .8rem; border: 1px solid var(--line); border-radius: 999px;
+  text-decoration: none; color: inherit; font-size: var(--fs-sm); line-height: 1.2;
+}
+.settings-nav a:hover { border-color: var(--line-strong); }
+.settings-nav a.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+.settings-category + .settings-category { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+.settings-category-title { font-size: var(--fs-h2); margin: 0 0 .75rem; }
