@@ -152,6 +152,11 @@ export function playSound(id: SoundId, volume = 0.5): void {
     master.gain.value = safeVolume(mix.master, 0.6);
     master.connect(context.destination);
   }
+  // A timer part-way through fading out has turned the overall volume down. Starting a sound
+  // again means the student wants to hear it, so the fade is called off rather than left silent.
+  clearTimer();
+  master.gain.cancelScheduledValues(context.currentTime);
+  master.gain.value = safeVolume(mix.master, 0.6);
   const gain = context.createGain();
   gain.gain.value = 0;
   gain.connect(master);
