@@ -70,7 +70,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/courses',
     target: ['[data-tour="add-course"]'],
     title: 'Courses',
-    body: 'Add each of your classes, starting blank or from a template such as Lecture, Lab, Writing or Math. Inside a course, topics hold its files, notes and recordings together.',
+    body: 'Add each of your classes, starting blank or from a template such as Lecture, Lab, Writing or Math. Inside a course, topics hold its files, notes and recordings together. If Courses is empty, a short setup can name your term and add your classes for you.',
     action: {
       isDone: hasAny('courses'),
       instruction: 'Try it: add one of your real classes, then press Create course.',
@@ -96,7 +96,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/planner',
     target: ['[data-tour="add-planner"]'],
     title: 'Planner',
-    body: 'Add assignments and exams with their due dates. Open one to break it into steps with your own target dates; the due date stays the same. Sort work your way, such as by due date or grade impact, and enter grades to see how each course is going.',
+    body: 'Add assignments and exams with their due dates. Tick a box to finish something and it saves itself; everything ticked off stays in Done. Open one to break it into steps with your own target dates; the due date stays the same. Sort work your way, such as by due date or grade impact.',
   },
   {
     id: 'study',

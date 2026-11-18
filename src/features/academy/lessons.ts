@@ -76,6 +76,23 @@ export const MODULES: Module[] = [
         feedback: 'Right: assignments, exams and their due dates go in Planner. The + at the top can add one too.',
       },
       {
+        id: 'school-level',
+        title: 'Your school and your first term',
+        intro: 'The first time Courses is empty, Study Forge asks which school you are in and what your first term is called. It changes the wording and what it offers. Skip it, or change it later in Settings.',
+        demo: { screen: screen('Courses', ['Set up your first term', 'Create course', 'Start a new semester']), highlight: 'Set up your first term', caption: 'Three short steps: your school, your term, then your classes.' },
+        activity: {
+          type: 'choice',
+          question: 'You pick Middle school. What happens?',
+          options: [
+            { text: 'Everything stays on this device, with no account and no syncing', correct: true, why: 'Right. Elementary and Middle school keep all your work on the one device, so there is no sign-in and Google and Dropbox stay off. Study Forge never asks your age.' },
+            { text: 'Your classes and marks are deleted and set up again', correct: false, why: 'No. Changing your school only changes wording and what is offered. Nothing you have made is touched.' },
+            { text: 'You have to enter your age first', correct: false, why: 'No. Study Forge never asks anyone\u2019s age. The school you pick is all it goes by.' },
+          ],
+        },
+        feedback: 'Your classes are grouped under the term you name, so next year\u2019s stay apart from this year\u2019s. Change your school any time in Settings.',
+        tip: 'Elementary and Middle school cannot sync, so make a backup from Settings to keep a copy of your work.',
+      },
+      {
         id: 'create-course',
         title: 'Create a course',
         intro: 'A course holds everything for one class: its topics, files, notes, recordings and assignments.',
@@ -185,6 +202,23 @@ export const MODULES: Module[] = [
     icon: '/planner',
     lessons: [
       {
+        id: 'tick-tasks',
+        title: 'Ticking things off',
+        intro: 'Every task has a real checkbox. Tapping it is the save: there is no Save button anywhere, and it is kept on this device and sent to your other devices on its own.',
+        demo: { screen: screen('Planner', ['Add item', 'Everything', 'Still to do', 'Done']), highlight: 'Done', caption: 'Everything you tick off is always in Done, whatever else you choose.' },
+        activity: {
+          type: 'choice',
+          question: 'In Settings you choose "Steps aside" for finished tasks. You tick off "Read chapter 4". Where is it?',
+          options: [
+            { text: 'In Done, still ticked and still readable', correct: true, why: 'Right. Stepping aside only takes it out of the active list. The task itself is unchanged and Done always has it.' },
+            { text: 'Deleted', correct: false, why: 'No. None of the three choices ever deletes or changes a task.' },
+            { text: 'Crossed out in the list', correct: false, why: 'That is the "Crossed out" choice. "Steps aside" takes it out of the list instead.' },
+          ],
+        },
+        feedback: 'Three choices in Settings and no more: a ticked task stays put and readable, stays and is crossed out, or steps aside. Un-ticking it anywhere puts it straight back.',
+        tip: 'Your checklist shows no score on purpose. The Progress section has the numbers if you want them.',
+      },
+      {
         id: 'assignment-steps',
         title: 'Break an assignment into steps',
         intro: 'Open any Planner item to split it into steps with your own target dates. The real due date never changes.',
@@ -223,6 +257,22 @@ export const MODULES: Module[] = [
     level: 'Everyday',
     icon: '/library',
     lessons: [
+      {
+        id: 'course-names',
+        title: 'Courses that came in as codes',
+        intro: 'Canvas and most school calendars send only a code, like ACC 211, so an imported course can arrive with that as its name. Courses offers to name those for you.',
+        activity: {
+          type: 'choice',
+          question: 'You rename "ACC 211" to "Managerial Accounting", then get the latest from your calendar again next week. What happens to the name?',
+          options: [
+            { text: 'It stays "Managerial Accounting"', correct: true, why: 'Right. The code is kept separately, and it is the code that an update matches on, so your name is never written over.' },
+            { text: 'It goes back to "ACC 211"', correct: false, why: 'No. That was the old problem. Your name is kept from now on.' },
+            { text: 'A second course called "ACC 211" appears', correct: false, why: 'No. The code matches the course you already have, so nothing is added twice.' },
+          ],
+        },
+        feedback: 'The code is kept separately, and it is the code that later updates match on. So the name you give stays, and you will not be asked again.',
+        tip: 'Study Forge never guesses a course name from a code: the same code means different classes at different schools.',
+      },
       {
         id: 'rename-move',
         title: 'Rename and move a file',
