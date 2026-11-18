@@ -1938,3 +1938,11 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
 .year-table thead th { font-size: var(--fs-sm); color: var(--muted); font-weight: 600; }
 .year-input { width: 6rem; max-width: 100%; }
 @media (max-width: 560px) { .year-input { width: 4.5rem; } .year-table th, .year-table td { padding-right: .25rem; } }
+
+/* The focus sound button sits with the other top-bar buttons, and shows plainly when it's on. */
+.sound-button[aria-pressed='true'] { color: var(--accent); }
+.sound-button[aria-pressed='true']::after {
+  content: ''; position: absolute; right: 6px; bottom: 6px; width: 6px; height: 6px;
+  border-radius: 50%; background: var(--accent);
+}
+.sound-button { position: relative; }

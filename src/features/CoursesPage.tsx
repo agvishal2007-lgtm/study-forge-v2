@@ -38,11 +38,17 @@ export function CoursesPage() {
       <div className="section-head">
         <h1>{words.Courses}</h1>
         {school.level !== 'elementary' && <Link className="button" to="/courses/new-semester" data-testid="new-semester">Start a new {words.term}</Link>}
-        <Link className="button" to="/courses/years" data-testid="school-years">School years</Link>
+
       </div>
       {showSetup
         ? <CourseSetup hasCourses={!nothingYet} onClose={() => setSetupOpen(false)} />
-        : data && <p className="muted small"><button className="text-button" type="button" onClick={() => setSetupOpen(true)} data-testid="reopen-setup">Change your school and {words.term} setup</button></p>}
+        : data && (
+          <p className="muted small">
+            <button className="text-button" type="button" onClick={() => setSetupOpen(true)} data-testid="reopen-setup">Change your school and {words.term} setup</button>
+            {' · '}
+            <Link to="/courses/years" data-testid="school-years">School years</Link>
+          </p>
+        )}
       {error && <p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p>}
       {data && data.courses.length > 1 && (
         <p>
@@ -54,7 +60,7 @@ export function CoursesPage() {
       )}
 
       {groups.map((group) => (
-        <section key={group.term || 'no-term'} className="course-group" aria-label={groupName(group.term)}>
+        <section key={group.term || 'no-term'} className="course-group" aria-label={group.term === ALL_YEAR ? `${words.Courses} that run all year` : group.term || `${words.Courses} with no ${words.term}`}>
           {(showTerms || group.term === ALL_YEAR) && <h2>{groupName(group.term)}</h2>}
           {arranging
             ? (

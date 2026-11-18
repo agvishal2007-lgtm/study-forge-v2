@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
 import { SmartAdd } from './SmartAdd';
+import { anyPlaying, playSound, savedMix, stopAll, subscribeFocus, type SoundId } from '../data/focusSounds';
 import { SyncBadge } from './SyncBadge';
 import { WalkthroughButton } from '../features/walkthrough/Walkthrough';
 import { getActiveAccount, switchAccount } from '../data/account';
@@ -17,6 +18,38 @@ function ThemeButton() {
         {dark
           ? <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>
           : <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" />}
+      </svg>
+    </button>
+  );
+}
+
+/**
+ * Sound, one tap away, beside light and dark. Starting it brings back the last mix the student
+ * had; the first time, brown noise, which is the gentlest. Choosing and mixing stays in Settings,
+ * because this button is for the moment you sit down to study, not for fiddling.
+ */
+function SoundButton() {
+  const [, redraw] = useState(0);
+  useEffect(() => subscribeFocus(() => redraw((count) => count + 1)), []);
+  const on = anyPlaying();
+  const start = () => {
+    const remembered = savedMix().layers;
+    const layers = remembered.length > 0 ? remembered : [{ id: 'brown' as SoundId, volume: 0.5 }];
+    layers.forEach((layer) => playSound(layer.id, layer.volume));
+  };
+  return (
+    <button
+      className="icon-button sound-button"
+      data-testid="sound-toggle"
+      aria-pressed={on}
+      onClick={() => (on ? stopAll() : start())}
+      aria-label={on ? 'Stop focus sounds' : 'Play focus sounds'}
+      title={on ? 'Stop focus sounds' : 'Play focus sounds'}
+    >
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {on
+          ? <><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" /></>
+          : <><path d="M4 11v2M8 9v6M12 11v2M16 9v6M20 11v2" /></>}
       </svg>
     </button>
   );
@@ -139,6 +172,7 @@ export function AccountMenu() {
       <Link className="icon-button" to="/search" aria-label="Search" title="Search">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
       </Link>
+      <SoundButton />
       <ThemeButton />
       <WalkthroughButton />
       {getActiveAccount() ? <SignedIn /> : <SignedOut />}

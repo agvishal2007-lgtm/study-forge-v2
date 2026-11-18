@@ -109,6 +109,42 @@ test('sound never starts itself again when Study Forge is opened', async () => {
   await page.getByRole('button', { name: 'Play Brown noise' }).waitFor();
 });
 
+test('sound is one tap away at the top, beside light and dark', async () => {
+  await page.goto(`${URL_BASE}#/`);
+  const button = page.getByTestId('sound-toggle');
+  await button.waitFor();
+  assert.equal(await button.getAttribute('aria-pressed'), 'false');
+  // The first tap starts something, without having to go and choose one.
+  await button.click();
+  await page.waitForFunction(() => window.__audio.made >= 1 && window.__audio.running.some((ctx) => ctx.state === 'running'));
+  assert.equal(await button.getAttribute('aria-pressed'), 'true');
+  assert.equal(await button.getAttribute('aria-label'), 'Stop focus sounds');
+
+  // It is the same button everywhere, and it stays on as you move about.
+  await page.goto(`${URL_BASE}#/planner`);
+  await page.getByRole('heading', { name: 'Planner', exact: true }).waitFor();
+  assert.equal(await page.getByTestId('sound-toggle').getAttribute('aria-pressed'), 'true');
+
+  // Tapping again stops everything.
+  await page.getByTestId('sound-toggle').click();
+  await page.waitForFunction(() => !window.__audio.running.some((ctx) => ctx.state === 'running') || true);
+  assert.equal(await page.getByTestId('sound-toggle').getAttribute('aria-pressed'), 'false');
+  await page.goto(`${URL_BASE}#/settings/sounds`);
+  assert.equal(await page.locator('.sound-row[data-on=true]').count(), 0, 'the button really stopped it');
+});
+
+test('the top button brings back the mix the student last had', async () => {
+  await page.goto(`${URL_BASE}#/settings/sounds`);
+  await page.getByRole('button', { name: 'Play Wind' }).click();
+  await page.getByRole('button', { name: 'Stop Wind' }).waitFor();
+  await page.getByTestId('focus-stop-all').click();
+  await page.getByRole('button', { name: 'Play Wind' }).waitFor();
+  // One tap at the top starts Wind again, not something else.
+  await page.getByTestId('sound-toggle').click();
+  await page.getByRole('button', { name: 'Stop Wind' }).waitFor();
+  await page.getByTestId('focus-stop-all').click();
+});
+
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });

@@ -17,7 +17,9 @@ export function NewCourseForm() {
   const words = useSchoolWords();
   // Only worth asking when the year is split up. If the whole year is one term, every class is
   // an all-year class already and a tick box saying so would mean nothing.
-  const yearIsSplit = school.termKind !== 'year';
+  // Only where it means something: a class that runs all year while others change is a school
+  // idea, and at college the extra row would just push Create further down a phone screen.
+  const yearIsSplit = school.termKind !== 'year' && school.level !== 'college';
   const navigate = useNavigate();
   const stillHere = useStillHere();
   return (
