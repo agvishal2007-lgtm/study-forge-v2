@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createCourse, updateCourse } from '../data/store';
+import { createCourse } from '../data/store';
 import { asOneUndo } from '../data/undo';
 import { getActiveAccount } from '../data/account';
 import {
@@ -66,10 +66,8 @@ export function CourseSetup({ hasCourses, onClose }: { hasCourses: boolean; onCl
       }
       if (wanted.length) {
         await asOneUndo(`Added ${wanted.length} ${wanted.length === 1 ? words.course : words.courses}`, async () => {
-          for (const name of wanted) {
-            const course = await createCourse(name, '');
-            if (term.trim()) await updateCourse(course.id, { term: term.trim() });
-          }
+          // Created with its term in one write, so a class is never briefly filed under no term.
+          for (const name of wanted) await createCourse(name, '', term);
         });
       }
       onClose?.();

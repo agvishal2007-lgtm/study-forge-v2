@@ -71,7 +71,7 @@ test('a student with nothing is set up in three steps, and their classes land in
     const group = page.locator('.course-group').filter({ hasText: 'Spring 2027' });
     await group.getByRole('heading', { name: 'Spring 2027' }).waitFor();
     for (const name of ['Algebra', 'Biology', 'Band', 'Robotics']) {
-      assert.ok(await group.getByText(name, { exact: true }).count(), `${name} is in Spring 2027`);
+      await group.getByText(name, { exact: true }).waitFor();
     }
     // All four arrived as one action, so one Undo takes back the whole batch.
     assert.match(await page.locator('.undo-bar').innerText(), /Added 4 classes/);
