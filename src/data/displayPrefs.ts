@@ -16,6 +16,8 @@ export type Density = 'comfortable' | 'compact';
 export type CompletedLook = 'visible' | 'struck' | 'hidden';
 /** Whether the checklist gathers tasks by when they're due or by the student's own sections. */
 export type Grouping = 'due' | 'section';
+/** Whether work found in a connected calendar becomes a task by itself. */
+export type AutoWork = 'on' | 'off';
 
 export interface DisplayPrefs {
   text: TextSize;
@@ -23,16 +25,18 @@ export interface DisplayPrefs {
   density: Density;
   completed: CompletedLook;
   grouping: Grouping;
+  autoWork: AutoWork;
 }
 
-const KEYS = { text: 'study-forge-text', motion: 'study-forge-motion', density: 'study-forge-density', completed: 'study-forge-completed', grouping: 'study-forge-grouping' } as const;
-const DEFAULTS: DisplayPrefs = { text: 'standard', motion: 'device', density: 'comfortable', completed: 'visible', grouping: 'due' };
+const KEYS = { text: 'study-forge-text', motion: 'study-forge-motion', density: 'study-forge-density', completed: 'study-forge-completed', grouping: 'study-forge-grouping', autoWork: 'study-forge-auto-work' } as const;
+const DEFAULTS: DisplayPrefs = { text: 'standard', motion: 'device', density: 'comfortable', completed: 'visible', grouping: 'due', autoWork: 'on' };
 const ALLOWED = {
   text: ['standard', 'large', 'larger'],
   motion: ['device', 'reduce'],
   density: ['comfortable', 'compact'],
   completed: ['visible', 'struck', 'hidden'],
   grouping: ['due', 'section'],
+  autoWork: ['on', 'off'],
 } as const;
 
 const listeners = new Set<() => void>();
@@ -46,7 +50,7 @@ function read(): DisplayPrefs {
       return DEFAULTS[key];
     }
   };
-  return { text: pick('text'), motion: pick('motion'), density: pick('density'), completed: pick('completed'), grouping: pick('grouping') };
+  return { text: pick('text'), motion: pick('motion'), density: pick('density'), completed: pick('completed'), grouping: pick('grouping'), autoWork: pick('autoWork') };
 }
 
 let current: DisplayPrefs = typeof window === 'undefined' ? DEFAULTS : read();

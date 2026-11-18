@@ -1959,3 +1959,36 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
   /* The sign-in link takes the room it needs and no more, so the buttons keep their size. */
   .topbar > .button { padding-left: .5rem; padding-right: .5rem; font-size: var(--fs-xs); }
 }
+
+/* The floating to-do list. It sits above the page, out of the way of the bars, and becomes a
+   sheet across the bottom on a phone, where a floating box would cover what's being read. */
+.todo-panel {
+  position: fixed; right: 1rem; bottom: 1rem; width: min(22rem, calc(100vw - 2rem));
+  max-height: min(60vh, 32rem); overflow: auto; z-index: 25;
+  background: var(--raised); border: 1px solid var(--line); border-radius: 12px;
+  padding: .75rem .9rem 1rem; box-shadow: 0 10px 30px #0006;
+}
+.todo-head { display: flex; align-items: center; gap: .25rem; }
+.todo-head h2 { flex: 1; min-width: 0; margin: 0; font-size: var(--fs-md); overflow-wrap: anywhere; }
+.todo-flip { width: 32px; height: 32px; font-size: 1.3rem; line-height: 1; }
+.todo-head .icon-button { width: 32px; height: 32px; }
+.todo-tabs { display: flex; flex-wrap: wrap; gap: .3rem; margin: .5rem 0; }
+.todo-tab {
+  border: 1px solid var(--line); background: none; color: inherit; cursor: pointer;
+  border-radius: 999px; padding: .2rem .6rem; font-size: var(--fs-xs);
+}
+.todo-tab.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+.todo-items { display: grid; gap: .1rem; margin: .5rem 0; }
+.todo-item label { display: flex; gap: .6rem; align-items: baseline; padding: .35rem .25rem; min-height: 40px; }
+.todo-item input { margin-top: .2rem; }
+.todo-item.struck span { text-decoration: line-through; }
+.todo-add { display: flex; gap: .4rem; margin-top: .5rem; }
+.todo-add input { flex: 1; min-width: 0; }
+.todo-button[aria-pressed='true'] { color: var(--accent); }
+@media (max-width: 560px) {
+  .todo-panel {
+    right: 0; left: 0; bottom: 0; width: auto; border-radius: 12px 12px 0 0;
+    max-height: 55vh; padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    margin-bottom: 4rem;
+  }
+}

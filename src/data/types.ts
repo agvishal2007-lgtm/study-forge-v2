@@ -310,6 +310,11 @@ export interface PlannerItem {
   materialIds?: string[];
   /** Optional steps the student broke this work into. The item's own due date stays the real deadline. */
   steps?: PlannerStep[];
+  /**
+   * True when the student took this off their list without deleting it. It stays in its course,
+   * on the calendar and in its history; it simply isn't in the way any more.
+   */
+  hiddenFromList?: boolean;
   /** A section the student made, such as "Morning routine". Empty or missing means no section. */
   section?: string;
   /**

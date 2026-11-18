@@ -249,6 +249,57 @@ test('a goal you can measure shows in plain words, and beating it is never a sho
   assert.equal((await row('Use the walking pad').getByTestId('row-goal').innerText()).trim(), '15 minutes goal, 30 done');
 });
 
+test('the floating list opens from the top, follows you about, and stays until closed', async () => {
+  await addTask('Read chapter 9');
+  const panel = page.getByTestId('todo-panel');
+  assert.equal(await panel.count(), 0, 'it waits to be asked for');
+  await page.getByTestId('todo-toggle').click();
+  await panel.waitFor();
+  await panel.getByText('Read chapter 9').waitFor();
+
+  // It stays put while working somewhere else entirely, which is the whole point of it.
+  await page.goto(`${URL_BASE}#/notes`);
+  await page.getByRole('heading', { name: 'Notes', exact: true }).waitFor();
+  await page.getByTestId('todo-panel').getByText('Read chapter 9').waitFor();
+  // Even after a reload, because it was left open.
+  await page.reload();
+  await page.getByTestId('todo-panel').waitFor();
+
+  // Ticking it off in the panel is the same one task, not a copy.
+  await page.getByTestId('todo-panel').getByRole('checkbox', { name: 'Read chapter 9' }).check();
+  await page.waitForTimeout(300);
+  await page.goto(`${URL_BASE}#/planner`);
+  await page.getByRole('heading', { name: 'Planner', exact: true }).waitFor();
+  assert.equal(await tick('Read chapter 9').isChecked(), true, 'the Planner shows the same task ticked');
+  assert.equal(await page.getByRole('link', { name: 'Read chapter 9', exact: true }).count(), 1, 'one task, not two');
+
+  // Closing it means closed, and it stays closed.
+  await page.getByTestId('todo-close').click();
+  assert.equal(await page.getByTestId('todo-panel').count(), 0);
+  await page.reload();
+  await page.getByRole('heading', { name: 'Planner', exact: true }).waitFor();
+  assert.equal(await page.getByTestId('todo-panel').count(), 0, 'it stays closed');
+  await tick('Read chapter 9').uncheck();
+  await page.waitForTimeout(300);
+});
+
+test('a task added in a list belongs to that list', async () => {
+  await page.goto(`${URL_BASE}#/planner`);
+  await page.getByTestId('todo-toggle').click();
+  const panel = page.getByTestId('todo-panel');
+  await panel.waitFor();
+  // Personal is always there as somewhere to start.
+  await panel.getByTestId('todo-list-name').waitFor();
+  await panel.getByPlaceholder(/^Add to /).fill('Buy a notebook');
+  await panel.getByRole('button', { name: 'Add', exact: true }).click();
+  await panel.getByText('Buy a notebook').waitFor();
+  // It is a real task in the Planner, not something only the panel knows about.
+  await page.reload();
+  await page.getByRole('heading', { name: 'Planner', exact: true }).waitFor();
+  await page.getByRole('link', { name: 'Buy a notebook', exact: true }).waitFor();
+  await page.getByTestId('todo-close').click();
+});
+
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });

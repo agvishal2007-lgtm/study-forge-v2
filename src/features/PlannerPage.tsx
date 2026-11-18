@@ -17,7 +17,7 @@ export function PlannerPage() {
   const [courseId, setCourseId] = useState(params.get('course') ?? '');
   // Three views over the same records: what's left, what's finished, or everything. Nothing is
   // copied or duplicated to make a view — each one is a filter over the one planner list.
-  const [show, setShow] = useState<'all' | 'todo' | 'done'>(params.get('show') === 'done' ? 'done' : 'all');
+  const [show, setShow] = useState<'all' | 'todo' | 'done' | 'hidden'>(params.get('show') === 'done' ? 'done' : params.get('show') === 'hidden' ? 'hidden' : 'all');
   const [kind, setKind] = useState<'all' | 'course' | 'personal'>('all');
   const { completed, grouping } = useDisplayPrefs();
   const [mode, setMode] = useState<PriorityMode>(savedMode);
@@ -30,7 +30,10 @@ export function PlannerPage() {
   if (error) return <div className="page"><h1>Planner</h1><p className="error" role="alert">Your planner couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
   const doneCount = data.items.filter(isDone).length;
+  const hiddenCount = data.items.filter((item) => item.hiddenFromList).length;
   const shown = data.items.filter((item) => {
+    // Anything taken off the list is out of every view but the one for finding it again.
+    if (Boolean(item.hiddenFromList) !== (show === 'hidden')) return false;
     if (courseId && (courseId === 'none' ? Boolean(item.courseId) : item.courseId !== courseId)) return false;
     if (kind === 'course' && !item.courseId) return false;
     if (kind === 'personal' && item.courseId) return false;
@@ -57,6 +60,7 @@ export function PlannerPage() {
             <option value="all">Everything</option>
             <option value="todo">Still to do</option>
             <option value="done">Done{doneCount > 0 ? '' : ' (nothing yet)'}</option>
+            {hiddenCount > 0 && <option value="hidden">Taken off my list ({hiddenCount})</option>}
           </select>
         </label>
       )}
@@ -110,7 +114,7 @@ export function PlannerPage() {
       {data.items.length === 0 && <p className="muted planner-empty">Nothing here yet. Add your first assignment or exam, or look at your <Link to="/courses">courses</Link> first.</p>}
       {data.items.length > 0 && shown.length === 0 && (
         <p className="muted planner-empty" data-testid="planner-none">
-          {show === 'done' ? "Nothing is ticked off yet." : show === 'todo' ? "Nothing left to do here." : 'Nothing here for this course.'}
+          {show === 'done' ? "Nothing is ticked off yet." : show === 'todo' ? "Nothing left to do here." : show === 'hidden' ? "Nothing has been taken off your list." : 'Nothing here for this course.'}
         </p>
       )}
       {show === 'all' && completed === 'hidden' && doneCount > 0 && (

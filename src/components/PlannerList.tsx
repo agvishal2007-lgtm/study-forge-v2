@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { setPlannerStatus } from '../data/planner';
+import { setPlannerHidden, setPlannerStatus } from '../data/planner';
 import { describeDue, describeGoal, groupOf, isDone, localNow, uncheckedStatus } from '../data/plannerRules';
 import { describeNext, stepProgress } from '../data/stepRules';
 import { useDisplayPrefs } from '../data/displayPrefs';
@@ -55,6 +55,14 @@ export function PlannerRow({ item, course, now }: { item: PlannerItem; course?: 
         <select id={`status-${item.id}`} value={item.status} onChange={(event) => change(event.target.value as PlannerStatus)}>
           {PLANNER_STATUSES.map((status) => <option key={status}>{status}</option>)}
         </select>
+        <button
+          className="text-button"
+          type="button"
+          data-testid={`hide-${item.id}`}
+          onClick={() => void setPlannerHidden(item.id, !item.hiddenFromList)}
+        >
+          {item.hiddenFromList ? 'Put back on my list' : 'Take off my list'}
+        </button>
       </div>
     </li>
   );

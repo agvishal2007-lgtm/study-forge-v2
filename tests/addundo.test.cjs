@@ -102,7 +102,7 @@ test('Smart Add is reachable from every screen and suggests the course being loo
   await page.getByRole('heading', { name: 'Add to Study Forge' }).waitFor();
   // The course being looked at is already chosen, and the student can change it.
   await page.waitForFunction(() => document.querySelector('.add-place select').selectedOptions[0].textContent === 'Biology');
-  for (const kind of ['File', 'Link', 'Note', 'Flashcards', 'Question set', 'Recording', 'Topic', 'Course']) {
+  for (const kind of ['File', 'Link', 'Note', 'To-do', 'Flashcards', 'Question set', 'Recording', 'Topic', 'Course']) {
     await page.getByRole('button', { name: new RegExp(`^${kind}`) }).first().waitFor();
   }
   // Saving a link reuses the same importer the Library uses, not a second form of its own.

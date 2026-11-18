@@ -1,3 +1,4 @@
+import { getDisplayPrefs } from './displayPrefs';
 import { getDb, notifyChanged } from './db';
 import { cleanTitle, courseTokenIn, fromCanvas, guessDestination, guessPlannerType, matchCourse, stableId, type Destination, type GoogleItem } from './calendarRules';
 import { createCourse, listCourses } from './store';
@@ -241,7 +242,7 @@ export async function applyGoogleItems(items: GoogleItem[], choices: Record<stri
           await planner.put({ ...current, title, dueDate: item.date, dueTime: item.startTime, updatedAt: later(current.updatedAt) });
           report.deadlinesUpdated += 1;
         }
-      } else if (!removedBefore && item.date >= today) {
+      } else if (!removedBefore && item.date >= today && getDisplayPrefs().autoWork === 'on') {
         // Older work isn't added, or the Planner would open with a wall of old overdue items.
         const now = Date.now();
         const added: PlannerItem = {

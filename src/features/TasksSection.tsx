@@ -13,7 +13,7 @@ const OPTIONS: { value: CompletedLook; label: string; what: string }[] = [
  * is always in Done. Ticking the box is itself the save, so there's nothing here about saving.
  */
 export function TasksSection() {
-  const { completed } = useDisplayPrefs();
+  const { completed, autoWork } = useDisplayPrefs();
   const chosen = OPTIONS.find((option) => option.value === completed) ?? OPTIONS[0];
   return (
     <section aria-labelledby="tasks-heading" data-testid="tasks-section">
@@ -46,6 +46,24 @@ export function TasksSection() {
           </div>
         </li>
       </ul>
+      <div className="pref-row">
+        <h3 id="pref-auto-work">Work from your calendar</h3>
+        <label className="choice-pair">
+          <input
+            type="checkbox"
+            checked={autoWork === 'on'}
+            data-testid="auto-work"
+            onChange={(event) => setDisplayPref('autoWork', event.target.checked ? 'on' : 'off')}
+          />
+          Turn homework, quizzes and exams from a connected calendar into tasks by themselves
+        </label>
+        <p className="muted small">
+          On, work found in a calendar you've connected becomes a task in the class it belongs to, so
+          you don't type your deadlines in twice. Class times and appointments are never turned into
+          tasks. Off, calendar items still show in Calendar, and nothing already in your list is
+          removed or changed — new ones just stop arriving on their own.
+        </p>
+      </div>
       <p className="muted small">
         Whichever you pick, nothing is deleted and nothing is hidden from you: everything you've
         ticked off is in <Link to="/planner?show=done">Done</Link>. Ticking a box saves it straight

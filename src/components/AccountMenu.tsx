@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
 import { SmartAdd } from './SmartAdd';
 import { anyPlaying, playSound, savedMix, stopAll, subscribeFocus, type SoundId } from '../data/focusSounds';
+import { setTodoPanelOpen, subscribeTodoPanel, todoPanelOpen } from './TodoPanel';
 import { SyncBadge } from './SyncBadge';
 import { WalkthroughButton } from '../features/walkthrough/Walkthrough';
 import { getActiveAccount, switchAccount } from '../data/account';
@@ -50,6 +51,26 @@ function SoundButton() {
         {on
           ? <><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" /></>
           : <><path d="M4 11v2M8 9v6M12 11v2M16 9v6M20 11v2" /></>}
+      </svg>
+    </button>
+  );
+}
+
+/** The to-do list, one tap away and staying where it is put, so it can be seen while working. */
+function TodoButton() {
+  const [open, setOpen] = useState(todoPanelOpen());
+  useEffect(() => subscribeTodoPanel(() => setOpen(todoPanelOpen())), []);
+  return (
+    <button
+      className="icon-button todo-button"
+      data-testid="todo-toggle"
+      aria-pressed={open}
+      onClick={() => setTodoPanelOpen(!open)}
+      aria-label={open ? 'Close your to-do list' : 'Open your to-do list'}
+      title={open ? 'Close your to-do list' : 'Open your to-do list'}
+    >
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="m3 6.5 1.8 1.8L8 5" /><path d="m3 13.5 1.8 1.8L8 12" /><path d="M11 7h10M11 14h10M11 20h7" />
       </svg>
     </button>
   );
@@ -172,6 +193,7 @@ export function AccountMenu() {
       <Link className="icon-button" to="/search" aria-label="Search" title="Search">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
       </Link>
+      <TodoButton />
       <SoundButton />
       <ThemeButton />
       <WalkthroughButton />

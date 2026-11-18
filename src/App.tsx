@@ -18,6 +18,7 @@ import { CalendarOffer } from './components/CalendarOffer';
 import { OfflineNotices } from './components/OfflineNotices';
 import { SaveProvider, SavePanel } from './components/SaveQueue';
 import { UndoBar } from './components/UndoBar';
+import { TodoPanel } from './components/TodoPanel';
 import { CourseDetailPage } from './features/CourseDetailPage';
 import { CoursesPage } from './features/CoursesPage';
 import { LibraryPage } from './features/LibraryPage';
@@ -235,6 +236,7 @@ export function App() {
           </ErrorBoundary>
         </main>
         </div>
+        <TodoPanel />
         <UndoBar />
         <SavePanel />
       </div>

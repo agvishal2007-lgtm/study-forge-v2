@@ -2,7 +2,7 @@
 // screen the student is on, and it never decides for them: every suggestion can be corrected.
 import type { Course, Topic } from './types.ts';
 
-export type AddKind = 'link' | 'file' | 'note' | 'deck' | 'questions' | 'recording' | 'course' | 'topic';
+export type AddKind = 'link' | 'file' | 'note' | 'todo' | 'deck' | 'questions' | 'recording' | 'course' | 'topic';
 
 export interface AddChoice {
   kind: AddKind;
@@ -18,6 +18,7 @@ export const ADD_CHOICES: AddChoice[] = [
   { kind: 'file', label: 'File', hint: 'Upload from this device. It stays on this device.', needsCourse: false },
   { kind: 'link', label: 'Link', hint: 'Save a web page, a reading, or a Google or Canvas document.', needsCourse: false },
   { kind: 'note', label: 'Note', hint: 'Write something now.', needsCourse: false },
+  { kind: 'todo', label: 'To-do', hint: 'Something to get done, with or without a due date.', needsCourse: false },
   { kind: 'deck', label: 'Flashcards', hint: 'Start a deck.', needsCourse: false },
   { kind: 'questions', label: 'Question set', hint: 'Start a set to practise with.', needsCourse: false },
   { kind: 'recording', label: 'Recording', hint: 'Record a lecture or a thought.', needsCourse: false },
@@ -69,6 +70,7 @@ export function destination(kind: AddKind, place: Place): string | null {
   switch (kind) {
     case 'deck': return withQuery('/cards', course);
     case 'questions': return withQuery('/practice', course);
+    case 'todo': return withQuery('/planner/new', course);
     case 'recording': return withQuery('/record');
     case 'course': return '/courses';
     case 'topic': return place.courseId ? `/courses/${encodeURIComponent(place.courseId)}` : null;

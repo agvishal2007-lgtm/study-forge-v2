@@ -20,6 +20,20 @@ export async function savePlannerItem(item: Omit<PlannerItem, 'createdAt' | 'upd
   notifyChanged();
 }
 
+/**
+ * Takes a task off the student's list, or puts it back, without touching anything else about it.
+ * Its course, its date, its history and its place on the calendar are all unchanged — it simply
+ * isn't in the way. Work that arrived from a calendar stays hidden rather than coming back on the
+ * next update, which is the point of hiding rather than deleting.
+ */
+export async function setPlannerHidden(id: string, hidden: boolean): Promise<void> {
+  const db = await getDb();
+  const item = await db.get('plannerItems', id);
+  if (!item) return;
+  await db.put('plannerItems', { ...item, hiddenFromList: hidden || undefined, updatedAt: Math.max(Date.now(), item.updatedAt + 1) });
+  notifyChanged();
+}
+
 export async function setPlannerStatus(id: string, status: PlannerStatus): Promise<void> {
   const tx = (await getDb()).transaction('plannerItems', 'readwrite');
   const item = await tx.store.get(id);
