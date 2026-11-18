@@ -51,7 +51,7 @@ export function PlannerPage() {
       </div>
       {data.items.length > 0 && (
         <label className="search">Show
-          <select value={show} onChange={(event) => setShow(event.target.value as typeof show)} data-testid="show-filter">
+          <select value={show} aria-label="Show" onChange={(event) => setShow(event.target.value as typeof show)} data-testid="show-filter">
             <option value="all">Everything</option>
             <option value="todo">Still to do</option>
             <option value="done">Done{doneCount > 0 ? '' : ' (nothing yet)'}</option>
@@ -60,7 +60,7 @@ export function PlannerPage() {
       )}
       {data.items.length > 0 && (
         <label className="search">Kind
-          <select value={kind} onChange={(event) => setKind(event.target.value as typeof kind)} data-testid="kind-filter">
+          <select value={kind} aria-label="Kind" onChange={(event) => setKind(event.target.value as typeof kind)} data-testid="kind-filter">
             <option value="all">Course work and personal</option>
             <option value="course">Course work</option>
             <option value="personal">Personal</option>
@@ -69,7 +69,7 @@ export function PlannerPage() {
       )}
       {data.items.length > 0 && (
         <label className="search">Course
-          <select value={courseId} onChange={(event) => setCourseId(event.target.value)}>
+          <select value={courseId} aria-label="Course" onChange={(event) => setCourseId(event.target.value)}>
             <option value="">All courses</option>
             {data.courses.map((course) => <option key={course.id} value={course.id}>{course.name}</option>)}
             <option value="none">No course</option>

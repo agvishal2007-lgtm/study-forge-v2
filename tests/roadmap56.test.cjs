@@ -77,15 +77,15 @@ test('an assignment breaks into steps on its page and shows progress in the Plan
   await steps.getByTestId('steps-message').filter({ hasText: 'the due date didn’t change' }).waitFor();
   await page.waitForFunction(() => document.querySelector('[aria-label="Target date for Submit"]')?.value === '2030-05-20', null, { timeout: 5000 });
   await steps.getByLabel('Choose a topic', { exact: true }).check();
-  await steps.getByTestId('step-progress').filter({ hasText: '1 of 7 steps done. Next: Research' }).waitFor();
+  await steps.getByTestId('step-progress').filter({ hasText: 'Next: Research' }).waitFor();
   await steps.getByRole('button', { name: 'Remove step Ask about sources' }).click();
-  await steps.getByTestId('step-progress').filter({ hasText: '1 of 6' }).waitFor();
+  await steps.getByTestId('step-progress').filter({ hasText: 'Next:' }).waitFor();
   assert.equal(await page.getByLabel('Due date').inputValue(), '2030-05-20');
   // Editing the item's other fields keeps its steps.
   await page.getByLabel('Name').fill('History essay final');
   await page.getByRole('button', { name: 'Save item' }).click();
   const row = page.getByTestId('planner-row').filter({ hasText: 'History essay final' });
-  await row.getByTestId('row-steps').filter({ hasText: '1 of 6 steps done. Next: Research' }).waitFor();
+  await row.getByTestId('row-steps').filter({ hasText: 'Next: Research' }).waitFor();
   // Finishing every step offers to complete the item; it doesn't do it by itself.
   await row.getByRole('link', { name: 'History essay final' }).click();
   // Ticked as fast as the browser allows, all in one go: none of the ticks may undo another.
@@ -99,10 +99,10 @@ test('an assignment breaks into steps on its page and shows progress in the Plan
   // What was saved, read back from the Planner: every quick tick is there.
   await page.goto(`${URL_BASE}#/planner`);
   const saved = page.getByTestId('planner-row').filter({ hasText: 'History essay final' });
-  await saved.getByTestId('row-steps').filter({ hasText: '6 of 6 steps done.' }).waitFor();
+  await saved.getByTestId('row-steps').filter({ hasText: 'Every step is ticked.' }).waitFor();
   await saved.getByRole('link', { name: 'History essay final' }).click();
   await page.getByTestId('steps-all-done').waitFor();
-  assert.equal(await page.getByTestId('step-progress').innerText(), '6 of 6 steps done.', 'every quick tick was saved');
+  assert.equal(await page.getByTestId('step-progress').innerText(), 'Every step is ticked.', 'every quick tick was saved');
   assert.equal(await page.getByLabel('Status').inputValue(), 'Not Started', 'still not completed until the student says so');
   await page.getByRole('button', { name: 'Mark the item Completed' }).click();
   await page.getByTestId('steps-message').filter({ hasText: 'Marked as Completed.' }).waitFor();

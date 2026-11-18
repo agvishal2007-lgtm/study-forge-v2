@@ -149,6 +149,8 @@ test('the checklist shows no score: no fractions, no percentages, no progress ba
   await page.getByTestId('assignment-steps').waitFor();
   const step = page.locator('.step-row').first().getByRole('checkbox');
   await step.check();
+  // Wait for the tick to be written, not for a guessed moment.
+  await page.locator('[data-testid=assignment-steps][data-saving=false]').waitFor();
   await page.reload();
   assert.equal(await page.locator('.step-row').first().getByRole('checkbox').isChecked(), true, 'a ticked step holds');
 });

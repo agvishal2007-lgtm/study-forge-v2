@@ -189,10 +189,10 @@ test('marking something done works from Today, is saved, and can be undone', asy
 });
 
 test('the planner can be filtered by course, and a course links to its items', async () => {
-  await page.getByLabel('Show').selectOption({ label: 'Accounting' });
+  await page.getByLabel('Course').selectOption({ label: 'Accounting' });
   await page.getByRole('link', { name: 'Midterm', exact: true }).waitFor();
   assert.equal(await page.getByRole('link', { name: 'Final paper', exact: true }).count(), 0);
-  await page.getByLabel('Show').selectOption({ label: 'No course' });
+  await page.getByLabel('Course').selectOption({ label: 'No course' });
   await page.getByRole('link', { name: 'Final paper', exact: true }).waitFor();
   assert.equal(await page.getByRole('link', { name: 'Midterm', exact: true }).count(), 0);
   await nav('Courses');
@@ -215,7 +215,7 @@ test('editing keeps what was entered, and an unchanged date never shifts', async
 });
 
 test('deleting asks first, and deleting a course keeps its items', async () => {
-  await page.getByLabel('Show').selectOption('');
+  await page.getByLabel('Course').selectOption('');
   await page.getByRole('link', { name: 'Read ahead', exact: true }).click();
   await page.getByRole('button', { name: 'Delete item' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();

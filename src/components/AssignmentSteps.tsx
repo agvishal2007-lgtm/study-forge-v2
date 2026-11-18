@@ -30,6 +30,7 @@ export function AssignmentSteps({ itemId }: { itemId: string }) {
   // Every hook runs before the early return below, or React sees a different number of them
   // once the item has loaded and the whole screen falls over.
   const { completed } = useDisplayPrefs();
+  const [pending, setPending] = useState(0);
   if (!item) return null;
   const steps = local ?? cleanSteps(item.steps);
   // The newest list, even before React has redrawn, so changes made in quick succession all build on each other.
@@ -41,15 +42,16 @@ export function AssignmentSteps({ itemId }: { itemId: string }) {
     current.current = next;
     setLocal(next);
     saving.current++;
+    setPending((count) => count + 1);
     void savePlannerSteps(itemId, next)
       .catch((error: Error) => { setMessage(`That wasn't saved. ${error.message}`); setLocal(null); })
-      .finally(() => { saving.current--; });
+      .finally(() => { saving.current--; setPending((count) => count - 1); });
   };
   const change = (id: string, patch: Partial<PlannerStep>) => save(current.current.map((step) => (step.id === id ? { ...step, ...patch } : step)));
   const allDone = progress !== null && progress.done === progress.total;
 
   return (
-    <section className="assignment-steps" aria-labelledby="steps-heading" data-testid="assignment-steps">
+    <section className="assignment-steps" aria-labelledby="steps-heading" data-testid="assignment-steps" data-saving={pending > 0}>
       <h2 id="steps-heading">Steps</h2>
       <p className="muted small">
         Optional. Break this into smaller pieces. Target dates are your own goals; the due date
