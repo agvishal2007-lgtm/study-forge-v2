@@ -91,6 +91,10 @@ export function TodayPage() {
     return { savedIds, practiceSession, reviewSession, gradeCategories, calendarEvents, studyDays, examResults, studyTime, practiceSets, practiceQuestions, practiceAttempts, topics, courses, materials, storage, unfinished, notes, lastBackup, plannerItems, decks, cards, cardProgress, progress, next: recommendNext(lessons, checkpoints, progress) };
   }, [askedToKeep]);
 
+  // Read with the other hooks, above the early exits: a hook after one of those would be read
+  // only sometimes, which React doesn't allow.
+  const school = useSchool();
+
   if (error) return <div className="page"><h1>Today</h1><p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
   const { savedIds, practiceSession, reviewSession, gradeCategories, courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress, practiceSets, practiceQuestions, practiceAttempts, topics, calendarEvents, studyDays, examResults, studyTime } = data;
@@ -180,7 +184,6 @@ export function TodayPage() {
   ];
 
   // On a block schedule, which day of the cycle this is — the first thing such a student checks.
-  const school = useSchool();
   const blockDay = school.rotation ? rotationDayOn(school.rotation, localNow().date) : null;
   return (
     <div className="page dashboard">
