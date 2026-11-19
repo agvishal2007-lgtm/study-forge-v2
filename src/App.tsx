@@ -13,6 +13,7 @@ import { SchoolYearsPage } from './features/SchoolYearsPage';
 import { TimetablePage } from './features/TimetablePage';
 import { TestPrepPage } from './features/TestPrepPage';
 import { ImportReviewPage } from './features/ImportReviewPage';
+import { ClassroomPage } from './features/ClassroomPage';
 import { AgreementPage } from './features/AgreementPage';
 import { agreedNow, subscribeAgreement } from './data/agreement';
 import { RecorderProvider, RecordingBar } from './components/Recorder';
@@ -199,6 +200,7 @@ export function App() {
                 <Route path="/courses/schedule" element={<TimetablePage />} />
                 <Route path="/test-prep" element={<TestPrepPage />} />
                 <Route path="/courses/review" element={<ImportReviewPage />} />
+                <Route path="/classroom" element={<ClassroomPage />} />
                 <Route path="/courses/:id" element={<CourseDetailPage />} />
                 <Route path="/library" element={<LibraryPage />} />
                 <Route path="/files/:id" element={<ViewerPage />} />

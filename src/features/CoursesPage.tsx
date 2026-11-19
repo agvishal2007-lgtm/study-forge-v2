@@ -51,6 +51,8 @@ export function CoursesPage() {
             <Link to="/courses/years" data-testid="school-years">School years</Link>
             {' · '}
             <Link to="/courses/schedule" data-testid="my-schedule">My daily schedule</Link>
+            {' · '}
+            <Link to="/classroom" data-testid="classroom-link">Google Classroom</Link>
           </p>
         )}
       {error && <p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p>}
