@@ -1,5 +1,4 @@
 import { Link, NavLink, useParams } from 'react-router-dom';
-import { useWalkthrough } from './walkthrough/Walkthrough';
 import { StudyToolsSection } from './StudyToolsSection';
 import { useState, type ReactElement } from 'react';
 import { AccountSection } from './AccountSection';
@@ -67,7 +66,6 @@ const SECTIONS: Record<string, () => ReactElement> = {
  * search that lands there, and anyone who'd rather scroll, finds what they came for.
  */
 export function SettingsPage() {
-  const { start: startTour } = useWalkthrough();
   const { category: slug } = useParams();
   const chosen = categoryBySlug(slug);
   const showing = chosen ? [chosen] : SETTINGS_CATEGORIES;
@@ -88,13 +86,13 @@ export function SettingsPage() {
         </div>
       ))}
       {/*
-        * On a phone the help menu isn't in the top bar — it doesn't fit beside the controls that
-        * belong there — so the walkthrough is reachable from here, where someone looking for help
-        * would look anyway.
+        * Help lives in one place: the ? button in the top bar, at every screen size. It was briefly
+        * here as well, when that button had been moved out to make room, and the owner asked for
+        * both copies to go once it came back. Two routes to the same two choices is how a student
+        * ends up unsure which is the real one.
         */}
       <p className="muted settings-legal">
-        <button className="text-button" data-testid="settings-walkthrough" onClick={startTour}>Take the walkthrough</button>
-        {' · '}<Link to="/help">Study Forge Academy</Link> · <Link to="/terms">Terms of Use</Link> · <Link to="/privacy">Privacy Policy</Link></p>
+        <Link to="/terms">Terms of Use</Link> · <Link to="/privacy">Privacy Policy</Link></p>
     </div>
   );
 }

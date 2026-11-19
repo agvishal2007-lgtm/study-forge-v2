@@ -37,31 +37,14 @@ async function open(profile, { auto = true, viewport = { width: 1280, height: 80
   page = context.pages()[0] ?? (await context.newPage());
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto(URL_BASE);
-  if (auto) {
-    // The help menu isn't in the top bar on a phone — six controls fit 360px at the tap size the
-    // audits set and it was the seventh — so there the walkthrough is started from Settings, which
-    // is where someone looking for help would go. On a computer it is still the ? button.
-    const phone = (page.viewportSize()?.width ?? 1280) <= 440;
-    if (phone) {
-      await page.goto(`${URL_BASE}#/settings`);
-      await page.getByTestId('settings-walkthrough').click();
-    } else {
-      await page.getByRole('button', { name: 'Help', exact: true }).click();
-      await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
-    }
-  }
+  if (auto) await startTour();
 }
 /**
- * Starts the walkthrough from wherever it lives on this screen. On a computer that is the ? button;
- * on a phone the help menu isn't in the top bar — six controls fit 360px at the tap size the audits
- * set and it was the seventh — so it is started from Settings instead.
+ * Starts the walkthrough from the one place it lives: the ? button in the top bar, at every screen
+ * size. It was briefly started from Settings on phones, while that button had been moved out of the
+ * bar to make room; the button is back and the Settings copy is gone, at the owner's request.
  */
 async function startTour() {
-  if ((page.viewportSize()?.width ?? 1280) <= 440) {
-    await page.goto(`${URL_BASE}#/settings`);
-    await page.getByTestId('settings-walkthrough').click();
-    return;
-  }
   await page.getByRole('button', { name: 'Help', exact: true }).click();
   await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
 }
@@ -617,8 +600,11 @@ test('no uncaught errors happened during the whole run', () => {
 
 test('Study Forge Academy teaches every major feature with hands-on lessons, and keeps the honest limits short', async () => {
   await open('academy', { auto: false });
-  await page.goto(`${URL_BASE}#/settings`);
-  await page.getByRole('link', { name: 'Study Forge Academy' }).click();
+  // Reached the way a student reaches it now: the ? button in the top bar. It used to be linked
+  // from the bottom of Settings as well, and the owner asked for that second copy to go, so help
+  // is in one place.
+  await page.getByRole('button', { name: 'Help', exact: true }).click();
+  await page.getByRole('menuitem', { name: /Study Forge Academy/ }).click();
   await page.getByRole('heading', { name: 'Study Forge Academy', level: 1 }).waitFor();
   const home = await page.getByTestId('academy').innerText();
   for (const title of ['Getting started', 'Files, links and textbooks', 'Study tools', 'Recording and transcripts', 'Planning', 'Organizing', 'Account, sync and privacy']) assert.ok(home.includes(title), title);
