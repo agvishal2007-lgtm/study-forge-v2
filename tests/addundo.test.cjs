@@ -59,8 +59,9 @@ test('each kind is made where it is already made, carrying the place with it', a
   assert.equal(destination('course', place), '/courses');
   // A topic has nowhere to go without a course.
   assert.equal(destination('topic', { courseId: null, topicId: null }), null);
-  // These are made in the dialog itself, so they need no address.
-  for (const kind of ['file', 'link', 'note']) assert.equal(destination(kind, place), null);
+  // These are made in the dialog itself, so they need no address. A to-do joined them: it used to
+  // open the full planner form, which the owner reported as the most confusing thing in the app.
+  for (const kind of ['file', 'link', 'note', 'todo']) assert.equal(destination(kind, place), null);
 });
 
 const PORT = 4214;

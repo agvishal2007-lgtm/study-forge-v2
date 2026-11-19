@@ -4,6 +4,7 @@ import { listCourses, listTopics } from '../data/store';
 import { useLive } from '../data/useLive';
 import { lastPlace, rememberPlace } from '../data/addPlace';
 import { ADD_CHOICES, destination, suggestPlace, type AddKind, type Place } from '../data/smartAddRules';
+import { QuickTodo } from './QuickTodo';
 import { AddFiles } from './AddFiles';
 import { SaveLinkForm } from './SaveLinkForm';
 import { NewNoteButton } from './NoteList';
@@ -106,6 +107,7 @@ function SmartAddDialog({ onClose }: { onClose: () => void }) {
         </ul>
       )}
 
+      {chosen === 'todo' && <QuickTodo courseId={here.courseId} />}
       {chosen === 'file' && <AddFiles courseId={here.courseId} topicId={here.topicId} />}
       {chosen === 'link' && <SaveLinkForm courseId={here.courseId} topicId={here.topicId} />}
       {chosen === 'note' && (

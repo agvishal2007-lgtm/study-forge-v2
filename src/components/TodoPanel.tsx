@@ -58,7 +58,8 @@ export function TodoPanel() {
       await savePlannerItem({
         id: crypto.randomUUID(), title, details: '', dueDate: '', dueTime: '',
         status: 'Not Started', priority: 'Normal', courseId, section, createdAt: Date.now(),
-        type: 'Assignment', estimateHours: null, points: null, earnedPoints: null, categoryId: null,
+        // Its own kind, so a to-do is never filed as coursework.
+        type: 'To-do', estimateHours: null, points: null, earnedPoints: null, categoryId: null,
       });
       setAdding('');
       setProblem('');

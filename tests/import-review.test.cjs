@@ -110,3 +110,28 @@ test('a student who is happy with the codes is not asked again', async () => {
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });
+
+test('a to-do is written down in the + menu, not in the planner form', async () => {
+  await page.goto(`${URL_BASE}#/`);
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await page.getByRole('heading', { name: 'Add to Study Forge' }).waitFor();
+  await page.getByRole('button', { name: /^To-do/ }).click();
+  // It is asked for here, rather than sending the student to the planner to fill in a form.
+  const form = page.getByTestId('quick-todo');
+  await form.waitFor();
+  assert.equal(new URL(page.url()).hash || '#/', '#/', 'it should not navigate away');
+  // Three things asked, and nothing else.
+  await page.getByTestId('quick-todo-text').fill('Email Mr Harris about the lab');
+  await page.getByTestId('quick-todo-due').fill('2026-12-01');
+  await page.getByTestId('quick-todo-list').selectOption({ label: 'Personal' });
+  await page.getByRole('button', { name: 'Add it', exact: true }).click();
+  await page.getByTestId('quick-todo-saved').filter({ hasText: 'Added to Personal' }).waitFor();
+  // The box clears so a second one can be written without closing anything.
+  assert.equal(await page.getByTestId('quick-todo-text').inputValue(), '');
+
+  // It is a to-do in the planner, not an assignment pretending to be one.
+  await page.goto(`${URL_BASE}#/planner`);
+  const row = page.getByTestId('planner-row').filter({ hasText: 'Email Mr Harris about the lab' });
+  await row.waitFor();
+  await row.filter({ hasText: 'To-do' }).waitFor();
+});

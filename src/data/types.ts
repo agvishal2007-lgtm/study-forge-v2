@@ -256,7 +256,12 @@ export interface CheckpointProgress {
 }
 
 /* Planner */
-export const PLANNER_TYPES = ['Assignment', 'Exam', 'Quiz', 'Project', 'Presentation', 'Reading', 'Study session'] as const;
+/*
+ * 'To-do' is its own kind on purpose. Anything written down from the to-do list or the + menu used
+ * to be saved as an Assignment, which made a reminder to email a teacher indistinguishable from
+ * coursework — the owner reported getting "really lost" in the planner because of exactly this.
+ */
+export const PLANNER_TYPES = ['Assignment', 'Exam', 'Quiz', 'Project', 'Presentation', 'Reading', 'Study session', 'To-do'] as const;
 export type PlannerType = (typeof PLANNER_TYPES)[number];
 export const PLANNER_STATUSES = ['Not Started', 'In Progress', 'Ready to Submit', 'Submitted', 'Waiting for Grade', 'Completed'] as const;
 export type PlannerStatus = (typeof PLANNER_STATUSES)[number];

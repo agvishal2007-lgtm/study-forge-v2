@@ -2065,3 +2065,5 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
 .review-list { display: grid; gap: .6rem; }
 .review-row label { display: grid; gap: .2rem; }
 .review-row input { width: 100%; max-width: 28rem; }
+.quick-todo { display: grid; gap: .6rem; }
+.quick-todo input, .quick-todo select { width: 100%; }
