@@ -16,7 +16,7 @@ export interface SoundInfo {
 }
 
 export const SOUNDS: SoundInfo[] = [
-  { id: 'brown', name: 'Brown noise', what: 'Deep and soft, like distant surf. The gentlest on most ears.' },
+  { id: 'brown', name: 'Brown noise', what: 'Deep and soft, like distant surf. The gentlest on most ears, though a phone speaker can barely produce the low notes it is made of — headphones or a speaker help.' },
   { id: 'pink', name: 'Pink noise', what: 'Even and full, like steady rain on a roof.' },
   { id: 'white', name: 'White noise', what: 'Bright and hissy. Best at covering voices nearby.' },
   { id: 'fan', name: 'Fan', what: 'A low whirr that rises and falls, like a fan across the room.' },
@@ -24,6 +24,28 @@ export const SOUNDS: SoundInfo[] = [
 ];
 
 export const soundInfo = (id: SoundId): SoundInfo | undefined => SOUNDS.find((sound) => sound.id === id);
+
+/**
+ * How much each sound has to be turned up to come out at the same loudness as the others.
+ *
+ * These are not guesses. Each sound was played on its own at the volume a student first gets and
+ * measured at the point it reaches the speakers. White noise came out at 0.172 RMS; brown and pink
+ * at about 0.058, the fan at 0.052, and wind at 0.024 — which is seventeen decibels below white, or
+ * near enough nothing. Filtering is what does it: a bandpass throws most of the signal away, and
+ * nothing afterwards put it back. So each sound carries the factor that brings it to the same
+ * level, and `tests/focus-sound-levels.test.cjs` measures them again and fails if any sound drifts
+ * away from the others.
+ */
+export const LEVEL: Record<SoundId, number> = {
+  white: 1,
+  pink: 2.95,
+  brown: 2.89,
+  fan: 3.3,
+  wind: 7.23,
+};
+
+/** The level a sound should reach: what white noise already managed, since that was audible. */
+export const TARGET_RMS = 0.17;
 
 /** A volume is a number from 0 to 1. Anything odd becomes something safe and quiet enough. */
 export function safeVolume(value: unknown, fallback = 0.5): number {

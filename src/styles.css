@@ -2028,3 +2028,29 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
 .prep-domains { display: grid; gap: 1rem 2rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .prep-domain-row, .prep-score-row { display: flex; gap: .75rem; justify-content: space-between; align-items: center; padding: .25rem 0; }
 .prep-score-form { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); align-items: end; }
+/*
+ * The phone top bar holds what it can hold. Measured: six controls fit 360px at the 40px tap size
+ * the audits set, seven do not. So the to-do list and the help menu are in the account menu there,
+ * and the to-do list is in the + menu as well.
+ */
+.topbar .phone-only { display: none; }
+@media (max-width: 440px) {
+  .topbar .topbar-roomy { display: none; }
+  .topbar .phone-only { display: block; }
+}
+/*
+ * The narrowest phones still in use (320px). Rather than shrink the tap targets below the 40px the
+ * audits settled on, the sign-in button gives up the room: at 320px the + button was 8px off the
+ * left edge, which is the whole bar unusable for the sake of one button's padding.
+ */
+@media (max-width: 340px) {
+  .topbar > .button { padding-left: .3rem; padding-right: .3rem; font-size: var(--fs-xs); }
+  .topbar { padding-left: .15rem; padding-right: .15rem; gap: .1rem; }
+}
+/* The sound picker, built like the help menu so both behave the same way. */
+.sound-menu-wrap { position: relative; display: flex; }
+.sound-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 40; min-width: 15rem; max-width: min(21rem, calc(100vw - 1.5rem)); background: var(--raised); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--lift, 0 8px 24px rgb(0 0 0 / .18)); padding: .35rem; display: grid; gap: .1rem; }
+.sound-menu [role="menuitemcheckbox"], .sound-menu .sound-menu-stop, .sound-menu .sound-menu-more { display: grid; gap: .1rem; text-align: left; width: 100%; background: none; border: 0; border-radius: calc(var(--radius) - 4px); padding: .45rem .55rem; color: inherit; font: inherit; cursor: pointer; }
+.sound-menu [role="menuitemcheckbox"]:hover, .sound-menu .sound-menu-stop:hover, .sound-menu .sound-menu-more:hover { background: var(--ground); }
+.sound-menu [role="menuitemcheckbox"][aria-checked="true"] { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.sound-menu .sound-menu-more { border-top: 1px solid var(--line); margin-top: .2rem; font-size: var(--fs-sm); }

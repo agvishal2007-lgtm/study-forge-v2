@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
 import { SmartAdd } from './SmartAdd';
-import { anyPlaying, playSound, savedMix, stopAll, subscribeFocus, type SoundId } from '../data/focusSounds';
+import { SOUNDS, anyPlaying, isPlaying, playSound, stopAll, stopSound, subscribeFocus } from '../data/focusSounds';
 import { setTodoPanelOpen, subscribeTodoPanel, todoPanelOpen } from './TodoPanel';
 import { SyncBadge } from './SyncBadge';
 import { WalkthroughButton } from '../features/walkthrough/Walkthrough';
@@ -29,30 +29,83 @@ function ThemeButton() {
  * had; the first time, brown noise, which is the gentlest. Choosing and mixing stays in Settings,
  * because this button is for the moment you sit down to study, not for fiddling.
  */
+/**
+ * Sound from the top bar, with the choice of which sound right there.
+ *
+ * Tapping opens a short list rather than starting something unasked: five sounds is a choice, and
+ * making one of them the one you always get is how a student ends up with the wrong noise or, as
+ * happened, no audible noise at all. Each row starts and stops that sound on its own, so they can
+ * be layered. Mixing, per-sound volume and the fading timer stay in Settings, where there is room.
+ */
 function SoundButton() {
+  const [open, setOpen] = useState(false);
   const [, redraw] = useState(0);
+  const wrap = useRef<HTMLDivElement>(null);
+  const button = useRef<HTMLButtonElement>(null);
   useEffect(() => subscribeFocus(() => redraw((count) => count + 1)), []);
+  useEffect(() => {
+    if (!open) return;
+    const away = (event: PointerEvent) => { if (!wrap.current?.contains(event.target as Node)) setOpen(false); };
+    document.addEventListener('pointerdown', away);
+    return () => document.removeEventListener('pointerdown', away);
+  }, [open]);
   const on = anyPlaying();
-  const start = () => {
-    const remembered = savedMix().layers;
-    const layers = remembered.length > 0 ? remembered : [{ id: 'brown' as SoundId, volume: 0.5 }];
-    layers.forEach((layer) => playSound(layer.id, layer.volume));
-  };
+
   return (
-    <button
-      className="icon-button sound-button"
-      data-testid="sound-toggle"
-      aria-pressed={on}
-      onClick={() => (on ? stopAll() : start())}
-      aria-label={on ? 'Stop focus sounds' : 'Play focus sounds'}
-      title={on ? 'Stop focus sounds' : 'Play focus sounds'}
+    <div
+      className="sound-menu-wrap"
+      ref={wrap}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && open) { event.stopPropagation(); setOpen(false); button.current?.focus(); }
+      }}
     >
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        {on
-          ? <><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" /></>
-          : <><path d="M4 11v2M8 9v6M12 11v2M16 9v6M20 11v2" /></>}
-      </svg>
-    </button>
+      <button
+        ref={button}
+        className="icon-button sound-button"
+        data-testid="sound-toggle"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-pressed={on}
+        onClick={() => setOpen((now) => !now)}
+        aria-label={on ? 'Focus sounds, playing' : 'Focus sounds'}
+        title={on ? 'Focus sounds, playing' : 'Focus sounds'}
+      >
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          {on
+            ? <><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" /></>
+            : <><path d="M4 11v2M8 9v6M12 11v2M16 9v6M20 11v2" /></>}
+        </svg>
+      </button>
+      {open && (
+        <div className="sound-menu" role="menu" aria-label="Focus sounds" data-testid="sound-menu">
+          {SOUNDS.map((sound) => {
+            const playing = isPlaying(sound.id);
+            return (
+              <button
+                key={sound.id}
+                type="button"
+                role="menuitemcheckbox"
+                aria-checked={playing}
+                data-testid={`sound-pick-${sound.id}`}
+                // Started straight from the press, because a phone only allows sound then.
+                onClick={() => (playing ? stopSound(sound.id) : playSound(sound.id, 0.5))}
+              >
+                <b>{sound.name}</b>
+                <span className="muted small">{playing ? 'Playing — tap to stop' : sound.what}</span>
+              </button>
+            );
+          })}
+          {on && (
+            <button type="button" role="menuitem" className="sound-menu-stop" data-testid="sound-stop-all" onClick={() => stopAll()}>
+              Stop all sounds
+            </button>
+          )}
+          <Link className="sound-menu-more" role="menuitem" to="/settings/sounds" onClick={() => setOpen(false)}>
+            Mixing, volume and a fading timer
+          </Link>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -175,6 +228,13 @@ function SignedIn() {
         <div className="account-dropdown" data-testid="account-dropdown">
           <p className="account-email">{account.email}</p>
           {syncLine && <p className="muted account-sync">{syncLine}</p>}
+          <button
+            className="dropdown-item phone-only"
+            data-testid="dropdown-todo"
+            onClick={() => { setTodoPanelOpen(!todoPanelOpen()); setOpen(false); }}
+          >
+            {todoPanelOpen() ? 'Hide my to-do list' : 'My to-do list'}
+          </button>
           <Link className="dropdown-item" to="/settings" onClick={() => setOpen(false)}>Settings</Link>
           <Link className="dropdown-item" to="/trash" onClick={() => setOpen(false)}>Trash</Link>
           <button className="dropdown-item" onClick={() => void signOut()}>Sign out</button>
@@ -193,10 +253,21 @@ export function AccountMenu() {
       <Link className="icon-button" to="/search" aria-label="Search" title="Search">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
       </Link>
-      <TodoButton />
+      {/*
+        * Eight controls plus the account button do not fit a phone: at 393px the + button sat at
+        * x = -19 and at 320px both + and Search were off the screen entirely — the "I can't even
+        * press it" problem, measured. Sound and light/dark stay here because they are what this bar
+        * is for. The to-do list and the help menu move into the account menu on a phone, and the
+        * to-do list is also in the + menu, so nothing becomes unreachable.
+        */}
+      <span className="topbar-roomy">
+        <TodoButton />
+      </span>
       <SoundButton />
       <ThemeButton />
-      <WalkthroughButton />
+      <span className="topbar-roomy">
+        <WalkthroughButton />
+      </span>
       {getActiveAccount() ? <SignedIn /> : <SignedOut />}
     </nav>
   );

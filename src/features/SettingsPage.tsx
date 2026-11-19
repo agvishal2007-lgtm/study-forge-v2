@@ -1,4 +1,5 @@
 import { Link, NavLink, useParams } from 'react-router-dom';
+import { useWalkthrough } from './walkthrough/Walkthrough';
 import { useState, type ReactElement } from 'react';
 import { AccountSection } from './AccountSection';
 import { AppearanceSection } from './AppearanceSection';
@@ -64,6 +65,7 @@ const SECTIONS: Record<string, () => ReactElement> = {
  * search that lands there, and anyone who'd rather scroll, finds what they came for.
  */
 export function SettingsPage() {
+  const { start: startTour } = useWalkthrough();
   const { category: slug } = useParams();
   const chosen = categoryBySlug(slug);
   const showing = chosen ? [chosen] : SETTINGS_CATEGORIES;
@@ -83,7 +85,14 @@ export function SettingsPage() {
           {SECTIONS[item.slug]()}
         </div>
       ))}
-      <p className="muted settings-legal"><Link to="/help">Study Forge Academy</Link> · <Link to="/terms">Terms of Use</Link> · <Link to="/privacy">Privacy Policy</Link></p>
+      {/*
+        * On a phone the help menu isn't in the top bar — it doesn't fit beside the controls that
+        * belong there — so the walkthrough is reachable from here, where someone looking for help
+        * would look anyway.
+        */}
+      <p className="muted settings-legal">
+        <button className="text-button" data-testid="settings-walkthrough" onClick={startTour}>Take the walkthrough</button>
+        {' · '}<Link to="/help">Study Forge Academy</Link> · <Link to="/terms">Terms of Use</Link> · <Link to="/privacy">Privacy Policy</Link></p>
     </div>
   );
 }

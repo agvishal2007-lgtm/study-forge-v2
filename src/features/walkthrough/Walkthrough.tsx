@@ -115,6 +115,15 @@ function contentRect(element: Element): DOMRect | null {
  * the screen the margin on that side shrinks to the room there is, instead of the ring being pushed
  * onto the part, so it never cuts through a picture or a label.
  */
+/** How much of a part is actually on screen inside whatever scrolls it. */
+function visibleHeight(element: Element): number {
+  const rect = element.getBoundingClientRect();
+  const panel = element.closest('main')?.getBoundingClientRect();
+  const top = Math.max(rect.top, panel?.top ?? 0, 0);
+  const bottom = Math.min(rect.bottom, panel?.bottom ?? window.innerHeight, window.innerHeight);
+  return bottom - top;
+}
+
 function visibleBox(element: Element): Box {
   const fitted = fittedRect(element);
   const radius = fitted.radius;
@@ -283,6 +292,7 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
     if (!definition.target) return;
     let frame = 0;
     let scrolledTo: Element | null = null;
+    let rescues = 0;
     let last: Box | null = null;
     const started = performance.now();
     const tick = () => {
@@ -296,6 +306,7 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
       if (element) {
         if (scrolledTo !== element) {
           scrolledTo = element;
+          rescues = 0;
           const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
           // A tall section starts at its top, and anything smaller is centered.
           const panel = element.closest('main');
@@ -315,6 +326,22 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
             // Not on a phone held sideways, where the explanation sits beside the part instead.
             if (overflow > 0 && window.innerWidth <= window.innerHeight && part.height + 36 < area.height) panel.scrollBy({ top: overflow, behavior: reduce ? 'auto' : 'smooth' });
           }, reduce ? 50 : 500);
+        }
+        /*
+         * The part can leave the screen after it was scrolled to, because a section above it was
+         * still loading and then pushed it down. That happened the moment Settings grew longer: the
+         * tour had scrolled, Reminders finished loading above the target, and the ring was left as a
+         * six-pixel sliver pointing at something off the bottom of the screen. The correction that
+         * existed only ran on a phone, so on a computer nothing ever put it right.
+         *
+         * So when the part is all but invisible, it is scrolled back to — at once rather than
+         * smoothly, since this is a correction and not a journey. Capped, and only when the part is
+         * genuinely gone, so it never fights a student scrolling the page themselves.
+         */
+        const onScreen = visibleHeight(element);
+        if (onScreen < 24 && rescues < 4) {
+          rescues += 1;
+          element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
         }
         const next = visibleBox(element);
         if (!sameBox(last, next)) {

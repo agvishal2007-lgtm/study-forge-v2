@@ -1,4 +1,4 @@
-import { FADE_SECONDS, mixedGain, readMix, safeVolume, type SavedMix, type SoundId } from './focusSoundRules';
+import { FADE_SECONDS, LEVEL, mixedGain, readMix, safeVolume, type SavedMix, type SoundId } from './focusSoundRules';
 
 export * from './focusSoundRules';
 
@@ -144,13 +144,71 @@ function buildLayer(ctx: AudioContext, id: SoundId, out: GainNode): { source: Au
 function applyGains() {
   if (!context || !master) return;
   const count = layers.length;
-  for (const layer of layers) layer.gain.gain.setTargetAtTime(mixedGain(layer.volume, count), context.currentTime, 0.08);
+  for (const layer of layers) {
+    // The sound's own calibration is part of its gain, so five sounds that are built very
+    // differently still come out at the same loudness.
+    const level = mixedGain(layer.volume, count) * LEVEL[layer.id];
+    layer.gain.gain.setTargetAtTime(level, context.currentTime, 0.08);
+  }
   master.gain.setTargetAtTime(safeVolume(mix.master, 0.6), context.currentTime, 0.08);
+}
+
+/**
+ * A quarter of a second of real silence, built here rather than shipped as a file.
+ */
+function silentWav(): string {
+  const rate = 8000;
+  const samples = 2000;
+  const bytes = new Uint8Array(44 + samples);
+  const view = new DataView(bytes.buffer);
+  const ascii = (at: number, text: string) => { for (let i = 0; i < text.length; i += 1) view.setUint8(at + i, text.charCodeAt(i)); };
+  ascii(0, 'RIFF'); view.setUint32(4, 36 + samples, true); ascii(8, 'WAVE');
+  ascii(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+  view.setUint32(24, rate, true); view.setUint32(28, rate, true); view.setUint16(32, 1, true); view.setUint16(34, 8, true);
+  ascii(36, 'data'); view.setUint32(40, samples, true);
+  bytes.fill(128, 44); // Unsigned eight-bit silence sits at the middle of the range, not at zero.
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return `data:audio/wav;base64,${btoa(binary)}`;
+}
+
+let keeper: HTMLAudioElement | null = null;
+
+/**
+ * Tells the phone that this is music, not a notification beep.
+ *
+ * On an iPhone, sound made by the browser's audio engine alone is treated as incidental and is
+ * silenced by the physical mute switch — so the sound plays, the volume is up, and nothing comes
+ * out. Playing a real (and genuinely silent) audio file alongside it moves the page into the
+ * category used for playback, which the mute switch doesn't govern. It costs nothing audible and
+ * is the only way round it from a web page. Started inside the same press, because a phone will
+ * not start playback later.
+ */
+function claimPlayback(): void {
+  try {
+    if (!keeper) {
+      keeper = new Audio(silentWav());
+      keeper.loop = true;
+      keeper.setAttribute('playsinline', '');
+    }
+    void keeper.play().catch(() => undefined);
+  } catch {
+    // No audio element available: the sound still plays, it just may obey the mute switch.
+  }
+}
+
+function releasePlayback(): void {
+  try {
+    keeper?.pause();
+  } catch {
+    // Nothing to release.
+  }
 }
 
 /** Starts a sound. Must be called from a press, because browsers only allow sound then. */
 export function playSound(id: SoundId, volume = 0.5): void {
   if (layers.some((layer) => layer.id === id)) return;
+  claimPlayback();
   context ??= new (window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
   void context.resume();
   if (!master) {
@@ -192,6 +250,7 @@ export function stopSound(id: SoundId): void {
 export function stopAll(): void {
   [...layers].forEach((layer) => stopSound(layer.id));
   clearTimer();
+  releasePlayback();
   announce();
 }
 
