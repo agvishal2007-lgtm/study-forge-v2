@@ -658,17 +658,27 @@ test('the ? button offers both kinds of help: the quick walkthrough or the Acade
   await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
   await card().waitFor();
   await closeTour();
-  // On a phone the ? button is deliberately not in the top bar: measured, six controls fit 360px at
-  // the 40px tap size the audits set, and the seventh pushed the + button off the screen. So what
-  // matters there is that help is still reachable, not that this menu fits.
+  /*
+   * The ? button belongs in the top bar at every size. The owner put it plainly: it is easier, and
+   * it is where people understand help to be. It was briefly moved into the account menu to make
+   * room and that was wrong — so this checks it is there on a phone, that both choices are offered
+   * with their difference explained, and that the menu stays on screen.
+   */
   for (const width of [390, 360]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto(`${URL_BASE}#/`);
-    assert.equal(await help.count(), 0, `the ? button should not crowd a ${width}px top bar`);
-    await page.goto(`${URL_BASE}#/settings`);
-    await page.getByTestId('settings-walkthrough').click();
-    await card().waitFor();
-    await closeTour();
+    await help.waitFor();
+    const button = await help.boundingBox();
+    assert.ok(button.x >= 0 && button.x + button.width <= width, `the ? button is off a ${width}px screen`);
+    await help.click();
+    await menu.waitFor();
+    const box = await menu.boundingBox();
+    assert.ok(box.x >= 0 && box.x + box.width <= width, `the help menu is off a ${width}px screen`);
+    // Which one is quick and which is thorough is said, not left to be guessed.
+    const said = await menu.innerText();
+    assert.match(said, /2 minutes/);
+    assert.match(said, /thorough/i);
+    await page.keyboard.press('Escape');
   }
   await page.setViewportSize({ width: 1280, height: 800 });
 });

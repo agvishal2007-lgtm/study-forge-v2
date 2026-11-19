@@ -654,11 +654,11 @@ export function WalkthroughButton() {
         <div className="help-menu" role="menu" aria-label="Help" data-testid="help-menu">
           <button type="button" role="menuitem" onClick={() => choose(start)}>
             <b>Take the walkthrough</b>
-            <span className="muted small">A quick guided tour, about 2 minutes</span>
+            <span className="muted small">The quick one: a guided tour of the app, about 2 minutes</span>
           </button>
           <button type="button" role="menuitem" onClick={() => choose(() => navigate('/help'))}>
             <b>Study Forge Academy</b>
-            <span className="muted small">Hands-on lessons for every feature</span>
+            <span className="muted small">The thorough one: hands-on lessons covering every feature, at your own pace</span>
           </button>
         </div>
       )}

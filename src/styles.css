@@ -2035,8 +2035,11 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
  */
 .topbar .phone-only { display: none; }
 @media (max-width: 440px) {
-  .topbar .topbar-roomy { display: none; }
   .topbar .phone-only { display: block; }
+}
+/* Only the narrowest bars give up the to-do button; it is in the + menu and account menu as well. */
+@media (max-width: 360px) {
+  .topbar .topbar-roomy { display: none; }
 }
 /*
  * The narrowest phones still in use (320px). Rather than shrink the tap targets below the 40px the
@@ -2067,3 +2070,22 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
 .review-row input { width: 100%; max-width: 28rem; }
 .quick-todo { display: grid; gap: .6rem; }
 .quick-todo input, .quick-todo select { width: 100%; }
+.sound-menu-volume { display: grid; grid-template-columns: auto 1fr auto; gap: .45rem; align-items: center; padding: .5rem .55rem; border-top: 1px solid var(--line); margin-top: .2rem; font-size: var(--fs-sm); }
+.sound-menu-volume input[type="range"] { width: 100%; min-width: 5rem; }
+/*
+ * The narrowest phones, signed out, cannot hold seven controls at the 40px tap size the audits set.
+ * The bar slides sideways there, the way the section bar already does, rather than shrinking a
+ * target or putting one off the edge where it cannot be pressed at all.
+ */
+@media (max-width: 340px) {
+  .topbar { overflow-x: auto; scrollbar-width: none; }
+  .topbar::-webkit-scrollbar { display: none; }
+}
+.narrow-label { display: none; }
+@media (max-width: 440px) {
+  .wide-label { display: none; }
+  .narrow-label { display: inline; }
+}
+.tool-setting { border: 1px solid var(--line); border-radius: var(--radius); padding: .6rem .75rem; margin-bottom: .7rem; }
+.tool-setting legend { padding: 0 .35rem; font-size: var(--fs-sm); }
+.tool-choices { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; }

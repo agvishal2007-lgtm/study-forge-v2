@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { clearReviewSession, listCardProgress, listCards, listDecks, loadReviewSession, rateCard, REVIEW_RESUME_MS, saveReviewSession } from '../data/flashcards';
 import { describeInterval, dueQueue, isWeak, outcome } from '../data/flashcardRules';
+import { getDisplayPrefs, useDisplayPrefs } from '../data/displayPrefs';
+import { inChosenOrder, sidesFor } from '../data/studyToolRules';
 import { localNow } from '../data/plannerRules';
 import { useStudyClock } from '../data/studyClock';
 import { CARD_RATINGS, type CardProgress, type CardRating, type Flashcard } from '../data/types';
@@ -56,14 +58,24 @@ export function ReviewPage() {
       const inDeck = cards.filter((card) => (!deckId || card.deckId === deckId) && (!courseDecks || courseDecks.has(card.deckId)));
       setProgress(saved);
       setDeckNames(new Map(decks.map((deck) => [deck.id, deck.name])));
-      if (mode === 'due') setQueue(dueQueue(inDeck, saved, localNow().date));
-      else if (mode === 'weak') setQueue(inDeck.filter((card) => isWeak(saved.get(card.id))));
-      else setQueue([...inDeck].sort((a, b) => a.createdAt - b.createdAt));
+      /*
+       * The student's chosen order is applied once, here, as the queue is built — not on each
+       * render, which would reorder the deck between one card and the next. Each card's own
+       * schedule is kept per card, so the order it is seen in changes nothing about when it
+       * returns.
+       */
+      const order = getDisplayPrefs().cardOrder;
+      const seed = `${deckId ?? 'all'}-${mode}-${localNow().date}`;
+      if (mode === 'due') setQueue(inChosenOrder(dueQueue(inDeck, saved, localNow().date), order, seed));
+      else if (mode === 'weak') setQueue(inChosenOrder(inDeck.filter((card) => isWeak(saved.get(card.id))), order, seed));
+      else setQueue(inChosenOrder([...inDeck].sort((a, b) => a.createdAt - b.createdAt), order, seed));
     }).catch((error: Error) => { if (active) setLoadFailure(error.message); });
     return () => { active = false; };
   }, [deckId, mode]);
 
   const card = queue?.[0];
+  const prefs = useDisplayPrefs();
+  const sides = sidesFor(card ?? { front: '', back: '' }, prefs.cardSide);
 
   const rate = useCallback(async (rating: CardRating) => {
     // A fast double press, or a press for a card already rated, counts once.
@@ -144,14 +156,19 @@ export function ReviewPage() {
         <Link to={back}>Stop for now</Link>
       </header>
       {removed > 0 && <p className="notice">Picked up where you left off. {removed} {removed === 1 ? 'card was' : 'cards were'} deleted since, so {removed === 1 ? 'it is' : 'they are'} skipped.</p>}
+      {/*
+        * Which side comes first is the student's choice. The test ids stay with the side of the
+        * card they name — card-front is always the card's front — so what is hidden and what is
+        * shown changes, and nothing about the card itself does.
+        */}
       <article className="flashcard" data-testid="flashcard" aria-live="polite">
-        <p className="flashcard-label">Front</p>
-        <p className="card-text flashcard-text" data-testid="card-front">{card.front}</p>
+        <p className="flashcard-label">{sides.flipped ? 'Back' : 'Front'}</p>
+        <p className="card-text flashcard-text" data-testid={sides.flipped ? 'card-back' : 'card-front'}>{sides.shown}</p>
         {revealed && (
           <>
             <hr />
-            <p className="flashcard-label">Back</p>
-            <p className="card-text flashcard-text" data-testid="card-back">{card.back}</p>
+            <p className="flashcard-label">{sides.flipped ? 'Front' : 'Back'}</p>
+            <p className="card-text flashcard-text" data-testid={sides.flipped ? 'card-front' : 'card-back'}>{sides.hidden}</p>
           </>
         )}
       </article>

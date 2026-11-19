@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getDisplayPrefs } from '../data/displayPrefs';
+import { opensWriting } from '../data/studyToolRules';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { applyFormat, applyToBox, NoteToolbar } from '../components/NoteToolbar';
 import { continueList } from '../data/noteFormat';
@@ -54,6 +56,12 @@ export function NoteEditor({ id, start, panel = false, onDeleted, onClose }: {
   onClose?: () => void;
 }) {
   const [previewing, setPreviewing] = useState(false);
+  /*
+   * Which view a note opens in is the student's choice, but a note with nothing in it always opens
+   * ready to write: a preview of an empty note would be absurd. So this waits until the note has
+   * loaded and only then switches, once, if there is something to preview.
+   */
+  const settled = useRef(false);
   const calculator = useCalculator();
   const { setInsertTarget } = calculator;
   const changeRef = useRef<(patch: { body: string }) => void>(() => undefined);
@@ -74,6 +82,13 @@ export function NoteEditor({ id, start, panel = false, onDeleted, onClose }: {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [status, setStatus] = useState<Status>('loading');
   const [failure, setFailure] = useState('');
+  // Once the note is loaded: open it the way the student asked, but only if there is something to
+  // look at. Done once, so it never fights them switching views themselves.
+  useEffect(() => {
+    if (settled.current || status === 'loading' || !draft) return;
+    settled.current = true;
+    if (!opensWriting(getDisplayPrefs().noteStart) && draft.body.trim().length > 0) setPreviewing(true);
+  }, [status, draft]);
   const [other, setOther] = useState<Note | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 

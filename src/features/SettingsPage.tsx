@@ -1,5 +1,6 @@
 import { Link, NavLink, useParams } from 'react-router-dom';
 import { useWalkthrough } from './walkthrough/Walkthrough';
+import { StudyToolsSection } from './StudyToolsSection';
 import { useState, type ReactElement } from 'react';
 import { AccountSection } from './AccountSection';
 import { AppearanceSection } from './AppearanceSection';
@@ -55,6 +56,7 @@ const SECTIONS: Record<string, () => ReactElement> = {
   appearance: () => <AppearanceSection />,
   tasks: () => <TasksSection />,
   sounds: () => <FocusSoundsSection />,
+  tools: () => <StudyToolsSection />,
   notifications: () => <><RemindersSection /><PermissionsSection /></>,
   account: () => <><AccountSection /><BackupSection /><OfflineSection /><StorageSection /></>,
 };

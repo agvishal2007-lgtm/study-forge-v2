@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { getDisplayPrefs, useDisplayPrefs } from '../data/displayPrefs';
+import { explainNow, inChosenOrder } from '../data/studyToolRules';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { gradeAutomatically } from '../data/mastery';
 import {
@@ -24,6 +26,7 @@ const minutes = (ms: number) => {
 };
 
 export function PracticeSessionPage() {
+  const prefs = useDisplayPrefs();
   const [params] = useSearchParams();
   const { pathname, search, key: visit } = useLocation();
   const url = `${pathname}${search}`;
@@ -95,7 +98,13 @@ export function PracticeSessionPage() {
 
   function startSession(ids: string[]): PracticeSession {
     lastTick.current = Date.now();
-    return { id: newId(), url, questionIds: ids, position: 0, attemptId: newId(), draft: '', selected: null, confidence: null, checking: false, answer: '', activeMs: 0, skipped: 0 };
+    /*
+     * The chosen order is settled once, as the session starts, and then stored with the session.
+     * Resuming reads it back from there, so a shuffled session keeps the order it had rather than
+     * reshuffling underneath the student halfway through.
+     */
+    const ordered = inChosenOrder(ids, getDisplayPrefs().practiceOrder, `${url}-${Date.now()}`);
+    return { id: newId(), url, questionIds: ordered, position: 0, attemptId: newId(), draft: '', selected: null, confidence: null, checking: false, answer: '', activeMs: 0, skipped: 0 };
   }
 
   /**
@@ -172,6 +181,29 @@ export function PracticeSessionPage() {
           {(session.activeMs ?? 0) >= 60_000 && <div><dt>Time spent</dt><dd>{minutes(session.activeMs ?? 0)}</dd></div>}
         </dl>
         {(session.skipped ?? 0) > 0 && <p className="notice">{session.skipped} {session.skipped === 1 ? 'question was' : 'questions were'} removed after this session began, so {session.skipped === 1 ? 'it was' : 'they were'} skipped.</p>}
+        {/*
+          * Kept for the end, as asked. Every question answered that has an explanation appears here
+          * with what was answered, so choosing "at the end" delays the explanation rather than
+          * costing it.
+          */}
+        {!explainNow(prefs.explanations) && results.some((attempt) => questions.get(attempt.questionId)?.explanation) && (
+          <section aria-labelledby="why-heading" data-testid="practice-explanations">
+            <h2 id="why-heading">Why these were the answers</h2>
+            <ul className="plain-list">
+              {results.map((attempt) => {
+                const question = questions.get(attempt.questionId);
+                if (!question?.explanation) return null;
+                return (
+                  <li key={attempt.id}>
+                    <p className="card-text"><b>{question.prompt}</b></p>
+                    <p className="muted small">You answered: {attempt.answer || '(nothing)'}</p>
+                    <p className="card-text">{question.explanation}</p>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
         <p className="muted">This counts answers, not mastery. Getting a question right once doesn't mean it's learned.</p>
         <div className="session-actions">
           {missed > 0 && <Link className="button primary" onClick={() => void clearPracticeSession()} to={`/practice/session?mode=mistakes${setId ? `&set=${setId}` : ''}`}>Practice what you missed</Link>}
@@ -309,7 +341,15 @@ export function PracticeSessionPage() {
           <p className="card-text">{attempt.answer}</p>
           <p className="flashcard-label">{isChoice ? 'Correct answer' : 'Model answer'}</p>
           <p className="card-text" data-testid="correct-answer">{correctText}</p>
-          {question.explanation && <><p className="flashcard-label">Why</p><p className="card-text">{question.explanation}</p></>}
+          {/*
+            * Whether the explanation appears now or is kept for the end is the student's choice:
+            * some people want to know at once, others find it interrupts the run of questions.
+            * Either way it is shown — holding it back for ever would not be a setting, it would be
+            * losing the thing that makes practice useful.
+            */}
+          {question.explanation && explainNow(prefs.explanations) && (
+            <><p className="flashcard-label">Why</p><p className="card-text">{question.explanation}</p></>
+          )}
           {question.source && <p className="muted file-meta">Source: {question.source}</p>}
           <fieldset className="confidence" data-testid="difficulty">
             <legend>How hard did this feel? (optional, doesn't change your score)</legend>

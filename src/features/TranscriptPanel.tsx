@@ -4,6 +4,7 @@ import { TRANSCRIBE_MODEL, TranscribeError, transcribe, type TranscribeProgress 
 import type { Material } from '../data/types';
 import { useLive } from '../data/useLive';
 import { isDeviceOnly } from '../data/schoolLevel';
+import { getDisplayPrefs } from '../data/displayPrefs';
 
 const STAGE_WORDS: Record<TranscribeProgress['stage'], string> = {
   preparing: 'Getting the sound ready',
@@ -18,6 +19,7 @@ export function TranscriptPanel({ material, blob }: { material: Material; blob: 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [copied, setCopied] = useState(false);
   const active = useRef(false);
+  const startedOnce = useRef(false);
   useEffect(() => () => { active.current = false; }, []);
 
   const run = () => {
@@ -39,6 +41,22 @@ export function TranscriptPanel({ material, blob }: { material: Material; blob: 
       })
       .finally(() => { active.current = false; setProgress(null); });
   };
+
+  /*
+   * Starting one by itself, when the student has asked for that in Settings.
+   *
+   * Only once, and only when there is nothing already: a transcript runs a speech model on the
+   * device, which is slow and warms a phone up, so it must never quietly run twice. Off by default
+   * for the same reason — nobody should pay that cost without choosing to.
+   */
+  useEffect(() => {
+    if (startedOnce.current || loading || transcript || progress) return;
+    if (getDisplayPrefs().autoTranscript !== 'on') return;
+    startedOnce.current = true;
+    run();
+    // run is stable for this panel, and this must fire once per recording rather than on each change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, transcript]);
 
   const working = progress !== null;
 

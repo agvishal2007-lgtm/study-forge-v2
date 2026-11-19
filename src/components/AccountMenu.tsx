@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { SmartAdd } from './SmartAdd';
-import { SOUNDS, anyPlaying, isPlaying, playSound, savedMix, soundInfo, stopAll, stopSound, subscribeFocus } from '../data/focusSounds';
+import { SOUNDS, anyPlaying, isPlaying, masterVolume, playSound, savedMix, setMasterVolume, soundInfo, stopAll, stopSound, subscribeFocus } from '../data/focusSounds';
 import { setTodoPanelOpen, subscribeTodoPanel, todoPanelOpen } from './TodoPanel';
 import { SyncBadge } from './SyncBadge';
 import { WalkthroughButton } from '../features/walkthrough/Walkthrough';
@@ -118,6 +118,23 @@ function SoundButton() {
               </button>
             );
           })}
+          {/*
+            * Volume belongs next to the choice. Going to Settings to turn something down while
+            * trying to work is the kind of trip that stops people using it at all.
+            */}
+          <label className="sound-menu-volume">
+            Volume
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={Math.round(masterVolume() * 100)}
+              aria-label="Volume for focus sounds"
+              data-testid="sound-volume"
+              onChange={(event) => setMasterVolume(Number(event.target.value) / 100)}
+            />
+            <span className="muted small" data-testid="sound-volume-shown">{Math.round(masterVolume() * 100)}%</span>
+          </label>
           {on && (
             <button type="button" role="menuitem" className="sound-menu-stop" data-testid="sound-stop-all" onClick={() => stopAll()}>
               Stop all sounds
@@ -177,7 +194,19 @@ function SignedOut() {
   return (
     <>
       <Link className="icon-button" to="/settings" aria-label="Settings" title="Settings"><GearIcon /></Link>
-      {!isDeviceOnly() && <Link className="button primary" to="/auth" data-tour="account">Log In / Sign Up</Link>}
+      {/*
+        * On a phone this button shows "Log in" rather than "Log In / Sign Up". The full wording is
+        * 109px of a 360px bar, which is what left the + button off the edge once the help button
+        * came back. Its accessible name stays the full phrase, so a screen reader and anything
+        * looking for it are unaffected — only the visible wording is shorter where room is short,
+        * and the page it opens offers both anyway.
+        */}
+      {!isDeviceOnly() && (
+        <Link className="button primary" to="/auth" data-tour="account" aria-label="Log In / Sign Up">
+          <span className="wide-label">Log In / Sign Up</span>
+          <span className="narrow-label">Log in</span>
+        </Link>
+      )}
     </>
   );
 }
@@ -258,9 +287,6 @@ function SignedIn() {
           >
             {todoPanelOpen() ? 'Hide my to-do list' : 'My to-do list'}
           </button>
-          <Link className="dropdown-item phone-only" to="/settings" onClick={() => setOpen(false)}>
-            Take the walkthrough, Academy and help
-          </Link>
           <Link className="dropdown-item" to="/settings" onClick={() => setOpen(false)}>Settings</Link>
           <Link className="dropdown-item" to="/trash" onClick={() => setOpen(false)}>Trash</Link>
           <button className="dropdown-item" onClick={() => void signOut()}>Sign out</button>
@@ -291,9 +317,15 @@ export function AccountMenu() {
       </span>
       <SoundButton />
       <ThemeButton />
-      <span className="topbar-roomy">
-        <WalkthroughButton />
-      </span>
+      {/*
+        * The help button stays here at every size. It was moved into the account menu to make room
+        * and that was wrong twice over: it is where people look for help, and the menu entry then
+        * went to Settings instead of offering the choice. Measured, it fits — 360px has 51px spare
+        * and a signed-in bar has far more, since the avatar replaces the wide sign-in button. Only
+        * a 320px screen signed out runs short, and there the bar slides sideways rather than
+        * shrinking a tap target below 40px.
+        */}
+      <WalkthroughButton />
       {getActiveAccount() ? <SignedIn /> : <SignedOut />}
     </nav>
   );
