@@ -2061,3 +2061,7 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
 @media (max-width: 440px) {
   .sound-menu { position: fixed; top: 54px; left: .5rem; right: .5rem; max-width: none; }
 }
+.import-notice { display: grid; gap: .5rem; padding: .7rem clamp(.8rem, 3vw, 1.1rem); border: 1px solid var(--line); border-radius: var(--radius); background: var(--raised); margin-bottom: 1rem; }
+.review-list { display: grid; gap: .6rem; }
+.review-row label { display: grid; gap: .2rem; }
+.review-row input { width: 100%; max-width: 28rem; }

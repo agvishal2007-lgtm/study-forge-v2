@@ -1,4 +1,5 @@
 import { getDisplayPrefs } from './displayPrefs';
+import { noteImportedCourses } from './importReview';
 import { getDb, notifyChanged } from './db';
 import { cleanTitle, courseTokenIn, fromCanvas, guessDestination, guessPlannerType, matchCourse, stableId, type Destination, type GoogleItem } from './calendarRules';
 import { createCourse, listCourses } from './store';
@@ -71,10 +72,19 @@ export async function removeCalendarEvents(ids: string[]): Promise<void> {
   notifyChanged();
 }
 
-/** Finds a course by its code, or adds it. */
+/**
+ * Finds a course by its code, or adds it.
+ *
+ * A course this creates is noted for review, because its name came from a school's calendar and is
+ * often a code rather than anything a student would choose. Matching on the code means a course the
+ * student has already renamed is reused, so their name is never overwritten by a later refresh.
+ */
 export async function courseForCode(code: string, name: string): Promise<Course> {
   const found = matchCourse(code, await listCourses());
-  return found ?? createCourse(name || code, code);
+  if (found) return found;
+  const made = await createCourse(name || code, code);
+  await noteImportedCourses([made.id]);
+  return made;
 }
 
 /* The class schedule */

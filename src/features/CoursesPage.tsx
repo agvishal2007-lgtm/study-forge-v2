@@ -9,6 +9,7 @@ import { showsTemplates, useSchool, useSchoolWords } from '../data/schoolLevel';
 import { useTourRunning } from './walkthrough/tourRunning';
 import { listCourses, listMaterials, moveCourse, setCourseStatus } from '../data/store';
 import { useLive } from '../data/useLive';
+import { ImportReviewNotice } from '../components/ImportReviewNotice';
 
 export function CoursesPage() {
   const [arranging, setArranging] = useState(false);
@@ -37,6 +38,7 @@ export function CoursesPage() {
     <div className="page">
       <div className="section-head">
         <h1>{words.Courses}</h1>
+      <ImportReviewNotice />
         {school.level !== 'elementary' && <Link className="button" to="/courses/new-semester" data-testid="new-semester">Start a new {words.term}</Link>}
 
       </div>
