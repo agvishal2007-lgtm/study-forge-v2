@@ -112,6 +112,33 @@ test('every sound comes out at the same loudness as the others', async () => {
   assert.ok(spread < 6, `the sounds are ${spread.toFixed(1)} dB apart: ${JSON.stringify(levels)}`);
 });
 
+test('the sound picker fits a phone, where the button is not at the edge', async () => {
+  await page.setViewportSize({ width: 390, height: 760 });
+  try {
+    await page.goto(`${URL_BASE}#/`);
+    await page.getByTestId('sound-toggle').click();
+    const menu = page.getByTestId('sound-menu');
+    await menu.waitFor();
+    // The button sits near the middle of a phone's bar, so a menu hanging off its right edge would
+    // run off the left of the screen.
+    const box = await menu.boundingBox();
+    assert.ok(box.x >= 0 && box.x + box.width <= 390, `the picker is off screen: ${JSON.stringify(box)}`);
+    assert.ok(box.y + box.height <= 760, 'the picker runs off the bottom of a phone');
+    // Every row can actually be pressed, which is the complaint this kind of bug produces.
+    for (const id of ['brown', 'pink', 'white', 'fan', 'wind']) {
+      const row = await page.getByTestId(`sound-pick-${id}`).boundingBox();
+      assert.ok(row.x >= 0 && row.x + row.width <= 390, `${id} is off screen`);
+      assert.ok(row.height >= 36, `${id} is too small to tap: ${row.height}px`);
+    }
+    // And the page itself never scrolls sideways because of it.
+    const sideways = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    assert.ok(sideways <= 0, `the page scrolls sideways by ${sideways}px`);
+    await page.keyboard.press('Escape');
+  } finally {
+    await page.setViewportSize({ width: 1280, height: 900 });
+  }
+});
+
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });

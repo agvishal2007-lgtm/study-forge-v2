@@ -235,6 +235,9 @@ function SignedIn() {
           >
             {todoPanelOpen() ? 'Hide my to-do list' : 'My to-do list'}
           </button>
+          <Link className="dropdown-item phone-only" to="/settings" onClick={() => setOpen(false)}>
+            Take the walkthrough, Academy and help
+          </Link>
           <Link className="dropdown-item" to="/settings" onClick={() => setOpen(false)}>Settings</Link>
           <Link className="dropdown-item" to="/trash" onClick={() => setOpen(false)}>Trash</Link>
           <button className="dropdown-item" onClick={() => void signOut()}>Sign out</button>

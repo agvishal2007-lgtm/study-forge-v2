@@ -160,6 +160,27 @@ test('a day the school did not count does not move the rotation along', async ()
   await page.getByTestId('special-cycle-note').filter({ hasText: "don't agree" }).waitFor();
 });
 
+test('the schedule works on a phone without the page scrolling sideways', async () => {
+  await page.setViewportSize({ width: 393, height: 700 });
+  try {
+    await page.goto(`${URL_BASE}#/courses/schedule`);
+    await page.getByTestId('timetable').waitFor();
+    // A wide grid scrolls inside its own frame; the page never does.
+    const sideways = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    assert.ok(sideways <= 0, `the page scrolls sideways by ${sideways}px`);
+    // The controls above the grid are reachable rather than pushed off the edge.
+    for (const id of ['period-count', 'add-period', 'same-times']) {
+      const box = await page.getByTestId(id).boundingBox();
+      assert.ok(box.x >= 0 && box.x + box.width <= 393, `${id} is off screen on a phone`);
+    }
+    // Special days too, since that form is a grid of its own.
+    const date = await page.getByTestId('special-date').boundingBox();
+    assert.ok(date.x >= 0 && date.x + date.width <= 393, 'the special-day date field is off screen');
+  } finally {
+    await page.setViewportSize({ width: 1400, height: 1000 });
+  }
+});
+
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });

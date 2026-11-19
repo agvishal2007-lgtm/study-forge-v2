@@ -2054,3 +2054,10 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
 .sound-menu [role="menuitemcheckbox"]:hover, .sound-menu .sound-menu-stop:hover, .sound-menu .sound-menu-more:hover { background: var(--ground); }
 .sound-menu [role="menuitemcheckbox"][aria-checked="true"] { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .sound-menu .sound-menu-more { border-top: 1px solid var(--line); margin-top: .2rem; font-size: var(--fs-sm); }
+/*
+ * On a phone the sound button sits near the middle of the bar, so a menu anchored to its right edge
+ * would hang off the left of the screen. There it becomes a sheet pinned inside both edges instead.
+ */
+@media (max-width: 440px) {
+  .sound-menu { position: fixed; top: 54px; left: .5rem; right: .5rem; max-width: none; }
+}

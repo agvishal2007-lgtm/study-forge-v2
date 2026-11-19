@@ -38,9 +38,32 @@ async function open(profile, { auto = true, viewport = { width: 1280, height: 80
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto(URL_BASE);
   if (auto) {
-    await page.getByRole('button', { name: 'Help', exact: true }).click();
-    await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
+    // The help menu isn't in the top bar on a phone — six controls fit 360px at the tap size the
+    // audits set and it was the seventh — so there the walkthrough is started from Settings, which
+    // is where someone looking for help would go. On a computer it is still the ? button.
+    const phone = (page.viewportSize()?.width ?? 1280) <= 440;
+    if (phone) {
+      await page.goto(`${URL_BASE}#/settings`);
+      await page.getByTestId('settings-walkthrough').click();
+    } else {
+      await page.getByRole('button', { name: 'Help', exact: true }).click();
+      await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
+    }
   }
+}
+/**
+ * Starts the walkthrough from wherever it lives on this screen. On a computer that is the ? button;
+ * on a phone the help menu isn't in the top bar — six controls fit 360px at the tap size the audits
+ * set and it was the seventh — so it is started from Settings instead.
+ */
+async function startTour() {
+  if ((page.viewportSize()?.width ?? 1280) <= 440) {
+    await page.goto(`${URL_BASE}#/settings`);
+    await page.getByTestId('settings-walkthrough').click();
+    return;
+  }
+  await page.getByRole('button', { name: 'Help', exact: true }).click();
+  await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
 }
 const card = () => page.getByTestId('tour-card');
 const closeTour = () => page.getByRole('button', { name: 'Close walkthrough' }).click();
@@ -527,7 +550,7 @@ test('on a phone with toolbars, a student with courses sees the whole Add a cour
     await page.getByRole('heading', { name }).waitFor();
   }
   await page.goto(URL_BASE);
-  await page.getByRole('button', { name: 'Help', exact: true }).click(); await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
+  await startTour();
   for (let i = 1; i < numberOf('courses'); i++) await next();
   await page.getByTestId('tour-done').waitFor();
   await settle();
@@ -635,12 +658,17 @@ test('the ? button offers both kinds of help: the quick walkthrough or the Acade
   await page.getByRole('menuitem', { name: /Take the walkthrough/ }).click();
   await card().waitFor();
   await closeTour();
+  // On a phone the ? button is deliberately not in the top bar: measured, six controls fit 360px at
+  // the 40px tap size the audits set, and the seventh pushed the + button off the screen. So what
+  // matters there is that help is still reachable, not that this menu fits.
   for (const width of [390, 360]) {
     await page.setViewportSize({ width, height: 800 });
-    await help.click();
-    const box = await menu.boundingBox();
-    assert.ok(box.x >= 0 && box.x + box.width <= width, `the menu fits a ${width}px phone`);
-    await page.keyboard.press('Escape');
+    await page.goto(`${URL_BASE}#/`);
+    assert.equal(await help.count(), 0, `the ? button should not crowd a ${width}px top bar`);
+    await page.goto(`${URL_BASE}#/settings`);
+    await page.getByTestId('settings-walkthrough').click();
+    await card().waitFor();
+    await closeTour();
   }
   await page.setViewportSize({ width: 1280, height: 800 });
 });
