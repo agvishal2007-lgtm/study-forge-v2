@@ -126,6 +126,10 @@ test('working through a topic ends with a count, and never with a predicted scor
 test('the score log takes only scores the test could report, and works out the rest', async () => {
   await page.goto(`${URL_BASE}#/practice`);
   await page.goto(`${URL_BASE}#/test-prep`);
+  // This test is about the PSAT/NMSQT, the one test with a Selection Index, so it says so rather
+  // than inheriting whatever an earlier test left behind — and waits for it to have taken.
+  await page.getByTestId('prep-test').selectOption('psat-nmsqt');
+  await page.getByTestId('prep-scale').filter({ hasText: 'total 320 to 1520' }).waitFor();
   // A score that is not a step of ten is refused, with the reason given.
   await page.getByTestId('score-rw').fill('685');
   await page.getByTestId('score-math').fill('700');

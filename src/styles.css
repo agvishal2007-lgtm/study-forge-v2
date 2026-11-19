@@ -2050,8 +2050,8 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
 /* The sound picker, built like the help menu so both behave the same way. */
 .sound-menu-wrap { position: relative; display: flex; }
 .sound-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 40; min-width: 15rem; max-width: min(21rem, calc(100vw - 1.5rem)); background: var(--raised); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--lift, 0 8px 24px rgb(0 0 0 / .18)); padding: .35rem; display: grid; gap: .1rem; }
-.sound-menu [role="menuitemcheckbox"], .sound-menu .sound-menu-stop, .sound-menu .sound-menu-more { display: grid; gap: .1rem; text-align: left; width: 100%; background: none; border: 0; border-radius: calc(var(--radius) - 4px); padding: .45rem .55rem; color: inherit; font: inherit; cursor: pointer; }
-.sound-menu [role="menuitemcheckbox"]:hover, .sound-menu .sound-menu-stop:hover, .sound-menu .sound-menu-more:hover { background: var(--ground); }
+.sound-menu [role="menuitemcheckbox"], .sound-menu [role="menuitem"], .sound-menu .sound-menu-stop, .sound-menu .sound-menu-more { display: grid; gap: .1rem; text-align: left; width: 100%; background: none; border: 0; border-radius: calc(var(--radius) - 4px); padding: .45rem .55rem; color: inherit; font: inherit; cursor: pointer; }
+.sound-menu [role="menuitemcheckbox"]:hover, .sound-menu [role="menuitem"]:hover, .sound-menu .sound-menu-stop:hover, .sound-menu .sound-menu-more:hover { background: var(--ground); }
 .sound-menu [role="menuitemcheckbox"][aria-checked="true"] { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .sound-menu .sound-menu-more { border-top: 1px solid var(--line); margin-top: .2rem; font-size: var(--fs-sm); }
 /*

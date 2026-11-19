@@ -22,6 +22,12 @@ import { useLive } from '../data/useLive';
 export function TestPrepPage() {
   const [running, setRunning] = useState<{ section: Section | 'both'; domain: string } | null>(null);
   const [problem, setProblem] = useState('');
+  /*
+   * What is on screen leads, and the save follows. These three fields are driven by stored data, and
+   * stored data arrives a moment after the write — so changing the test and moving on quickly could
+   * lose the change, and a date being typed could spring back mid-keystroke.
+   */
+  const [chosen, setChosen] = useState<PrepSetup | null>(null);
   const { data, error } = useLive(async () => ({
     setup: await getPrepSetup(),
     scores: await listScores(),
@@ -30,10 +36,17 @@ export function TestPrepPage() {
 
   if (error) return <div className="page"><h1>SAT and PSAT practice</h1><p className="error" role="alert">This couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
-  const { setup, scores, attempts } = data;
+  const { scores, attempts } = data;
+  const setup = chosen ?? data.setup;
   const facts = testFacts(setup.test);
   const [lowTotal, highTotal] = totalRange(setup.test);
-  const change = (next: Partial<PrepSetup>) => void savePrepSetup({ ...setup, ...next });
+  const change = (next: Partial<PrepSetup>) => {
+    const wanted = { ...setup, ...next };
+    setChosen(wanted);
+    void savePrepSetup(wanted).catch((failure: Error) => {
+      setProblem(`That wasn't saved, so it is only on this screen. ${failure.message}`);
+    });
+  };
 
   if (running) {
     const questions = pickQuestions({ test: setup.test, section: running.section, domain: running.domain });

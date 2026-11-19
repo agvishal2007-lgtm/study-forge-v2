@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { SmartAdd } from './SmartAdd';
-import { SOUNDS, anyPlaying, isPlaying, playSound, stopAll, stopSound, subscribeFocus } from '../data/focusSounds';
+import { SOUNDS, anyPlaying, isPlaying, playSound, savedMix, soundInfo, stopAll, stopSound, subscribeFocus } from '../data/focusSounds';
 import { setTodoPanelOpen, subscribeTodoPanel, todoPanelOpen } from './TodoPanel';
 import { SyncBadge } from './SyncBadge';
 import { WalkthroughButton } from '../features/walkthrough/Walkthrough';
@@ -42,7 +42,12 @@ function SoundButton() {
   const [, redraw] = useState(0);
   const wrap = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
+  const { pathname } = useLocation();
   useEffect(() => subscribeFocus(() => redraw((count) => count + 1)), []);
+  // Moving to another screen closes it. Nothing is unmounted when the address changes, so without
+  // this the menu hangs about over the new page — and the next tap on the button would close it
+  // rather than open it, which reads as the button doing nothing.
+  useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
     if (!open) return;
     const away = (event: PointerEvent) => { if (!wrap.current?.contains(event.target as Node)) setOpen(false); };
@@ -78,6 +83,24 @@ function SoundButton() {
       </button>
       {open && (
         <div className="sound-menu" role="menu" aria-label="Focus sounds" data-testid="sound-menu">
+          {/*
+            * The mix the student last had, in one go. Choosing which sound is the point of this
+            * menu, but someone who has already settled on a mix shouldn't have to rebuild it every
+            * time — so it sits at the top when there is one and nothing is playing.
+            */}
+          {!on && savedMix().layers.length > 0 && (
+            <button
+              type="button"
+              role="menuitem"
+              data-testid="sound-last-mix"
+              onClick={() => savedMix().layers.forEach((layer) => playSound(layer.id, layer.volume))}
+            >
+              <b>Play my last mix</b>
+              <span className="muted small">
+                {savedMix().layers.map((layer) => soundInfo(layer.id)?.name ?? layer.id).join(', ')}
+              </span>
+            </button>
+          )}
           {SOUNDS.map((sound) => {
             const playing = isPlaying(sound.id);
             return (

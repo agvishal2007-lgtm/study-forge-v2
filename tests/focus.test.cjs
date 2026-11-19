@@ -114,19 +114,28 @@ test('sound is one tap away at the top, beside light and dark', async () => {
   const button = page.getByTestId('sound-toggle');
   await button.waitFor();
   assert.equal(await button.getAttribute('aria-pressed'), 'false');
-  // The first tap starts something, without having to go and choose one.
+  /*
+   * The tap opens the choice of sound rather than starting one picked for the student. That is the
+   * owner's own correction: the sound chosen for them was brown noise, which a phone speaker can
+   * barely produce, so the button appeared to do nothing. Choosing is now the first thing it offers,
+   * and a student who has settled on a mix gets it back from the top of the same menu.
+   */
   await button.click();
+  await page.getByTestId('sound-menu').waitFor();
+  for (const id of ['brown', 'pink', 'white', 'fan', 'wind']) await page.getByTestId(`sound-pick-${id}`).waitFor();
+  await page.getByTestId('sound-pick-pink').click();
   await page.waitForFunction(() => window.__audio.made >= 1 && window.__audio.running.some((ctx) => ctx.state === 'running'));
   assert.equal(await button.getAttribute('aria-pressed'), 'true');
-  assert.equal(await button.getAttribute('aria-label'), 'Stop focus sounds');
+  assert.equal(await button.getAttribute('aria-label'), 'Focus sounds, playing');
 
   // It is the same button everywhere, and it stays on as you move about.
   await page.goto(`${URL_BASE}#/planner`);
   await page.getByRole('heading', { name: 'Planner', exact: true }).waitFor();
   assert.equal(await page.getByTestId('sound-toggle').getAttribute('aria-pressed'), 'true');
 
-  // Tapping again stops everything.
+  // Stopping everything is in the same menu, from any page.
   await page.getByTestId('sound-toggle').click();
+  await page.getByTestId('sound-stop-all').click();
   await page.waitForFunction(() => !window.__audio.running.some((ctx) => ctx.state === 'running') || true);
   assert.equal(await page.getByTestId('sound-toggle').getAttribute('aria-pressed'), 'false');
   await page.goto(`${URL_BASE}#/settings/sounds`);
@@ -139,8 +148,13 @@ test('the top button brings back the mix the student last had', async () => {
   await page.getByRole('button', { name: 'Stop Wind' }).waitFor();
   await page.getByTestId('focus-stop-all').click();
   await page.getByRole('button', { name: 'Play Wind' }).waitFor();
-  // One tap at the top starts Wind again, not something else.
+  // The mix is still one go from the top: the menu offers it back by name, rather than making the
+  // student rebuild it or guessing a different sound for them.
   await page.getByTestId('sound-toggle').click();
+  const again = page.getByTestId('sound-last-mix');
+  await again.waitFor();
+  assert.match(await again.innerText(), /Wind/);
+  await again.click();
   await page.getByRole('button', { name: 'Stop Wind' }).waitFor();
   await page.getByTestId('focus-stop-all').click();
 });
