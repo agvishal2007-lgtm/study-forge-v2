@@ -740,6 +740,102 @@ test('a pin made on the phone and the look chosen on the laptop reach the other 
   await laptop.getByRole('button', { name: 'Unpin', exact: true }).waitFor({ timeout: 15000 });
 });
 
+test('Trash has exactly one home at every width, and never two', async () => {
+  /*
+   * On a computer Trash lives at the bottom of the side menu; where there is no side menu it lives
+   * in the account menu. Having it in both at once is a duplicate that leaves a student wondering
+   * whether the two lead to the same place — and hiding it from both would strand it. The two
+   * breakpoints are paired for that reason, so this checks both sides of the pair.
+   */
+  const laptop = await device('laptop');
+  const seen = async () => {
+    const sidebar = await laptop.getByTestId('nav-trash').isVisible().catch(() => false);
+    await openMenu(laptop);
+    const entry = laptop.getByTestId('account-dropdown').getByRole('link', { name: 'Trash', exact: true });
+    const inMenu = (await entry.count()) > 0 && await entry.isVisible().catch(() => false);
+    const box = inMenu ? await entry.boundingBox() : null;
+    await laptop.getByRole('button', { name: /Account menu for/ }).click();
+    await laptop.getByTestId('account-dropdown').waitFor({ state: 'detached' });
+    return { sidebar, inMenu, height: box?.height ?? 0 };
+  };
+
+  await laptop.setViewportSize({ width: 1280, height: 800 });
+  const wide = await seen();
+  assert.equal(wide.sidebar, true, 'the side menu should hold Trash on a computer');
+  assert.equal(wide.inMenu, false, 'the account menu should not duplicate it on a computer');
+
+  for (const width of [393, 360]) {
+    await laptop.setViewportSize({ width, height: 760 });
+    const narrow = await seen();
+    assert.equal(narrow.sidebar, false, `the side menu is hidden at ${width}px`);
+    assert.equal(narrow.inMenu, true, `Trash must still be reachable at ${width}px`);
+    assert.ok(narrow.height >= 36, `Trash is too small to tap at ${width}px: ${narrow.height}px`);
+  }
+  await laptop.setViewportSize({ width: 1280, height: 800 });
+
+  // And the page itself still works, whichever way it was reached.
+  await laptop.goto(`${URL_BASE}#/trash`);
+  await laptop.getByRole('heading', { name: 'Trash', level: 1 }).waitFor();
+});
+
+test('a study setting chosen on the laptop reaches the phone, whichever setting it is', async () => {
+  /*
+   * This is the bug this test exists for: the receiving side had a hand-written list of six
+   * preference names, so the Study tools settings added later were saved and sent and then quietly
+   * ignored on the other device. The list is now read from the preferences themselves, and these
+   * two settings stand for every one of them.
+   */
+  const laptop = await device('laptop');
+  const phone = await device('phone');
+  await nav(laptop, 'Settings');
+  await laptop.getByTestId('setting-cardSide').getByRole('radio', { name: 'The back' }).check();
+  await laptop.getByTestId('setting-explanations').getByRole('radio', { name: 'All together at the end' }).check();
+  await saved(laptop);
+
+  await nav(phone, 'Settings');
+  const look = () => phone.evaluate(() => {
+    const checked = (id) => {
+      const box = document.querySelector(`[data-testid=setting-${id}]`);
+      if (!box) return 'the setting is not on the page';
+      return [...box.querySelectorAll('input[type=radio]')].findIndex((one) => one.checked);
+    };
+    return { cardSide: checked('cardSide'), explanations: checked('explanations'), signedIn: !!document.querySelector('[aria-label^="Account menu for"]') };
+  });
+  let saw = await look();
+  for (let waited = 0; waited < 25000 && !(saw.cardSide === 1 && saw.explanations === 1); waited += 500) {
+    await phone.waitForTimeout(500);
+    saw = await look();
+  }
+  const stored = async (page) => page.evaluate(async () => {
+    const names = (await indexedDB.databases()).map((one) => one.name).filter(Boolean);
+    const out = {};
+    for (const name of names) {
+      const db = await new Promise((done) => { const ask = indexedDB.open(name); ask.onsuccess = () => done(ask.result); ask.onerror = () => done(null); });
+      if (!db || !db.objectStoreNames.contains('settings')) { db?.close(); continue; }
+      const rows = await new Promise((done) => { const ask = db.transaction('settings').objectStore('settings').getAll(); ask.onsuccess = () => done(ask.result); ask.onerror = () => done([]); });
+      const row = rows.find((one) => one.id === 'appearance');
+      if (row) out[name] = { cardSide: row.value?.cardSide, explanations: row.value?.explanations, updatedAt: row.updatedAt };
+      db.close();
+    }
+    return out;
+  });
+  assert.deepEqual({ cardSide: saw.cardSide, explanations: saw.explanations }, { cardSide: 1, explanations: 1 },
+    `the phone never took the laptop's choices: phone shows ${JSON.stringify(saw)}; laptop stored ${JSON.stringify(await stored(laptop))}; phone stored ${JSON.stringify(await stored(phone))}`);
+
+  // And it really applies, rather than only showing as chosen: the card starts from its back.
+  await nav(phone, 'Flashcards');
+  const deck = phone.getByRole('link', { name: /Terms|Shared deck/ }).first();
+  if (await deck.count()) {
+    await deck.click();
+    const practice = phone.getByRole('link', { name: /^Practice all/ });
+    if (await practice.count()) {
+      await practice.click();
+      await phone.getByTestId('flashcard').waitFor();
+      assert.match(await phone.getByTestId('flashcard').innerText(), /^Back/);
+    }
+  }
+});
+
 test('a second student on the same computer cannot open the first student\'s work', async () => {
   const laptop = await device('laptop');
   await nav(laptop, 'Settings');

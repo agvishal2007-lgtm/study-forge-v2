@@ -2092,3 +2092,15 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
 .todo-new-list { border-style: dashed; font-weight: 500; }
 .todo-name-list { display: grid; gap: .4rem; padding: .5rem .6rem; border-bottom: 1px solid var(--line); }
 .todo-name-list input { width: 100%; }
+/*
+ * Shown only where the side menu is hidden. Paired with `@media (max-width: 720px)` on
+ * `.nav .nav-trash`, so Trash has exactly one home at every width: the sidebar on a computer, the
+ * account menu on a phone or tablet. If one of these two breakpoints is ever changed, change both.
+ */
+/*
+ * Two classes, not one, on purpose: `.dropdown-item` is given `display: flex` further down this
+ * file, and a single-class rule up here loses to it however it is ordered. A test checks the
+ * account menu really has no Trash on a computer, which is what caught this.
+ */
+.account-dropdown .no-sidebar-only { display: none; }
+@media (max-width: 720px) { .account-dropdown .no-sidebar-only { display: flex; } }

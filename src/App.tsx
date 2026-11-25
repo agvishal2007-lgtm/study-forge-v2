@@ -61,6 +61,8 @@ import { CalendarPage } from './features/CalendarPage';
 import { GoogleCalendarPage } from './features/GoogleCalendarPage';
 import { ProgressPage } from './features/ProgressPage';
 import { TrashPage } from './features/TrashPage';
+import { chooseStartingRetention } from './data/trashPolicy';
+import { sweepTrash } from './data/trashRows';
 import { SchedulePage } from './features/SchedulePage';
 import { SettingsPage } from './features/SettingsPage';
 import { TodayPage } from './features/TodayPage';
@@ -101,7 +103,20 @@ export function App() {
   const [newVisitor, setNewVisitor] = useState<boolean | null>(null);
   useEffect(() => {
     let active = true;
-    isNewVisitor(Boolean(getActiveAccount())).then((answer) => { if (active) setNewVisitor(answer); });
+    isNewVisitor(Boolean(getActiveAccount())).then((answer) => {
+      if (!active) return;
+      setNewVisitor(answer);
+      /*
+       * Trash cleanup, decided and then run once the device has been looked at.
+       *
+       * A brand-new student starts on the recommended 30 days; anyone who already has work keeps
+       * deleting things themselves until they choose otherwise, so this update never empties a
+       * Trash that was filled under the old promise. The sweep then deletes whatever has passed
+       * its date — on opening, because there is no server to do it while Study Forge is closed.
+       */
+      chooseStartingRetention(!answer);
+      void sweepTrash();
+    });
     const started = () => setNewVisitor(false);
     window.addEventListener(WELCOME_SEEN_EVENT, started);
     return () => { active = false; window.removeEventListener(WELCOME_SEEN_EVENT, started); };

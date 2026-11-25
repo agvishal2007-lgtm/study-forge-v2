@@ -207,3 +207,90 @@ test('permanent deletion and Empty Trash always ask first, and Cancel keeps ever
   assert.equal(leftovers, 0);
   assert.deepEqual(pageErrors, []);
 });
+
+/*
+ * Automatic cleanup. A student's existing Trash is the thing most easily lost here, so this starts
+ * from the promise that was made before this setting existed — nothing goes until you say so — and
+ * only then checks that choosing a time really works.
+ */
+const age = (name, days) => page.evaluate(async ({ name, days }) => {
+  const dbName = (await indexedDB.databases()).map((one) => one.name).find((one) => one && one.startsWith('study-forge'));
+  const db = await new Promise((done) => { const ask = indexedDB.open(dbName); ask.onsuccess = () => done(ask.result); });
+  const rows = await new Promise((done) => { const ask = db.transaction('studyState').objectStore('studyState').getAll(); ask.onsuccess = () => done(ask.result); });
+  const found = rows.find((row) => row.id.startsWith('trash-') && row.value && row.value.name === name);
+  if (!found) return false;
+  found.value.deletedAt -= days * 24 * 60 * 60 * 1000;
+  await new Promise((done) => { const ask = db.transaction('studyState', 'readwrite').objectStore('studyState').put(found); ask.onsuccess = () => done(); });
+  db.close();
+  return true;
+}, { name, days });
+
+const trashANote = async (title) => {
+  await page.goto(`${URL_BASE}#/notes`);
+  await page.getByRole('button', { name: 'New note' }).click();
+  await page.getByLabel('Title').fill(title);
+  await page.locator('textarea.note-body').fill('Something worth keeping until I say otherwise.');
+  await page.getByTestId('note-done').click();
+  await page.locator('main').getByRole('link', { name: new RegExp(title) }).first().click();
+  await page.getByRole('button', { name: 'Delete note' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Delete note' }).click();
+};
+
+test('an existing Trash is never emptied by this update, and only a choice changes that', async () => {
+  await trashANote('Older than a month');
+  await openTrash();
+  await page.getByTestId('trash-policy').getByText('Things here stay until you delete them.').waitFor();
+
+  // Old enough for every policy there is, and still here, because nothing has been chosen.
+  assert.equal(await age('Older than a month', 40), true, 'the note was found in Trash to age');
+  await page.goto(URL_BASE);
+  await openTrash();
+  await row('Older than a month').waitFor();
+
+  // Choosing a shorter time says exactly what would go, and Cancel really keeps it.
+  await page.goto(`${URL_BASE}#/settings/account`);
+  await page.getByTestId('setting-retention').getByRole('radio', { name: '7 days' }).click();
+  const asking = page.getByRole('dialog');
+  await asking.getByText('Older than a month').waitFor();
+  await asking.getByRole('button', { name: 'Cancel' }).click();
+  await openTrash();
+  await row('Older than a month').waitFor();
+  await page.getByTestId('trash-policy').getByText('Things here stay until you delete them.').waitFor();
+
+  // And saying yes deletes it, on opening, which is what the wording promises.
+  await page.goto(`${URL_BASE}#/settings/account`);
+  await page.getByTestId('setting-retention').getByRole('radio', { name: '7 days' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Delete them and save this' }).click();
+  await page.goto(URL_BASE);
+  await openTrash();
+  assert.equal(await row('Older than a month').count(), 0, 'it was deleted on opening');
+  await page.getByTestId('trash-policy').getByText('Things here are deleted 7 days after you put them in Trash.').waitFor();
+});
+
+test('restoring stops the clock, and trashing it again starts the time over', async () => {
+  await page.goto(`${URL_BASE}#/settings/account`);
+  await page.getByTestId('setting-retention').getByRole('radio', { name: '30 days' }).click();
+  await page.getByTestId('retention-effect').getByText('30 days').waitFor();
+
+  await trashANote('Nearly due');
+  assert.equal(await age('Nearly due', 29), true);
+  await openTrash();
+  await row('Nearly due').getByText('deleted tomorrow').waitFor();
+
+  // Restored, so nothing is pending any more.
+  await page.getByRole('button', { name: 'Restore Nearly due' }).click();
+  await page.goto(`${URL_BASE}#/notes`);
+  await page.locator('main').getByRole('link', { name: /Nearly due/ }).first().waitFor();
+
+  // Deleted again: a fresh 30 days, not the day it had left before.
+  await page.locator('main').getByRole('link', { name: /Nearly due/ }).first().click();
+  await page.getByRole('button', { name: 'Delete note' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Delete note' }).click();
+  await openTrash();
+  await row('Nearly due').getByText('deleted in 30 days').waitFor();
+
+  // Put back the way it was found, so nothing after this inherits a policy it didn't ask for.
+  await page.goto(`${URL_BASE}#/settings/account`);
+  await page.getByTestId('setting-retention').getByRole('radio', { name: 'Never — I’ll delete things myself' }).click();
+  assert.deepEqual(pageErrors, []);
+});

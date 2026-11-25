@@ -1,5 +1,6 @@
 import { Link, NavLink, useParams } from 'react-router-dom';
 import { StudyToolsSection } from './StudyToolsSection';
+import { TrashKeepSection } from './TrashKeepSection';
 import { useState, type ReactElement } from 'react';
 import { AccountSection } from './AccountSection';
 import { AppearanceSection } from './AppearanceSection';
@@ -26,6 +27,8 @@ function StorageSection() {
         <p className="muted">Restore or permanently delete anything you deleted, from any part of Study Forge.</p>
         <Link className="button" to="/trash">Open Trash</Link>
       </section>
+
+      <TrashKeepSection />
 
       <section aria-labelledby="storage-heading">
         <h2 id="storage-heading">Storage on this device</h2>

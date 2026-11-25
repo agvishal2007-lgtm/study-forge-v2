@@ -275,6 +275,28 @@ export const isPlaying = (id: SoundId): boolean => layers.some((layer) => layer.
 export const anyPlaying = (): boolean => layers.length > 0;
 export const masterVolume = (): number => safeVolume(mix.master, 0.6);
 export const savedMix = (): SavedMix => mix;
+
+/**
+ * Puts back the sounds another device had chosen, without making a noise.
+ *
+ * Which sounds a student likes is theirs and should follow them; how loud a particular device plays
+ * is that device's business, so the master volume is deliberately left alone here. Nothing starts
+ * playing either: sound in Study Forge only ever begins from a press, and a phone that started
+ * humming by itself because a laptop was playing would be a fright, not a feature.
+ */
+export function restoreSavedLayers(chosen: SavedMix['layers']): void {
+  const kept = readMix({ layers: chosen, master: mix.master }).layers;
+  if (JSON.stringify(kept) === JSON.stringify(mix.layers)) return;
+  // Something playing here is what the student is listening to right now; it wins over a record.
+  if (layers.length > 0) return;
+  mix = { layers: kept, master: mix.master };
+  try {
+    localStorage.setItem(KEY, JSON.stringify(mix));
+  } catch {
+    // Not being able to remember it is no reason to fail.
+  }
+  announce();
+}
 export const timerLeft = (): number => (timerEndsAt ? Math.max(0, timerEndsAt - Date.now()) : 0);
 
 function clearTimer() {

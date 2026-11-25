@@ -281,7 +281,14 @@ function SignedIn() {
           <p className="account-email">{account.email}</p>
           {syncLine && <p className="muted account-sync">{syncLine}</p>}
           <Link className="dropdown-item" to="/settings" onClick={() => setOpen(false)}>Settings</Link>
-          <Link className="dropdown-item" to="/trash" onClick={() => setOpen(false)}>Trash</Link>
+          {/*
+            * Trash only here on the screens that have no sidebar. On a computer it lives at the
+            * bottom of the side menu, and having it in both places is a duplicate that makes a
+            * student wonder whether the two lead to the same place. The breakpoint matches the
+            * one that hides the sidebar's Trash, so there is always exactly one route to it and
+            * never none.
+            */}
+          <Link className="dropdown-item no-sidebar-only" to="/trash" onClick={() => setOpen(false)}>Trash</Link>
           <button className="dropdown-item" onClick={() => void signOut()}>Sign out</button>
         </div>
       )}
