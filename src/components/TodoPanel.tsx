@@ -4,6 +4,7 @@ import { listCourses } from '../data/store';
 import { listPlannerItems, savePlannerItem, setPlannerStatus } from '../data/planner';
 import type { PlannerItem } from '../data/types';
 import { belongsTo, chooseList, flip, listsFor } from '../data/listRules';
+import { addTodoList, getTodoLists, removeTodoList } from '../data/todoLists';
 import { isDone, uncheckedStatus } from '../data/plannerRules';
 import { useDisplayPrefs } from '../data/displayPrefs';
 import { useLive } from '../data/useLive';
@@ -37,18 +38,53 @@ export function TodoPanel() {
   const [wanted, setWanted] = useState(read(LIST_KEY));
   const [adding, setAdding] = useState('');
   const [problem, setProblem] = useState('');
+  const [naming, setNaming] = useState(false);
+  const [newList, setNewList] = useState('');
   const { completed } = useDisplayPrefs();
   useEffect(() => subscribeTodoPanel(() => setOpen(todoPanelOpen())), []);
 
-  const { data } = useLive(async () => ({ items: await listPlannerItems(), courses: await listCourses() }));
+  const { data } = useLive(async () => ({
+    items: await listPlannerItems(),
+    courses: await listCourses(),
+    named: await getTodoLists(),
+  }));
   if (!open || !data) return null;
 
-  const lists = listsFor(data.items, data.courses);
+  const lists = listsFor(data.items, data.courses, data.named);
   const list = chooseList(lists, wanted);
   if (!list) return null;
   const show = completed === 'hidden' ? list.items.filter((item) => !isDone(item)) : list.items;
 
   const go = (id: string) => { setWanted(id); write(LIST_KEY, id); };
+
+  /** A list of their own — College, Family, chores, whatever they need it for. */
+  const makeList = async () => {
+    const problemFound = await addTodoList(newList, data.courses.map((course) => course.name));
+    if (problemFound) { setProblem(problemFound); return; }
+    setProblem('');
+    setNaming(false);
+    const made = newList.replace(/\s+/g, ' ').trim().slice(0, 40);
+    setNewList('');
+    go(`section:${made}`);
+  };
+
+  /**
+   * Forgetting a list, without losing anything that was in it. Whatever is still there is moved to
+   * Personal first and the student is told, because a list that took its tasks with it when it went
+   * would be the worst kind of surprise.
+   */
+  const dropList = async (which: typeof list) => {
+    try {
+      for (const item of which.items) await savePlannerItem({ ...item, section: '' });
+      await removeTodoList(which.name);
+      go('personal');
+      setProblem(which.items.length > 0
+        ? `${which.name} is gone. ${which.items.length === 1 ? 'Its task' : `Its ${which.items.length} tasks`} moved to Personal — nothing was deleted.`
+        : '');
+    } catch (failure) {
+      setProblem(`That didn't work. ${(failure as Error).message}`);
+    }
+  };
 
   const add = async () => {
     const title = adding.trim();
@@ -77,10 +113,23 @@ export function TodoPanel() {
           {list.left > 0 && <span className="muted small"> · {list.left} to do</span>}
         </h2>
         <button className="icon-button todo-flip" onClick={() => go(flip(lists, list.id, 1))} aria-label="Next list" disabled={lists.length < 2}>›</button>
+        {/* Only a list the student made can be removed: a class's list belongs to the class. */}
+        {data.named.some((one) => one.toLowerCase() === list.name.toLowerCase()) && (
+          <button
+            className="icon-button"
+            onClick={() => void dropList(list)}
+            aria-label={`Remove the ${list.name} list`}
+            title={`Remove the ${list.name} list`}
+            data-testid="todo-drop-list"
+          >
+            🗑
+          </button>
+        )}
         <button className="icon-button" onClick={() => setTodoPanelOpen(false)} aria-label="Close your to-do list" data-testid="todo-close">×</button>
       </div>
 
-      {lists.length > 1 && (
+      {/* Always shown, even with one list, because this is where a new list is made from. */}
+      {(
         <div className="todo-tabs" role="tablist" aria-label="Your lists">
           {lists.map((one) => (
             <button
@@ -93,7 +142,30 @@ export function TodoPanel() {
               {one.name}
             </button>
           ))}
+          <button className="todo-tab todo-new-list" onClick={() => { setNaming(true); setProblem(''); }} data-testid="todo-add-list">
+            + New list
+          </button>
         </div>
+      )}
+
+      {naming && (
+        <form
+          className="todo-name-list"
+          data-testid="todo-name-list"
+          onSubmit={(event) => { event.preventDefault(); void makeList(); }}
+        >
+          <label htmlFor="todo-list-name-field">What is this list for?</label>
+          <input
+            id="todo-list-name-field"
+            value={newList}
+            placeholder="College, Family, Chores…"
+            data-testid="todo-list-input"
+            autoFocus
+            onChange={(event) => setNewList(event.target.value)}
+          />
+          <button className="button primary" type="submit">Make the list</button>
+          <button className="button" type="button" onClick={() => { setNaming(false); setNewList(''); setProblem(''); }}>Cancel</button>
+        </form>
       )}
 
       {problem && <p className="error" role="alert">{problem}</p>}

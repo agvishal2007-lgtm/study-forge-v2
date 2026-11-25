@@ -309,3 +309,63 @@ test('a task added in a list belongs to that list', async () => {
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });
+
+test('a student can make lists of their own, and removing one never loses a task', async () => {
+  // The owner's point: there was only Personal, with no way to make a list before putting
+  // something in it. Sections only became lists once a task happened to be filed under one.
+  await page.goto(`${URL_BASE}#/planner`);
+  if ((await page.getByTestId('todo-panel').count()) === 0) await page.getByTestId('todo-toggle').click();
+  const panel = page.getByTestId('todo-panel');
+  await panel.waitFor();
+
+  await panel.getByTestId('todo-add-list').click();
+  await panel.getByTestId('todo-list-input').fill('College');
+  await panel.getByRole('button', { name: 'Make the list' }).click();
+  // It exists at once, empty, and is the one on screen.
+  await panel.getByTestId('todo-list-name').filter({ hasText: 'College' }).waitFor();
+  await panel.getByTestId('todo-empty').filter({ hasText: 'Nothing in College yet' }).waitFor();
+  await panel.getByRole('tab', { name: 'College' }).waitFor();
+
+  // A name already taken is refused with the reason, rather than making a second identical tab.
+  await panel.getByTestId('todo-add-list').click();
+  await panel.getByTestId('todo-list-input').fill('college');
+  await panel.getByRole('button', { name: 'Make the list' }).click();
+  await panel.getByRole('alert').filter({ hasText: 'already have a list called' }).waitFor();
+  await panel.getByRole('button', { name: 'Cancel' }).click();
+
+  // A second list, and a task typed into one lands in that one.
+  await panel.getByTestId('todo-add-list').click();
+  await panel.getByTestId('todo-list-input').fill('Family');
+  await panel.getByRole('button', { name: 'Make the list' }).click();
+  await panel.getByTestId('todo-list-name').filter({ hasText: 'Family' }).waitFor();
+  await panel.getByPlaceholder('Add to Family').fill('Call Grandma');
+  await panel.getByPlaceholder('Add to Family').press('Enter');
+  await panel.getByText('Call Grandma').waitFor();
+  // It is not in College, which is the whole point of separate lists.
+  await panel.getByRole('tab', { name: 'College' }).click();
+  assert.equal(await panel.getByText('Call Grandma').count(), 0);
+
+  // The lists survive a reload, because they are saved rather than worked out from tasks.
+  await page.reload();
+  await page.getByTestId('todo-panel').waitFor();
+  await page.getByTestId('todo-panel').getByRole('tab', { name: 'College' }).waitFor();
+  await page.getByTestId('todo-panel').getByRole('tab', { name: 'Family' }).waitFor();
+
+  // Removing a list keeps its tasks: they move to Personal and it says so.
+  await page.getByTestId('todo-panel').getByRole('tab', { name: 'Family' }).click();
+  await page.getByTestId('todo-panel').getByTestId('todo-drop-list').click();
+  await page.getByTestId('todo-panel').getByRole('alert').filter({ hasText: 'moved to Personal' }).waitFor();
+  await page.getByTestId('todo-panel').getByRole('alert').filter({ hasText: 'nothing was deleted' }).waitFor();
+  assert.equal(await page.getByTestId('todo-panel').getByRole('tab', { name: 'Family' }).count(), 0);
+  await page.getByTestId('todo-panel').getByText('Call Grandma').waitFor();
+  assert.match(await page.getByTestId('todo-list-name').innerText(), /Personal/);
+
+  // A class's list has no remove button: it belongs to the class, not to the panel.
+  const classTab = page.getByTestId('todo-panel').getByRole('tab', { name: 'Accounting' });
+  if (await classTab.count()) {
+    await classTab.click();
+    assert.equal(await page.getByTestId('todo-panel').getByTestId('todo-drop-list').count(), 0);
+  }
+  // This test runs after the file's own uncaught-error check, so it makes its own.
+  assert.deepEqual(pageErrors, []);
+});

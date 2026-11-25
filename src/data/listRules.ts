@@ -22,12 +22,39 @@ export interface TodoList {
 }
 
 /**
- * Every list a student has, in the order they'd expect: their classes first, in the order the
- * classes are in, then their own sections, then Personal. A list with nothing in it is left out,
- * so the panel doesn't fill with empty classes — except Personal, which stays as somewhere to put
- * a new task that belongs to nothing.
+ * Tidies a name a student typed for a new list.
+ *
+ * Trimmed, and squashed to one line, because a name with a newline in it breaks every tab that
+ * shows it. Length-capped for the same reason: a tab is a tab, not a paragraph.
  */
-export function listsFor(all: PlannerItem[], courses: Course[]): TodoList[] {
+export const tidyListName = (name: string): string => name.replace(/\s+/g, ' ').trim().slice(0, 40);
+
+/**
+ * Whether a name can be used for a new list, and why not when it can't.
+ *
+ * A name already taken by a class, by another list, or by Personal is refused — two lists with the
+ * same name are indistinguishable on a tab, and the student would have no way to tell which they
+ * were typing into.
+ */
+export function listNameProblem(name: string, taken: { lists: string[]; courses: string[] }): string {
+  const wanted = tidyListName(name);
+  if (!wanted) return 'Give the list a name.';
+  const same = (other: string) => other.trim().toLowerCase() === wanted.toLowerCase();
+  if (same('Personal')) return 'There is already a Personal list.';
+  if (taken.lists.some(same)) return `You already have a list called ${wanted}.`;
+  if (taken.courses.some(same)) return `${wanted} is one of your classes, and it already has its own list.`;
+  return '';
+}
+
+/**
+ * Every list a student has, in the order they'd expect: their classes first, in the order the
+ * classes are in, then their own lists, then Personal.
+ *
+ * A class with nothing in it is left out, so the panel doesn't fill with empty classes. A list the
+ * student made themselves is always shown, empty or not — they made it on purpose, and a list that
+ * vanished until it had something in it would look like it had failed to save.
+ */
+export function listsFor(all: PlannerItem[], courses: Course[], named: string[] = []): TodoList[] {
   // Anything the student took off their list stays out of every list, without being deleted.
   const items = all.filter((item) => !item.hiddenFromList);
   const lists: TodoList[] = [];
@@ -39,13 +66,19 @@ export function listsFor(all: PlannerItem[], courses: Course[]): TodoList[] {
     if (mine.length > 0) lists.push(make(course.id, course.name, 'course', mine));
   }
 
-  // A section the student named, taking whatever is in it that no class has already claimed.
-  for (const section of sectionsOf(items)) {
+  /*
+   * Lists the student made, then any other section that has something in it. Both are the same kind
+   * of thing — a named group of tasks — so a list made here and a section that arrived with a task
+   * are shown identically. The ones they made come first and stay even when empty.
+   */
+  const made = named.map(tidyListName).filter(Boolean);
+  const fromItems = sectionsOf(items).filter((section) => !made.some((one) => one.toLowerCase() === section.toLowerCase()));
+  for (const section of [...made, ...fromItems]) {
     const mine = items
-      .filter((item) => (item.section ?? '').trim() === section && !used.has(item.id))
+      .filter((item) => (item.section ?? '').trim().toLowerCase() === section.toLowerCase() && !used.has(item.id))
       .sort(comparePlanner);
     mine.forEach((item) => used.add(item.id));
-    if (mine.length > 0) lists.push(make(`section:${section}`, section, 'section', mine));
+    if (mine.length > 0 || made.includes(section)) lists.push(make(`section:${section}`, section, 'section', mine));
   }
 
   const personal = items.filter((item) => !used.has(item.id)).sort(comparePlanner);

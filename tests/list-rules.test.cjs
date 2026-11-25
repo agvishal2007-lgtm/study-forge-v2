@@ -114,3 +114,54 @@ test('with nothing chosen yet, the panel opens somewhere predictable', async () 
   assert.equal(chooseList(lists.slice(0, 2), null).id, 'acc');
   assert.equal(chooseList([], null), null);
 });
+
+test('a student can make a list of their own, and it stays even when empty', async () => {
+  const { listsFor, tidyListName, listNameProblem } = await import('../src/data/listRules.ts');
+  const courses = [{ id: 'bio', name: 'Biology', status: 'active', position: 0 }];
+  const items = [];
+  // A list they made is there from the moment they make it, with nothing in it.
+  const lists = listsFor(items, courses, ['College', 'Family']);
+  assert.deepEqual(lists.map((one) => one.name), ['College', 'Family', 'Personal']);
+  assert.equal(lists[0].kind, 'section');
+  assert.equal(lists[0].items.length, 0);
+  assert.equal(lists[0].left, 0);
+  // A class with no work is still left out, so the panel doesn't fill with empty classes.
+  assert.equal(lists.some((one) => one.name === 'Biology'), false);
+
+  // Names are tidied, not taken raw.
+  assert.equal(tidyListName('  Family  stuff \n'), 'Family stuff');
+  assert.equal(tidyListName('x'.repeat(60)).length, 40);
+
+  // A name already in use is refused, with the reason said.
+  const taken = { lists: ['College'], courses: ['Biology'] };
+  assert.match(listNameProblem('college', taken), /already have a list called/);
+  assert.match(listNameProblem('Biology', taken), /one of your classes/);
+  assert.match(listNameProblem('personal', taken), /already a Personal list/);
+  assert.match(listNameProblem('   ', taken), /Give the list a name/);
+  assert.equal(listNameProblem('Family', taken), '');
+});
+
+test('tasks filed under a made list land in it, and are never counted twice', async () => {
+  const { listsFor } = await import('../src/data/listRules.ts');
+  const item = (id, extra = {}) => ({ id, title: id, courseId: null, section: '', status: 'Not Started', type: 'To-do', dueDate: '', createdAt: 0, ...extra });
+  const courses = [{ id: 'bio', name: 'Biology', status: 'active', position: 0 }];
+  const items = [
+    item('a', { section: 'College' }),
+    item('b', { section: 'College' }),
+    item('c'),
+    item('d', { courseId: 'bio' }),
+    item('e', { section: 'Chores' }),
+  ];
+  const lists = listsFor(items, courses, ['College']);
+  const named = (name) => lists.find((one) => one.name === name);
+  assert.deepEqual(named('College').items.map((one) => one.id), ['a', 'b']);
+  // A section that arrived with a task still becomes a list, after the ones they made.
+  assert.deepEqual(named('Chores').items.map((one) => one.id), ['e']);
+  assert.deepEqual(named('Biology').items.map((one) => one.id), ['d']);
+  // Only the task belonging to nothing is left in Personal.
+  assert.deepEqual(named('Personal').items.map((one) => one.id), ['c']);
+  // Every task is in exactly one list, still.
+  const everywhere = lists.flatMap((one) => one.items.map((task) => task.id));
+  assert.equal(new Set(everywhere).size, everywhere.length);
+  assert.equal(everywhere.length, items.length);
+});

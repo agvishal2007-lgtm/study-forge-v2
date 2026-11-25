@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { belongsTo, listsFor } from '../data/listRules';
+import { getTodoLists } from '../data/todoLists';
 import { listPlannerItems, savePlannerItem } from '../data/planner';
 import { listCourses } from '../data/store';
 import { useLive } from '../data/useLive';
@@ -22,8 +23,10 @@ export function QuickTodo({ courseId, onAdded }: { courseId: string | null; onAd
   const [saved, setSaved] = useState('');
   const [problem, setProblem] = useState('');
   const { data } = useLive(async () => {
-    const [courses, items] = await Promise.all([listCourses(), listPlannerItems()]);
-    return { lists: listsFor(items, courses) };
+    // The lists the student made are offered here too, so a to-do can go straight into College or
+    // Family rather than always landing in Personal and needing moving afterwards.
+    const [courses, items, named] = await Promise.all([listCourses(), listPlannerItems(), getTodoLists()]);
+    return { lists: listsFor(items, courses, named) };
   });
 
   const lists = data?.lists ?? [];
