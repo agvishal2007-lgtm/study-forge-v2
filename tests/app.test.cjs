@@ -316,7 +316,12 @@ test('moving to another screen during a delete does not get overridden', async (
     location.hash = '#/settings';
   });
   await page.getByRole('heading', { name: 'Settings' }).waitFor();
-  await page.waitForTimeout(500);
+  /*
+   * Long enough that a slow machine's database has certainly answered by now. At 500ms this passed
+   * on a fast machine and failed on a slower one, because the override it is watching for happened
+   * after the test had stopped looking — which is to say the test was passing by luck.
+   */
+  await page.waitForTimeout(2500);
   assert.match(page.url(), /#\/settings$/);
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Library' }).click();
   await page.getByRole('link', { name: 'accounting-notes.pdf' }).waitFor();

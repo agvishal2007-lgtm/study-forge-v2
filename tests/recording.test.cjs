@@ -231,6 +231,14 @@ test('recording and notes stack on a phone', async () => {
   const box = await notes.boundingBox();
   assert.ok(box.y > controls.y, 'notes sit under the controls');
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false);
+  /*
+   * Wait for real audio before stopping. Without this the test stopped the moment it had started,
+   * and on a slower machine no audio had arrived yet — so Study Forge correctly saved nothing and
+   * said "Nothing was captured", and the test sat waiting thirty seconds for a Play it link that
+   * was never coming. The app was right and the test was wrong, which is why this failed only on
+   * the slow runner. The other recording tests already wait like this.
+   */
+  await waitForPieces(1);
   await page.getByRole('button', { name: 'Stop and save' }).click();
   await page.getByRole('link', { name: 'Play it' }).waitFor();
   await page.setViewportSize({ width: 1280, height: 900 });

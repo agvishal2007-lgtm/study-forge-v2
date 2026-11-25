@@ -62,7 +62,7 @@ import { GoogleCalendarPage } from './features/GoogleCalendarPage';
 import { ProgressPage } from './features/ProgressPage';
 import { TrashPage } from './features/TrashPage';
 import { chooseStartingRetention } from './data/trashPolicy';
-import { sweepTrash } from './data/trashRows';
+import { sweepTrashWhenIdle } from './data/trashRows';
 import { SchedulePage } from './features/SchedulePage';
 import { SettingsPage } from './features/SettingsPage';
 import { TodayPage } from './features/TodayPage';
@@ -112,10 +112,11 @@ export function App() {
        * A brand-new student starts on the recommended 30 days; anyone who already has work keeps
        * deleting things themselves until they choose otherwise, so this update never empties a
        * Trash that was filled under the old promise. The sweep then deletes whatever has passed
-       * its date — on opening, because there is no server to do it while Study Forge is closed.
+       * its date — on opening, because there is no server to do it while Study Forge is closed, and
+       * once the browser is idle, because nothing a student is waiting for depends on it.
        */
       chooseStartingRetention(!answer);
-      void sweepTrash();
+      sweepTrashWhenIdle();
     });
     const started = () => setNewVisitor(false);
     window.addEventListener(WELCOME_SEEN_EVENT, started);

@@ -70,6 +70,19 @@ export async function trashRows(): Promise<Row[]> {
  */
 let sweeping: Promise<number> | null = null;
 
+/**
+ * Runs the sweep once the browser has nothing better to do.
+ *
+ * Emptying Trash is never urgent — nothing a student is waiting for depends on it — so it has no
+ * business competing with the app opening. On a browser without idle callbacks a short wait does
+ * the same job.
+ */
+export function sweepTrashWhenIdle(): void {
+  const run = () => { void sweepTrash().catch(() => undefined); };
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 4000 });
+  else setTimeout(run, 2000);
+}
+
 export function sweepTrash(now = Date.now()): Promise<number> {
   sweeping ??= (async () => {
     try {

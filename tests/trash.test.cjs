@@ -263,6 +263,12 @@ test('an existing Trash is never emptied by this update, and only a choice chang
   await page.getByRole('dialog').getByRole('button', { name: 'Delete them and save this' }).click();
   await page.goto(URL_BASE);
   await openTrash();
+  /*
+   * Waited for rather than asserted at once: the sweep runs when the browser is idle, so that it
+   * never competes with the app opening. Checking the instant the page appears would be a race, and
+   * a test that wins a race by luck is worse than no test.
+   */
+  await row('Older than a month').waitFor({ state: 'detached', timeout: 20000 });
   assert.equal(await row('Older than a month').count(), 0, 'it was deleted on opening');
   await page.getByTestId('trash-policy').getByText('Things here are deleted 7 days after you put them in Trash.').waitFor();
 });
