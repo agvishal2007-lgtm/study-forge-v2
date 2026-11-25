@@ -38,13 +38,33 @@
         root.density = pick('study-forge-density', ['comfortable', 'compact'], 'comfortable');
       })();
     </script>
-    <meta name="description" content="Keep your courses and study files in one place." />
+    <!--
+      What a student sees before they ever open Study Forge: in a search result, and in the link
+      preview when one of them pastes it into a group chat. The claims here are kept to things the
+      app really does, and the share card is generated from the app's own colours by
+      scripts/share-card.cjs rather than drawn by hand, so it cannot drift from the brand.
+    -->
+    <meta name="description" content="A free study workspace for your whole semester: courses, files, lectures, notes, flashcards and deadlines in one place. Works offline, follows you between your laptop and your phone, and never makes you use AI." />
+    <link rel="canonical" href="https://agvishal2007-lgtm.github.io/study-forge-v2/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Study Forge" />
+    <meta property="og:title" content="Study Forge — your whole semester in one place" />
+    <meta property="og:description" content="Courses, files, lectures, notes, flashcards and deadlines together. Free, works offline, and follows you between devices." />
+    <meta property="og:url" content="https://agvishal2007-lgtm.github.io/study-forge-v2/" />
+    <meta property="og:image" content="https://agvishal2007-lgtm.github.io/study-forge-v2/share-card.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Study Forge: a free study workspace for your whole semester." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Study Forge — your whole semester in one place" />
+    <meta name="twitter:description" content="Courses, files, lectures, notes, flashcards and deadlines together. Free, works offline, and follows you between devices." />
+    <meta name="twitter:image" content="https://agvishal2007-lgtm.github.io/study-forge-v2/share-card.png" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23162130'/><rect x='6' y='8' width='6' height='18' fill='%237DD3FC'/><rect x='14' y='5' width='5' height='21' fill='%236EE7C8'/><rect x='21' y='11' width='5' height='15' fill='%23B4A7F5'/></svg>" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icon-180.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Study Forge" />
-    <title>Study Forge</title>
+    <title>Study Forge — your whole semester in one place</title>
   </head>
   <body>
     <div id="root"></div>

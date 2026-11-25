@@ -1,7 +1,7 @@
 {
   "name": "Study Forge",
   "short_name": "Study Forge",
-  "description": "Keep your courses, notes, and studying in one place.",
+  "description": "A free study workspace for your whole semester: courses, files, lectures, notes, flashcards and deadlines in one place. Works offline.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
