@@ -111,7 +111,9 @@ export async function applySyncedSettings(): Promise<void> {
        * This was a hand-written list of six names, and the six Study tools settings added later
        * were recorded and sent but never put back — so changing one on a laptop synced, and the
        * phone quietly ignored it. Reading the keys from the current preferences means a new one
-       * cannot be forgotten again, and a test asserts every key survives the round trip.
+       * cannot be forgotten again: there is no list here to forget to add it to. A test chooses two
+       * of them on a laptop and waits for them to arrive on a phone, which is what the hand-written
+       * list failed.
        */
       const now = getDisplayPrefs();
       for (const key of Object.keys(now) as (keyof DisplayPrefs)[]) {

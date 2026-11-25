@@ -366,7 +366,7 @@ textarea { font: inherit; color: var(--paper); background: var(--ground); border
 .tour-blocker { position: fixed; inset: 0; z-index: 1000; }
 .tour-dark { position: fixed; inset: 0; z-index: 1001; background: var(--tour-dim); pointer-events: none; }
 .tour-box { position: fixed; z-index: 1001; border: 3px solid var(--accent); border-radius: 6px; box-shadow: 0 0 0 100vmax var(--tour-dim); pointer-events: none; transition: top .2s ease, left .2s ease, width .2s ease, height .2s ease; }
-.tour-card { position: fixed; z-index: 1002; width: min(380px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; background: var(--raised); color: var(--paper); border: 1px solid var(--muted); border-radius: 6px; padding: 1.1rem 1.25rem; box-shadow: 0 10px 30px #000a; }
+.tour-card { position: fixed; z-index: 1002; width: min(380px, calc(100vw - 24px)); max-height: calc(100dvh - 24px - env(safe-area-inset-bottom) - env(safe-area-inset-top)); overflow-y: auto; background: var(--raised); color: var(--paper); border: 1px solid var(--muted); border-radius: 6px; padding: 1.1rem 1.25rem; box-shadow: 0 10px 30px #000a; }
 .tour-card h2 { margin: .75rem 0 .4rem; }
 .tour-card p { margin: .35rem 0; }
 .tour-count { color: var(--muted); font-size: var(--fs-sm); }

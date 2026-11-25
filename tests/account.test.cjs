@@ -822,18 +822,24 @@ test('a study setting chosen on the laptop reaches the phone, whichever setting 
   assert.deepEqual({ cardSide: saw.cardSide, explanations: saw.explanations }, { cardSide: 1, explanations: 1 },
     `the phone never took the laptop's choices: phone shows ${JSON.stringify(saw)}; laptop stored ${JSON.stringify(await stored(laptop))}; phone stored ${JSON.stringify(await stored(phone))}`);
 
-  // And it really applies, rather than only showing as chosen: the card starts from its back.
+  /*
+   * And it really applies, rather than only showing as chosen.
+   *
+   * Opened by the deck's own address, the way the study-tools test does it, rather than by clicking
+   * a "Review" link that is only there while a card is due. An earlier version of this looked for a
+   * link by a loose pattern, matched the "Terms of Use" link in the footer and clicked that — the
+   * sort of false pass a test should never have.
+   *
+   * With "the back shows first", the side the student meets is the answer and the question is what
+   * stays hidden until they reveal it.
+   */
   await nav(phone, 'Flashcards');
-  const deck = phone.getByRole('link', { name: /Terms|Shared deck/ }).first();
-  if (await deck.count()) {
-    await deck.click();
-    const practice = phone.getByRole('link', { name: /^Practice all/ });
-    if (await practice.count()) {
-      await practice.click();
-      await phone.getByTestId('flashcard').waitFor();
-      assert.match(await phone.getByTestId('flashcard').innerText(), /^Back/);
-    }
-  }
+  const deckHref = await phone.locator('main a[href*="#/cards/"]').first().getAttribute('href');
+  const deckId = (deckHref ?? '').split('/cards/')[1];
+  assert.ok(deckId, `a deck to study with, from ${deckHref}`);
+  await phone.goto(`${URL_BASE}#/cards/review?deck=${deckId}&mode=practice`);
+  await phone.getByTestId('flashcard').waitFor();
+  assert.match(await phone.getByTestId('flashcard').innerText(), /^Back/, 'the back of the card is what shows first');
 });
 
 test('a second student on the same computer cannot open the first student\'s work', async () => {

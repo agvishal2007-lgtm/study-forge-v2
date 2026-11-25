@@ -34,6 +34,13 @@ export type Explanations = 'each' | 'end';
 export type NoteOpen = 'write' | 'preview';
 /** Whether a transcript is made as soon as a recording is stopped. */
 export type AutoTranscript = 'on' | 'off';
+/**
+ * Whether the words appear on screen while a lecture is being recorded.
+ *
+ * This lived in the browser on its own for a while, next to the automatic-transcript switch that
+ * followed the student everywhere. Same kind of choice, so it follows them too.
+ */
+export type LiveTranscript = 'on' | 'off';
 /*
  * There is deliberately no study-session length here. The spec asked for one, but Study Forge has
  * no timed study session to apply it to — Study is guided lessons, and Cram Mode only estimates
@@ -54,6 +61,7 @@ export interface DisplayPrefs {
   explanations: Explanations;
   noteStart: NoteOpen;
   autoTranscript: AutoTranscript;
+  liveTranscript: LiveTranscript;
 }
 
 const KEYS = {
@@ -62,6 +70,7 @@ const KEYS = {
   cardOrder: 'study-forge-card-order', cardSide: 'study-forge-card-side',
   practiceOrder: 'study-forge-practice-order', explanations: 'study-forge-explanations',
   noteStart: 'study-forge-note-start', autoTranscript: 'study-forge-auto-transcript',
+  liveTranscript: 'study-forge-live-transcript',
 } as const;
 const DEFAULTS: DisplayPrefs = {
   text: 'standard', motion: 'device', density: 'comfortable', completed: 'visible', grouping: 'due',
@@ -71,6 +80,8 @@ const DEFAULTS: DisplayPrefs = {
   noteStart: 'write',
   // Off, because making a transcript is slow on a phone and runs the speech model on the device.
   autoTranscript: 'off',
+  // On, which is what the Record screen already did before this was a saved preference.
+  liveTranscript: 'on',
 };
 const ALLOWED = {
   text: ['standard', 'large', 'larger'],
@@ -85,6 +96,7 @@ const ALLOWED = {
   explanations: ['each', 'end'],
   noteStart: ['write', 'preview'],
   autoTranscript: ['on', 'off'],
+  liveTranscript: ['on', 'off'],
 } as const;
 
 const listeners = new Set<() => void>();
@@ -103,6 +115,7 @@ function read(): DisplayPrefs {
     grouping: pick('grouping'), autoWork: pick('autoWork'), cardOrder: pick('cardOrder'),
     cardSide: pick('cardSide'), practiceOrder: pick('practiceOrder'), explanations: pick('explanations'),
     noteStart: pick('noteStart'), autoTranscript: pick('autoTranscript'),
+    liveTranscript: pick('liveTranscript'),
   };
 }
 

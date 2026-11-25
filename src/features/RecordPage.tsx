@@ -12,6 +12,7 @@ import { formatBytes, formatDate, formatDuration } from '../data/format';
 import { discardSession, finishSession, listUnfinished } from '../data/recordings';
 import { listCourses, listTopics } from '../data/store';
 import type { RecordingSession } from '../data/types';
+import { setDisplayPref, useDisplayPrefs } from '../data/displayPrefs';
 import { useLive } from '../data/useLive';
 
 const defaultName = () => `Lecture ${formatWhen(new Date(), { month: 'short', day: 'numeric', year: 'numeric' })}`;
@@ -176,12 +177,9 @@ export function RecordPage() {
   const [topicId, setTopicId] = useState(params.get('topic') ?? '');
   const [source, setSource] = useState<RecordingSource>('microphone');
   const [withMicrophone, setWithMicrophone] = useState(false);
-  const [liveTranscript, setLiveTranscript] = useState(() => {
-    try { return localStorage.getItem('study-forge-live-transcript') !== 'off'; } catch { return true; }
-  });
-  useEffect(() => {
-    try { localStorage.setItem('study-forge-live-transcript', liveTranscript ? 'on' : 'off'); } catch { /* not kept */ }
-  }, [liveTranscript]);
+  // Kept with the other preferences, so it follows the student to their other devices.
+  const liveTranscript = useDisplayPrefs().liveTranscript === 'on';
+  const setLiveTranscript = (on: boolean) => setDisplayPref('liveTranscript', on ? 'on' : 'off');
   const screenAvailable = canRecordScreen();
   const { data: courses } = useLive(listCourses);
   const { data: topics } = useLive(() => (courseId ? listTopics(courseId) : Promise.resolve([])), [courseId]);

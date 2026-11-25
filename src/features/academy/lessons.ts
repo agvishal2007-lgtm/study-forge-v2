@@ -279,7 +279,7 @@ export const MODULES: Module[] = [
             { text: 'It is copied, so it is in two places at once', correct: false, why: 'Nothing is ever copied. A task is one record however many ways you look at it.' },
           ],
         },
-        feedback: 'Sections are yours to name. Type a new one on any task, and it is offered on the next one.',
+        feedback: 'Sections are yours to name. Type a new one on any task, and it is offered on the next one. In the to-do list, + New list makes one straight away — College, Family, Work, whatever you keep track of.',
         tip: 'Changing Group by never changes a task — it only changes how the same list is gathered.',
       },
       {
@@ -333,9 +333,25 @@ export const MODULES: Module[] = [
       {
         id: 'trash',
         title: 'Using Trash and restoring',
-        intro: 'Deleting something moves it to Trash. Nothing is gone until you permanently delete it.',
+        intro: 'Deleting something moves it to Trash. Nothing is gone until you permanently delete it, or until the time you chose runs out.',
         activity: { type: 'trash' },
         feedback: 'Restore put it back where it was. Permanently delete always asks first, because it can’t be undone.',
+      },
+      {
+        id: 'trash-keeps',
+        title: 'How long Trash keeps things',
+        intro: 'In Settings, Trash can empty itself after 7, 14, 30, 60 or 90 days — or never. The time starts when you put something in, and restoring it stops the clock.',
+        activity: {
+          type: 'choice',
+          question: 'You have had Study Forge for months, and this setting has just appeared. What happens to what is already in your Trash?',
+          options: [
+            { text: 'Nothing. It stays until you delete it, or until you choose a time yourself', correct: true, why: 'Right. Your Trash was filled when nothing went until you said so, and an update is not permission to start deleting it.' },
+            { text: 'Anything older than 30 days is deleted the next time you open Study Forge', correct: false, why: 'No. 30 days is only the starting point for a brand-new account. Nothing is chosen for you.' },
+            { text: 'It is emptied, because the setting is on by default', correct: false, why: 'No. Nothing in your Trash is ever deleted because of an update.' },
+          ],
+        },
+        feedback: 'And if you pick a shorter time that would delete something straight away, Study Forge names what would go and asks first.',
+        tip: 'There is no server doing this while Study Forge is closed, so anything past its date goes the next time you open it. That is also why it stays free.',
       },
     ],
   },
@@ -397,7 +413,7 @@ const TIPS: Record<string, string> = {
   'record-lecture': 'Ask permission before recording where your class requires it. Audio is saved every 5 seconds, so a crash loses only a few seconds.',
   transcripts: 'Transcripts work best in clear English. They are made on your device, so nothing is uploaded.',
   calendar: 'Google Calendar is read-only: Study Forge never changes your Google events. Day and week grids aren’t built yet; there are month and plan views.',
-  trash: 'Courses, topics and files you delete stay where they were but hidden, so restoring is instant.',
+  trash: 'Courses, topics and files you delete stay where they were but hidden, so restoring is instant. The Trash page itself says how long things are kept, with one tap to change it.',
   'sync-status': 'Signing in, syncing and Google Drive need the internet; everything else works offline after your first visit.',
 };
 for (const module of MODULES) for (const lesson of module.lessons) if (TIPS[lesson.id]) lesson.tip = TIPS[lesson.id];

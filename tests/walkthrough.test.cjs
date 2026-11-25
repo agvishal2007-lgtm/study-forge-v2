@@ -174,6 +174,7 @@ const EXPECTED = [
   ['backup', '#/settings', '[data-tour=backup-actions]'],
   ['sync-files', '#/settings', '[data-testid=drive-backup], [data-tour=account]'],
   ['offline', '#/settings', '[data-tour=offline]'],
+  ['trash', '#/settings', '[data-testid=nav-trash]'],
   ['appearance', '#/settings', '.segmented[aria-labelledby=appearance-heading]'],
   ['permissions', '#/settings', '[data-testid=permission-notifications]'],
   ['search', '#/search', '[data-tour=search-box]'],
@@ -667,4 +668,37 @@ test('the ? button offers both kinds of help: the quick walkthrough or the Acade
     await page.keyboard.press('Escape');
   }
   await page.setViewportSize({ width: 1280, height: 800 });
+});
+
+test('the tour tells a phone where Trash really is, and never points at the hidden sidebar', async () => {
+  /*
+   * One tour, two truths. On a computer Trash is at the bottom of the side menu; on a phone that
+   * menu isn't there and Trash is in Settings and the account menu. A tour that said the same thing
+   * on both would be sending half its students to a control they cannot see.
+   */
+  const reach = async () => {
+    for (let at = Number((await count()).match(/Step (\d+)/)[1]); at < numberOf('trash'); at += 1) await next();
+    await atStep(numberOf('trash'));
+  };
+
+  await open('tour-trash-desktop');
+  await reach();
+  const onComputer = await page.locator('#tour-body').innerText();
+  assert.match(onComputer, /menu down the side/, 'a computer is told about its sidebar');
+  assert.equal(await page.getByTestId('nav-trash').isVisible(), true, 'and that sidebar Trash is really there');
+
+  await open('tour-trash-phone', { viewport: { width: 393, height: 830 }, mobile: true });
+  await reach();
+  const onPhone = await page.locator('#tour-body').innerText();
+  assert.doesNotMatch(onPhone, /menu down the side/, 'a phone is not sent to a menu it does not have');
+  assert.match(onPhone, /Open Trash|account menu/, 'it is told where Trash actually is');
+  assert.equal(await page.getByTestId('nav-trash').isVisible(), false, 'the sidebar Trash is genuinely hidden here');
+  // The highlight sits on something real, and the card stays on screen.
+  await page.getByTestId('tour-box').waitFor();
+  const fits = await page.evaluate(() => {
+    const card = document.querySelector('[data-testid=tour-card]').getBoundingClientRect();
+    return card.left >= -1 && card.top >= -1 && card.right <= innerWidth + 1 && card.bottom <= innerHeight + 1;
+  });
+  assert.equal(fits, true, 'the card stays inside a phone screen');
+  assert.deepEqual(pageErrors, []);
 });

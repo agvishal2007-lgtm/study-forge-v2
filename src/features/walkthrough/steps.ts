@@ -21,7 +21,21 @@ export interface TourStep {
   body: string;
   /** Something the student must really do before moving on. */
   action?: TourAction;
+  /**
+   * What this step says and points at where there is no side menu — a phone, or a narrow window.
+   *
+   * One tour, not two: the steps, their order and the student's place in them are the same on every
+   * device, and only the parts that are really different are written twice. Two separate tours
+   * would drift apart, and the one nobody was looking at would be the one that broke.
+   */
+  phone?: Partial<Pick<TourStep, 'title' | 'body' | 'target' | 'route'>>;
 }
+
+/** The width where the side menu goes away. The same number as the stylesheet's. */
+export const NO_SIDEBAR = 720;
+
+/** The step as this device should see it. */
+export const stepFor = (step: TourStep, phone: boolean): TourStep => (phone && step.phone ? { ...step, ...step.phone } : step);
 
 const hasAny = (store: 'courses' | 'lessons' | 'notes') => async () => (await (await getDb()).count(store)) > 0;
 
@@ -42,7 +56,10 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/',
     target: ['.nav-links'],
     title: 'Your sections',
-    body: 'Use these to move between the parts of Study Forge.',
+    body: 'Use the menu down the side to move between the parts of Study Forge. Trash sits at the bottom of it.',
+    phone: {
+      body: 'Tap along this bar to move between the parts of Study Forge. It slides sideways, so swipe it to reach the rest.',
+    },
   },
   {
     id: 'add',
@@ -57,6 +74,9 @@ export const TOUR_STEPS: TourStep[] = [
     target: ['[data-tour=account]', '.topbar'],
     title: 'Your account',
     body: 'Signing in is optional. Log in with email, Google, Microsoft or Yahoo, and your work syncs to your other devices by itself. Once you’re signed in, the badge here shows whether everything is synced.',
+    phone: {
+      body: 'Signing in is optional. Tap here to log in with email, Google, Microsoft or Yahoo, and your work syncs to your other devices by itself. Once you’re signed in, this is also where Trash lives.',
+    },
   },
   {
     id: 'today',
@@ -206,6 +226,17 @@ export const TOUR_STEPS: TourStep[] = [
     target: ['[data-testid=offline-status]', '[data-tour="offline"]'],
     title: 'Study without internet',
     body: 'After your first visit, Study Forge opens without internet and keeps saving your work. You can also install it like an app.',
+  },
+  {
+    id: 'trash',
+    route: '/settings',
+    target: ['[data-testid=nav-trash]', '[aria-labelledby=trash-heading]'],
+    title: 'Nothing is deleted straight away',
+    body: 'Anything you delete anywhere in Study Forge waits in Trash, at the bottom of the menu down the side. Restore puts it back where it was, and you can have Trash empty itself after a time you choose.',
+    phone: {
+      target: ['[aria-labelledby=trash-heading]', '[data-tour=account]'],
+      body: 'Anything you delete anywhere in Study Forge waits in Trash. On a phone you reach it with Open Trash here in Settings, or from your account menu at the top once you are signed in. Restore puts it back where it was, and you can have Trash empty itself after a time you choose.',
+    },
   },
   {
     id: 'appearance',

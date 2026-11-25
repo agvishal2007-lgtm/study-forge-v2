@@ -1,12 +1,26 @@
 import {
-  createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode,
+  createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { getDb, subscribe } from '../../data/db';
-import { TOUR_STEPS } from './steps';
+import { NO_SIDEBAR, TOUR_STEPS, stepFor } from './steps';
 import { setTourRunning } from './tourRunning';
+
+/*
+ * Is there no side menu? The same question the stylesheet asks, asked in one place so the tour and
+ * the page can never disagree about which layout the student is looking at. Watched rather than
+ * read once, because turning a phone on its side can cross the line in the middle of a step.
+ */
+const isNarrow = () => typeof window !== 'undefined' && window.matchMedia(`(max-width: ${NO_SIDEBAR}px)`).matches;
+const watchNarrow = (listener: () => void) => {
+  if (typeof window === 'undefined') return () => undefined;
+  const query = window.matchMedia(`(max-width: ${NO_SIDEBAR}px)`);
+  query.addEventListener('change', listener);
+  return () => query.removeEventListener('change', listener);
+};
+const onDesktop = () => false;
 
 const STATE_KEY = 'walkthrough';
 const FIND_TARGET_MS = 1500;
@@ -221,7 +235,8 @@ function Overlay({ step, onStep, onPause, onFinish, onRestart }: {
   onFinish: () => void;
   onRestart: () => void;
 }) {
-  const definition = TOUR_STEPS[step];
+  const phone = useSyncExternalStore(watchNarrow, isNarrow, onDesktop);
+  const definition = stepFor(TOUR_STEPS[step], phone);
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const card = useRef<HTMLDivElement>(null);
