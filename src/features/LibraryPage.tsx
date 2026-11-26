@@ -130,7 +130,7 @@ export function LibraryPage() {
 
       {data && view === 'all' && (shown.length > 0
         ? <MaterialList materials={shown} courses={data.courses} selected={selected} onToggle={toggle} />
-        : <p className="muted">{data.materials.length ? 'Nothing matches that search.' : 'Nothing here yet. Add a file or save a link above.'}</p>)}
+        : <p className="muted">{data.materials.length ? 'Nothing matches that search.' : 'Your slides, readings and recordings will live here, together and searchable.'}</p>)}
 
       {data && view === 'personal' && (
         <div data-testid="personal-library">

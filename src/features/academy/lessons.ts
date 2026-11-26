@@ -503,7 +503,7 @@ const FILES: Module = {
       id: 'add-files',
       title: 'Adding files',
       intro: 'Add slides, readings, spreadsheets, pictures, audio and video, and open most of them right inside Study Forge.',
-      demo: { screen: screen('Library', ['Add files', 'From Google Drive', 'Save a link instead']), highlight: 'Add files', caption: 'Add files is on the Library and on each course. You can also drag files in.' },
+      demo: { screen: screen('Library', ['Add files', 'From Google Drive', 'Save a link instead']), highlight: 'Add files', caption: 'Add files is on the Library and on each course. On a computer you can also drag files straight in.' },
       activity: find('Library', ['Save a link instead', 'From Google Drive', 'Add files'], 'From Google Drive', 'Your reading is in your Google Drive. Tap the way to bring it in.', 'It’s named after where the file is.'),
       feedback: 'Right. A file only says Saved once every byte is on this device and checked, and Download always gives you the original.',
       tip: 'Without Google Drive sync, files live only on this device, so make backups.',

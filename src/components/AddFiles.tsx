@@ -64,7 +64,12 @@ export function AddFiles({ courseId = null, topicId = null }: { courseId?: strin
       }}
     >
       <button className="button primary" onClick={() => input.current?.click()}>Add files</button>
-      <span className="muted">or drag them here</span>
+      {/*
+        "or drag them here" only where there is something to drag with. On a phone there is no
+        dragging a file from anywhere, so the words were instructions for a thing the student
+        cannot do — and they were taking up the width that pushed the buttons onto ragged lines.
+      */}
+      <span className="muted drop-hint">or drag them here</span>
       {sources.map((source) => (
         <button key={source} className="button" disabled={busy !== null || !(ready.includes(source) || unreachable.includes(source))} onClick={() => pick(source)}>
           {busy === source ? 'Getting files…' : `From ${CLOUD_LABEL[source]}`}

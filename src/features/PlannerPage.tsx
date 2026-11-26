@@ -111,7 +111,7 @@ export function PlannerPage() {
           </select>
         </label>
       )}
-      {data.items.length === 0 && <p className="muted planner-empty">Nothing here yet. Add your first assignment or exam, or look at your <Link to="/courses">courses</Link> first.</p>}
+      {data.items.length === 0 && <p className="muted planner-empty">Every deadline you add lands here, ordered by what moves your grade most — not just by what is due soonest. Start from a <Link to="/courses">course</Link> if you would rather.</p>}
       {data.items.length > 0 && shown.length === 0 && (
         <p className="muted planner-empty" data-testid="planner-none">
           {show === 'done' ? "Nothing is ticked off yet." : show === 'todo' ? "Nothing left to do here." : show === 'hidden' ? "Nothing has been taken off your list." : 'Nothing here for this course.'}

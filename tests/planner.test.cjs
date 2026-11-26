@@ -128,7 +128,7 @@ test('the empty planner explains itself, and the form checks before saving', asy
   await page.getByRole('button', { name: 'Create course' }).click();
   await page.getByRole('heading', { name: 'Accounting' }).waitFor();
   await nav('Planner');
-  await page.getByText('Add your first assignment or exam').waitFor();
+  await page.getByText('ordered by what moves your grade most').waitFor();
   await page.getByRole('button', { name: 'Add item' }).click();
   await page.getByRole('button', { name: 'Save item' }).click();
   await page.getByTestId('planner-problems').getByText('Enter a name').waitFor();
@@ -139,7 +139,7 @@ test('the empty planner explains itself, and the form checks before saving', asy
   await page.getByTestId('planner-problems').getByText('Add a due date to go with the time').waitFor();
   await page.getByTestId('planner-problems').getByText('Enter estimated hours').waitFor();
   await page.getByRole('link', { name: 'Cancel' }).click();
-  await page.getByText('Add your first assignment or exam').waitFor();
+  await page.getByText('ordered by what moves your grade most').waitFor();
 });
 
 test('items sort into the right groups, in plain words', async () => {

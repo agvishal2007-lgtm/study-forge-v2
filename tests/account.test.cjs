@@ -851,7 +851,9 @@ test('a second student on the same computer cannot open the first student\'s wor
   await laptop.getByRole('link', { name: 'Guest note' }).waitFor();
   assert.equal(await laptop.getByRole('link', { name: 'Shared note', exact: true }).count(), 0, 'signed out shows only no-account work');
   await nav(laptop, 'Library');
-  await laptop.getByText('Nothing here yet').waitFor();
+  // The empty Library, which is the point: none of the other student's files are on this screen.
+  // The wording of this message changed in a polish pass and this line had to change with it.
+  await laptop.getByText('Your slides, readings and recordings will live here').waitFor();
 
   await close('laptop');
   const asBob = await device('laptop', BOB);
@@ -861,7 +863,7 @@ test('a second student on the same computer cannot open the first student\'s wor
   await nav(asBob, 'Notes');
   await asBob.getByText('No notes yet').waitFor();
   await nav(asBob, 'Library');
-  await asBob.getByText('Nothing here yet').waitFor();
+  await asBob.getByText('Your slides, readings and recordings will live here').waitFor();
   await addNote(asBob, 'Bob private', 'Only for Bob');
   await saved(asBob);
   assert.ok(!fake.state.items('alice-uid').some((item) => item.json.includes('Only for Bob')));

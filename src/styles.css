@@ -2104,3 +2104,143 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
  */
 .account-dropdown .no-sidebar-only { display: none; }
 @media (max-width: 720px) { .account-dropdown .no-sidebar-only { display: flex; } }
+
+/* ==========================================================================
+   Rhythm pass — November 2026
+   --------------------------------------------------------------------------
+   Every page in Study Forge opens the same way: a title, sometimes a row that
+   filters what is below it, and a line saying what the page is. Those three
+   things had grown apart page by page. On Library the title sat straight on top
+   of its buttons with no gap at all, so they read as one squashed lump; on
+   Settings the same row of buttons wrapped onto four lines and filled the whole
+   first screen of a phone before a single setting appeared.
+
+   So the spacing is set once, here, for all of them, rather than per page. The
+   numbers are a small scale rather than whatever looked right that day: a title
+   is followed by its filters, its filters by its description, and its
+   description by the page itself, each gap larger than the last so the eye
+   groups them in that order.
+   ========================================================================== */
+
+:root {
+  --rhythm-title: 1rem;    /* title → the row that filters it */
+  --rhythm-group: 1.15rem; /* that row → the line saying what the page is */
+  --rhythm-page: 1.9rem;   /* that line → the page itself */
+}
+
+.page > h1 + .calc-tabs,
+.page > h1 + .settings-nav,
+.page > h1 + .segmented,
+.page > header > h1 + .calc-tabs,
+.page > header > h1 + .segmented { margin-top: var(--rhythm-title); }
+
+.page > .calc-tabs + p.muted,
+.page > .settings-nav + p.muted,
+.page > .segmented + p.muted { margin-top: var(--rhythm-group); }
+
+.page > .calc-tabs + p.muted + *,
+.page > .settings-nav + p.muted + *,
+.page > p.muted + .drop { margin-top: var(--rhythm-page); }
+
+.settings-nav { margin-bottom: var(--rhythm-page); }
+
+/* A line of prose stops being readable long before it stops fitting. */
+.page > p.muted, .page > header .muted, .page > .muted { max-width: 68ch; }
+
+/*
+ * On a phone a row of filters is one line you push sideways, the way the bar at
+ * the bottom of the screen already works. Wrapping was turning eight choices
+ * into four rows of shuffling text, and the wider the phone the less it looked
+ * deliberate. The row runs to both edges of the screen so that it reads as
+ * something that keeps going rather than something that has been cut off.
+ */
+@media (max-width: 720px) {
+  .calc-tabs, .settings-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    margin-inline: -1.1rem;
+    padding-inline: 1.1rem;
+    padding-block: .15rem;
+  }
+  .calc-tabs::-webkit-scrollbar, .settings-nav::-webkit-scrollbar { display: none; }
+  .calc-tabs > *, .settings-nav > * { flex: 0 0 auto; scroll-snap-align: start; }
+}
+
+/*
+ * Somewhere to put a file, that looks like somewhere to put a file. It used to
+ * stretch the full width of a desktop window with its buttons huddled at the
+ * left end, which made a large dashed rectangle of mostly nothing.
+ */
+.drop {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: .7rem .9rem;
+  padding: 1.4rem 1.25rem;
+  max-width: 44rem;
+}
+.drop-hint { display: none; }
+/* Said only where there is something to drag with. A phone has no drag. */
+@media (any-pointer: fine) { .drop-hint { display: inline; } }
+
+/*
+ * "Save a link instead" was a browser's bare disclosure triangle sitting among
+ * rounded buttons, which made it look like something nobody had finished. It is
+ * a thing you can press, so it now looks like one.
+ */
+.link-adder > summary {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .55rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--raised);
+  font-size: var(--fs-md);
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.link-adder > summary::-webkit-details-marker { display: none; }
+.link-adder > summary::before {
+  content: '+';
+  font-size: 1.1em;
+  line-height: 1;
+  font-weight: 700;
+  transform: translateY(-.04em);
+}
+.link-adder[open] > summary::before { content: '–'; }
+.link-adder > summary:hover { border-color: var(--accent); background: var(--accent-soft); }
+.link-adder[open] > summary { margin-bottom: .9rem; }
+
+/*
+ * A line that follows an action needs room to stop looking like a caption of it.
+ *
+ * Empty pages were putting a button and then a sentence a few pixels below it, and because the
+ * sentence usually repeated what the button said, the pair read as one crowded lump. The sentences
+ * themselves now say what the page will hold instead of restating the button, and this gives them
+ * the space that makes them read as a separate thought.
+ */
+.page > p.muted:not(:first-of-type),
+.page > .planner-empty,
+.page > form + p.muted,
+.page > .button + p.muted { margin-top: 1.4rem; }
+
+/*
+ * The one thing a brand-new student is offered, after the form that makes their first course.
+ *
+ * It was a plain underlined link sitting under a round solid button, which made the only piece of
+ * help on the page look like the least considered thing on it. A quiet button says the same thing
+ * and belongs to the same family: still clearly secondary to Create course, still obviously a
+ * thing you press.
+ */
+.button.quiet {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.button.quiet:hover { border-color: var(--accent); background: var(--accent-soft); }
+.first-offer { margin-top: 1.6rem; }

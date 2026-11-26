@@ -108,7 +108,7 @@ export function TodayPage() {
         <h1>Start with one course</h1>
         <p>Add a course, then keep its slides, readings, and recordings together. Everything stays in this browser on this device.</p>
         <NewCourseForm />
-        <p><button className="text-button" onClick={start}>New here? Take the walkthrough</button></p>
+        <p className="first-offer"><button className="button quiet" onClick={start}>New here? Take the walkthrough</button></p>
       </div>
     );
   }

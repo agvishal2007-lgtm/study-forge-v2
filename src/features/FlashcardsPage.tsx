@@ -51,7 +51,7 @@ export function FlashcardsPage() {
       )}
       <form className="inline-form" onSubmit={(event) => void create(event)} data-tour="new-deck">
         <label>New deck<input value={name} onChange={(event) => { setName(event.target.value); setFailure(''); }} placeholder="Chapter 3 terms" /></label>
-        <button className="button" type="submit">Create deck</button>
+        <button className="button primary" type="submit">Create deck</button>
       </form>
       {failure && <p className="error" role="alert">{failure}</p>}
       {data.decks.length > 0 && (

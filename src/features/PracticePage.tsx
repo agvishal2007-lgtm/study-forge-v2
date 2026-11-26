@@ -103,7 +103,7 @@ export function PracticePage() {
       )}
       <form className="inline-form" onSubmit={(event) => void create(event)} data-tour="new-practice">
         <label>New practice set<input value={name} onChange={(event) => { setName(event.target.value); setFailure(''); }} placeholder="Chapter 3 review" /></label>
-        <button className="button" type="submit">Create set</button>
+        <button className="button primary" type="submit">Create set</button>
       </form>
       {failure && <p className="error" role="alert">{failure}</p>}
       {sets.length > 0 && (
