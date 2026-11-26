@@ -1,5 +1,5 @@
 import type {
-  AnswerRecord, Checkpoint, CheckpointProgress, GuidedQuestion, KeyPointRating, Lesson, MasteryStatus, StudyStage,
+  AnswerRecord, Checkpoint, CheckpointProgress, GuidedQuestion, KeyPointRating, Lesson, MasteryStatus, PastAttempt, StudyStage,
 } from './types';
 
 /**
@@ -39,6 +39,46 @@ export function newProgress(checkpointId: string, now: number): CheckpointProgre
     masteredAt: null,
   };
 }
+
+/**
+ * Starts a checkpoint over while keeping what the earlier attempt showed.
+ *
+ * The student gets a fresh attempt — no answers carried forward, nothing counted twice, mastery to
+ * be shown again rather than assumed — and the attempt they are leaving behind is folded into the
+ * record as a line of its own. So "mastered on 12 September, restarted on 26 November" stays true,
+ * and a restart never costs a student something they really did.
+ *
+ * A checkpoint that was never started has nothing to keep, so restarting it changes nothing.
+ */
+export function restartProgress(current: CheckpointProgress, now: number): CheckpointProgress {
+  const fresh = newProgress(current.checkpointId, now);
+  if (current.status === 'not-started' && current.answers.length === 0 && current.explanations.length === 0) {
+    return { ...fresh, past: current.past };
+  }
+  const attempt: PastAttempt = {
+    status: current.status,
+    answered: current.answers.length,
+    correct: current.answers.filter((answer) => answer.correct).length,
+    explanations: current.explanations.length,
+    masteredAt: current.masteredAt,
+    // An older record from before attempts were kept has no start of its own; its last study is the
+    // closest honest answer, and it is better than inventing one.
+    startedAt: current.answers[0]?.at ?? current.lastStudiedAt,
+    restartedAt: now,
+  };
+  return { ...fresh, past: [...(current.past ?? []), attempt] };
+}
+
+/** The most recent time this checkpoint was mastered, in an earlier attempt or in this one. */
+export function everMasteredAt(progress: CheckpointProgress): number | null {
+  const times = [progress.masteredAt, ...(progress.past ?? []).map((attempt) => attempt.masteredAt)].filter(
+    (time): time is number => typeof time === 'number',
+  );
+  return times.length ? Math.max(...times) : null;
+}
+
+/** How many times this checkpoint has been started over. */
+export const restartCount = (progress: CheckpointProgress): number => (progress.past ?? []).length;
 
 export const hasTeaching = (checkpoint: Checkpoint) =>
   [checkpoint.teaching.intro, checkpoint.teaching.meaning, checkpoint.teaching.keyIdea].some((text) => text.trim() !== '');

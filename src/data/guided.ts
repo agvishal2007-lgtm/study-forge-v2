@@ -1,6 +1,6 @@
 import { logStudy } from './studyLog';
 import { getDb, notifyChanged } from './db';
-import { applyStudyAction, newProgress, type StudyAction } from './mastery';
+import { applyStudyAction, newProgress, restartProgress, type StudyAction } from './mastery';
 import type { Checkpoint, CheckpointProgress, Lesson, Teaching } from './types';
 import { moveToTrash } from './trash';
 
@@ -72,8 +72,18 @@ export async function recordStudyAction(checkpoint: Checkpoint, action: StudyAct
   return next;
 }
 
-/** Clears progress for one checkpoint. The lesson, its questions, and everything else stay. */
-export async function resetProgress(checkpointId: string): Promise<void> {
-  await (await getDb()).delete('checkpointProgress', checkpointId);
+/**
+ * Starts one checkpoint over, keeping what the earlier attempt showed.
+ *
+ * This used to delete the record, which meant a topic mastered in September and refreshed in
+ * November had never been mastered at all. The work restarts; the evidence stays. The lesson, its
+ * questions and everything else are untouched either way.
+ */
+export async function restartCheckpoint(checkpointId: string): Promise<void> {
+  const db = await getDb();
+  const tx = db.transaction('checkpointProgress', 'readwrite');
+  const current = await tx.store.get(checkpointId);
+  if (current) await tx.store.put(restartProgress(current, Date.now()));
+  await tx.done;
   notifyChanged();
 }

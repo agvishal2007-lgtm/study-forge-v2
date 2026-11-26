@@ -2,11 +2,26 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { useStillHere } from '../../components/useStillHere';
-import { deleteCheckpoint, deleteLesson, getLesson, listCheckpoints, listLessons, listProgress, resetProgress, saveLesson } from '../../data/guided';
-import { countLesson, evaluateMastery, missingContent, STATUS_LABEL } from '../../data/mastery';
+import { deleteCheckpoint, deleteLesson, getLesson, listCheckpoints, listLessons, listProgress, restartCheckpoint, saveLesson } from '../../data/guided';
+import { countLesson, evaluateMastery, everMasteredAt, missingContent, restartCount, STATUS_LABEL } from '../../data/mastery';
 import { listAllCourses } from '../../data/store';
-import type { Checkpoint } from '../../data/types';
+import type { Checkpoint, CheckpointProgress } from '../../data/types';
 import { useLive } from '../../data/useLive';
+
+/**
+ * What earlier attempts at this checkpoint showed, in one line.
+ *
+ * A date is given when there is one to give, because "mastered on 12 September" is the thing a
+ * student would be sorry to lose, and it is why a restart keeps the record rather than clearing it.
+ */
+function earlier(record: CheckpointProgress): string {
+  const times = restartCount(record);
+  if (times === 0) return '';
+  const was = everMasteredAt(record);
+  const day = (at: number) => new Date(at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  const starts = times === 1 ? 'Started over once' : `Started over ${times} times`;
+  return was && was !== record.masteredAt ? `${starts} · mastered ${day(was)}` : starts;
+}
 
 export function LessonPage() {
   const { id = '' } = useParams();
@@ -72,6 +87,13 @@ export function LessonPage() {
                       ? `${record.answers.length} answered, ${record.answers.length - wrong} right, ${wrong} wrong`
                       : `${checkpoint.questions.length} practice questions`}
                   </div>
+                  {/*
+                    Said out loud, because it is the whole point of keeping it: starting a
+                    checkpoint over no longer costs the student what they already showed.
+                  */}
+                  {record && earlier(record) && (
+                    <div className="muted small" data-testid={`earlier-${checkpoint.id}`}>{earlier(record)}</div>
+                  )}
                 </div>
                 <div className="row-actions">
                   <span className="status" data-status={status}>{STATUS_LABEL[status]}</span>
@@ -112,11 +134,12 @@ export function LessonPage() {
       {confirm?.kind === 'reset' && (
         <ConfirmDialog
           title={`Start ${confirm.checkpoint.title} over?`}
-          confirmLabel="Clear my progress"
+          confirmLabel="Start it over"
           onCancel={() => setConfirm(null)}
-          onConfirm={() => void attempt(() => resetProgress(confirm.checkpoint.id))}
+          onConfirm={() => void attempt(() => restartCheckpoint(confirm.checkpoint.id))}
         >
-          <p>This clears your answers and progress for this checkpoint only. The lesson, its questions, and everything else stay.</p>
+          <p>You'll start this checkpoint fresh: no answers carried over, and mastery to be shown again rather than assumed.</p>
+          <p>What you did before is kept. If you mastered this already, it still says so, with the date — starting over doesn't take that away. The lesson, its questions and everything else stay as they are.</p>
         </ConfirmDialog>
       )}
     </div>

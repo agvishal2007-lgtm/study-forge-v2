@@ -338,15 +338,25 @@ test('a student-written typed answer is self-checked and labeled that way', asyn
   assert.match(await page.getByTestId('lesson-count').textContent(), /1 of 1 checkpoints mastered\. Lesson completed/);
 });
 
-test('starting over clears only progress, and deleting asks first', async () => {
+test('starting over gives a fresh attempt and keeps what the last one showed', async () => {
   await page.getByRole('button', { name: 'Start Unfinished idea over' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
   assert.match(await page.getByTestId('lesson-count').textContent(), /1 of 1/);
   await page.getByRole('button', { name: 'Start Unfinished idea over' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Clear my progress' }).click();
+  // The dialog promises the history is kept, so the test holds it to that promise.
+  await page.getByRole('dialog').getByText('If you mastered this already, it still says so').waitFor();
+  await page.getByRole('dialog').getByRole('button', { name: 'Start it over' }).click();
   await page.locator('[data-testid=lesson-count]', { hasText: '0 of 1' }).waitFor();
   await page.getByRole('link', { name: 'Unfinished idea', exact: true }).waitFor();
   await page.getByText('2 practice questions').waitFor();
+  /*
+   * The point of the change: the work starts again, and what the student really did is still on the
+   * screen with its date. Before this, starting over deleted the record, so a checkpoint mastered
+   * in September and refreshed in November had never been mastered at all.
+   */
+  const earlier = page.locator('[data-testid^=earlier-]').first();
+  await earlier.waitFor();
+  assert.match(await earlier.textContent(), /Started over once · mastered/);
   await page.getByRole('button', { name: 'Delete Unfinished idea' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
   await page.getByRole('link', { name: 'Unfinished idea', exact: true }).waitFor();

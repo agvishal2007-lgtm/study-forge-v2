@@ -152,3 +152,65 @@ test('the next recommendation resumes, then reviews, then moves on', async () =>
   const allDone = new Map(['a', 'b', 'c'].map((id) => [id, { status: 'mastered' }]));
   assert.equal(recommendNext(lessons, cps, allDone), null);
 });
+
+/*
+ * Starting a checkpoint over. Under the owner's study system a restart "restarts the requested
+ * scope while retaining historical evidence" and must not "erase previously demonstrated
+ * achievement" — so these check the keeping, not just the restarting.
+ */
+test('starting over gives a fresh attempt and keeps what the last one showed', async () => {
+  const { newProgress, restartProgress, everMasteredAt, restartCount } = await load();
+  const september = Date.UTC(2026, 8, 12);
+  const november = Date.UTC(2026, 10, 26);
+
+  const mastered = {
+    ...newProgress('cp-1', september),
+    status: 'mastered',
+    answers: [{ questionId: 'q1', correct: true, at: september }, { questionId: 'q2', correct: false, at: september }],
+    explanations: [{ at: september, passed: true }],
+    masteredAt: september,
+    lastStudiedAt: september,
+  };
+
+  const again = restartProgress(mastered, november);
+  assert.equal(again.status, 'not-started', 'the work really does start again');
+  assert.deepEqual(again.answers, [], 'with no answers carried over');
+  assert.equal(again.masteredAt, null, 'and mastery to be shown again, not assumed');
+
+  assert.equal(restartCount(again), 1);
+  assert.deepEqual(again.past[0], {
+    status: 'mastered',
+    answered: 2,
+    correct: 1,
+    explanations: 1,
+    masteredAt: september,
+    startedAt: september,
+    restartedAt: november,
+  }, 'and September is still on the record');
+  assert.equal(everMasteredAt(again), september, 'so the student can still see they mastered it');
+});
+
+test('restarting twice keeps both attempts, oldest first', async () => {
+  const { newProgress, restartProgress, restartCount, everMasteredAt } = await load();
+  const first = Date.UTC(2026, 0, 10);
+  const second = Date.UTC(2026, 3, 10);
+  const third = Date.UTC(2026, 7, 10);
+
+  let record = { ...newProgress('cp-1', first), status: 'mastered', masteredAt: first, answers: [{ questionId: 'q1', correct: true, at: first }] };
+  record = restartProgress(record, second);
+  record = { ...record, status: 'practicing', answers: [{ questionId: 'q1', correct: false, at: second }] };
+  record = restartProgress(record, third);
+
+  assert.equal(restartCount(record), 2);
+  assert.deepEqual(record.past.map((attempt) => attempt.status), ['mastered', 'practicing'], 'oldest first');
+  assert.equal(everMasteredAt(record), first, 'and the mastery from January survives both restarts');
+});
+
+test('starting over a checkpoint never begun leaves nothing behind', async () => {
+  const { newProgress, restartProgress, restartCount } = await load();
+  const now = Date.now();
+  const untouched = newProgress('cp-1', now);
+  const again = restartProgress(untouched, now + 1000);
+  assert.equal(restartCount(again), 0, 'an attempt with nothing in it is not worth keeping');
+  assert.deepEqual(again.answers, []);
+});

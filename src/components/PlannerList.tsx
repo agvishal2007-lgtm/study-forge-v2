@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
 import { setPlannerHidden, setPlannerStatus } from '../data/planner';
+import { pendingTick, setPendingTick, subscribePendingTicks, tickVersion } from '../data/pendingTicks';
 import { describeDue, describeGoal, groupOf, isDone, localNow, uncheckedStatus } from '../data/plannerRules';
 import { describeNext, stepProgress } from '../data/stepRules';
 import { useDisplayPrefs } from '../data/displayPrefs';
@@ -16,16 +17,21 @@ export function PlannerRow({ item, course, now }: { item: PlannerItem; course?: 
    * database and on to the student's other devices, which takes a moment, and a box that sprang
    * back in the meantime would look like the tap was missed. If the save really fails, the box
    * goes back to what is actually stored and says so, so a change is never quietly lost.
+   *
+   * What was tapped is kept in pendingTicks rather than in this row, because ticking something off
+   * moves it into Done — a different list — and a row that moves is taken apart and built again,
+   * losing anything it was holding. See that file for the whole story.
    */
-  const [pending, setPending] = useState<boolean | null>(null);
+  useSyncExternalStore(subscribePendingTicks, tickVersion, () => 0);
+  const pending = pendingTick(item.id);
   const done = pending ?? saved;
-  useEffect(() => { if (pending !== null && pending === saved) setPending(null); }, [pending, saved]);
+  useEffect(() => { if (pending !== undefined && pending === saved) setPendingTick(item.id, undefined); }, [pending, saved, item.id]);
 
   const change = (status: PlannerStatus) => {
     setFailure('');
-    setPending(['Submitted', 'Waiting for Grade', 'Completed'].includes(status));
+    setPendingTick(item.id, ['Submitted', 'Waiting for Grade', 'Completed'].includes(status));
     setPlannerStatus(item.id, status).catch((error: Error) => {
-      setPending(null);
+      setPendingTick(item.id, undefined);
       setFailure(`That wasn't saved, so it's back as it was. ${error.message}`);
     });
   };

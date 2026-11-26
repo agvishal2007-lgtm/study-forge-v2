@@ -253,6 +253,28 @@ export interface CheckpointProgress {
   draft: string;
   lastStudiedAt: number;
   masteredAt: number | null;
+  /**
+   * What earlier attempts at this checkpoint showed, oldest first.
+   *
+   * Starting a checkpoint over used to delete the record, so a topic mastered in September and
+   * refreshed in November had never been mastered at all. Restarting is not the same as never
+   * having learnt it: it restarts the work while keeping what was shown before, which is also the
+   * rule everywhere else in Study Forge — nothing a student did is removed without them asking for
+   * exactly that.
+   */
+  past?: PastAttempt[];
+}
+
+/** One finished attempt at a checkpoint, kept when the student starts it over. */
+export interface PastAttempt {
+  /** Where it had got to when it was restarted. */
+  status: MasteryStatus;
+  answered: number;
+  correct: number;
+  explanations: number;
+  masteredAt: number | null;
+  startedAt: number;
+  restartedAt: number;
 }
 
 /* Planner */
