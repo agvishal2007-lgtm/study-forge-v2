@@ -21,7 +21,7 @@ export function FocusSoundsSection() {
   const playing = playingSounds();
   const left = timerLeft();
   return (
-    <section aria-labelledby="focus-heading" data-testid="focus-sounds">
+    <section id="focus-sounds" aria-labelledby="focus-heading" data-testid="focus-sounds" tabIndex={-1}>
       <h2 id="focus-heading">Focus sounds</h2>
       <p className="muted">
         Steady sound to study to. Your browser makes each one as it plays, so none of it is downloaded,

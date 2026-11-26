@@ -121,7 +121,7 @@ export function BackupSection() {
   const summary = data?.summary;
 
   return (
-    <section aria-labelledby="backup-heading" data-tour="backup">
+    <section id="backup" aria-labelledby="backup-heading" data-tour="backup" tabIndex={-1}>
       <h2 id="backup-heading">Backup</h2>
       <p>Save everything to one .zip file, then keep it somewhere safe, like Google Drive or a USB drive. It holds your original files and recordings exactly as you added them, byte for byte, plus your courses, topics, notes, planner, calendar, flashcards, practice, lessons, progress, links and transcripts, in folders you can open on any computer. Settings like light or dark mode aren't included. Restoring only adds what's missing and never replaces anything.</p>
       {summary && <p className="muted" data-testid="backup-summary">

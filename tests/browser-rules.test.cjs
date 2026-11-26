@@ -94,3 +94,40 @@ errorTest('a promise started early is marked as handled before anything is await
   assertErrors.ok(started !== -1 && guarded !== -1 && awaited !== -1, 'the early permission request is still written this way');
   assertErrors.ok(guarded > started && guarded < awaited, 'it is marked as handled between being started and the first await');
 });
+
+errorTest('every link that names a setting points at a section that exists and can take focus', () => {
+  /*
+   * A link into Settings that means one particular setting should land on it, not at the top of a
+   * long category — the owner hit this coming from Trash and asked for it everywhere.
+   *
+   * Checked statically because the failure is silent: rename a section's id and the link still
+   * works, it just quietly stops jumping, and nobody notices until they are scrolling a phone
+   * looking for the thing they tapped.
+   */
+  const root = pathErrors.join(__dirname, '..', 'src');
+  const files = [];
+  const walk = (dir) => {
+    for (const entry of fsErrors.readdirSync(dir, { withFileTypes: true })) {
+      const full = pathErrors.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.name.endsWith('.tsx')) files.push(full);
+    }
+  };
+  walk(root);
+
+  const sources = new Map(files.map((file) => [file, fsErrors.readFileSync(file, 'utf8')]));
+  const everything = [...sources.values()].join('\n');
+
+  const asked = [];
+  for (const [file, text] of sources) {
+    for (const match of text.matchAll(/to="\/settings[^"]*\?go=([a-z-]+)"/g)) asked.push({ file: pathErrors.basename(file), id: match[1] });
+  }
+  assertErrors.ok(asked.length >= 4, `links that name a setting, found ${asked.length}`);
+
+  for (const { file, id } of asked) {
+    assertErrors.ok(everything.includes(`id="${id}"`), `${file} asks for "${id}", but no section has that id`);
+    const owner = [...sources.values()].find((text) => text.includes(`id="${id}"`));
+    assertErrors.match(owner.slice(owner.indexOf(`id="${id}"`), owner.indexOf(`id="${id}"`) + 220), /tabIndex=\{-1\}/,
+      `the section "${id}" can take focus, so a keyboard arrives there too`);
+  }
+});

@@ -48,7 +48,7 @@ export function SchoolSection() {
   };
 
   return (
-    <section aria-labelledby="school-heading" data-testid="school-section">
+    <section id="school" aria-labelledby="school-heading" data-testid="school-section" tabIndex={-1}>
       <h2 id="school-heading">School</h2>
       <label>Which school are you in?
         <select value={school.level} onChange={(event) => choose(event.target.value as SchoolLevel)} data-testid="school-level">

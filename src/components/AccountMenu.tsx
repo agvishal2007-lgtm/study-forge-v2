@@ -140,7 +140,7 @@ function SoundButton() {
               Stop all sounds
             </button>
           )}
-          <Link className="sound-menu-more" role="menuitem" to="/settings/sounds" onClick={() => setOpen(false)}>
+          <Link className="sound-menu-more" role="menuitem" to="/settings/sounds?go=focus-sounds" onClick={() => setOpen(false)}>
             Mixing, volume and a fading timer
           </Link>
         </div>

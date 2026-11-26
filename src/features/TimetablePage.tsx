@@ -118,7 +118,7 @@ export function TimetablePage() {
       {!rotation && (
         <p className="muted small">
           Your schedule is the same every day, so there is one column. If your school runs a rotation,
-          turn on the block schedule in <Link to="/settings/school">school settings</Link> and a column
+          turn on the block schedule in <Link to="/settings/school?go=school">school settings</Link> and a column
           appears for each day of the cycle.
         </p>
       )}
