@@ -32,6 +32,7 @@ import { NotesPage } from './features/NotesPage';
 import { CheckpointEditorPage } from './features/guided/CheckpointEditorPage';
 import { LessonPage } from './features/guided/LessonPage';
 import { SessionPage } from './features/guided/SessionPage';
+import { CheckpointReviewPage } from './features/guided/CheckpointReviewPage';
 import { StudyPage } from './features/guided/StudyPage';
 import { RecordPage } from './features/RecordPage';
 import { AuthShell, AuthTabsPage, ForgotEmailPage, ForgotPasswordPage, PrivacyPage } from './features/AuthPages';
@@ -251,6 +252,7 @@ export function App() {
                 <Route path="/study/lessons/:id" element={<LessonPage />} />
                 <Route path="/study/lessons/:lessonId/checkpoints/:id/edit" element={<CheckpointEditorPage />} />
                 <Route path="/study/checkpoints/:id" element={<SessionPage />} />
+                <Route path="/study/checkpoints/:checkpointId/review" element={<CheckpointReviewPage />} />
                 <Route path="/notes" element={<NotesPage />} />
                 <Route path="/notes/:id" element={<NoteEditorPage />} />
                 <Route path="/record" element={<RecordPage />} />

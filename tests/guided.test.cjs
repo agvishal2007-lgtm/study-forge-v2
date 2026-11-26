@@ -338,6 +338,35 @@ test('a student-written typed answer is self-checked and labeled that way', asyn
   assert.match(await page.getByTestId('lesson-count').textContent(), /1 of 1 checkpoints mastered\. Lesson completed/);
 });
 
+test('a mastered checkpoint can be practised again without giving up the mastery', async () => {
+  /*
+   * The difference the owner's study system draws between reviewing and restarting. Before this the
+   * only button on a mastered checkpoint was Start over, so a student wanting a refresher before an
+   * exam had to give up the record of having mastered it to get one. This runs while the checkpoint
+   * is still mastered, which is why it sits before the test that starts it over.
+   */
+  await page.getByRole('link', { name: 'Review Unfinished idea' }).click();
+  await page.getByTestId('review-lead').getByText('Nothing here changes what you mastered').waitFor();
+
+  for (let asked = 0; asked < 10; asked += 1) {
+    const question = page.getByTestId('question');
+    if (await question.count() === 0) break;
+    const choice = question.getByRole('radio').first();
+    if (await choice.count()) await choice.check();
+    else await question.getByRole('textbox').fill('something');
+    await question.getByRole('button', { name: 'Submit answer' }).click();
+    await page.getByTestId('review-feedback').waitFor();
+    await page.getByTestId('review-feedback').getByRole('button').click();
+  }
+
+  await page.getByTestId('review-score').waitFor();
+  await page.getByText('is unchanged — reviewing never takes that away').waitFor();
+  await page.getByRole('link', { name: 'Back to lesson' }).click();
+  // Still mastered, still counted, and now noted as reviewed.
+  assert.match(await page.getByTestId('lesson-count').textContent(), /1 of 1/);
+  await page.locator('[data-testid^=earlier-]', { hasText: 'Reviewed' }).waitFor();
+});
+
 test('starting over gives a fresh attempt and keeps what the last one showed', async () => {
   await page.getByRole('button', { name: 'Start Unfinished idea over' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();

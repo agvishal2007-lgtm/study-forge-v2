@@ -263,6 +263,21 @@ export interface CheckpointProgress {
    * exactly that.
    */
   past?: PastAttempt[];
+  /**
+   * Times this checkpoint was practised again after it was mastered.
+   *
+   * Reviewing is not restarting. A student who already showed they understood something and wants a
+   * refresher should not have to give up the record of having understood it, so a review records
+   * only that it happened and how it went, and never touches mastery.
+   */
+  reviews?: ReviewRecord[];
+}
+
+/** One pass back through a checkpoint's questions, after it was already mastered. */
+export interface ReviewRecord {
+  at: number;
+  answered: number;
+  correct: number;
 }
 
 /** One finished attempt at a checkpoint, kept when the student starts it over. */

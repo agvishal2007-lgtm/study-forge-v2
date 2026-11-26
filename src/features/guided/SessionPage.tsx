@@ -49,7 +49,7 @@ function teachingSteps(checkpoint: Checkpoint): { heading: string; body: ReactNo
   return steps;
 }
 
-function Question({ question, attemptId, draft, busy, position, onDraft, onSubmit }: {
+export function Question({ question, attemptId, draft, busy, position, onDraft, onSubmit }: {
   question: GuidedQuestion;
   attemptId: string;
   draft: string;

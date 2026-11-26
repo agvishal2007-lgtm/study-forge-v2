@@ -1,5 +1,5 @@
 import type {
-  AnswerRecord, Checkpoint, CheckpointProgress, GuidedQuestion, KeyPointRating, Lesson, MasteryStatus, PastAttempt, StudyStage,
+  AnswerRecord, Checkpoint, CheckpointProgress, GuidedQuestion, KeyPointRating, Lesson, MasteryStatus, PastAttempt, ReviewRecord, StudyStage,
 } from './types';
 
 /**
@@ -79,6 +79,33 @@ export function everMasteredAt(progress: CheckpointProgress): number | null {
 
 /** How many times this checkpoint has been started over. */
 export const restartCount = (progress: CheckpointProgress): number => (progress.past ?? []).length;
+
+/**
+ * Records that a mastered checkpoint was practised again, without changing what was mastered.
+ *
+ * Deliberately separate from everything above. A review's answers are not practice answers: they do
+ * not count toward the evidence for mastery, they cannot take mastery away, and a bad review does
+ * not undo a good September. What it does do is say when the student last looked at this, which is
+ * what decides what to suggest reviewing next.
+ */
+export function addReview(progress: CheckpointProgress, result: { answered: number; correct: number }, now: number): CheckpointProgress {
+  const review: ReviewRecord = { at: now, answered: Math.max(0, result.answered), correct: Math.max(0, Math.min(result.correct, result.answered)) };
+  return { ...progress, reviews: [...(progress.reviews ?? []), review] };
+}
+
+/** When this checkpoint was last gone over, whether by mastering it or by reviewing it since. */
+export function lastLookedAt(progress: CheckpointProgress): number {
+  return Math.max(progress.lastStudiedAt, ...(progress.reviews ?? []).map((review) => review.at), 0);
+}
+
+/** How a review went, in plain words, for the line under a checkpoint. */
+export function reviewWords(progress: CheckpointProgress): string {
+  const last = (progress.reviews ?? []).at(-1);
+  if (!last) return '';
+  const day = new Date(last.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  if (last.answered === 0) return `Reviewed ${day}`;
+  return `Reviewed ${day} · ${last.correct} of ${last.answered} right`;
+}
 
 export const hasTeaching = (checkpoint: Checkpoint) =>
   [checkpoint.teaching.intro, checkpoint.teaching.meaning, checkpoint.teaching.keyIdea].some((text) => text.trim() !== '');
@@ -290,6 +317,8 @@ export interface Recommendation {
   checkpoint: Checkpoint;
   lesson: Lesson;
   reason: string;
+  /** True when the suggestion is to practise again, not to carry on learning. */
+  review?: boolean;
 }
 
 /** Picks what to study next: unfinished work, then anything needing review, then the next new checkpoint. */
@@ -313,5 +342,15 @@ export function recommendNext(
   const review = withStatusOf(['needs-review'])[0];
   if (review) return { ...review, reason: 'Part of this still needs review.' };
   const next = inOrder.find(({ checkpoint }) => !progress.has(checkpoint.id) || progress.get(checkpoint.id)?.status === 'not-started');
-  return next ? { ...next, reason: 'This is next in order.' } : null;
+  if (next) return { ...next, reason: 'This is next in order.' };
+  /*
+   * Everything here is mastered, which used to mean nothing was suggested at all — a student who
+   * had finished a lesson was simply shown an empty space. Offer the one they have not looked at
+   * for longest instead, to review rather than to start over, since mastering something is not a
+   * reason to be done with it forever.
+   */
+  const stale = inOrder
+    .filter(({ checkpoint }) => progress.get(checkpoint.id)?.status === 'mastered' && checkpoint.questions.length > 0)
+    .sort((a, b) => lastLookedAt(progress.get(a.checkpoint.id)!) - lastLookedAt(progress.get(b.checkpoint.id)!))[0];
+  return stale ? { ...stale, reason: 'All mastered here. This is the one you have not looked at for longest.', review: true } : null;
 }

@@ -3,6 +3,8 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 
 const load = () => import('../src/data/mastery.ts');
+// A bare progress record, for tests that only care about a couple of its fields.
+const require_newProgress = (id) => ({ checkpointId: id, status: 'not-started', teachingFinished: false, teachingSkipped: false, stage: { kind: 'teach', step: 0 }, answers: [], misses: {}, reteachCount: 0, explanations: [], draft: '', lastStudiedAt: 0, masteredAt: null });
 const NOW = 1000;
 const q = (id, over = {}) => ({ id, kind: 'multiple', prompt: id, options: ['a', 'b'], correctOption: 0, accepted: [], modelAnswer: 'a', explanation: 'x', idea: '', ...over });
 const checkpoint = (questions, over = {}) => ({
@@ -149,8 +151,15 @@ test('the next recommendation resumes, then reviews, then moves on', async () =>
   assert.equal(recommendNext(lessons, cps, new Map([['a', { status: 'mastered' }]])).checkpoint.id, 'b');
   assert.equal(recommendNext(lessons, cps, new Map([['a', { status: 'needs-review' }]])).checkpoint.id, 'a');
   assert.equal(recommendNext(lessons, cps, new Map([['a', { status: 'needs-review' }], ['c', { status: 'practicing', lastStudiedAt: 5 }]])).checkpoint.id, 'c');
-  const allDone = new Map(['a', 'b', 'c'].map((id) => [id, { status: 'mastered' }]));
-  assert.equal(recommendNext(lessons, cps, allDone), null);
+  /*
+   * Everything mastered used to mean nothing suggested — a student who finished a lesson was shown
+   * an empty space. Now the one left longest is offered to review, which is what the owner's study
+   * system asks for: mastering something is not a reason to be done with it forever.
+   */
+  const allDone = new Map(['a', 'b', 'c'].map((id, index) => [id, { status: 'mastered', lastStudiedAt: 100 - index }]));
+  const afterAll = recommendNext(lessons, cps, allDone);
+  assert.equal(afterAll.checkpoint.id, 'c', 'the one looked at longest ago');
+  assert.equal(afterAll.review, true, 'to review, not to start over');
 });
 
 /*
@@ -213,4 +222,53 @@ test('starting over a checkpoint never begun leaves nothing behind', async () =>
   const again = restartProgress(untouched, now + 1000);
   assert.equal(restartCount(again), 0, 'an attempt with nothing in it is not worth keeping');
   assert.deepEqual(again.answers, []);
+});
+
+/*
+ * Reviewing, which under the owner's study system is a different thing from restarting: it must not
+ * "erase previously demonstrated achievement", so these check that it cannot.
+ */
+test('reviewing records that it happened and never touches what was mastered', async () => {
+  const { newProgress, addReview, lastLookedAt, reviewWords } = await load();
+  const september = Date.UTC(2026, 8, 12);
+  const november = Date.UTC(2026, 10, 26);
+  const mastered = { ...newProgress('cp-1', september), status: 'mastered', masteredAt: september, lastStudiedAt: september, answers: [{ questionId: 'q1', correct: true, at: september }] };
+
+  const after = addReview(mastered, { answered: 4, correct: 2 }, november);
+  assert.equal(after.status, 'mastered', 'still mastered');
+  assert.equal(after.masteredAt, september, 'and still mastered on the same day');
+  assert.deepEqual(after.answers, mastered.answers, 'the answers that earned it are untouched');
+  assert.deepEqual(after.reviews, [{ at: november, answered: 4, correct: 2 }]);
+  assert.equal(lastLookedAt(after), november, 'but Study Forge knows it was looked at in November');
+  assert.match(reviewWords(after), /2 of 4 right/);
+});
+
+test('a review that went badly is still not a reason to take mastery away', async () => {
+  const { newProgress, addReview } = await load();
+  const mastered = { ...newProgress('cp-1', 1000), status: 'mastered', masteredAt: 1000 };
+  const after = addReview(mastered, { answered: 5, correct: 0 }, 2000);
+  assert.equal(after.status, 'mastered');
+  assert.equal(after.masteredAt, 1000);
+  assert.deepEqual(after.reviews.at(-1), { at: 2000, answered: 5, correct: 0 });
+});
+
+test('a review cannot report more right than were asked', async () => {
+  const { newProgress, addReview } = await load();
+  const after = addReview(newProgress('cp-1', 1), { answered: 3, correct: 9 }, 2);
+  assert.deepEqual(after.reviews.at(-1), { at: 2, answered: 3, correct: 3 }, 'nonsense is clamped rather than stored');
+});
+
+test('when everything is mastered, the suggestion is to review the one left longest', async () => {
+  const { recommendNext } = await load();
+  const lesson = { id: 'l1', title: 'Lesson one', order: 0, createdAt: 0, courseId: null, label: 'Lesson' };
+  const make = (id, order) => ({ ...checkpoint([q('q1')], { id, lessonId: 'l1', order, title: id }), createdAt: order });
+  const checkpoints = [make('older', 0), make('newer', 1)];
+  const progress = new Map([
+    ['older', { ...require_newProgress('older'), status: 'mastered', lastStudiedAt: 1000 }],
+    ['newer', { ...require_newProgress('newer'), status: 'mastered', lastStudiedAt: 9000 }],
+  ]);
+  const suggestion = recommendNext([lesson], checkpoints, progress);
+  assert.equal(suggestion.checkpoint.id, 'older', 'the one not looked at for longest');
+  assert.equal(suggestion.review, true, 'and it is a review, not starting it over');
+  assert.match(suggestion.reason, /not looked at for longest/);
 });

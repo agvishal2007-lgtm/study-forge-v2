@@ -1,6 +1,6 @@
 import { logStudy } from './studyLog';
 import { getDb, notifyChanged } from './db';
-import { applyStudyAction, newProgress, restartProgress, type StudyAction } from './mastery';
+import { addReview, applyStudyAction, newProgress, restartProgress, type StudyAction } from './mastery';
 import type { Checkpoint, CheckpointProgress, Lesson, Teaching } from './types';
 import { moveToTrash } from './trash';
 
@@ -70,6 +70,22 @@ export async function recordStudyAction(checkpoint: Checkpoint, action: StudyAct
     notifyChanged();
   }
   return next;
+}
+
+/**
+ * Records that a checkpoint was practised again after being mastered.
+ *
+ * Written straight onto the progress record and nowhere else: a review changes when the student
+ * last looked at this, and nothing about what they mastered.
+ */
+export async function saveReview(checkpointId: string, result: { answered: number; correct: number }): Promise<void> {
+  const db = await getDb();
+  const tx = db.transaction('checkpointProgress', 'readwrite');
+  const current = await tx.store.get(checkpointId);
+  if (current) await tx.store.put(addReview(current, result, Date.now()));
+  await tx.done;
+  await logStudy('lessons');
+  notifyChanged();
 }
 
 /**

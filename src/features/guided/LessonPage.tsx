@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { useStillHere } from '../../components/useStillHere';
 import { deleteCheckpoint, deleteLesson, getLesson, listCheckpoints, listLessons, listProgress, restartCheckpoint, saveLesson } from '../../data/guided';
-import { countLesson, evaluateMastery, everMasteredAt, missingContent, restartCount, STATUS_LABEL } from '../../data/mastery';
+import { countLesson, evaluateMastery, everMasteredAt, missingContent, restartCount, reviewWords, STATUS_LABEL } from '../../data/mastery';
 import { listAllCourses } from '../../data/store';
 import type { Checkpoint, CheckpointProgress } from '../../data/types';
 import { useLive } from '../../data/useLive';
@@ -91,13 +91,23 @@ export function LessonPage() {
                     Said out loud, because it is the whole point of keeping it: starting a
                     checkpoint over no longer costs the student what they already showed.
                   */}
-                  {record && earlier(record) && (
-                    <div className="muted small" data-testid={`earlier-${checkpoint.id}`}>{earlier(record)}</div>
+                  {record && (earlier(record) || reviewWords(record)) && (
+                    <div className="muted small" data-testid={`earlier-${checkpoint.id}`}>
+                      {[earlier(record), reviewWords(record)].filter(Boolean).join(' · ')}
+                    </div>
                   )}
                 </div>
                 <div className="row-actions">
                   <span className="status" data-status={status}>{STATUS_LABEL[status]}</span>
                   <Link className="text-button" to={`/study/lessons/${lesson.id}/checkpoints/${checkpoint.id}/edit`} aria-label={`Edit ${checkpoint.title}`}>Edit</Link>
+                  {/*
+                    Review and start over are different things, and offering only the second was the
+                    gap: a student wanting a refresher before an exam had to give up the record of
+                    having mastered it to get one.
+                  */}
+                  {status === 'mastered' && checkpoint.questions.length > 0 && (
+                    <Link className="text-button" to={`/study/checkpoints/${checkpoint.id}/review`} aria-label={`Review ${checkpoint.title}`}>Review</Link>
+                  )}
                   {record && <button className="text-button" onClick={() => setConfirm({ kind: 'reset', checkpoint })} aria-label={`Start ${checkpoint.title} over`}>Start over</button>}
                   <button className="text-button danger-text" onClick={() => setConfirm({ kind: 'checkpoint', checkpoint })} aria-label={`Delete ${checkpoint.title}`}>Delete</button>
                 </div>

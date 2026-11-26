@@ -382,7 +382,10 @@ export function TodayPage() {
           {next
             ? (
               <>
-                <p className="dash-next-title"><Link to={`/study/checkpoints/${next.checkpoint.id}`}>{next.checkpoint.title}</Link></p>
+                {/* A suggestion to review goes to the review, not back into the lesson. */}
+                <p className="dash-next-title">
+                  <Link to={next.review ? `/study/checkpoints/${next.checkpoint.id}/review` : `/study/checkpoints/${next.checkpoint.id}`}>{next.checkpoint.title}</Link>
+                </p>
                 <p className="muted">{next.lesson.title}. {next.reason}</p>
               </>
             )
