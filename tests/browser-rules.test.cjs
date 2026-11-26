@@ -76,3 +76,21 @@ errorTest('no error is constructed with an empty message', () => {
   }
   assertErrors.deepEqual(offenders, [], 'an error with no message prints as its minified class name and tells nobody anything');
 });
+
+errorTest('a promise started early is marked as handled before anything is awaited', () => {
+  /*
+   * googleConnect asks Google for permission before awaiting anything, because a browser only
+   * opens Google's window while it can still see the student's tap. That leaves a gap: if the
+   * request fails during the await that follows — which is exactly what closing the Google window
+   * does — nothing is listening yet, and the browser reports an uncaught error even though the
+   * code below handles it properly.
+   *
+   * This is the leak that hid behind the unreadable "Ju" in the test logs for two weeks.
+   */
+  const text = fsErrors.readFileSync(pathErrors.join(__dirname, '..', 'src', 'data', 'googleConnect.ts'), 'utf8');
+  const started = text.indexOf('const permission =');
+  const guarded = text.indexOf('permission?.catch(');
+  const awaited = text.indexOf('await getGoogleConnection()');
+  assertErrors.ok(started !== -1 && guarded !== -1 && awaited !== -1, 'the early permission request is still written this way');
+  assertErrors.ok(guarded > started && guarded < awaited, 'it is marked as handled between being started and the first await');
+});

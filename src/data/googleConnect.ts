@@ -67,12 +67,21 @@ export async function getLatestFromGoogle(email?: string): Promise<GoogleReport 
    * put a Google window in front of someone who never connected anything.
    */
   const permission = knownGoogleConnection() === null ? null : askGoogle(email);
+  /*
+   * Marked as handled the instant it is made, before anything is awaited.
+   *
+   * This promise is deliberately started early, and nothing looks at it until further down. If it
+   * fails in that gap — which is precisely what closing the Google window does — the browser sees
+   * a rejection nobody is listening to and reports an uncaught error, even though the code below
+   * goes on to handle it properly. A no-op catch here says someone is listening; awaiting the
+   * original promise later still raises the failure to whoever asked.
+   *
+   * This is what was hiding behind the unreadable "Ju" in the test logs: a real leak, from an
+   * error whose empty message made it impossible to name.
+   */
+  permission?.catch(() => undefined);
   const connection = await getGoogleConnection();
-  if (!connection) {
-    // Swallow the permission we started, so a connection removed on another device is quiet.
-    void permission?.catch(() => undefined);
-    return null;
-  }
+  if (!connection) return null;
   await (permission ?? askGoogle(email));
   const today = localNow().date;
   const items = await readGoogleItems(connection.calendars, today);
