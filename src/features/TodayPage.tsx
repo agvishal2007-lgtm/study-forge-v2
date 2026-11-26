@@ -12,7 +12,7 @@ import { daySummary, nextStep } from '../data/dashboard';
 import { listCardProgress, listCards, listDecks } from '../data/flashcards';
 import { isDue, isWeak } from '../data/flashcardRules';
 import { listCheckpoints, listLessons, listProgress } from '../data/guided';
-import { recommendNext } from '../data/mastery';
+import { howLongAgo, recommendNext, whereYouLeftOff } from '../data/mastery';
 import { listNotes } from '../data/notes';
 import { listAllTopics, listPracticeAttempts, listPracticeQuestions, listPracticeSets } from '../data/practice';
 import { accuracyOf, latestAnswers, mistakesIn, weakTopics } from '../data/practiceRules';
@@ -100,6 +100,16 @@ export function TodayPage() {
   if (error) return <div className="page"><h1>Today</h1><p className="error" role="alert">Your courses couldn't be loaded. {error.message}</p></div>;
   if (!data) return <p className="page muted">Loading…</p>;
   const { timetable, specialDays, savedIds, practiceSession, reviewSession, gradeCategories, courses, materials, storage, unfinished, notes, lastBackup, next, plannerItems, decks, cards, cardProgress, progress, practiceSets, practiceQuestions, practiceAttempts, topics, calendarEvents, studyDays, examResults, studyTime } = data;
+
+  /*
+   * Where they left off in whatever is being suggested. Study Forge already brought them back to
+   * the exact question; saying so on the card is what makes picking it up again feel like picking
+   * it up rather than starting again.
+   */
+  const nextRecord = next ? progress.get(next.checkpoint.id) : undefined;
+  const leftOff = next && nextRecord ? whereYouLeftOff(next.checkpoint, nextRecord) : '';
+  const ago = nextRecord ? howLongAgo(nextRecord.lastStudiedAt, Date.now()) : '';
+  const nextLeftOff = leftOff ? (ago ? `${leftOff} · ${ago}` : leftOff) : '';
   const backupDue = (materials.length > 0 || notes.length > 0) && (lastBackup === null || Date.now() - lastBackup > BACKUP_REMINDER_MS);
 
   if (courses.length === 0 && materials.length === 0 && unfinished.length === 0 && notes.length === 0 && plannerItems.length === 0 && cards.length === 0 && decks.length === 0 && practiceSets.length === 0 && calendarEvents.length === 0) {
@@ -387,6 +397,8 @@ export function TodayPage() {
                   <Link to={next.review ? `/study/checkpoints/${next.checkpoint.id}/review` : `/study/checkpoints/${next.checkpoint.id}`}>{next.checkpoint.title}</Link>
                 </p>
                 <p className="muted">{next.lesson.title}. {next.reason}</p>
+                {/* If they were part-way through it, say where — it is the thing that makes it easy to start again. */}
+                {nextLeftOff && <p className="muted small" data-testid="next-left-off">{nextLeftOff}</p>}
               </>
             )
             : <p className="muted">No lessons waiting. <Link to="/study">Go to Study</Link> to add one.</p>}

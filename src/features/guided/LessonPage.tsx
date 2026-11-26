@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { useStillHere } from '../../components/useStillHere';
 import { deleteCheckpoint, deleteLesson, getLesson, listCheckpoints, listLessons, listProgress, restartCheckpoint, saveLesson } from '../../data/guided';
-import { countLesson, evaluateMastery, everMasteredAt, missingContent, restartCount, reviewWords, STATUS_LABEL } from '../../data/mastery';
+import { countLesson, evaluateMastery, everMasteredAt, missingContent, howLongAgo, restartCount, reviewWords, STATUS_LABEL, whereYouLeftOff } from '../../data/mastery';
 import { listAllCourses } from '../../data/store';
 import type { Checkpoint, CheckpointProgress } from '../../data/types';
 import { useLive } from '../../data/useLive';
@@ -91,6 +91,17 @@ export function LessonPage() {
                     Said out loud, because it is the whole point of keeping it: starting a
                     checkpoint over no longer costs the student what they already showed.
                   */}
+                  {/*
+                    Where they left off, said out loud. Study Forge always kept the place and
+                    brought them back to it; it just never told them it had, so a checkpoint in the
+                    middle looked exactly like one never opened.
+                  */}
+                  {record && whereYouLeftOff(checkpoint, record) && (
+                    <div className="muted small" data-testid={`left-off-${checkpoint.id}`}>
+                      {whereYouLeftOff(checkpoint, record)}
+                      {howLongAgo(record.lastStudiedAt, Date.now()) ? ` · ${howLongAgo(record.lastStudiedAt, Date.now())}` : ''}
+                    </div>
+                  )}
                   {record && (earlier(record) || reviewWords(record)) && (
                     <div className="muted small" data-testid={`earlier-${checkpoint.id}`}>
                       {[earlier(record), reviewWords(record)].filter(Boolean).join(' · ')}

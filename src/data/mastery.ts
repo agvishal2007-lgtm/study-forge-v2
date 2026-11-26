@@ -107,6 +107,59 @@ export function reviewWords(progress: CheckpointProgress): string {
   return `Reviewed ${day} · ${last.correct} of ${last.answered} right`;
 }
 
+/**
+ * Where a student left off, in the words they would use about it.
+ *
+ * Study Forge already kept the exact place — the question, the step of the teaching, the
+ * half-written explanation — and brought them back to it. What it never did was say so. A
+ * checkpoint in the middle looked the same as one never opened, so the student had to open it to
+ * find out, which is the opposite of being able to pick something up again.
+ *
+ * Returns an empty string for a checkpoint that is finished or has not been started, because there
+ * is nothing to come back to in either case.
+ */
+export function whereYouLeftOff(checkpoint: Checkpoint, progress: CheckpointProgress): string {
+  if (progress.status === 'not-started' || progress.status === 'mastered') return '';
+  const stage = progress.stage;
+  const numbered = (questionId: string) => {
+    const at = checkpoint.questions.findIndex((question) => question.id === questionId);
+    return at >= 0 ? `question ${at + 1} of ${checkpoint.questions.length}` : 'a question';
+  };
+  switch (stage.kind) {
+    case 'teach':
+      return 'Paused in the teaching';
+    case 'question':
+      return `Paused at ${numbered(stage.questionId)}`;
+    case 'self-check':
+      return `Paused marking your answer to ${numbered(stage.questionId)}`;
+    case 'feedback':
+      return 'Paused on the answer you just gave';
+    case 'reteach':
+      return `Paused going back over ${stage.idea || 'an idea'}`;
+    case 'stuck':
+      return `Paused on ${stage.idea || 'an idea'} that needs another look`;
+    case 'explain':
+    case 'explain-check':
+      return 'Paused explaining it in your own words';
+    case 'explain-result':
+      return 'Paused on how your explanation went';
+    default:
+      return 'Paused part-way';
+  }
+}
+
+/** How long ago, in the roughest words that are still true. */
+export function howLongAgo(at: number, now: number): string {
+  const days = Math.floor((now - at) / (24 * 60 * 60 * 1000));
+  if (!Number.isFinite(at) || at <= 0 || now < at) return '';
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return `${days} days ago`;
+  if (days < 14) return 'last week';
+  if (days < 62) return `${Math.round(days / 7)} weeks ago`;
+  return new Date(at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+}
+
 export const hasTeaching = (checkpoint: Checkpoint) =>
   [checkpoint.teaching.intro, checkpoint.teaching.meaning, checkpoint.teaching.keyIdea].some((text) => text.trim() !== '');
 

@@ -272,3 +272,43 @@ test('when everything is mastered, the suggestion is to review the one left long
   assert.equal(suggestion.review, true, 'and it is a review, not starting it over');
   assert.match(suggestion.reason, /not looked at for longest/);
 });
+
+/*
+ * Saying where a student left off. Study Forge always kept the place and brought them back to it;
+ * what it never did was tell them, so a checkpoint in the middle looked like one never opened.
+ */
+test('where you left off is said in the words a student would use', async () => {
+  const { whereYouLeftOff } = await load();
+  const cp = checkpoint([q('q1'), q('q2'), q('q3')]);
+  const at = (stage, status = 'practicing') => whereYouLeftOff(cp, { ...require_newProgress(cp.id), status, stage });
+
+  assert.equal(at({ kind: 'question', questionId: 'q2', attemptId: 'a' }), 'Paused at question 2 of 3');
+  assert.equal(at({ kind: 'teach', step: 1 }, 'learning'), 'Paused in the teaching');
+  assert.equal(at({ kind: 'explain' }), 'Paused explaining it in your own words');
+  assert.equal(at({ kind: 'self-check', questionId: 'q3', attemptId: 'a', answer: '' }), 'Paused marking your answer to question 3 of 3');
+  assert.equal(at({ kind: 'stuck', idea: 'accruals' }, 'needs-review'), 'Paused on accruals that needs another look');
+  // A question that has since been deleted must not produce "question 0 of 3" or an empty gap.
+  assert.equal(at({ kind: 'question', questionId: 'gone', attemptId: 'a' }), 'Paused at a question');
+});
+
+test('nothing is said about a checkpoint that is finished or never opened', async () => {
+  const { whereYouLeftOff } = await load();
+  const cp = checkpoint([q('q1')]);
+  const stage = { kind: 'question', questionId: 'q1', attemptId: 'a' };
+  assert.equal(whereYouLeftOff(cp, { ...require_newProgress(cp.id), status: 'not-started', stage }), '', 'nothing to come back to');
+  assert.equal(whereYouLeftOff(cp, { ...require_newProgress(cp.id), status: 'mastered', stage }), '', 'nor when it is done');
+});
+
+test('how long ago is rounded to something a person would actually say', async () => {
+  const { howLongAgo } = await load();
+  const day = 24 * 60 * 60 * 1000;
+  const now = Date.UTC(2026, 10, 26);
+  assert.equal(howLongAgo(now - 3600 * 1000, now), 'today');
+  assert.equal(howLongAgo(now - day, now), 'yesterday');
+  assert.equal(howLongAgo(now - 4 * day, now), '4 days ago');
+  assert.equal(howLongAgo(now - 9 * day, now), 'last week');
+  assert.equal(howLongAgo(now - 30 * day, now), '4 weeks ago');
+  assert.match(howLongAgo(now - 200 * day, now), /2026/, 'far enough back to deserve a month and a year');
+  assert.equal(howLongAgo(0, now), '', 'a missing date says nothing rather than "56 years ago"');
+  assert.equal(howLongAgo(now + day, now), '', 'and neither does one in the future');
+});

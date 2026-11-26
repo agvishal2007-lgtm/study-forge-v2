@@ -484,3 +484,53 @@ test('phone layout works with all seven destinations, including during study', a
 test('no uncaught errors happened during the whole run', () => {
   assert.deepEqual(pageErrors, []);
 });
+
+test('a checkpoint left part-way says where it was left', async () => {
+  /*
+   * The place was always kept and the student was always brought back to it; it was simply never
+   * said, so on the lesson a checkpoint in the middle looked exactly like one never opened and the
+   * only way to find out was to open it.
+   *
+   * Built from scratch here rather than borrowing a checkpoint from the tests above, because this
+   * one has to be genuinely half-finished and every checkpoint up there ends up mastered.
+   */
+  await nav('Study');
+  await page.getByLabel('Lesson title').fill('Half-finished lesson');
+  await page.getByRole('button', { name: 'Create lesson' }).click();
+  await page.getByRole('heading', { name: 'Half-finished lesson' }).waitFor();
+  await page.getByRole('button', { name: 'Add checkpoint' }).click();
+  await page.getByLabel('Checkpoint title').fill('Left in the middle');
+  await page.getByLabel('The most important idea').fill('Something worth coming back to.');
+  await page.getByLabel('What it means, in simple words').fill('A short idea, explained simply.');
+  const only = page.locator('.editor-question').first();
+  await only.getByLabel('Question', { exact: true }).fill('Which one is right?');
+  await only.getByLabel(/Answer choices/).fill('The first\nThe second');
+  await only.getByLabel(/Which choice is correct/).fill('1');
+  // Without this the checkpoint saves but is not ready to study, and the session shows the
+  // "still needs" screen instead of the teaching — which is the app being right, not wrong.
+  await only.getByLabel('Why this is the answer').fill('Because the first one is the one that fits.');
+  // A checkpoint is not ready to study without key points either: the explanation check is marked
+  // against them, and without them there would be nothing to mark against.
+  await page.getByLabel(/Key points a good explanation/).fill('It is the first one.');
+  await page.getByRole('button', { name: 'Save checkpoint' }).click();
+  await page.getByRole('heading', { name: 'Half-finished lesson' }).waitFor();
+  assert.equal(await page.getByText('Still needs').count(), 0, 'the checkpoint is ready to study');
+
+  // Start it, get as far as the question, and leave without answering.
+  await page.getByRole('link', { name: 'Left in the middle', exact: true }).click();
+  await throughTeaching();
+  await question().waitFor();
+  /*
+   * Leave the way a student would mid-session: there is no "Back to lesson" button here, because
+   * that one only appears once a checkpoint is mastered. Walking out through Study is the real
+   * route, and it is the one worth testing.
+   */
+  await nav('Study');
+  await page.getByRole('link', { name: 'Half-finished lesson', exact: true }).click();
+  await page.getByRole('heading', { name: 'Half-finished lesson' }).waitFor();
+
+  const where = page.locator('[data-testid^=left-off-]').first();
+  await where.waitFor();
+  assert.match(await where.textContent(), /Paused at question 1 of 1 · today/);
+});
+
