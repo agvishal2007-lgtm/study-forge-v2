@@ -2244,3 +2244,42 @@ body.tour-active .topbar { padding-top: 14px; padding-bottom: 12px; padding-righ
 }
 .button.quiet:hover { border-color: var(--accent); background: var(--accent-soft); }
 .first-offer { margin-top: 1.6rem; }
+
+/*
+ * One anchor in the top bar, so seven identical glyphs stop reading as a crowd.
+ *
+ * The bar holds a row of controls that all looked exactly alike: same size, same weight, same
+ * colour. With that many in a row and no space to spare on a phone, the eye has nowhere to land
+ * and the whole bar reads as crammed even when every button is a full-size tap target.
+ *
+ * Add is the one thing in that row that makes something, so it gets a soft tinted circle. This
+ * costs no width at all — the button was already 44px — which matters, because the comments in
+ * AccountMenu record how little room is left at 320px and nothing here may take any of it.
+ */
+.topbar [data-tour="smart-add"] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.topbar [data-tour="smart-add"]:hover { background: var(--accent); color: var(--on-accent); }
+.topbar [data-tour="smart-add"] svg { stroke-width: 2.1; }
+
+/*
+ * The quiet third tier: Skip for now, Cancel, Not now.
+ *
+ * These are the right shape for what they do — an escape next to a solid main action should not
+ * compete with it — but they were drawn as underlined links, so next to a round filled button they
+ * read as navigation rather than as the other half of the choice. Without the underline, with a
+ * little weight and somewhere to land on hover, they stay plainly secondary and plainly pressable.
+ *
+ * One exception, kept deliberately: a text button sitting inside a sentence keeps its underline,
+ * because there it really is a word in prose and the underline is what makes it findable.
+ */
+.text-button {
+  text-decoration: none;
+  font-weight: 600;
+  padding: .45rem .7rem;
+  border-radius: 999px;
+}
+.text-button:hover, .text-button:focus-visible { text-decoration: underline; background: var(--raised); }
+p > .text-button, li > .text-button { text-decoration: underline; padding-inline: .15rem; }
+p > .text-button:hover, li > .text-button:hover { background: none; }
