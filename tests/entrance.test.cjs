@@ -18,7 +18,7 @@ const pageErrors = [];
 const open = async (viewport, theme, firstVisit = false, agreed = !firstVisit) => {
   const page = await browser.newPage({ viewport, deviceScaleFactor: 1 });
   page.setDefaultTimeout(15000);
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   if (!firstVisit) {
     // Most of these tests are a student who has been here before, not a brand-new visitor.
     await page.addInitScript(() => {

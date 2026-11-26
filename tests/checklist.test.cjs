@@ -25,7 +25,7 @@ before(async () => {
   context = await browser.newContext({ viewport: { width: 1280, height: 900 }, serviceWorkers: 'block' });
   await returningStudent(context);
   page = await context.newPage();
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
 });
 
 after(async () => {

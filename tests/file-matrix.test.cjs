@@ -35,7 +35,7 @@ before(async () => {
   await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   page.setDefaultTimeout(20000);
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   page.on('dialog', (dialog) => { pageErrors.push(`a dialog opened: ${dialog.message()}`); void dialog.dismiss(); });
   await page.goto(`${URL_BASE}#/library`);
   await page.getByTestId('file-input').first().setInputFiles(FILES);

@@ -38,7 +38,7 @@ before(async () => {
   });
   page = context.pages()[0] ?? (await context.newPage());
   page.setDefaultTimeout(20000);
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await page.goto(`${URL_BASE}#/record`);
 });
 

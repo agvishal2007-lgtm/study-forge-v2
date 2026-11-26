@@ -69,7 +69,7 @@ before(async () => {
   await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   page.setDefaultTimeout(15000);
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await page.clock.setFixedTime(new Date('2026-11-04T09:00:00-05:00'));
   await fakeGoogle(page);
   await page.goto(URL_BASE);

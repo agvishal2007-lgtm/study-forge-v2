@@ -24,7 +24,7 @@ async function open({ viewport = { width: 1280, height: 800 }, mobile = false, t
   await returningStudent(context);
   await context.addInitScript((t) => { try { localStorage.setItem('study-forge-theme', t); } catch { /* private */ } }, theme);
   page = await context.newPage();
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await page.goto(`${URL_BASE}#/notes`);
   await page.getByRole('button', { name: 'New note' }).first().click();
   await page.locator('textarea.note-body').fill('Working: ');

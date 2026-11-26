@@ -1,4 +1,5 @@
-import { Link, NavLink, useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, NavLink, useParams, useSearchParams } from 'react-router-dom';
 import { StudyToolsSection } from './StudyToolsSection';
 import { TrashKeepSection } from './TrashKeepSection';
 import { useState, type ReactElement } from 'react';
@@ -72,6 +73,25 @@ export function SettingsPage() {
   const { category: slug } = useParams();
   const chosen = categoryBySlug(slug);
   const showing = chosen ? [chosen] : SETTINGS_CATEGORIES;
+  /*
+   * A link that names a section goes to that section, not to the top of a long page.
+   *
+   * Settings is long enough on a phone that landing at the top and scrolling for the thing you
+   * tapped is its own small chore — the owner hit exactly this coming from Trash. The section is
+   * also focused, so a keyboard or a screen reader lands there too rather than being told nothing
+   * moved. Scrolled without animation on purpose: arriving somewhere should be instant, and a
+   * student who has asked for a particular setting does not need to watch the journey.
+   */
+  const [params] = useSearchParams();
+  const go = params.get('go');
+  useEffect(() => {
+    if (!go) return;
+    const target = document.getElementById(go);
+    if (!target) return;
+    target.scrollIntoView({ block: 'start', behavior: 'auto' });
+    (target as HTMLElement).focus({ preventScroll: true });
+  }, [go, chosen]);
+
   return (
     <div className="page settings-page">
       <h1>Settings</h1>

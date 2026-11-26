@@ -42,7 +42,7 @@ before(async () => {
   await returningStudent(context);
   page = await context.newPage();
   page.setDefaultTimeout(60000);
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await page.goto(`${URL_BASE}#/library`);
   await page.getByTestId('file-input').first().setInputFiles(['lecture.webm', 'screen.webm', 'phone.m4a'].map((name) => path.join(work, name)));
   for (const name of ['lecture.webm', 'screen.webm', 'phone.m4a']) await page.getByRole('link', { name }).waitFor();

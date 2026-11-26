@@ -120,7 +120,7 @@ before(async () => {
   await returningStudent(context);
   await context.addInitScript('delete window.showSaveFilePicker;');
   page = context.pages()[0] ?? (await context.newPage());
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await page.goto(URL_BASE);
 });
 
@@ -252,7 +252,7 @@ test('no time limit shows no clock, and improvement appears once there are two s
   await returningStudent(context);
   await context.addInitScript('delete window.showSaveFilePicker;');
   page = context.pages()[0] ?? (await context.newPage());
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await page.goto(`${URL_BASE}#/exams`);
   await page.getByRole('heading', { name: 'Exam Hall' }).waitFor();
   await startExam('No time limit');

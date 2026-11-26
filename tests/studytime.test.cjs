@@ -110,7 +110,7 @@ before(async () => {
   await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   page.setDefaultTimeout(15000);
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await page.clock.install({ time: new Date('2026-11-05T14:30:00-05:00') });
   await page.goto(URL_BASE);
 });

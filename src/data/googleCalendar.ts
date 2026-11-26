@@ -60,7 +60,7 @@ export function askGoogle(hint?: string): Promise<void> {
         resolve();
       },
       error_callback: (problem: any) => reject(problem?.type === 'popup_closed'
-        ? new CalendarError('', true)
+        ? new CalendarError('You closed the Google window, so nothing was connected.', true)
         : new CalendarError(problem?.type === 'popup_failed_to_open' ? 'Your browser blocked the window. Allow pop-ups for this site, then try again.' : "Google Calendar didn't give access. Try again.")),
     });
     client.requestAccessToken();

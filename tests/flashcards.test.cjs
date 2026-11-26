@@ -83,7 +83,7 @@ async function open(profile, viewport = { width: 1280, height: 800 }, when = '20
   await context.addInitScript('delete window.showSaveFilePicker;');
   page = context.pages()[0] ?? (await context.newPage());
   await page.clock.setFixedTime(new Date(when));
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await page.goto(URL_BASE);
 }
 const nav = (name) => page.getByRole('navigation', { name: name === 'Settings' ? 'Account' : 'Main' }).getByRole('link', { name, exact: true }).click();
@@ -312,7 +312,7 @@ test('someone already using the site keeps everything when Flashcards arrive', a
   context = await chromium.launchPersistentContext(path.join(work, 'older-student'), { viewport: { width: 1280, height: 800 } });
   await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await page.route(`${URL_BASE}blank.html`, (route) => route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>blank</title>' }));
   await page.goto(`${URL_BASE}blank.html`);
   await page.evaluate(() => new Promise((resolve, reject) => {

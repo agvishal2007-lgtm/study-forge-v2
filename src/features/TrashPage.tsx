@@ -39,7 +39,7 @@ export function TrashPage() {
       <p className="muted">Things you delete from anywhere in Study Forge wait here. Restore puts them back where they were. Nothing is gone until you delete it permanently.</p>
       {/* The rule in force, where a student looking at their Trash will actually see it, with one tap to change it. */}
       <p className="muted small trash-policy" data-testid="trash-policy">
-        {retentionWords(policy)} <Link to="/settings/account">Change this</Link>
+        {retentionWords(policy)} <Link to="/settings/account?go=trash-keep">Change this</Link>
       </p>
       {message && <p className="notice" role="status" data-testid="trash-message">{message}</p>}
       {rows.length === 0

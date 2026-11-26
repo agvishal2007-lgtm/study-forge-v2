@@ -25,7 +25,7 @@ async function open(profile = 'main') {
   await returningStudent(context);
   await context.addInitScript(NO_PICKER);
   page = context.pages()[0] ?? (await context.newPage());
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await page.goto(URL_BASE);
 }
 const nav = (name) => page.getByRole('navigation', { name: name === 'Settings' ? 'Account' : 'Main' }).getByRole('link', { name, exact: true }).click();

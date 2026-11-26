@@ -171,7 +171,7 @@ before(async () => {
   context = await chromium.launchPersistentContext(path.join(work, 'profile'), { viewport: { width: 1280, height: 800 }, serviceWorkers: 'block' });
   await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await page.goto(URL_BASE);
   await page.getByLabel('Course name').waitFor();
 });

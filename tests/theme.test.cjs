@@ -31,7 +31,7 @@ before(async () => {
   await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   page.setDefaultTimeout(15000);
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   // Noon in New York on 11 November 2026: the sun is up (it sets about 4:43 pm).
   await page.clock.install({ time: new Date('2026-11-11T12:00:00-05:00') });
   await page.goto(`${URL_BASE}#/notes`);

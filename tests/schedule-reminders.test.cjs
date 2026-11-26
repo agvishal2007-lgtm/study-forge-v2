@@ -25,7 +25,7 @@ before(async () => {
   await page.clock.setFixedTime(new Date('2026-11-04T14:30:00-05:00'));
   await returningStudent(page);
   page.setDefaultTimeout(15000);
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await page.goto(URL_BASE);
 });
 

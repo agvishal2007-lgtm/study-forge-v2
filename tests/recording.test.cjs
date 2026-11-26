@@ -23,7 +23,7 @@ async function open(profile = 'main', init) {
   await returningStudent(context);
   if (init) await context.addInitScript(init);
   page = context.pages()[0] ?? (await context.newPage());
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await page.goto(URL_BASE);
 }
 

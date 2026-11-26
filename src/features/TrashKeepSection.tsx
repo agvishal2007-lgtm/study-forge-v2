@@ -29,7 +29,7 @@ export function TrashKeepSection() {
   };
 
   return (
-    <section aria-labelledby="keep-heading">
+    <section id="trash-keep" aria-labelledby="keep-heading" tabIndex={-1}>
       <h2 id="keep-heading">Automatically delete items from Trash after</h2>
       <div className="tool-choices" data-testid="setting-retention">
         {RETENTION_CHOICES.map((choice) => (

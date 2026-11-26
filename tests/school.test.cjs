@@ -31,7 +31,7 @@ async function fresh(viewport = { width: 1280, height: 900 }) {
   const context = await browser.newContext({ viewport, serviceWorkers: 'block' });
   await returningStudent(context);
   const page = await context.newPage();
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   return { context, page };
 }
 const level = (page, name) => page.getByRole('radio', { name: new RegExp(name) });

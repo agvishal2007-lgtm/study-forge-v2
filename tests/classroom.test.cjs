@@ -69,7 +69,7 @@ before(async () => {
     return route.fulfill({ status: 200, headers, body: JSON.stringify({ courseWork: WORK[courseId] ?? [] }) });
   });
   page = await context.newPage();
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await returningStudent(page);
   page.setDefaultTimeout(15000);
   await page.goto(URL_BASE);

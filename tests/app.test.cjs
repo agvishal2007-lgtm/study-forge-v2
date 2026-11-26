@@ -61,7 +61,7 @@ async function open() {
   context = await chromium.launchPersistentContext(profile, { acceptDownloads: true, viewport: { width: 1280, height: 800 } });
   await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await page.goto(URL_BASE);
 }
 

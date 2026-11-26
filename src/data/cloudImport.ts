@@ -12,8 +12,14 @@ export interface CloudResult {
 export class CloudError extends Error {
   code: 'cancelled' | 'failed';
 
+  /*
+   * A message is always given, even for a cancellation nobody shows. An Error with an empty
+   * message is reported by the browser as nothing but its class name, and after minification that
+   * is two meaningless characters — which is exactly how a stray cancellation reached a test log
+   * as "Ju" and took three sightings to identify.
+   */
   constructor(code: 'cancelled' | 'failed', message = '') {
-    super(message);
+    super(message || (code === 'cancelled' ? 'You closed the Google window, so nothing was added.' : 'Google could not be reached.'));
     this.code = code;
   }
 }

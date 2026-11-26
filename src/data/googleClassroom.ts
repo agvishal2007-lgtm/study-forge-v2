@@ -75,7 +75,7 @@ export function askClassroom(hint?: string): Promise<void> {
         resolve();
       },
       error_callback: (problem: any) => reject(problem?.type === 'popup_closed'
-        ? new ClassroomError('', { cancelled: true })
+        ? new ClassroomError('You closed the Google window, so nothing was imported.', { cancelled: true })
         : new ClassroomError(problem?.type === 'popup_failed_to_open'
           ? 'Your browser blocked the window. Allow pop-ups for this site, then try again.'
           : "Google Classroom didn't give access. Try again.")),

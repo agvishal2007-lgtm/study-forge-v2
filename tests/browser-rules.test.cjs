@@ -48,3 +48,31 @@ test('a quietly closed question and an extension block each get their own steps'
   assert.match(extensionBlockSteps('arc'), /arc:\/\/extensions/);
   assert.match(extensionBlockSteps('arc'), /Pop-up blockers, ad blockers and security extensions/);
 });
+
+/*
+ * No error in Study Forge may carry an empty message.
+ *
+ * A thrown Error with no message is reported by the browser as nothing but its class name, and in
+ * the built site that name is minified to something like "Ju" — which is how a stray cancelled
+ * sign-in appeared in a test log three times before anyone could tell what it was. The messages
+ * here are mostly never displayed, because the code checks a flag instead; they exist so that one
+ * which does escape says what it was.
+ */
+const { test: errorTest } = require('node:test');
+const assertErrors = require('node:assert/strict');
+const fsErrors = require('node:fs');
+const pathErrors = require('node:path');
+
+errorTest('no error is constructed with an empty message', () => {
+  const dir = pathErrors.join(__dirname, '..', 'src', 'data');
+  const offenders = [];
+  for (const name of fsErrors.readdirSync(dir).filter((file) => file.endsWith('.ts'))) {
+    const text = fsErrors.readFileSync(pathErrors.join(dir, name), 'utf8');
+    for (const [line, at] of text.split('\n').map((one, index) => [one, index + 1])) {
+      // new SomethingError('') or new SomethingError('', …) — an error that will print as its own
+      // minified class name and nothing else.
+      if (/new \w*Error\(\s*(''|"")\s*[,)]/.test(line)) offenders.push(`${name}:${at}`);
+    }
+  }
+  assertErrors.deepEqual(offenders, [], 'an error with no message prints as its minified class name and tells nobody anything');
+});

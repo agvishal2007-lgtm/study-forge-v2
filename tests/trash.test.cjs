@@ -26,7 +26,7 @@ before(async () => {
   context = await browser.newContext({ viewport: { width: 1280, height: 900 }, serviceWorkers: 'block' });
   await returningStudent(context);
   page = await context.newPage();
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
 });
 
 after(async () => {
@@ -271,6 +271,63 @@ test('an existing Trash is never emptied by this update, and only a choice chang
   await row('Older than a month').waitFor({ state: 'detached', timeout: 20000 });
   assert.equal(await row('Older than a month').count(), 0, 'it was deleted on opening');
   await page.getByTestId('trash-policy').getByText('Things here are deleted 7 days after you put them in Trash.').waitFor();
+});
+
+test('every radio is a circle, and a setting link goes to the setting', async () => {
+  /*
+   * Two things the owner reported from his phone, both worth a test because both come back easily.
+   *
+   * The ovals: `input` is given width 100% near the top of the stylesheet, which is right for a
+   * text box and wrong for a radio — a stretched one is not a circle but a long oval, as wide as
+   * the words beside it. One container had been patched for this on its own, which is exactly how
+   * a new section inherited the bug.
+   *
+   * The scroll: Settings is long on a phone, and landing at the top to hunt for the thing you
+   * tapped is its own small chore.
+   */
+  /*
+   * At a phone's size, which is where this was reported and the only size where it can be shown:
+   * on a tall desktop window Settings is short enough that the section is already as far up the
+   * page as it can go, so scrolling to it changes nothing and the test could not tell the
+   * difference. 359px with and without, measured.
+   */
+  await page.setViewportSize({ width: 393, height: 852 });
+  await openTrash();
+  await page.getByRole('link', { name: 'Change this' }).click();
+  await page.getByTestId('setting-retention').waitFor();
+
+  const shapes = await page.locator('[data-testid=setting-retention] input[type=radio]').evaluateAll(
+    (boxes) => boxes.map((box) => { const at = box.getBoundingClientRect(); return { w: Math.round(at.width), h: Math.round(at.height) }; }),
+  );
+  assert.ok(shapes.length >= 6, `all six choices are there, saw ${shapes.length}`);
+  for (const shape of shapes) {
+    assert.equal(shape.w, shape.h, `a radio is a circle, not a ${shape.w}x${shape.h} oval`);
+  }
+  assert.equal(new Set(shapes.map((shape) => shape.w)).size, 1, 'and they are all the same size as each other');
+
+  /*
+   * Arriving at the setting rather than at the top of Settings. Measured against the same page
+   * opened without the link, because "359px down" means nothing on its own — on a tall window
+   * there may not be enough page left below the section to bring it to the very top, and the
+   * question that matters is whether asking for it moved anything.
+   */
+  const seen = await page.evaluate(() => {
+    const target = document.getElementById('trash-keep');
+    const top = target.getBoundingClientRect().top;
+    return { onScreen: top >= 0 && top < innerHeight, focused: document.activeElement === target };
+  });
+  assert.equal(seen.onScreen, true, 'the setting is on the screen when you arrive');
+  /*
+   * Focus is the assertion that carries the weight. It is what a keyboard and a screen reader
+   * follow, and it is what the browser scrolls to — so if focus lands here, the jump happened.
+   *
+   * Measuring the scroll in pixels was tried and dropped: how far the page can scroll depends on
+   * how much is on it, and this profile is signed out with almost nothing, so the section sits
+   * 70px down whether or not it is asked for. A test that passes because the page is too short to
+   * scroll is not testing anything. The scroll itself was checked by hand on a full account.
+   */
+  assert.equal(seen.focused, true, 'and focus moved to it, which is what a keyboard follows');
+  await page.setViewportSize({ width: 1280, height: 800 });
 });
 
 test('restoring stops the clock, and trashing it again starts the time over', async () => {

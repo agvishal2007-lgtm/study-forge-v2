@@ -48,7 +48,7 @@ async function open(profile, viewport = { width: 1280, height: 800 }) {
   await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   await page.clock.setFixedTime(new Date('2026-11-04T14:30:00-05:00'));
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await page.goto(URL_BASE);
 }
 const nav = (name) => page.getByRole('navigation', { name: name === 'Settings' ? 'Account' : 'Main' }).getByRole('link', { name, exact: true }).click();
@@ -242,7 +242,7 @@ test('it fits a phone, with the numbers side by side', async () => {
   await returningStudent(context);
   page = context.pages()[0] ?? (await context.newPage());
   await page.clock.setFixedTime(new Date('2026-11-04T14:30:00-05:00'));
-  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('pageerror', (error) => pageErrors.push(`${error.message}${error.stack ? `\n${error.stack}` : ''}`));
   await page.goto(URL_BASE);
   await page.getByTestId('tile-due').waitFor();
   const overflow = await page.evaluate(() => {
