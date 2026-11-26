@@ -130,7 +130,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/study',
     target: ['[data-tour="sample-lesson"]'],
     title: 'Mastery is earned',
-    body: 'Clicking through or guessing never counts. A topic is mastered only after you answer questions, apply the idea and explain it.',
+    body: 'Clicking through or guessing never counts. A topic is mastered only after you answer questions, apply the idea and explain it — and once it is, reviewing it later never takes that away.',
     action: {
       isDone: hasAny('lessons'),
       instruction: 'Try it: press Add sample lesson. It stays in Study for when you’re ready, and you can delete it anytime.',
