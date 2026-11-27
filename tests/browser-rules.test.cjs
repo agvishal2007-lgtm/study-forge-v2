@@ -149,3 +149,20 @@ errorTest('every word a course kind suggests can actually be chosen', () => {
   }
   assertErrors.ok(kinds.includes("|| 'Lesson'"), 'a course that never said what kind it is keeps the old word');
 });
+
+errorTest('every test file in tests/ is one the gate actually runs', () => {
+  /*
+   * A test that is never run is worse than no test: it reads like proof and proves nothing. This
+   * found tests/trash-rules.test.cjs, which held the rules for automatically deleting Trash — 7,
+   * 14, 30, 60, 90 or never — and had never once run in the gate, so nothing about that feature
+   * was being checked before a release.
+   *
+   * The gate names its files one by one on purpose, so that a half-written test cannot creep into
+   * a release by being in the folder. This keeps that, and only insists that nothing is forgotten.
+   */
+  const gate = JSON.parse(fsErrors.readFileSync(pathErrors.join(__dirname, '..', 'package.json'), 'utf8')).scripts.test;
+  const files = fsErrors.readdirSync(pathErrors.join(__dirname)).filter((name) => name.endsWith('.test.cjs'));
+  assertErrors.ok(files.length > 70, `the tests are still here, found ${files.length}`);
+  const forgotten = files.filter((name) => !gate.includes(`tests/${name}`));
+  assertErrors.deepEqual(forgotten, [], `these test files are never run: ${forgotten.join(', ')}`);
+});
