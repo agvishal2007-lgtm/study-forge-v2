@@ -534,3 +534,54 @@ test('a checkpoint left part-way says where it was left', async () => {
   assert.match(await where.textContent(), /Paused at question 1 of 1 · today/);
 });
 
+test('a half-typed answer survives the app being put in the background', async () => {
+  /*
+   * Leaving the screen already saved a draft, but a phone does not always leave politely: switch
+   * apps and iOS can discard the page without React unmounting anything, taking the last fraction
+   * of a second of typing with it. Hiding the page is the signal, and it is the one the note
+   * editor has used for a while.
+   *
+   * Built from scratch with a short-answer question, because this needs something to type into
+   * and the checkpoints above are multiple choice. An earlier version skipped itself when it
+   * found no textbox, which is a test that reports green while checking nothing.
+   */
+  await nav('Study');
+  await page.getByLabel('Lesson title').fill('Backgrounded lesson');
+  await page.getByRole('button', { name: 'Create lesson' }).click();
+  await page.getByRole('heading', { name: 'Backgrounded lesson' }).waitFor();
+  await page.getByRole('button', { name: 'Add checkpoint' }).click();
+  await page.getByLabel('Checkpoint title').fill('Typing something');
+  await page.getByLabel('The most important idea').fill('Worth not losing.');
+  await page.getByLabel('What it means, in simple words').fill('A short idea, explained simply.');
+  await page.locator('.editor-question select').first().selectOption('short');
+  const only = page.locator('.editor-question').first();
+  await only.getByLabel('Question', { exact: true }).fill('Say it in your own words.');
+  await only.getByLabel('Why this is the answer').fill('Because that is what it means.');
+  // A short-answer question needs something to mark against; Study Forge refuses to save without
+  // one, and says so. Leaving it out is how this test first failed.
+  await only.getByLabel(/Model answer/).fill('It means what the idea says it means.');
+  await page.getByLabel(/Key points a good explanation/).fill('It means what it means.');
+  await page.getByRole('button', { name: 'Save checkpoint' }).click();
+  await page.getByRole('heading', { name: 'Backgrounded lesson' }).waitFor();
+  assert.equal(await page.getByText('Still needs').count(), 0, 'the checkpoint is ready to study');
+
+  await page.getByRole('link', { name: 'Typing something', exact: true }).click();
+  await throughTeaching();
+  await question().waitFor();
+  const box = question().getByRole('textbox');
+  await box.waitFor();
+
+  const typed = 'Half a thought I had not finished';
+  await box.fill(typed);
+
+  // Backgrounded without leaving the screen: no unmount, no navigation.
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.waitForTimeout(300);
+
+  await page.reload();
+  await question().waitFor();
+  assert.equal(await question().getByRole('textbox').inputValue(), typed, 'what was typed is still there');
+});

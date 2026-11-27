@@ -224,6 +224,35 @@ export function SessionPage() {
     }, 400);
   };
 
+  /*
+   * Save a half-typed answer the moment the app goes into the background.
+   *
+   * Leaving this screen already saves it, but a phone does not always leave politely: switch apps
+   * and iOS can discard the page without React ever unmounting anything, taking whatever was typed
+   * in the last fraction of a second with it. The note editor has done this for a while; a study
+   * answer is worth the same care, and losing the end of a sentence you were part-way through is
+   * exactly the sort of small loss that makes an app feel untrustworthy.
+   */
+  useEffect(() => {
+    const flush = () => {
+      /* Read the checkpoint when the flush actually happens, the same way leaving the screen does,
+         so a save can never be skipped because the checkpoint had not arrived when this was set up. */
+      const target = loadedRef.current;
+      if (latestDraft.current === null || !target) return;
+      clearTimeout(draftTimer.current);
+      const text = latestDraft.current;
+      latestDraft.current = null;
+      void recordStudyAction(target, { type: 'draft', text }).catch(() => undefined);
+    };
+    const whenHidden = () => { if (document.visibilityState === 'hidden') flush(); };
+    document.addEventListener('visibilitychange', whenHidden);
+    window.addEventListener('pagehide', flush);
+    return () => {
+      document.removeEventListener('visibilitychange', whenHidden);
+      window.removeEventListener('pagehide', flush);
+    };
+  }, [checkpoint?.id]);
+
   if (failure && !checkpoint) return <div className="page"><p className="error" role="alert">{failure}</p></div>;
   if (checkpoint === undefined || (checkpoint && !progress)) return <p className="page muted">Loading…</p>;
   if (checkpoint === null || !progress) return <div className="page"><h1>This checkpoint doesn't exist</h1><Link to="/study">Go to Study</Link></div>;
