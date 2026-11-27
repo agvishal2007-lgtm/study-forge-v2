@@ -477,6 +477,7 @@ const MORE: Record<string, Lesson[]> = {
         ['As soon as you read it', 'Reading isn’t evidence. You have to answer, apply and explain.'],
         ['After one right answer', 'One answer isn’t enough. It takes several answers, an application and an explanation.']),
       feedback: 'Right. Try Add sample lesson in Study to see how it works.',
+      tip: 'On a course you can say what it is — a class, software, an exam — and Study Forge will suggest calling its lessons chapters, lessons or sections to match. Saying nothing is fine; nothing changes.',
     },
     {
       id: 'review-or-restart',

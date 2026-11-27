@@ -131,3 +131,21 @@ errorTest('every link that names a setting points at a section that exists and c
       `the section "${id}" can take focus, so a keyboard arrives there too`);
   }
 });
+
+errorTest('every word a course kind suggests can actually be chosen', () => {
+  /*
+   * The kind of a course suggests what to call the level below it — a class has chapters, software
+   * has lessons, an exam has sections. If a suggestion is missing from the list of choices, the
+   * box renders empty and the student sees a blank where a word should be, which looks broken and
+   * is easy to miss in review.
+   */
+  const kinds = fsErrors.readFileSync(pathErrors.join(__dirname, '..', 'src', 'data', 'courseKinds.ts'), 'utf8');
+  const page = fsErrors.readFileSync(pathErrors.join(__dirname, '..', 'src', 'features', 'guided', 'StudyPage.tsx'), 'utf8');
+  const suggested = [...kinds.matchAll(/levelWord: '([A-Za-z]+)'/g)].map((match) => match[1]);
+  const offered = [...page.matchAll(/'([A-Z][a-z]+)'/g)].map((match) => match[1]);
+  assertErrors.ok(suggested.length >= 6, `all six kinds suggest a word, found ${suggested.length}`);
+  for (const word of suggested) {
+    assertErrors.ok(offered.includes(word), `"${word}" is suggested by a course kind, so it must be choosable`);
+  }
+  assertErrors.ok(kinds.includes("|| 'Lesson'"), 'a course that never said what kind it is keeps the old word');
+});

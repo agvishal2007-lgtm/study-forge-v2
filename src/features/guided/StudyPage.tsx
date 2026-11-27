@@ -5,12 +5,19 @@ import { countLesson, recommendNext, STATUS_LABEL } from '../../data/mastery';
 import { addSampleLesson } from '../../data/sampleLesson';
 import { listAllCourses } from '../../data/store';
 import { useLive } from '../../data/useLive';
+import { levelWordFor } from '../../data/courseKinds';
 
 export function StudyPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [title, setTitle] = useState('');
-  const [label, setLabel] = useState('Lesson');
+  /*
+   * Empty until the student has either picked a course that says what kind it is, or chosen a word
+   * themselves. Kept as "their choice or nothing" rather than defaulted up front, so that picking
+   * a course can still fill it in — and so that having typed a word themselves, choosing a course
+   * never overwrites it.
+   */
+  const [label, setLabel] = useState('');
   const [courseId, setCourseId] = useState(params.get('course') ?? '');
   const [failure, setFailure] = useState('');
   const { data, error } = useLive(async () => {
@@ -18,6 +25,13 @@ export function StudyPage() {
     return { courses, lessons, checkpoints, progress };
   });
   if (error) return <div className="page"><h1>Study</h1><p className="error" role="alert">Your lessons couldn't be loaded. {error.message}</p></div>;
+
+  /*
+   * The word this course would call the level below it. A class has chapters, software has
+   * lessons, an exam has sections — saying so once on the course stops the student correcting the
+   * same word every time they add one. A course that never said keeps Study Forge's old 'Lesson'.
+   */
+  const suggestedWord = levelWordFor(data?.courses.find((course) => course.id === courseId)?.kind);
   if (!data) return <p className="page muted">Loading…</p>;
 
   const { courses, lessons, checkpoints, progress } = data;
@@ -106,7 +120,7 @@ export function StudyPage() {
             if (!title.trim()) return setFailure('Enter a lesson title.');
             setFailure('');
             try {
-              const lesson = await createLesson(title, label, courseId || null);
+              const lesson = await createLesson(title, label || suggestedWord, courseId || null);
               navigate(`/study/lessons/${lesson.id}`);
             } catch (problem) {
               setFailure(`The lesson wasn't saved. ${(problem as Error).message}`);
@@ -115,11 +129,12 @@ export function StudyPage() {
         >
           <label>Lesson title<input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Chapter 1: Assets" /></label>
           <label>Called a
-            <select value={label} onChange={(event) => setLabel(event.target.value)}>
-              <option>Lesson</option>
-              <option>Chapter</option>
-              <option>Module</option>
-              <option>Unit</option>
+            <select value={label || suggestedWord} onChange={(event) => setLabel(event.target.value)}>
+              {/*
+                Every word a course kind can suggest is in this list. A suggestion missing from it
+                would leave the box looking empty, which is worse than having too many choices.
+              */}
+              {['Lesson', 'Chapter', 'Module', 'Unit', 'Section', 'Topic'].map((word) => <option key={word}>{word}</option>)}
             </select>
           </label>
           <label>Course

@@ -1,3 +1,4 @@
+import type { CourseKind } from './courseKinds';
 import type { LinkCategory } from './linkRules';
 import type { EventDetails } from './eventDetails';
 export type { LinkCategory };
@@ -25,6 +26,11 @@ export interface Course {
    * empty means every day, so a class is never hidden because this was never filled in.
    */
   meetsOn?: number[];
+  /**
+   * What kind of thing this is — a class, software, an exam, and so on. Optional, never guessed,
+   * and missing is a real answer: a course that has not said behaves exactly as it always did.
+   */
+  kind?: CourseKind;
   /** Credit hours as the student entered them. Null or missing means not entered, never zero. */
   credits?: number | null;
   /** The final grade as the student wrote it, such as "A-" or "Pass". Empty means not entered. */

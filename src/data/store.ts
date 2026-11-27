@@ -1,3 +1,4 @@
+import type { CourseKind } from './courseKinds';
 import { createSHA256 } from 'hash-wasm';
 import { deleteBlob, readBlob, removeLeftovers, saveBlob, whileSaving } from './blobs';
 import { getDb, notifyChanged } from './db';
@@ -355,7 +356,7 @@ function statusLabel(status: Lifecycle, name: string): string {
 /* ---- Editing and ordering, so a student can organize courses however they need. ---- */
 
 /** Renames a course, or changes its code or term. Empty term means no semester: an independent study. */
-export async function updateCourse(id: string, changes: { name?: string; code?: string; term?: string; allYear?: boolean; credits?: number | null; finalGrade?: string; meetsOn?: number[] }): Promise<void> {
+export async function updateCourse(id: string, changes: { name?: string; code?: string; term?: string; allYear?: boolean; credits?: number | null; finalGrade?: string; meetsOn?: number[]; kind?: CourseKind | '' }): Promise<void> {
   const db = await getDb();
   const course = await db.get('courses', id);
   if (!course) return;
@@ -374,6 +375,9 @@ export async function updateCourse(id: string, changes: { name?: string; code?: 
       // later code would have to remember means "all".
       meetsOn: changes.meetsOn === undefined ? course.meetsOn : (changes.meetsOn.length > 0 ? changes.meetsOn : undefined),
       credits: changes.credits === undefined ? course.credits : changes.credits,
+      // '' is the student choosing "not saying" and must clear it; undefined means they did not
+      // touch the field at all. Without the difference there would be no way back to not saying.
+      kind: changes.kind === undefined ? course.kind : (changes.kind || undefined),
       finalGrade: changes.finalGrade === undefined ? course.finalGrade : changes.finalGrade.trim(),
       updatedAt: Math.max(now, course.updatedAt + 1),
     });

@@ -10,6 +10,7 @@ import { NewNoteButton, NoteList } from '../components/NoteList';
 import { listNotes } from '../data/notes';
 import { useStillHere } from '../components/useStillHere';
 import { groupTopics } from '../data/courseRules';
+import { COURSE_KINDS, isCourseKind, type CourseKind } from '../data/courseKinds';
 import { createTopic, getCourse, listAllResourceLinks, listTopics, materialsForCourse, moveTopic, setCourseStatus, setTopicStatus, topicWithin, updateCourse, updateTopic } from '../data/store';
 import type { Material, Note, Topic } from '../data/types';
 import { useLive } from '../data/useLive';
@@ -95,6 +96,8 @@ export function CourseDetailPage() {
                 name: String(form.get('name') ?? ''),
                 code: String(form.get('code') ?? ''),
                 term: String(form.get('term') ?? ''),
+                // '' is a real answer — "not saying" — and clears it, rather than being ignored.
+                kind: isCourseKind(form.get('kind')) ? (form.get('kind') as CourseKind) : '',
                 ...(rotation
                   ? {
                       meetsOn: tidyMeetsOn(
@@ -110,6 +113,17 @@ export function CourseDetailPage() {
         >
           <label>Course name<input name="name" defaultValue={course.name} required /></label>
           <label>Course code<input name="code" defaultValue={course.code} placeholder="ACC 211" /></label>
+          {/*
+            Optional, and never guessed from the name. All it does is suggest what to call the
+            level below this course when you write a lesson — a class has chapters, software has
+            lessons, an exam has sections — so you are not correcting the same word every time.
+          */}
+          <label>What this is
+            <select name="kind" defaultValue={course.kind ?? ''}>
+              <option value="">Not saying</option>
+              {COURSE_KINDS.map((kind) => <option key={kind.value} value={kind.value}>{kind.label} — {kind.example}</option>)}
+            </select>
+          </label>
           <label>
             Semester
             <input name="term" defaultValue={course.term} placeholder="Fall 2026" />
