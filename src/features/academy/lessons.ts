@@ -459,6 +459,17 @@ const MORE: Record<string, Lesson[]> = {
         ['After each step', 'The steps only gather choices. You confirm everything at the end.']),
       feedback: 'Right. Finished courses are archived, never deleted, and official deadlines are never moved.',
     },
+    {
+      id: 'what-this-is',
+      title: 'Saying what a course is',
+      intro: 'Edit course asks What this is: a class you are taking, software you are learning, a skill for work, an exam, something you are learning on your own, or a certification.',
+      activity: ask('What does answering it change?',
+        ['The word Study Forge uses for the parts of the course', 'A class gets Chapters, software gets Lessons, an exam gets Sections — so you are not correcting the same word every time.'],
+        ['How much you have to do to master something', 'No. Mastery is the same standard whatever kind of course it is, so you always know what it takes.'],
+        ['Which courses Today suggests first', 'No. Today goes by your deadlines and where you left off, not by the kind of course.']),
+      feedback: 'Not saying is a real answer, and the default. A course that never says keeps the neutral word, Lesson.',
+      tip: 'Nothing is guessed from a course’s name, and changing this later only changes a suggested word — never anything you have written.',
+    },
   ],
   'study-tools': [
     {
@@ -499,6 +510,7 @@ const MORE: Record<string, Lesson[]> = {
         ['Open it and see', 'You can, but you should not have to. The lesson tells you before you open it.'],
         ['You cannot — you start that checkpoint again', 'No. Nothing you did is lost by stopping.']),
       feedback: 'Today says it too, on the Study next card, so the thing you were in the middle of is easy to start again.',
+      tip: 'This holds when you leave by accident. Switch apps, take a call or let the screen lock part-way through typing an answer, and the answer is saved as you had it.',
     },
     {
       id: 'exam-hall',

@@ -90,7 +90,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: '/courses',
     target: ['[data-tour="add-course"]'],
     title: 'Courses',
-    body: 'Add each of your classes, starting blank or from a template such as Lecture, Lab, Writing or Math. Inside a course, topics hold its files, notes and recordings together. If Courses is empty, a short setup can name your term and add your classes for you.',
+    body: 'Add each of your classes, starting blank or from a template such as Lecture, Lab, Writing or Math. Inside a course, topics hold its files, notes and recordings together. Edit course can say what kind of thing it is, which sets the word for its parts — Chapters, Modules, Sections. If Courses is empty, a short setup can name your term and add your classes for you.',
     action: {
       isDone: hasAny('courses'),
       instruction: 'Try it: add one of your real classes, then press Create course.',
